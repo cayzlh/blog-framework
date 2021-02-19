@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="description" content="MyBatis基础支持层位于 Mybatis 整体架构的最底层，支撑着 Mybatis 的核心处理层，是整个框架的基石。基础支持层中封装了多个较为通用的、独立的模块，不仅仅为 Mybatis 提供基础支撑，也可以在合适的场景中直接复用。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="基础支持层——缓存模块">
+<meta property="og:url" content="https://www.cayzlh.com/blog">
+<meta property="og:site_name" content="CAYZLH">
+<meta property="og:description" content="MyBatis基础支持层位于 Mybatis 整体架构的最底层，支撑着 Mybatis 的核心处理层，是整个框架的基石。基础支持层中封装了多个较为通用的、独立的模块，不仅仅为 Mybatis 提供基础支撑，也可以在合适的场景中直接复用。">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/09/2_c5SKkm_zgJEGC.png">
+<meta property="og:image" content="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/11/image-20200611103644916_Rw2GMv.png">
+<meta property="og:image" content="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/11/image-20200611105658387_IJSXLa.png">
+<meta property="og:image" content="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/11/image-20200611114247838_a3jRci.png">
+<meta property="og:image" content="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/11/image-20200611120028350_RNaWIP.png">
+<meta property="og:image" content="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/16/image-20200616092820328_4agKqU.png">
+<meta property="og:image" content="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/18/image-20200618093048912_N2ifEV.png">
+<meta property="article:published_time" content="2019-10-31T01:09:42.000Z">
+<meta property="article:modified_time" content="2020-08-21T08:26:54.947Z">
+<meta property="article:author" content="🐳Ant丶">
+<meta property="article:tag" content="MyBatis">
+<meta property="article:tag" content="《MyBatis技术内幕》">
+<meta property="article:tag" content="基础支持层">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/09/2_c5SKkm_zgJEGC.png">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/blog/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/blog/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/blog/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>基础支持层——缓存模块</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/blog/css/style.css">
+
+    <!-- persian styles -->
+    
+      
+<link rel="stylesheet" href="/blog/css/rtl.css">
+
+    
+    <!-- rss -->
+    
+    
+      <link rel="alternate" href="/blog/true" title="CAYZLH" type="application/atom+xml">
+    
+<meta name="generator" content="Hexo 5.3.0"></head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fas fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fas fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fas fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a href="/blog/">Home</a></li>
+        
+          <li><a href="/blog/archives/">Articles</a></li>
+        
+          <li><a href="/blog/about/">About</a></li>
+        
+          <li><a href="/blog/search/">Search</a></li>
+        
+      </ul>
+    </span>
+    <br>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/blog/2020/01/01/a426e6ea.html"><i class="fas fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/blog/2019/10/30/e275ec7f.html"><i class="fas fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+<!--        <li><a class="icon" href="#"><i class="fas fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>-->
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous</span>
+      <span id="i-next" class="info" style="display:none;">Next</span>
+      <span id="i-top" class="info" style="display:none;">Back to top</span>
+      <span id="i-share" class="info" style="display:none;">Share post</span>
+    </span>
+    <br>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.facebook.com/sharer.php?u=https://www.cayzlh.com/2019/10/31/fce458a9.html"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://twitter.com/share?url=https://www.cayzlh.com/2019/10/31/fce458a9.html&text=基础支持层——缓存模块"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.linkedin.com/shareArticle?url=https://www.cayzlh.com/2019/10/31/fce458a9.html&title=基础支持层——缓存模块"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://pinterest.com/pin/create/bookmarklet/?url=https://www.cayzlh.com/2019/10/31/fce458a9.html&is_video=false&description=基础支持层——缓存模块"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=基础支持层——缓存模块&body=Check out this article: https://www.cayzlh.com/2019/10/31/fce458a9.html"><i class="fas fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://getpocket.com/save?url=https://www.cayzlh.com/2019/10/31/fce458a9.html&title=基础支持层——缓存模块"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://reddit.com/submit?url=https://www.cayzlh.com/2019/10/31/fce458a9.html&title=基础支持层——缓存模块"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.stumbleupon.com/submit?url=https://www.cayzlh.com/2019/10/31/fce458a9.html&title=基础支持层——缓存模块"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://digg.com/submit?url=https://www.cayzlh.com/2019/10/31/fce458a9.html&title=基础支持层——缓存模块"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.tumblr.com/share/link?url=https://www.cayzlh.com/2019/10/31/fce458a9.html&name=基础支持层——缓存模块&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://news.ycombinator.com/submitlink?u=https://www.cayzlh.com/2019/10/31/fce458a9.html&t=基础支持层——缓存模块"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    <div id="toc">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%A3%85%E9%A5%B0%E5%99%A8%E6%A8%A1%E5%BC%8F"><span class="toc-number">1.</span> <span class="toc-text">装饰器模式</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Cache%E6%8E%A5%E5%8F%A3%E5%8F%8A%E5%85%B6%E5%AE%9E%E7%8E%B0"><span class="toc-number">2.</span> <span class="toc-text">Cache接口及其实现</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#PerpetualCache"><span class="toc-number">2.1.</span> <span class="toc-text">PerpetualCache</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#BlockingCache"><span class="toc-number">2.2.</span> <span class="toc-text">BlockingCache</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#FifoCache-amp-LruCache"><span class="toc-number">2.3.</span> <span class="toc-text">FifoCache&amp;LruCache</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#SoftCache-amp-WeakCache"><span class="toc-number">2.4.</span> <span class="toc-text">SoftCache&amp;WeakCache</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#others"><span class="toc-number">2.5.</span> <span class="toc-text">others</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#CacheKey"><span class="toc-number">3.</span> <span class="toc-text">CacheKey</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8F%82%E8%80%83"><span class="toc-number">4.</span> <span class="toc-text">参考</span></a></li></ol>
+    </div>
+  </span>
+</div>
+
+    
+    <div class="content index py4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        基础支持层——缓存模块
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">🐳Ant丶</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2019-10-31T01:09:42.000Z" itemprop="datePublished">2019-10-31</time>
+        
+      
+    </div>
+
+
+      
+    <div class="article-category">
+        <i class="fas fa-archive"></i>
+        <a class="category-link" href="/blog/categories/%E4%B9%A6%E7%B1%8D/">书籍</a> › <a class="category-link" href="/blog/categories/%E4%B9%A6%E7%B1%8D/%E3%80%8AMyBatis%E6%8A%80%E6%9C%AF%E5%86%85%E5%B9%95%E3%80%8B/">《MyBatis技术内幕》</a>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fas fa-tag"></i>
+        <a class="tag-link-link" href="/blog/tags/MyBatis/" rel="tag">MyBatis</a>, <a class="tag-link-link" href="/blog/tags/%E3%80%8AMyBatis%E6%8A%80%E6%9C%AF%E5%86%85%E5%B9%95%E3%80%8B/" rel="tag">《MyBatis技术内幕》</a>, <a class="tag-link-link" href="/blog/tags/%E5%9F%BA%E7%A1%80%E6%94%AF%E6%8C%81%E5%B1%82/" rel="tag">基础支持层</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <p>MyBatis基础支持层位于 Mybatis 整体架构的最底层，支撑着 Mybatis 的核心处理层，是整个框架的基石。基础支持层中封装了多个较为通用的、独立的模块，不仅仅为 Mybatis 提供基础支撑，也可以在合适的场景中直接复用。</p>
+<p><img src="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/09/2_c5SKkm_zgJEGC.png" alt="整体架构"></p>
+<blockquote>
+<p>这篇文章介绍MyBatis的<strong>缓存模块</strong></p>
+</blockquote>
+<p><code>MyBatis</code>作为 一个 强大的持久层 框 架，缓 存是其必不可少的功能之一。MyBatis中的缓 存 是两 层 结 构 的，分为 <strong>一级 缓 存</strong>、<strong>二级 缓 存</strong>，但在本质 上是相同的，它 们 使用的都是<code>Cache</code>接 口的实 现 。</p>
+<p>在 MyBatis缓 存模块 中涉及了装 饰 器模式的相关 知识 。</p>
+<h2 id="装饰器模式"><a href="#装饰器模式" class="headerlink" title="装饰器模式"></a>装饰器模式</h2><p>在实践生产中，新需求在软件的整个生命过程中总是不断出现的。当有新需求出现时，就需要为某些组件添加新的功能来满足这些需求。</p>
+<p>添加新功能的方式有很多，我们可以直接修改己有组件的代码并添加相应的新功能，这显然会破坏己有组件的稳定性，修改完成后，整个组件需要重新进行测试，才能上线使用。这种方式显然违反了“<strong>开放-封闭</strong>”原则。</p>
+<p><u>另一种方式是使用继承方式，我们可以创建子类并在子类中添加新功能实现扩展。</u>*这种方法是静态的，用户不能控制增加行为的方式和时机。而且有些情况下继承是不可行的。</p>
+<ul>
+<li><p>例如己有组件是被<code>final</code>关键字修饰的类。</p>
+</li>
+<li><p>另外，如果待添加的新功能存在多种组合，使用继承方式可能会导致大量子类的出现。</p>
+<p>例如，有4个待添加的新功能，系统需要动态使用任意多个功能的组合，则需要添加15个子类才能满足全部需求。</p>
+</li>
+</ul>
+<p>装饰器模式能够帮助我们解决上述问题，装饰器可以动态地为对象添加功能，它是基于组合的方式实现该功能的。</p>
+<p><strong>在实践中，我们应该尽量使用组合的方式来扩展系统的功能，而非使用继承的方式。</strong><u>设计模式中常见的一句话:组合优于继承。</u></p>
+<p>装饰器模式的类图，以及其中的核心角色：</p>
+<p><img src="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/11/image-20200611103644916_Rw2GMv.png" alt="image-20200611103644916"></p>
+<ul>
+<li><p><strong>Component（组件）</strong></p>
+<p>组件接口定义了全部组件实现类以及所有装饰器实现的行为。</p>
+</li>
+<li><p><strong>ConcreteComponent (具体 组 件实 现 类 )</strong></p>
+<p>具体组件实现类实现了<code>Component</code>接口。</p>
+<p>通常情况下，具体组件实现类就是被装饰器装饰的原始对象，该类提供了<code>Component</code>接口中定义的最基本的功能，其他高级功能或后续添加的新功能，都是通过装饰器的方式添加到该类的对象之上的。</p>
+</li>
+<li><p><strong>Decorator(装饰器)</strong></p>
+<p>所有装饰器的父类，它是一个实现了<code>Component</code>接口的抽象类，并在其中封装了一个<code>Component</code>对象，也就是被装饰的对象。</p>
+<p>而这个被装饰的对象只要是<code>Component</code>类型即可，这就实现了装饰器的组合和复用。</p>
+<p>如下图，装饰器<strong>C(ConcreteDecoratorl类型)**修饰了装饰器</strong>B(ConcreteDecorator2类型)**并为其添加功能<code>W</code>，而装饰器<code>B(ConcreteDecorator2类型)</code>又修饰了组件<code>A(ConcreteComponent类型)</code>并为其添加功能<code>V</code>。</p>
+<p>其中，组件对象A提供的是最基本的功能，装饰器B和装饰器C会为组件对象A添加新的功能。</p>
+<p><img src="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/11/image-20200611105658387_IJSXLa.png" alt="image-20200611105658387"></p>
+</li>
+<li><p><strong>ConcreteDecorator</strong></p>
+<p>具体的装饰器实现类，该实现类要向被装饰对象添加某些功能。如上图，装饰器B、C就是该角色，被装饰的对象只要是<code>Component</code>类型即可。<br>在<code>JavaIO</code>包中，大量应用了装饰器模式，我们在使用<code>JavaIO</code>包读取文件时，经常会看到如下代码:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">BufferedlnputStream bis = </span><br><span class="line">  <span class="keyword">new</span> BufferedlnputStream( <span class="keyword">new</span> FilelnputStream(<span class="keyword">new</span> File(<span class="string">&quot;D:/test.txt&quot;</span>)));</span><br></pre></td></tr></table></figure>
+<p><code>FilelnputStream</code>并没有缓冲功能，每次调用其<code>read()</code>方法时都会向操作系统发起相应的系统调用，当读取大量数据时，就会导致操作系统在用户态和内核态之间频繁切换，性能较低。</p>
+</li>
+</ul>
+<p><code>BufferedlnputStream</code>是提供了缓冲功能的装饰器，每次调用其<code>read()</code>方法时，会预先从文件中获取一部分数据并缓存到<code>BufferedlnputStream</code>的缓冲区中，后面连续的几次读取可以直接从缓冲区中获取数据，直到缓冲区数据耗尽才会重新从文件中读取数据，这样就可以减少用户态和内核态的切换，提高了读取的性能。</p>
+<p>在<code>MyBatis</code>的缓存模块中，使用了装饰器模式的变体，其中将<code>Decorator</code>接口和<code>Component</code>接口合并为一个<code>Component</code>接口</p>
+<p><img src="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/11/image-20200611114247838_a3jRci.png" alt="image-20200611114247838"></p>
+<p>使用装饰器模式的优点：</p>
+<ul>
+<li>相较于继承来说，装饰器模式的灵活性更强，可扩展性也强。正如前面所说，继承方式会导致大量子类的情况。<strong>而装饰者模式可以将复杂的功能切分成一个个独立的装饰器，通过多个独立装饰器的动态组合，创建不同功能的组件，从而满足多种不同需求。</strong></li>
+<li>当有新功能需要添加时，只需要添加新的装饰器实现类，然后通过组合方式添加这个新装饰器即可，无须修改己有类的代码，符合“<strong>开放-封闭</strong>”原则。</li>
+</ul>
+<p>但是，随着添加的新需求越来越多，可能会创建出嵌套多层装饰器的对象，这增加了系统的复杂性，也增加了理解的难度和定位错误的难度。</p>
+<h2 id="Cache接口及其实现"><a href="#Cache接口及其实现" class="headerlink" title="Cache接口及其实现"></a>Cache接口及其实现</h2><p><code>MyBatis</code>的缓存模块在<code>org.apache.ibatis.cache</code>包下，其中<code>Cache</code>接口是缓存模块的中最核心的接口，它定义了所有缓存的基本行为。</p>
+<p><strong>Cache</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">Cache</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">  <span class="comment">/**</span></span><br><span class="line"><span class="comment">   * 返回该缓存对应的id</span></span><br><span class="line"><span class="comment">   * <span class="doctag">@return</span> The identifier of this cache</span></span><br><span class="line"><span class="comment">   */</span></span><br><span class="line">  <span class="function">String <span class="title">getId</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line">  <span class="comment">/**</span></span><br><span class="line"><span class="comment">   * 向缓存中添加数据，一般情况下Key是CacheKey，value是查询结果</span></span><br><span class="line"><span class="comment">   * <span class="doctag">@param</span> key Can be any object but usually it is a &#123;<span class="doctag">@link</span> CacheKey&#125;</span></span><br><span class="line"><span class="comment">   * <span class="doctag">@param</span> value The result of a select.</span></span><br><span class="line"><span class="comment">   */</span></span><br><span class="line">  <span class="function"><span class="keyword">void</span> <span class="title">putObject</span><span class="params">(Object key, Object value)</span></span>;</span><br><span class="line"></span><br><span class="line">  <span class="comment">/**</span></span><br><span class="line"><span class="comment">   * 从缓存中获取数据</span></span><br><span class="line"><span class="comment">   * <span class="doctag">@param</span> key The key</span></span><br><span class="line"><span class="comment">   * <span class="doctag">@return</span> The object stored in the cache.</span></span><br><span class="line"><span class="comment">   */</span></span><br><span class="line">  <span class="function">Object <span class="title">getObject</span><span class="params">(Object key)</span></span>;</span><br><span class="line"></span><br><span class="line">  <span class="comment">/**</span></span><br><span class="line"><span class="comment">   * 删除Key对应的缓存</span></span><br><span class="line"><span class="comment">   * As of 3.3.0 this method is only called during a rollback </span></span><br><span class="line"><span class="comment">   * for any previous value that was missing in the cache.</span></span><br><span class="line"><span class="comment">   * This lets any blocking cache to release the lock that </span></span><br><span class="line"><span class="comment">   * may have previously put on the key.</span></span><br><span class="line"><span class="comment">   * A blocking cache puts a lock when a value is null </span></span><br><span class="line"><span class="comment">   * and releases it when the value is back again.</span></span><br><span class="line"><span class="comment">   * This way other threads will wait for the value to be </span></span><br><span class="line"><span class="comment">   * available instead of hitting the database.</span></span><br><span class="line"><span class="comment">   *</span></span><br><span class="line"><span class="comment">   * </span></span><br><span class="line"><span class="comment">   * <span class="doctag">@param</span> key The key</span></span><br><span class="line"><span class="comment">   * <span class="doctag">@return</span> Not used</span></span><br><span class="line"><span class="comment">   */</span></span><br><span class="line">  <span class="function">Object <span class="title">removeObject</span><span class="params">(Object key)</span></span>;</span><br><span class="line"></span><br><span class="line">  <span class="comment">/**</span></span><br><span class="line"><span class="comment">   * 清空缓存</span></span><br><span class="line"><span class="comment">   * Clears this cache instance</span></span><br><span class="line"><span class="comment">   */</span>  </span><br><span class="line">  <span class="function"><span class="keyword">void</span> <span class="title">clear</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line">  <span class="comment">/**</span></span><br><span class="line"><span class="comment">   * 缓存项的个数，不会被MyBatis核心代码调用</span></span><br><span class="line"><span class="comment">   * Optional. This method is not called by the core.</span></span><br><span class="line"><span class="comment">   * </span></span><br><span class="line"><span class="comment">   * <span class="doctag">@return</span> The number of elements stored in the cache (not its capacity).</span></span><br><span class="line"><span class="comment">   */</span></span><br><span class="line">  <span class="function"><span class="keyword">int</span> <span class="title">getSize</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line">  <span class="comment">/** </span></span><br><span class="line"><span class="comment">   * 获取读写锁，不会被MyBatis核心代码调用</span></span><br><span class="line"><span class="comment">   * Optional. As of 3.2.6 this method is no longer called by the core.</span></span><br><span class="line"><span class="comment">   *  </span></span><br><span class="line"><span class="comment">   * Any locking needed by the cache must be provided internally by the cache provider.</span></span><br><span class="line"><span class="comment">   * </span></span><br><span class="line"><span class="comment">   * <span class="doctag">@return</span> A ReadWriteLock </span></span><br><span class="line"><span class="comment">   */</span></span><br><span class="line">  <span class="function">ReadWriteLock <span class="title">getReadWriteLock</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><code>Cache</code>接口的实现类有多个，大部分都是装饰器，只有<code>PerpetualCache</code>提供了Cache接口的基本实现。</p>
+<p><img src="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/11/image-20200611120028350_RNaWIP.png" alt="image-20200611120028350"></p>
+<h3 id="PerpetualCache"><a href="#PerpetualCache" class="headerlink" title="PerpetualCache"></a>PerpetualCache</h3><p><code>**PerpetualCache</code>在缓存模块中扮演着<code>ConcreteComponent</code>的角色**，其实现比较简单，底层使用<code>HashMap</code>记录缓存项，也是通过该<code>HashMap</code>对象的方法实现的<code>Cache</code>接口中定义的相应方法。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">PerpetualCache</span> <span class="keyword">implements</span> <span class="title">Cache</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">final</span> String id;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">private</span> Map&lt;Object, Object&gt; cache = <span class="keyword">new</span> HashMap&lt;Object, Object&gt;();</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="title">PerpetualCache</span><span class="params">(String id)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">this</span>.id = id;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="meta">@Override</span></span><br><span class="line">  <span class="function"><span class="keyword">public</span> String <span class="title">getId</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> id;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="meta">@Override</span></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">getSize</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> cache.size();</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="meta">@Override</span></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">putObject</span><span class="params">(Object key, Object value)</span> </span>&#123;</span><br><span class="line">    cache.put(key, value);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="meta">@Override</span></span><br><span class="line">  <span class="function"><span class="keyword">public</span> Object <span class="title">getObject</span><span class="params">(Object key)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> cache.get(key);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="meta">@Override</span></span><br><span class="line">  <span class="function"><span class="keyword">public</span> Object <span class="title">removeObject</span><span class="params">(Object key)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> cache.remove(key);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="meta">@Override</span></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">clear</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    cache.clear();</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="meta">@Override</span></span><br><span class="line">  <span class="function"><span class="keyword">public</span> ReadWriteLock <span class="title">getReadWriteLock</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="meta">@Override</span></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">equals</span><span class="params">(Object o)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (getId() == <span class="keyword">null</span>) &#123;</span><br><span class="line">      <span class="keyword">throw</span> <span class="keyword">new</span> CacheException(<span class="string">&quot;Cache instances require an ID.&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (<span class="keyword">this</span> == o) &#123;</span><br><span class="line">      <span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (!(o <span class="keyword">instanceof</span> Cache)) &#123;</span><br><span class="line">      <span class="keyword">return</span> <span class="keyword">false</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    Cache otherCache = (Cache) o;</span><br><span class="line">    <span class="keyword">return</span> getId().equals(otherCache.getId());</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="meta">@Override</span></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">hashCode</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (getId() == <span class="keyword">null</span>) &#123;</span><br><span class="line">      <span class="keyword">throw</span> <span class="keyword">new</span> CacheException(<span class="string">&quot;Cache instances require an ID.&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> getId().hashCode();</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>下面来介绍<code>org.apache.ibatis.cache.decorators</code>包下提供的装饰器，它们都直接实现了<code>Cache</code>接口，扮演着<code>ConcreteDecorator</code>的角色。</p>
+<p>这些装饰器会在<code>PerpetualCache</code>的基础上提供一些额外的功能，通过多个组合后满足一个特定的需求，后面介绍二级缓存时，会见到这些装饰器是如何完成动态组合的。</p>
+<h3 id="BlockingCache"><a href="#BlockingCache" class="headerlink" title="BlockingCache"></a>BlockingCache</h3><p><code>BlockingCache</code>是阻塞版本的缓存装饰器，它会保证只有一个线程到数据库中查找指定<code>key</code>对应的数据。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 阻塞超时时间</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">long</span> timeout;</span><br><span class="line"><span class="comment">// 被装饰的底层Cache对象</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> Cache delegate;</span><br><span class="line"><span class="comment">// 每个Key都有对应的ReentrantLock对象</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> ConcurrentHashMap&lt;Object, ReentrantLock&gt; locks;</span><br></pre></td></tr></table></figure>
+<p>假设<code>线程A</code>在<code>BlockingCache</code>中未查找到<code>keyA</code>对应的缓存项时，<code>线程A</code>会获取<code>keyA</code>对应的锁，这样后续线程在查找<code>keyA</code>时会发生阻塞</p>
+<p><img src="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/16/image-20200616092820328_4agKqU.png" alt="image-20200616092820328"></p>
+<p><strong>BlockingCache.getObject(Object key)</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> Object <span class="title">getObject</span><span class="params">(Object key)</span> </span>&#123;</span><br><span class="line">  <span class="comment">// 获取key对应的锁</span></span><br><span class="line">  acquireLock(key);</span><br><span class="line">  Object value = delegate.getObject(key);</span><br><span class="line">  <span class="keyword">if</span> (value != <span class="keyword">null</span>) &#123;</span><br><span class="line">    <span class="comment">// 如果缓存有key对应的缓存项，则释放锁	</span></span><br><span class="line">    releaseLock(key);</span><br><span class="line">  &#125;        </span><br><span class="line">  <span class="keyword">return</span> value;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><strong>acquireLock(Object key)</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">acquireLock</span><span class="params">(Object key)</span> </span>&#123;</span><br><span class="line">  <span class="comment">// 获取ReentrantLock对象</span></span><br><span class="line">  Lock lock = getLockForKey(key);</span><br><span class="line">  <span class="keyword">if</span> (timeout &gt; <span class="number">0</span>) &#123;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">      <span class="comment">// 获取锁，带超时时间的那种</span></span><br><span class="line">      <span class="keyword">boolean</span> acquired = lock.tryLock(timeout, TimeUnit.MILLISECONDS);</span><br><span class="line">      <span class="keyword">if</span> (!acquired) &#123;</span><br><span class="line">        <span class="comment">// 如果超时，则抛出异常</span></span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> CacheException(<span class="string">&quot;...&quot;</span>);  </span><br><span class="line">      &#125;</span><br><span class="line">    &#125; <span class="keyword">catch</span> (InterruptedException e) &#123;</span><br><span class="line">      <span class="keyword">throw</span> <span class="keyword">new</span> CacheException(<span class="string">&quot;...&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    lock.lock();</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>再来看一下<code>getLockForKey</code>方法</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> ReentrantLock <span class="title">getLockForKey</span><span class="params">(Object key)</span> </span>&#123;</span><br><span class="line">  ReentrantLock lock = <span class="keyword">new</span> ReentrantLock(); <span class="comment">// 创建ReentrantLock对象</span></span><br><span class="line">  <span class="comment">// 试添加到locks集合中，如果locks集合中已经有了相应的ReentrantLock对象，则使用locks集合</span></span><br><span class="line">  <span class="comment">// 中的ReentrantLock对象</span></span><br><span class="line">  ReentrantLock previous = locks.putIfAbsent(key, lock);</span><br><span class="line">  <span class="keyword">return</span> previous == <span class="keyword">null</span> ? lock : previous;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>假设线程A从数据库中查找到keyA对应的结果对象后，将结果对象放入到<code>BlockingCache</code>中，此时线程A会释放keyA对应的锁，唤醒阻塞在该锁上的线程。</p>
+<p>其他线程即可从<code>BlockingCache</code>中获取keyA对应的数据，而不是再次访问数据库。</p>
+<p><img src="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/18/image-20200618093048912_N2ifEV.png" alt="image-20200618093048912"></p>
+<p><strong>BlockingCache.putObject()</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">putObject</span><span class="params">(Object key, Object value)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">try</span> &#123;</span><br><span class="line">    <span class="comment">// 向缓存中添加缓存项</span></span><br><span class="line">    delegate.putObject(key, value);</span><br><span class="line">  &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">    releaseLock(key);<span class="comment">// 释放锁</span></span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><strong>BlockingCache.releaseLock(Object key)</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">releaseLock</span><span class="params">(Object key)</span> </span>&#123;</span><br><span class="line">  ReentrantLock lock = locks.get(key);</span><br><span class="line">  <span class="keyword">if</span> (lock.isHeldByCurrentThread()) &#123; <span class="comment">// 判断锁是否被当前线程持有</span></span><br><span class="line">    <span class="comment">// 释放锁</span></span><br><span class="line">    lock.unlock();</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="FifoCache-amp-LruCache"><a href="#FifoCache-amp-LruCache" class="headerlink" title="FifoCache&amp;LruCache"></a>FifoCache&amp;LruCache</h3><p>在很多场景中，为了控制缓存的大小，系统需要按照一定的规则清理缓存。</p>
+<p><code>FifoCache</code>是先入先出版本的装饰器，**<u>当向缓存添加数据时，如果缓存项的个数己经达到上限，则会将缓存中最老(即最早进入缓存)的缓存项删除。</u>**</p>
+<p><code>FifoCache</code>中字段的含义：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 被装饰的底层Cache对象</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> Cache delegate;</span><br><span class="line"><span class="comment">// 用于记录key进入缓存的先后顺序，使用的是LinkedList&lt;Object&gt;类型的几个对象	</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> Deque&lt;Object&gt; keyList;</span><br><span class="line"><span class="comment">// 记录缓存项的上限，如果超过，则清理最老的缓存</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">int</span> size;</span><br></pre></td></tr></table></figure>
+<p><u><code>FifoCache.getObject()</code>和<code>removeObject()</code>方法的实现都是直接调用底层<code>Cache</code>对象的对应方法。</u></p>
+<p>在<code>FifoCache.putObject()</code>方法中会完成缓存项个数的检测以及缓存的清理操作。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">putObject</span><span class="params">(Object key, Object value)</span> </span>&#123;</span><br><span class="line">  <span class="comment">// 检测并清理缓存</span></span><br><span class="line">  cycleKeyList(key);</span><br><span class="line">  <span class="comment">// 添加缓存项</span></span><br><span class="line">  delegate.putObject(key, value);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">cycleKeyList</span><span class="params">(Object key)</span> </span>&#123;</span><br><span class="line">  <span class="comment">// 记录key</span></span><br><span class="line">  keyList.addLast(key);</span><br><span class="line">  <span class="keyword">if</span> (keyList.size() &gt; size) &#123; <span class="comment">// 如果达到缓存上限，则清理最老的缓存项</span></span><br><span class="line">    Object oldestKey = keyList.removeFirst();</span><br><span class="line">    delegate.removeObject(oldestKey);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><code>LruCache</code>是按照近期最少使用算法**(LeastRecentlyUsed，LRU)**进行缓存清理的装饰器，在需要清理缓存时,它会清除最近最少使用的缓存项。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 被装饰的底层Cache对象</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> Cache delegate;</span><br><span class="line"><span class="comment">// LinkedHashMap&lt;Object,Object&gt;类型对象，它是一个有序的HashMap，用于记录key最近的使用情况</span></span><br><span class="line"><span class="keyword">private</span> Map&lt;Object, Object&gt; keyMap;</span><br><span class="line"><span class="comment">// 记录最少被使用的缓存项的key</span></span><br><span class="line"><span class="keyword">private</span> Object eldestKey;</span><br></pre></td></tr></table></figure>
+<p><code>LruCache</code>的构造函数中默认设置的缓存大小是<strong>1024</strong>,我们可以通过其<code>setSize()</code>方法重新设置缓存大小</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">setSize</span><span class="params">(<span class="keyword">final</span> <span class="keyword">int</span> size)</span> </span>&#123;</span><br><span class="line">  <span class="comment">// 重新设置缓存大小的时候， 会充值keyMap字段</span></span><br><span class="line">  <span class="comment">// LinkedHashMap构造函数的第三个参数，true表示该LinkedHashMap记录的顺序是</span></span><br><span class="line">  <span class="comment">// access-order,也就是说LinkedHashMap.get()方法会改变其记录的顺序</span></span><br><span class="line">  keyMap = <span class="keyword">new</span> LinkedHashMap&lt;Object, Object&gt;(size, <span class="number">.75F</span>, <span class="keyword">true</span>) &#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">long</span> serialVersionUID = <span class="number">4267176411845948333L</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 当调用LinkedHashMap.put()方法时，会调用该方法</span></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">protected</span> <span class="keyword">boolean</span> <span class="title">removeEldestEntry</span><span class="params">(Map.Entry&lt;Object, Object&gt; eldest)</span> </span>&#123;</span><br><span class="line">      <span class="keyword">boolean</span> tooBig = size() &gt; size;</span><br><span class="line">      <span class="keyword">if</span> (tooBig) &#123;</span><br><span class="line">        <span class="comment">// 如果已到达缓存上限，则更新eldestKey字段，后面会删除该项</span></span><br><span class="line">        eldestKey = eldest.getKey();</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">return</span> tooBig;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><code>LruCache.getObject()</code>方法除了返回缓存项，还会调用<code>keyMap.get()</code>方法修改<code>key</code>的顺序，表示指定的key最近被使用。</p>
+<p><code>LruCache.putObject()</code>方法除了添加缓存项，还会将<code>eldestKey</code>字段指定的缓存项清除掉。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">putObject</span><span class="params">(Object key, Object value)</span> </span>&#123;</span><br><span class="line">  <span class="comment">// 修改LinkedHashMap中记录的顺序</span></span><br><span class="line">  delegate.putObject(key, value);</span><br><span class="line">  cycleKeyList(key);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> Object <span class="title">getObject</span><span class="params">(Object key)</span> </span>&#123;</span><br><span class="line">  keyMap.get(key); <span class="comment">//touch</span></span><br><span class="line">  <span class="comment">// 删除最久未使用的缓存项</span></span><br><span class="line">  <span class="keyword">return</span> delegate.getObject(key);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">cycleKeyList</span><span class="params">(Object key)</span> </span>&#123;</span><br><span class="line">  keyMap.put(key, key);</span><br><span class="line">  <span class="keyword">if</span> (eldestKey != <span class="keyword">null</span>) &#123; <span class="comment">// eldestKey不为空，即缓存已达到上限</span></span><br><span class="line">    <span class="comment">// 删除最久未使用的缓存</span></span><br><span class="line">    delegate.removeObject(eldestKey);</span><br><span class="line">    eldestKey = <span class="keyword">null</span>;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="SoftCache-amp-WeakCache"><a href="#SoftCache-amp-WeakCache" class="headerlink" title="SoftCache&amp;WeakCache"></a>SoftCache&amp;WeakCache</h3><p>先了解一下<a href="/2020/06/18/ae9388fa.html">Java提供的4种引用类型</a>。</p>
+<p><code>SoftCache</code>中各个字段的含义：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// ReferenceQueue，引用队列，用于记录已经被GC回收的缓存项所对应的SoftEntry对象</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> Deque&lt;Object&gt; hardLinksToAvoidGarbageCollection;</span><br><span class="line"><span class="comment">// 在SoftCache中，最近使用的一部分缓存项不会被GC回收，这就是通过将其value添加到</span></span><br><span class="line"><span class="comment">// hardLinksToAvoidGarbageCollection集合中实现的(即有强引用指向其value)</span></span><br><span class="line"><span class="comment">// hardLinksToAvoidGarbageCollection集合是LinkedList&lt;Object&gt;类型</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> ReferenceQueue&lt;Object&gt; queueOfGarbageCollectedEntries;</span><br><span class="line"><span class="comment">// 底层被装饰的底层Cache对象</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> Cache delegate;</span><br><span class="line"><span class="comment">// 强连接的个数，默认值是256</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">int</span> numberOfHardLinks;</span><br></pre></td></tr></table></figure>
+<p><code>SoftCache</code>中缓存项的<code>value</code>是<code>SoftEntry</code>对象，<code>SoftEntry</code>继承了<code>SoftReference</code>，其中指向<code>key</code>的引用是强引用，而指向<code>value</code>的引用是软引用。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">SoftEntry</span> <span class="keyword">extends</span> <span class="title">SoftReference</span>&lt;<span class="title">Object</span>&gt; </span>&#123;</span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">final</span> Object key;</span><br><span class="line"></span><br><span class="line">  SoftEntry(Object key, Object value, ReferenceQueue&lt;Object&gt; garbageCollectionQueue) &#123;</span><br><span class="line">    <span class="keyword">super</span>(value, garbageCollectionQueue); <span class="comment">// 指向value的引用是软引用，且关联了引用队列</span></span><br><span class="line">    <span class="keyword">this</span>.key = key; <span class="comment">// 强引用</span></span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><code>SoftCache.putObject()</code>方法除了向缓存中添加缓存项，还会清除己经被<code>GC</code>回收的缓存项,其具体实现如下:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">putObject</span><span class="params">(Object key, Object value)</span> </span>&#123;</span><br><span class="line">  <span class="comment">// 清除已被GC回收的缓存项</span></span><br><span class="line">  removeGarbageCollectedItems();</span><br><span class="line">  <span class="comment">// 向缓存中添加缓存项</span></span><br><span class="line">  delegate.putObject(key, <span class="keyword">new</span> SoftEntry(key, value, queueOfGarbageCollectedEntries));</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">removeGarbageCollectedItems</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  SoftEntry sv;</span><br><span class="line">  <span class="comment">// 遍历queueOfGarbageCollectedEntries集合</span></span><br><span class="line">  <span class="keyword">while</span> ((sv = (SoftEntry) queueOfGarbageCollectedEntries.poll()) != <span class="keyword">null</span>) &#123;</span><br><span class="line">    <span class="comment">// 将已经被GC回收的value对象对应的缓存项清除</span></span><br><span class="line">    delegate.removeObject(sv.key);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><code>SoftCache.getObject()</code>方法除了从缓存中查找对应的<code>value</code>,处理被<code>GC</code>回收的<code>value</code>对应的缓存项，还会更新<code>hardLinksToAvoidGarbageCollection</code>集合</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> Object <span class="title">getObject</span><span class="params">(Object key)</span> </span>&#123;</span><br><span class="line">  Object result = <span class="keyword">null</span>;</span><br><span class="line">  <span class="meta">@SuppressWarnings(&quot;unchecked&quot;)</span> <span class="comment">// assumed delegate cache is totally managed by this cache</span></span><br><span class="line">  <span class="comment">// 从缓存中查找对应的缓存项</span></span><br><span class="line">  SoftReference&lt;Object&gt; softReference = (SoftReference&lt;Object&gt;) delegate.getObject(key);</span><br><span class="line">  <span class="keyword">if</span> (softReference != <span class="keyword">null</span>) &#123; <span class="comment">// 检测缓存中是否有对应的缓存项</span></span><br><span class="line">    result = softReference.get(); <span class="comment">// 获取SoftReference引用的value</span></span><br><span class="line">    <span class="keyword">if</span> (result == <span class="keyword">null</span>) &#123;<span class="comment">// 已经被GC回收</span></span><br><span class="line">      delegate.removeObject(key); <span class="comment">// 从缓存中清除对应的缓存项</span></span><br><span class="line">    &#125; <span class="keyword">else</span> &#123; <span class="comment">// 未被GC回收</span></span><br><span class="line">      <span class="comment">// See #586 (and #335) modifications need more than a read lock </span></span><br><span class="line">      <span class="keyword">synchronized</span> (hardLinksToAvoidGarbageCollection) &#123;</span><br><span class="line">        <span class="comment">// 缓存项的value添加到hardLinksToAvoidGarbageCollection集合中保存</span></span><br><span class="line">        hardLinksToAvoidGarbageCollection.addFirst(result);</span><br><span class="line">        <span class="keyword">if</span> (hardLinksToAvoidGarbageCollection.size() &gt; numberOfHardLinks) &#123;</span><br><span class="line">          <span class="comment">// 超过numberOfHardLinks，则将最老的缓存项从hardLinksToAvoidGarbageCollection集合中清除，有点类似于先进先出队列</span></span><br><span class="line">          hardLinksToAvoidGarbageCollection.removeLast();</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> result;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><u><code>SoftCache.removeObject()</code>方法在清除缓存项之前，也会调用<code>removeGarbageCollectedItems()</code>方法清理被<code>GC</code>回收的缓存项。</u></p>
+<p><code>SoftCache.clear()</code>方法首先清理<code>hardLinksToAvoidGarbageCollection</code>集合，然后清理被<code>GC</code>回收的缓存项，最后清理底层<code>delegate</code>缓存中的缓存项。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">clear</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="keyword">synchronized</span> (hardLinksToAvoidGarbageCollection) &#123;</span><br><span class="line">    hardLinksToAvoidGarbageCollection.clear(); <span class="comment">// 清理强引用集合</span></span><br><span class="line">  &#125;</span><br><span class="line">  removeGarbageCollectedItems(); <span class="comment">// 清理被GC回收的缓存项</span></span><br><span class="line">  delegate.clear(); <span class="comment">// 清理底层delegate缓存中的缓存项</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p><code>WeakCache</code>的实现与<code>SoftCache</code>基本类似，唯一的区别在于其中使用<code>WeakEntry</code>(继承自<code>WeakReference</code>)封装真正的<code>value</code>对象，其他实现完全一样。</p>
+</blockquote>
+<h3 id="others"><a href="#others" class="headerlink" title="others"></a>others</h3><p><code>ScheduledCache</code>是周期性清理缓存的装饰器，它的<code>clearlnterval</code>字段记录了两次缓存清理之间的时间间隔，默认是一小时，<code>lastClear</code>字段记录了最近一次清理的时间戳。</p>
+<p><code>ScheduledCache</code>的<code>getObject()</code>、<code>putObject()</code>、<code>removeObject()</code>等核心方法在执行时，都会根据这两个字段检测是否需要进行清理操作，清理操作会清空缓存中所有缓存项。</p>
+<p><code>LoggingCache</code>在<code>Cache</code>的基础上提供了日志功能，它通过<code>hit</code>字段和<code>request</code>字段记录了<code>Cache</code>的命中次数和访问次数。</p>
+<p>在<code>LoggingCache.getObject()</code>方法中会统计命中次数和访问次数这两个指标，并按照指定的日志输出方式输出命中率。</p>
+<p><code>SynchronizedCache</code>通过在每个方法上添加<code>synchronized</code>关键字，为<code>Cache</code>添加了同步功能，有点类似于<code>JDK</code>中<code>Collections</code>中的<code>SynchronizedCollection</code>内部类的实现。</p>
+<p><code>SerializedCache</code>提供了将<code>value</code>对象序列化的功能。</p>
+<p><code>SerializedCache</code>在添加缓存项时，会将<code>value</code>对应的<code>Java</code>对象进行序列化，并将序列化后的<code>byte[]</code>数组作为<code>value</code>存入缓存。</p>
+<p><code>SerializedCache</code>在获取缓存项时，会将缓存项中的<code>byte[]</code>数组反序列化成<code>Java</code>对象。</p>
+<p>使用前面介绍的<code>Cache</code>装饰器实现进行装饰之后，每次从缓存中获取同一<code>key</code>对应的对象时，得到的都是同一对象，任意一个线程修改该对象都会影响到其他线程以及缓存中的对象；而<code>SerializedCache</code>每次从缓存中获取数据时，都会通过反序列化得到一个全新的对象。**<code>SerializedCache</code>使用的序列化方式是<code>Java</code>原生序列化。**</p>
+<h2 id="CacheKey"><a href="#CacheKey" class="headerlink" title="CacheKey"></a>CacheKey</h2><p>在<code>Cache</code>中唯一确定一个缓存项需要使用缓存项的<code>key</code>,<code>MyBatis</code>中因为涉及动态<code>SQL</code>等多方面因素，其缓存项的<code>key</code>不能仅仅通过一个<code>String</code>表示，所以<code>MyBatis</code>提供了<code>CacheKey</code>类来表示缓存项的<code>key</code>，在一个<code>CacheKey</code>对象中可以封装多个影响缓存项的因素。</p>
+<p><code>CacheKey</code>中可以添加多个对象，由这些对象共同确定两个<code>CacheKey</code>对象是否相同。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 参与计算hashcode，默认值37</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> <span class="keyword">int</span> multiplier;</span><br><span class="line"><span class="comment">// CacheKey的hashcode，初始值是37</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">int</span> hashcode;</span><br><span class="line"><span class="comment">// 校验和</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">long</span> checksum;</span><br><span class="line"><span class="comment">// updateList集合的个数</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">int</span> count;</span><br><span class="line"><span class="comment">// 由该集合中的所有对象共同决定两个CacheKey是否相同</span></span><br><span class="line"><span class="keyword">private</span> List&lt;Object&gt; updateList;</span><br></pre></td></tr></table></figure>
+<p>在向<code>CacheKey.updateList</code>集合中添加对 象时 ，使用的是<code>CacheKey.update()</code>方法：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">update</span><span class="params">(Object object)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">int</span> baseHashCode = object == <span class="keyword">null</span> ? <span class="number">1</span> : ArrayUtil.hashCode(object); </span><br><span class="line">  <span class="comment">// 重新计算count、checksum和hashcode的值</span></span><br><span class="line">  count++;</span><br><span class="line">  checksum += baseHashCode;</span><br><span class="line">  baseHashCode *= count;</span><br><span class="line"></span><br><span class="line">  hashcode = multiplier * hashcode + baseHashCode;</span><br><span class="line">	<span class="comment">// 将object添加到updateList集合中</span></span><br><span class="line">  updateList.add(object);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ul>
+<li><p><strong>《MyBatis技术内幕》</strong></p>
+</li>
+<li><p>部分图片来源——<strong>《MyBatis技术内幕》</strong></p>
+</li>
+</ul>
+
+  </div>
+
+  
+    <div style="text-align:center;width:100%">
+      <img src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/640-2.gif">
+    </div>
+  
+
+  
+    <div>
+      <h4>版权声明</h4>
+      <pre>
+        
+        <strong>本文来源： </strong><a href="https://www.cayzlh.com/blog" title="🐳Ant丶" rel="noopener external nofollow noreferrer" target="_blank">https://www.cayzlh.com/blog</a>
+
+        <strong>本文链接：</strong><a href="https://www.cayzlh.com/2019/10/31/fce458a9.html" title="/blog/%E5%9F%BA%E7%A1%80%E6%94%AF%E6%8C%81%E5%B1%82%E2%80%94%E2%80%94%E7%BC%93%E5%AD%98%E6%A8%A1%E5%9D%97">https://www.cayzlh.com/2019/10/31/fce458a9.html</a>
+
+        <strong>版权声明： </strong>
+        
+          文章内容仅用作学习和分享，转载请注明出处
+        
+      </pre>
+    </div>
+  
+
+</article>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/blog/">Home</a></li>
+        
+          <li><a href="/blog/archives/">Articles</a></li>
+        
+          <li><a href="/blog/about/">About</a></li>
+        
+          <li><a href="/blog/search/">Search</a></li>
+        
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%A3%85%E9%A5%B0%E5%99%A8%E6%A8%A1%E5%BC%8F"><span class="toc-number">1.</span> <span class="toc-text">装饰器模式</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Cache%E6%8E%A5%E5%8F%A3%E5%8F%8A%E5%85%B6%E5%AE%9E%E7%8E%B0"><span class="toc-number">2.</span> <span class="toc-text">Cache接口及其实现</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#PerpetualCache"><span class="toc-number">2.1.</span> <span class="toc-text">PerpetualCache</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#BlockingCache"><span class="toc-number">2.2.</span> <span class="toc-text">BlockingCache</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#FifoCache-amp-LruCache"><span class="toc-number">2.3.</span> <span class="toc-text">FifoCache&amp;LruCache</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#SoftCache-amp-WeakCache"><span class="toc-number">2.4.</span> <span class="toc-text">SoftCache&amp;WeakCache</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#others"><span class="toc-number">2.5.</span> <span class="toc-text">others</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#CacheKey"><span class="toc-number">3.</span> <span class="toc-text">CacheKey</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8F%82%E8%80%83"><span class="toc-number">4.</span> <span class="toc-text">参考</span></a></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.facebook.com/sharer.php?u=https://www.cayzlh.com/2019/10/31/fce458a9.html"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://twitter.com/share?url=https://www.cayzlh.com/2019/10/31/fce458a9.html&text=基础支持层——缓存模块"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.linkedin.com/shareArticle?url=https://www.cayzlh.com/2019/10/31/fce458a9.html&title=基础支持层——缓存模块"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://pinterest.com/pin/create/bookmarklet/?url=https://www.cayzlh.com/2019/10/31/fce458a9.html&is_video=false&description=基础支持层——缓存模块"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=基础支持层——缓存模块&body=Check out this article: https://www.cayzlh.com/2019/10/31/fce458a9.html"><i class="fas fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://getpocket.com/save?url=https://www.cayzlh.com/2019/10/31/fce458a9.html&title=基础支持层——缓存模块"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://reddit.com/submit?url=https://www.cayzlh.com/2019/10/31/fce458a9.html&title=基础支持层——缓存模块"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.stumbleupon.com/submit?url=https://www.cayzlh.com/2019/10/31/fce458a9.html&title=基础支持层——缓存模块"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://digg.com/submit?url=https://www.cayzlh.com/2019/10/31/fce458a9.html&title=基础支持层——缓存模块"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.tumblr.com/share/link?url=https://www.cayzlh.com/2019/10/31/fce458a9.html&name=基础支持层——缓存模块&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://news.ycombinator.com/submitlink?u=https://www.cayzlh.com/2019/10/31/fce458a9.html&t=基础支持层——缓存模块"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fas fa-bars fa-lg" aria-hidden="true"></i> Menu</a>
+        <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fas fa-list fa-lg" aria-hidden="true"></i> TOC</a>
+<!--        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fas fa-share-alt fa-lg" aria-hidden="true"></i> Share</a>-->
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    CAYZLH &copy;
+    
+    
+    2019-2021
+    粤ICP备20058712号-1
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        
+          <li><a href="/blog/tools/">tools</a></li>
+        
+          <li><a href="/blog/links/">links</a></li>
+        
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+<link rel="stylesheet" href="/blog/lib/font-awesome/css/all.min.css">
+
+
+<link rel="stylesheet" href="/blog/lib/justified-gallery/css/justifiedGallery.min.css">
+
+
+    <!-- jquery -->
+
+<script src="/blog/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/blog/lib/justified-gallery/js/jquery.justifiedGallery.min.js"></script>
+
+<!-- clipboard -->
+
+  
+<script src="/blog/lib/clipboard/clipboard.min.js"></script>
+
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"Copy to clipboard!\">";
+    btn += '<i class="far fa-clone"></i>';
+    btn += '</span>'; 
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "Copied!");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/blog/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Google Analytics -->
+
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-129095667-1"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'UA-129095667-1');
+    </script>
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Umami Analytics -->
+
+<!-- Disqus Comments -->
+
+
+</body>
+</html>

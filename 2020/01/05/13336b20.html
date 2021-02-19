@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="description" content="分析IOC获取Document对象的源码">
+<meta property="og:type" content="article">
+<meta property="og:title" content="IOC之获取Document对象">
+<meta property="og:url" content="http://cmsblogs.com/?p=2695">
+<meta property="og:site_name" content="CAYZLH">
+<meta property="og:description" content="分析IOC获取Document对象的源码">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/MdkyLc.jpg">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/xpMUPz.jpg">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/7nooAW.jpg">
+<meta property="og:image" content="https://gitee.com/chenssy/blog-home/raw/master/image/201811/spring-201806071003.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/c1mMOc.jpg">
+<meta property="article:published_time" content="2020-01-05T06:21:04.000Z">
+<meta property="article:modified_time" content="2020-05-22T02:09:49.838Z">
+<meta property="article:author" content="🐳Ant丶">
+<meta property="article:tag" content="Spring">
+<meta property="article:tag" content="死磕Spring">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/MdkyLc.jpg">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/blog/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/blog/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/blog/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>IOC之获取Document对象</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/blog/css/style.css">
+
+    <!-- persian styles -->
+    
+      
+<link rel="stylesheet" href="/blog/css/rtl.css">
+
+    
+    <!-- rss -->
+    
+    
+      <link rel="alternate" href="/blog/true" title="CAYZLH" type="application/atom+xml">
+    
+<meta name="generator" content="Hexo 5.3.0"></head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fas fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fas fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fas fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a href="/blog/">Home</a></li>
+        
+          <li><a href="/blog/archives/">Articles</a></li>
+        
+          <li><a href="/blog/about/">About</a></li>
+        
+          <li><a href="/blog/search/">Search</a></li>
+        
+      </ul>
+    </span>
+    <br>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/blog/2020/01/06/9de498cf.html"><i class="fas fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/blog/2020/01/04/4e0696ee.html"><i class="fas fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+<!--        <li><a class="icon" href="#"><i class="fas fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>-->
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous</span>
+      <span id="i-next" class="info" style="display:none;">Next</span>
+      <span id="i-top" class="info" style="display:none;">Back to top</span>
+      <span id="i-share" class="info" style="display:none;">Share post</span>
+    </span>
+    <br>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.facebook.com/sharer.php?u=https://www.cayzlh.com/2020/01/05/13336b20.html"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://twitter.com/share?url=https://www.cayzlh.com/2020/01/05/13336b20.html&text=IOC之获取Document对象"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.linkedin.com/shareArticle?url=https://www.cayzlh.com/2020/01/05/13336b20.html&title=IOC之获取Document对象"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://pinterest.com/pin/create/bookmarklet/?url=https://www.cayzlh.com/2020/01/05/13336b20.html&is_video=false&description=IOC之获取Document对象"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=IOC之获取Document对象&body=Check out this article: https://www.cayzlh.com/2020/01/05/13336b20.html"><i class="fas fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://getpocket.com/save?url=https://www.cayzlh.com/2020/01/05/13336b20.html&title=IOC之获取Document对象"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://reddit.com/submit?url=https://www.cayzlh.com/2020/01/05/13336b20.html&title=IOC之获取Document对象"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.stumbleupon.com/submit?url=https://www.cayzlh.com/2020/01/05/13336b20.html&title=IOC之获取Document对象"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://digg.com/submit?url=https://www.cayzlh.com/2020/01/05/13336b20.html&title=IOC之获取Document对象"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.tumblr.com/share/link?url=https://www.cayzlh.com/2020/01/05/13336b20.html&name=IOC之获取Document对象&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://news.ycombinator.com/submitlink?u=https://www.cayzlh.com/2020/01/05/13336b20.html&t=IOC之获取Document对象"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    <div id="toc">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#DocumentLoader"><span class="toc-number">1.</span> <span class="toc-text">DocumentLoader</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#EntityResolver"><span class="toc-number">2.</span> <span class="toc-text">EntityResolver</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%B6%89%E5%8F%8A%E5%AD%90%E7%B1%BB"><span class="toc-number">2.1.</span> <span class="toc-text">涉及子类</span></a></li></ol></li></ol>
+    </div>
+  </span>
+</div>
+
+    
+    <div class="content index py4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        IOC之获取Document对象
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">Java技术驿站-chenssy-【死磕 Spring】—– IOC之获取Document对象</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2020-01-05T06:21:04.000Z" itemprop="datePublished">2020-01-05</time>
+        
+      
+    </div>
+
+
+      
+    <div class="article-category">
+        <i class="fas fa-archive"></i>
+        <a class="category-link" href="/blog/categories/Spring/">Spring</a> › <a class="category-link" href="/blog/categories/Spring/%E3%80%8ASpring%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E3%80%8B/">《Spring源码分析》</a>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fas fa-tag"></i>
+        <a class="tag-link-link" href="/blog/tags/Spring/" rel="tag">Spring</a>, <a class="tag-link-link" href="/blog/tags/%E6%AD%BB%E7%A3%95Spring/" rel="tag">死磕Spring</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <p>在 <code>XmlBeanDefinitionReader.doLoadDocument()</code> 方法中做了两件事情，一是调用 <code>getValidationModeForResource()</code> 获取 <code>XML</code> 的验证模式，二是调用 <code>DocumentLoader.loadDocument()</code> 获取 <code>Document</code> 对象。上篇博客已经分析了获取 <code>XML</code> 验证模式（<a href="/2020/01/04/4e0696ee.html">IOC 之 获取验证模型</a>），这篇我们分析获取 <code>Document</code> 对象。 </p>
+<h2 id="DocumentLoader"><a href="#DocumentLoader" class="headerlink" title="DocumentLoader"></a>DocumentLoader</h2><p>获取 <code>Document</code> 的策略由接口 <code>DocumentLoader</code> 定义，如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">DocumentLoader</span> </span>&#123;</span><br><span class="line">    <span class="function">Document <span class="title">loadDocument</span><span class="params">(</span></span></span><br><span class="line"><span class="function"><span class="params">            InputSource inputSource, EntityResolver entityResolver,</span></span></span><br><span class="line"><span class="function"><span class="params">            ErrorHandler errorHandler, <span class="keyword">int</span> validationMode, <span class="keyword">boolean</span> namespaceAware)</span></span></span><br><span class="line"><span class="function">            <span class="keyword">throws</span> Exception</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><code>DocumentLoader</code> 中只有一个方法</p>
+<p><code>loadDocument()</code> ，该方法接收五个参数： </p>
+<ol>
+<li><strong>inputSource</strong>：加载 Document 的 Resource 源 </li>
+<li><strong>entityResolver</strong>：解析文件的解析器 </li>
+<li><strong>errorHandler</strong>：处理加载 Document 对象的过程的错误 </li>
+<li><strong>validationMode</strong>：验证模式 </li>
+<li><strong>namespaceAware</strong>：命名空间支持。</li>
+</ol>
+<p>如果要提供对 <code>XML</code> 名称空间的支持，则为<code>true</code> 该方法由 <code>DocumentLoader</code> 的默认实现类 <code>DefaultDocumentLoader</code> 实现，如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> Document <span class="title">loadDocument</span><span class="params">(InputSource inputSource, </span></span></span><br><span class="line"><span class="function"><span class="params">                             EntityResolver entityResolver,</span></span></span><br><span class="line"><span class="function"><span class="params">                             ErrorHandler errorHandler, </span></span></span><br><span class="line"><span class="function"><span class="params">                             <span class="keyword">int</span> validationMode, </span></span></span><br><span class="line"><span class="function"><span class="params">                             <span class="keyword">boolean</span> namespaceAware)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line"></span><br><span class="line">  DocumentBuilderFactory factory = </span><br><span class="line">    createDocumentBuilderFactory(validationMode, namespaceAware);</span><br><span class="line">  <span class="keyword">if</span> (logger.isDebugEnabled()) &#123;</span><br><span class="line">    logger.debug(<span class="string">&quot;Using JAXP provider [&quot;</span> </span><br><span class="line">                 + factory.getClass().getName() + <span class="string">&quot;]&quot;</span>);</span><br><span class="line">  &#125;</span><br><span class="line">  DocumentBuilder builder = </span><br><span class="line">    createDocumentBuilder(factory, entityResolver, errorHandler);</span><br><span class="line">  <span class="keyword">return</span> builder.parse(inputSource);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>首先调用</p>
+<p><code>createDocumentBuilderFactory()</code> 创建 <code>DocumentBuilderFactory</code> ，再通过该 <code>factory</code> 创建 <code>DocumentBuilder</code>，最后解析 <code>InputSource</code> 返回 <code>Document</code> 对象。</p>
+<h2 id="EntityResolver"><a href="#EntityResolver" class="headerlink" title="EntityResolver"></a>EntityResolver</h2><p><code>loadDocument()</code> 获取 <code>Document</code> 对象时，有一个参数 <code>entityResolver</code> ，该参数是通过 <code>getEntityResolver()</code> 获取的。</p>
+<blockquote>
+<p><code>getEntityResolver()</code> 返回指定的解析器，如果没有指定，则构造一个未指定的默认解析器。</p>
+</blockquote>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> EntityResolver <span class="title">getEntityResolver</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (<span class="keyword">this</span>.entityResolver == <span class="keyword">null</span>) &#123;</span><br><span class="line">    ResourceLoader resourceLoader = getResourceLoader();</span><br><span class="line">    <span class="keyword">if</span> (resourceLoader != <span class="keyword">null</span>) &#123;</span><br><span class="line">      <span class="keyword">this</span>.entityResolver = <span class="keyword">new</span> ResourceEntityResolver(resourceLoader);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span> &#123;</span><br><span class="line">      <span class="keyword">this</span>.entityResolver = <span class="keyword">new</span> DelegatingEntityResolver(getBeanClassLoader());</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> <span class="keyword">this</span>.entityResolver;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<ul>
+<li>如果 ResourceLoader 不为 <strong>null</strong>，则根据指定的 ResourceLoader 创建一个 ResourceEntityResolver。</li>
+<li>如果 ResourceLoader 为<strong>null</strong>，则创建 一个 DelegatingEntityResolver，该 Resolver 委托给默认的 BeansDtdResolver 和 PluggableSchemaResolver 。</li>
+</ul>
+<h3 id="涉及子类"><a href="#涉及子类" class="headerlink" title="涉及子类"></a>涉及子类</h3><ul>
+<li>ResourceEntityResolver：继承自 EntityResolver ，通过 ResourceLoader 来解析实体的引用。</li>
+<li>DelegatingEntityResolver：EntityResolver 的实现，分别代理了 dtd 的 BeansDtdResolver 和 xml schemas 的 PluggableSchemaResolver。</li>
+<li>BeansDtdResolver ： spring bean dtd 解析器。EntityResolver 的实现，用来从 classpath 或者 jar 文件加载 dtd。</li>
+<li>PluggableSchemaResolver：使用一系列 Map 文件将 schema url 解析到本地 classpath 资源</li>
+</ul>
+<p><code>getEntityResolver()</code> 返回 EntityResolver ，那这个 EntityResolver 到底是什么呢？</p>
+<blockquote>
+<p>If a SAX application needs to implement customized handling for external entities, it must implement this interface and register an instance with the SAX driver using the setEntityResolver method.<br>就是说：如果 SAX 应用程序需要实现自定义处理外部实体，则必须实现此接口并使用 <code>setEntityResolver()</code> 向 SAX 驱动器注册一个实例。 如下：</p>
+</blockquote>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">MyResolver</span> <span class="keyword">implements</span> <span class="title">EntityResolver</span> </span>&#123;</span><br><span class="line">  <span class="function"><span class="keyword">public</span> InputSource <span class="title">resolveEntity</span> <span class="params">(String publicId, String systemId)</span></span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (systemId.equals(<span class="string">&quot;http://www.myhost.com/today&quot;</span>))&#123;</span><br><span class="line">      MyReader reader = <span class="keyword">new</span> MyReader();</span><br><span class="line">      <span class="keyword">return</span> <span class="keyword">new</span> InputSource(reader);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      <span class="comment">// use the default behaviour</span></span><br><span class="line">      <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>我们首先将</p>
+<p><code>spring-student.xml</code> 文件中的 XSD 声明的地址改掉，如下：</p>
+<p> <img src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/MdkyLc.jpg" alt="MdkyLc"></p>
+<p>如果我们再次运行，则会报如下错误：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/xpMUPz.jpg" alt="xpMUPz"></p>
+<p>从上面的错误可以看到，是在进行文档验证时，无法根据声明找到 XSD 验证文件而导致无法进行 XML 文件验证。在(<a href="/archives/4e0696ee.html">IOC 之 获取验证模型</a>)中讲到，如果要解析一个 XML 文件，SAX 首先会读取该 XML 文档上的声明，然后根据声明去寻找相应的 DTD 定义，以便对文档进行验证。默认的加载规则是通过网络方式下载验证文件，而在实际生产环境中我们会遇到网络中断或者不可用状态，那么就应用就会因为无法下载验证文件而报错。</p>
+<blockquote>
+<p>EntityResolver 的作用就是应用本身可以提供一个如何寻找验证文件的方法，即自定义实现。 接口声明如下：</p>
+</blockquote>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">EntityResolver</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">abstract</span> InputSource <span class="title">resolveEntity</span> <span class="params">(String publicId,String systemId)</span></span></span><br><span class="line"><span class="function">        <span class="keyword">throws</span> SAXException, IOException</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>接口方法接收两个参数 publicId 和 systemId，并返回 InputSource 对象。两个参数声明如下：</p>
+<ul>
+<li><p>publicId：被引用的外部实体的公共标识符，如果没有提供，则返回null</p>
+</li>
+<li><p>systemId：被引用的外部实体的系统标识符 这两个参数的实际内容和具体的验证模式有关系。如下</p>
+</li>
+<li><p>XSD 验证模式</p>
+<ul>
+<li>publicId：null</li>
+<li>systemId：<a target="_blank" rel="external nofollow noopener noreferrer" href="http://www.springframework.org/schema/beans/spring-beans.xsd">http://www.springframework.org/schema/beans/spring-beans.xsd</a></li>
+</ul>
+</li>
+<li><p>DTD 验证模式 </p>
+<ul>
+<li>publicId：-//SPRING//DTD BEAN 2.0//EN</li>
+</ul>
+</li>
+<li><p>systemId：<a target="_blank" rel="external nofollow noopener noreferrer" href="http://www.springframework.org/dtd/spring-beans.dtd">http://www.springframework.org/dtd/spring-beans.dtd</a> 如下： </p>
+</li>
+</ul>
+<p><img src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/7nooAW.jpg" alt="7nooAW"><a target="_blank" rel="external nofollow noopener noreferrer" href="https://gitee.com/chenssy/blog-home/raw/master/image/201811/spring-201806071003.png"><img src="https://gitee.com/chenssy/blog-home/raw/master/image/201811/spring-201806071003.png" alt="spring-201806071003"></a>我们知道在 Spring 中使用 DelegatingEntityResolver 为 EntityResolver 的实现类，<code>resolveEntity()</code> 实现如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> InputSource <span class="title">resolveEntity</span><span class="params">(String publicId, </span></span></span><br><span class="line"><span class="function"><span class="params">                                 <span class="meta">@Nullable</span> String systemId)</span> </span></span><br><span class="line"><span class="function">  <span class="keyword">throws</span> SAXException, IOException </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (systemId != <span class="keyword">null</span>) &#123;</span><br><span class="line">    <span class="keyword">if</span> (systemId.endsWith(DTD_SUFFIX)) &#123;</span><br><span class="line">      <span class="keyword">return</span> <span class="keyword">this</span>.dtdResolver.resolveEntity(publicId, systemId);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span> <span class="keyword">if</span> (systemId.endsWith(XSD_SUFFIX)) &#123;</span><br><span class="line">      <span class="keyword">return</span> <span class="keyword">this</span>.schemaResolver.resolveEntity(publicId, systemId);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>不同的验证模式使用不同的解析器解析，如果是 DTD 验证模式则使用 BeansDtdResolver 来进行解析，如果是 XSD 则使用 PluggableSchemaResolver 来进行解析。 BeansDtdResolver 的解析过程如下:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> InputSource <span class="title">resolveEntity</span><span class="params">(String publicId,</span></span></span><br><span class="line"><span class="function"><span class="params">                                 <span class="meta">@Nullable</span> String systemId)</span> </span></span><br><span class="line"><span class="function">  <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (logger.isTraceEnabled()) &#123;</span><br><span class="line">    logger.trace(<span class="string">&quot;Trying to resolve XML entity with public ID [&quot;</span> </span><br><span class="line">                 + publicId +</span><br><span class="line">                 <span class="string">&quot;] and system ID [&quot;</span> </span><br><span class="line">                 + systemId + <span class="string">&quot;]&quot;</span>);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">if</span> (systemId != <span class="keyword">null</span> &amp;&amp; systemId.endsWith(DTD_EXTENSION)) &#123;</span><br><span class="line">    <span class="keyword">int</span> lastPathSeparator = systemId.lastIndexOf(<span class="string">&#x27;/&#x27;</span>);</span><br><span class="line">    <span class="keyword">int</span> dtdNameStart = systemId.indexOf(DTD_NAME, lastPathSeparator);</span><br><span class="line">    <span class="keyword">if</span> (dtdNameStart != -<span class="number">1</span>) &#123;</span><br><span class="line">      String dtdFile = DTD_NAME + DTD_EXTENSION;</span><br><span class="line">      <span class="keyword">if</span> (logger.isTraceEnabled()) &#123;</span><br><span class="line">        logger.trace(<span class="string">&quot;Trying to locate [&quot;</span> + dtdFile + <span class="string">&quot;] in Spring jar on classpath&quot;</span>);</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">try</span> &#123;</span><br><span class="line">        Resource resource = <span class="keyword">new</span> ClassPathResource(dtdFile, getClass());</span><br><span class="line">        InputSource source = <span class="keyword">new</span> InputSource(resource.getInputStream());</span><br><span class="line">        source.setPublicId(publicId);</span><br><span class="line">        source.setSystemId(systemId);</span><br><span class="line">        <span class="keyword">if</span> (logger.isDebugEnabled()) &#123;</span><br><span class="line">          logger.debug(<span class="string">&quot;Found beans DTD [&quot;</span> + systemId + <span class="string">&quot;] in classpath: &quot;</span> + dtdFile);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> source;</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">catch</span> (IOException ex) &#123;</span><br><span class="line">        <span class="keyword">if</span> (logger.isDebugEnabled()) &#123;</span><br><span class="line">          logger.debug(<span class="string">&quot;Could not resolve beans DTD [&quot;</span> </span><br><span class="line">                       + systemId + <span class="string">&quot;]: not found in classpath&quot;</span>, ex);</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  or wherever.</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>从上面的代码中我们可以看到加载 DTD 类型的</p>
+<p><code>BeansDtdResolver.resolveEntity()</code> 只是对 systemId 进行了简单的校验（从最后一个 / 开始，内容中是否包含 <code>spring-beans</code>），然后构造一个 InputSource 并设置 publicId、systemId，然后返回。 PluggableSchemaResolver 的解析过程如下:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> InputSource <span class="title">resolveEntity</span><span class="params">(String publicId, </span></span></span><br><span class="line"><span class="function"><span class="params">                                 <span class="meta">@Nullable</span> String systemId)</span> </span></span><br><span class="line"><span class="function">  <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (logger.isTraceEnabled()) &#123;</span><br><span class="line">    logger.trace(<span class="string">&quot;Trying to resolve XML entity with public id [&quot;</span> </span><br><span class="line">                 + publicId +</span><br><span class="line">                 <span class="string">&quot;] and system id [&quot;</span> </span><br><span class="line">                 + systemId + <span class="string">&quot;]&quot;</span>);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> (systemId != <span class="keyword">null</span>) &#123;</span><br><span class="line">    String resourceLocation = getSchemaMappings().get(systemId);</span><br><span class="line">    <span class="keyword">if</span> (resourceLocation != <span class="keyword">null</span>) &#123;</span><br><span class="line">      Resource resource = <span class="keyword">new</span> ClassPathResource(resourceLocation, </span><br><span class="line">                                                <span class="keyword">this</span>.classLoader);</span><br><span class="line">      <span class="keyword">try</span> &#123;</span><br><span class="line">        InputSource source = <span class="keyword">new</span> InputSource(resource.getInputStream());</span><br><span class="line">        source.setPublicId(publicId);</span><br><span class="line">        source.setSystemId(systemId);</span><br><span class="line">        <span class="keyword">if</span> (logger.isDebugEnabled()) &#123;</span><br><span class="line">          logger.debug(<span class="string">&quot;Found XML schema [&quot;</span> </span><br><span class="line">                       + systemId + <span class="string">&quot;] in classpath: &quot;</span> </span><br><span class="line">                       + resourceLocation);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> source;</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">catch</span> (FileNotFoundException ex) &#123;</span><br><span class="line">        <span class="keyword">if</span> (logger.isDebugEnabled()) &#123;</span><br><span class="line">          logger.debug(<span class="string">&quot;Couldn&#x27;t find XML schema [&quot;</span></span><br><span class="line">                       + systemId + <span class="string">&quot;]: &quot;</span> + resource, ex);</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>首先调用 getSchemaMappings() 获取一个映射表(systemId 与其在本地的对照关系)，然后根据传入的 systemId 获取该 systemId 在本地的路径 resourceLocation，最后根据 resourceLocation 构造 InputSource 对象。 映射表如下（部分）:</p>
+<p><img src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/c1mMOc.jpg" alt="c1mMOc"></p>
+
+  </div>
+
+  
+    <div style="text-align:center;width:100%">
+      <img src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/640-2.gif">
+    </div>
+  
+
+  
+    <div>
+      <h4>版权声明</h4>
+      <pre>
+        
+        <strong>本文来源： </strong><a href="http://cmsblogs.com/?p=2695" title="Java技术驿站-chenssy-【死磕 Spring】—– IOC之获取Document对象" rel="external nofollow noopener noreferrer" target="_blank">http://cmsblogs.com/?p=2695</a>
+
+        <strong>本文链接：</strong><a href="https://www.cayzlh.com/2020/01/05/13336b20.html" title="/blog/IOC%E4%B9%8B%E8%8E%B7%E5%8F%96Document%E5%AF%B9%E8%B1%A1">https://www.cayzlh.com/2020/01/05/13336b20.html</a>
+
+        <strong>版权声明： </strong>
+        
+          文章内容仅用作学习和分享，转载请注明出处
+        
+      </pre>
+    </div>
+  
+
+</article>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/blog/">Home</a></li>
+        
+          <li><a href="/blog/archives/">Articles</a></li>
+        
+          <li><a href="/blog/about/">About</a></li>
+        
+          <li><a href="/blog/search/">Search</a></li>
+        
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#DocumentLoader"><span class="toc-number">1.</span> <span class="toc-text">DocumentLoader</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#EntityResolver"><span class="toc-number">2.</span> <span class="toc-text">EntityResolver</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%B6%89%E5%8F%8A%E5%AD%90%E7%B1%BB"><span class="toc-number">2.1.</span> <span class="toc-text">涉及子类</span></a></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.facebook.com/sharer.php?u=https://www.cayzlh.com/2020/01/05/13336b20.html"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://twitter.com/share?url=https://www.cayzlh.com/2020/01/05/13336b20.html&text=IOC之获取Document对象"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.linkedin.com/shareArticle?url=https://www.cayzlh.com/2020/01/05/13336b20.html&title=IOC之获取Document对象"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://pinterest.com/pin/create/bookmarklet/?url=https://www.cayzlh.com/2020/01/05/13336b20.html&is_video=false&description=IOC之获取Document对象"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=IOC之获取Document对象&body=Check out this article: https://www.cayzlh.com/2020/01/05/13336b20.html"><i class="fas fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://getpocket.com/save?url=https://www.cayzlh.com/2020/01/05/13336b20.html&title=IOC之获取Document对象"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://reddit.com/submit?url=https://www.cayzlh.com/2020/01/05/13336b20.html&title=IOC之获取Document对象"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.stumbleupon.com/submit?url=https://www.cayzlh.com/2020/01/05/13336b20.html&title=IOC之获取Document对象"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://digg.com/submit?url=https://www.cayzlh.com/2020/01/05/13336b20.html&title=IOC之获取Document对象"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.tumblr.com/share/link?url=https://www.cayzlh.com/2020/01/05/13336b20.html&name=IOC之获取Document对象&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://news.ycombinator.com/submitlink?u=https://www.cayzlh.com/2020/01/05/13336b20.html&t=IOC之获取Document对象"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fas fa-bars fa-lg" aria-hidden="true"></i> Menu</a>
+        <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fas fa-list fa-lg" aria-hidden="true"></i> TOC</a>
+<!--        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fas fa-share-alt fa-lg" aria-hidden="true"></i> Share</a>-->
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    CAYZLH &copy;
+    
+    
+    2019-2021
+    粤ICP备20058712号-1
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        
+          <li><a href="/blog/tools/">tools</a></li>
+        
+          <li><a href="/blog/links/">links</a></li>
+        
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+<link rel="stylesheet" href="/blog/lib/font-awesome/css/all.min.css">
+
+
+<link rel="stylesheet" href="/blog/lib/justified-gallery/css/justifiedGallery.min.css">
+
+
+    <!-- jquery -->
+
+<script src="/blog/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/blog/lib/justified-gallery/js/jquery.justifiedGallery.min.js"></script>
+
+<!-- clipboard -->
+
+  
+<script src="/blog/lib/clipboard/clipboard.min.js"></script>
+
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"Copy to clipboard!\">";
+    btn += '<i class="far fa-clone"></i>';
+    btn += '</span>'; 
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "Copied!");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/blog/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Google Analytics -->
+
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-129095667-1"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'UA-129095667-1');
+    </script>
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Umami Analytics -->
+
+<!-- Disqus Comments -->
+
+
+</body>
+</html>

@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="description" content="虽然我们都知道有26个设计模式，但是大多停留在概念层面，真实开发中很少遇到，Mybatis源码中使用了大量的设计模式，阅读源码并观察设计模式在其中的应用，能够更深入的理解设计模式。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Mybatis中用到的几种设计模式">
+<meta property="og:url" content="http://www.crazyant.net/2022.html">
+<meta property="og:site_name" content="CAYZLH">
+<meta property="og:description" content="虽然我们都知道有26个设计模式，但是大多停留在概念层面，真实开发中很少遇到，Mybatis源码中使用了大量的设计模式，阅读源码并观察设计模式在其中的应用，能够更深入的理解设计模式。">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/c32qrf.jpg">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/KAGdgM.jpg">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/Z3PDMk.jpg">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/70L93B.jpg">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/tHOgLF.jpg">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/57qXzr.jpg">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/kEL5d7.jpg">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/4eSz9o.jpg">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/mPNlOa.jpg">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/dq9xXH.jpg">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/rkEM6Y.jpg">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/uVGQZ0.jpg">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/BdaHcM.jpg">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/49UcwT.jpg">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/dsNpxb.jpg">
+<meta property="article:published_time" content="2020-03-23T12:50:34.000Z">
+<meta property="article:modified_time" content="2020-05-21T13:27:47.039Z">
+<meta property="article:author" content="🐳Ant丶">
+<meta property="article:tag" content="转载">
+<meta property="article:tag" content="设计模式">
+<meta property="article:tag" content="MyBatis">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/c32qrf.jpg">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/blog/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/blog/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/blog/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>Mybatis中用到的几种设计模式</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/blog/css/style.css">
+
+    <!-- persian styles -->
+    
+      
+<link rel="stylesheet" href="/blog/css/rtl.css">
+
+    
+    <!-- rss -->
+    
+    
+      <link rel="alternate" href="/blog/true" title="CAYZLH" type="application/atom+xml">
+    
+<meta name="generator" content="Hexo 5.3.0"></head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fas fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fas fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fas fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a href="/blog/">Home</a></li>
+        
+          <li><a href="/blog/archives/">Articles</a></li>
+        
+          <li><a href="/blog/about/">About</a></li>
+        
+          <li><a href="/blog/search/">Search</a></li>
+        
+      </ul>
+    </span>
+    <br>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/blog/2020/03/24/40c5d21f.html"><i class="fas fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/blog/2020/03/22/d856f34b.html"><i class="fas fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+<!--        <li><a class="icon" href="#"><i class="fas fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>-->
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous</span>
+      <span id="i-next" class="info" style="display:none;">Next</span>
+      <span id="i-top" class="info" style="display:none;">Back to top</span>
+      <span id="i-share" class="info" style="display:none;">Share post</span>
+    </span>
+    <br>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.facebook.com/sharer.php?u=https://www.cayzlh.com/2020/03/23/26b455b4.html"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://twitter.com/share?url=https://www.cayzlh.com/2020/03/23/26b455b4.html&text=Mybatis中用到的几种设计模式"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.linkedin.com/shareArticle?url=https://www.cayzlh.com/2020/03/23/26b455b4.html&title=Mybatis中用到的几种设计模式"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://pinterest.com/pin/create/bookmarklet/?url=https://www.cayzlh.com/2020/03/23/26b455b4.html&is_video=false&description=Mybatis中用到的几种设计模式"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Mybatis中用到的几种设计模式&body=Check out this article: https://www.cayzlh.com/2020/03/23/26b455b4.html"><i class="fas fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://getpocket.com/save?url=https://www.cayzlh.com/2020/03/23/26b455b4.html&title=Mybatis中用到的几种设计模式"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://reddit.com/submit?url=https://www.cayzlh.com/2020/03/23/26b455b4.html&title=Mybatis中用到的几种设计模式"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.stumbleupon.com/submit?url=https://www.cayzlh.com/2020/03/23/26b455b4.html&title=Mybatis中用到的几种设计模式"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://digg.com/submit?url=https://www.cayzlh.com/2020/03/23/26b455b4.html&title=Mybatis中用到的几种设计模式"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.tumblr.com/share/link?url=https://www.cayzlh.com/2020/03/23/26b455b4.html&name=Mybatis中用到的几种设计模式&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://news.ycombinator.com/submitlink?u=https://www.cayzlh.com/2020/03/23/26b455b4.html&t=Mybatis中用到的几种设计模式"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    <div id="toc">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#Builder%E6%A8%A1%E5%BC%8F"><span class="toc-number">1.</span> <span class="toc-text">Builder模式</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%B7%A5%E5%8E%82%E6%A8%A1%E5%BC%8F"><span class="toc-number">2.</span> <span class="toc-text">工厂模式</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8D%95%E4%BE%8B%E6%A8%A1%E5%BC%8F"><span class="toc-number">3.</span> <span class="toc-text">单例模式</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BB%A3%E7%90%86%E6%A8%A1%E5%BC%8F"><span class="toc-number">4.</span> <span class="toc-text">代理模式</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%BB%84%E5%90%88%E6%A8%A1%E5%BC%8F"><span class="toc-number">5.</span> <span class="toc-text">组合模式</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%A8%A1%E6%9D%BF%E6%96%B9%E6%B3%95%E6%A8%A1%E5%BC%8F"><span class="toc-number">6.</span> <span class="toc-text">模板方法模式</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%80%82%E9%85%8D%E5%99%A8%E6%A8%A1%E5%BC%8F"><span class="toc-number">7.</span> <span class="toc-text">适配器模式</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%A3%85%E9%A5%B0%E8%80%85%E6%A8%A1%E5%BC%8F"><span class="toc-number">8.</span> <span class="toc-text">装饰者模式</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%BF%AD%E4%BB%A3%E5%99%A8%E6%A8%A1%E5%BC%8F"><span class="toc-number">9.</span> <span class="toc-text">迭代器模式</span></a></li></ol>
+    </div>
+  </span>
+</div>
+
+    
+    <div class="content index py4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        Mybatis中用到的几种设计模式
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">蚂蚁学Python</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2020-03-23T12:50:34.000Z" itemprop="datePublished">2020-03-23</time>
+        
+      
+    </div>
+
+
+      
+    <div class="article-category">
+        <i class="fas fa-archive"></i>
+        <a class="category-link" href="/blog/categories/%E6%A1%86%E6%9E%B6/">框架</a> › <a class="category-link" href="/blog/categories/%E6%A1%86%E6%9E%B6/MyBatis/">MyBatis</a>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fas fa-tag"></i>
+        <a class="tag-link-link" href="/blog/tags/MyBatis/" rel="tag">MyBatis</a>, <a class="tag-link-link" href="/blog/tags/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" rel="tag">设计模式</a>, <a class="tag-link-link" href="/blog/tags/%E8%BD%AC%E8%BD%BD/" rel="tag">转载</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <blockquote>
+<p>本文转载自：<a target="_blank" rel="external nofollow noopener noreferrer" href="http://www.crazyant.net/2022.html">http://www.crazyant.net/2022.html</a></p>
+</blockquote>
+<p>Mybatis至少遇到了以下的设计模式的使用：</p>
+<ol>
+<li><strong>Builder模式</strong>，例如<code>SqlSessionFactoryBuilder</code>、<code>XMLConfigBuilder</code>、<code>XMLMapperBuilder</code>、<code>XMLStatementBuilder</code>、<code>CacheBuilder</code>；</li>
+<li><strong>工厂模式</strong>，例如<code>SqlSessionFactory</code>、<code>ObjectFactory</code>、<code>MapperProxyFactory</code>；</li>
+<li><strong>单例模式</strong>，例如ErrorContext和<code>LogFactory</code>；</li>
+<li><strong>代理模式</strong>，Mybatis实现的核心，比如<code>MapperProxy</code>、<code>ConnectionLogger</code>，用的jdk的动态代理；还有executor.loader包使用了cglib或者javassist达到延迟加载的效果；</li>
+<li>组合模式，例如<code>SqlNode</code>和各个子类<code>ChooseSqlNode</code>等；</li>
+<li><strong>模板方法模式</strong>，例如<code>BaseExecutor</code>和<code>SimpleExecutor</code>，还有<code>BaseTypeHandler</code>和所有的子类例如<code>IntegerTypeHandler</code>；</li>
+<li><strong>适配器模式</strong>，例如Log的Mybatis接口和它对jdbc、log4j等各种日志框架的适配实现；</li>
+<li><strong>装饰者模式</strong>，例如Cache包中的cache.decorators子包中等各个装饰者的实现；</li>
+<li><strong>迭代器模式</strong>，例如迭代器模式<code>PropertyTokenizer</code>；</li>
+</ol>
+<p>接下来挨个模式进行解读，先介绍模式自身的知识，然后解读在Mybatis中怎样应用了该模式。</p>
+<h2 id="Builder模式"><a href="#Builder模式" class="headerlink" title="Builder模式"></a>Builder模式</h2><p>Builder模式的定义是“将一个复杂对象的构建与它的表示分离，使得同样的构建过程可以创建不同的表示”，它属于创建类模式，一般来说，如果一个对象的构建比较复杂，超出了构造函数所能包含的范围，就可以使用工厂模式和Builder模式，相对于工厂模式会产出一个完整的产品，Builder应用于更加复杂的对象的构建，甚至只会构建产品的一个部分。</p>
+<p><img src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/c32qrf.jpg" alt="Builder模式"></p>
+<p>在Mybatis环境的初始化过程中，<code>SqlSessionFactoryBuilder</code>会调用<code>XMLConfigBuilder</code>读取所有的<code>MybatisMapConfig.xml</code>和所有的*Mapper.xml文件，构建Mybatis运行的核心对象Configuration对象，然后将该Configuration对象作为参数构建一个SqlSessionFactory对象。</p>
+<p>其中<code>XMLConfigBuilder</code>在构建<code>Configuration</code>对象时，也会调用<code>XMLMapperBuilder</code>用于读取*Mapper文件，而<code>XMLMapperBuilder</code>会使用<code>XMLStatementBuilder</code>来读取和build所有的SQL语句。</p>
+<p>在这个过程中，有一个相似的特点，就是这些Builder会读取文件或者配置，然后做大量的XpathParser解析、配置或语法的解析、反射生成对象、存入结果缓存等步骤，这么多的工作都不是一个构造函数所能包括的，因此大量采用了Builder模式来解决。</p>
+<p>对于builder的具体类，方法都大都用build*开头，比如<code>SqlSessionFactoryBuilder</code>为例，它包含以下方法：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/KAGdgM.jpg" alt="SqlSessionFactoryBuilder"></p>
+<p>即根据不同的输入参数来构建<code>SqlSessionFactory</code>这个工厂对象。</p>
+<h2 id="工厂模式"><a href="#工厂模式" class="headerlink" title="工厂模式"></a>工厂模式</h2><p>在Mybatis中比如<code>SqlSessionFactory</code>使用的是工厂模式，该工厂没有那么复杂的逻辑，是一个简单工厂模式。</p>
+<p>简单工厂模式(Simple Factory Pattern)：又称为静态工厂方法(Static Factory Method)模式，它属于类创建型模式。在简单工厂模式中，可以根据参数的不同返回不同类的实例。简单工厂模式专门定义一个类来负责创建其他类的实例，被创建的实例通常都具有共同的父类。</p>
+<p><img src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/Z3PDMk.jpg" alt="简单工厂模式"></p>
+<p>SqlSession可以认为是一个Mybatis工作的核心的接口，通过这个接口可以执行执行SQL语句、获取Mappers、管理事务。类似于连接MySQL的Connection对象。</p>
+<p><img src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/70L93B.jpg" alt="70L93B"></p>
+<p>可以看到，该Factory的openSession方法重载了很多个，分别支持autoCommit、Executor、Transaction等参数的输入，来构建核心的SqlSession对象。</p>
+<p>在DefaultSqlSessionFactory的默认工厂实现里，有一个方法可以看出工厂怎么产出一个产品：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> SqlSession <span class="title">openSessionFromDataSource</span><span class="params">(ExecutorType execType,</span></span></span><br><span class="line"><span class="function"><span class="params">                                             TransactionIsolationLevel level,</span></span></span><br><span class="line"><span class="function"><span class="params">                                             <span class="keyword">boolean</span> autoCommit)</span> </span>&#123;</span><br><span class="line">		Transaction tx = <span class="keyword">null</span>;</span><br><span class="line">		<span class="keyword">try</span> &#123;</span><br><span class="line">			<span class="keyword">final</span> Environment environment = configuration.getEnvironment();</span><br><span class="line">			<span class="keyword">final</span> TransactionFactory transactionFactory = </span><br><span class="line">        getTransactionFactoryFromEnvironment(environment);</span><br><span class="line">			tx = </span><br><span class="line">        transactionFactory.newTransaction(environment.getDataSource(), </span><br><span class="line">                                          level, autoCommit);</span><br><span class="line">			<span class="keyword">final</span> Executor executor = configuration.newExecutor(tx, execType);</span><br><span class="line">			<span class="keyword">return</span> <span class="keyword">new</span> DefaultSqlSession(configuration, executor, autoCommit);</span><br><span class="line">		&#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">			closeTransaction(tx); <span class="comment">// may have fetched a connection so lets call</span></span><br><span class="line">									<span class="comment">// close()</span></span><br><span class="line">			<span class="keyword">throw</span> ExceptionFactory.wrapException(<span class="string">&quot;Error opening session.  Cause: &quot;</span> + e, e);</span><br><span class="line">		&#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">			ErrorContext.instance().reset();</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure>
+<p>这是一个openSession调用的底层方法，该方法先从configuration读取对应的环境配置，然后初始化<code>TransactionFactory</code>获得一个<code>Transaction</code>对象，然后通过<code>Transaction</code>获取一个<code>Executor</code>对象，最后通过configuration、Executor、是否autoCommit三个参数构建了<code>SqlSession</code>。</p>
+<p>在这里其实也可以看到端倪，<code>SqlSession</code>的执行，其实是委托给对应的<code>Executor</code>来进行的。</p>
+<p>而对于<code>LogFactory</code>，它的实现代码：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">final</span> <span class="class"><span class="keyword">class</span> <span class="title">LogFactory</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> Constructor&lt;? extends Log&gt; logConstructor;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">private</span> <span class="title">LogFactory</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="comment">// disable construction</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> Log <span class="title">getLog</span><span class="params">(Class&lt;?&gt; aClass)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> getLog(aClass.getName());</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>这里有个特别的地方，是Log变量的的类型是<code>Constructor</code>，也就是说该工厂生产的不只是一个产品，而是具有Log公共接口的一系列产品，比如<code>Log4jImpl</code>、<code>Slf4jImpl</code>等很多具体的Log。</p>
+<h2 id="单例模式"><a href="#单例模式" class="headerlink" title="单例模式"></a>单例模式</h2><p>单例模式(Singleton Pattern)：单例模式确保某一个类只有一个实例，而且自行实例化并向整个系统提供这个实例，这个类称为单例类，它提供全局访问的方法。</p>
+<p>单例模式的要点有三个：一是某个类只能有一个实例；二是它必须自行创建这个实例；三是它必须自行向整个系统提供这个实例。单例模式是一种对象创建型模式。单例模式又名单件模式或单态模式。</p>
+<p><img src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/tHOgLF.jpg" alt="tHOgLF"></p>
+<p>在Mybatis中有两个地方用到单例模式，<code>ErrorContext</code>和<code>LogFactory</code>，其中<code>ErrorContext</code>是用在每个线程范围内的单例，用于记录该线程的执行环境错误信息，而<code>LogFactory</code>则是提供给整个Mybatis使用的日志工厂，用于获得针对项目配置好的日志对象。</p>
+<p><code>ErrorContext</code>的单例实现代码：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">ErrorContext</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> ThreadLocal&lt;ErrorContext&gt; LOCAL = <span class="keyword">new</span> ThreadLocal&lt;ErrorContext&gt;();</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">private</span> <span class="title">ErrorContext</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> ErrorContext <span class="title">instance</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        ErrorContext context = LOCAL.get();</span><br><span class="line">        <span class="keyword">if</span> (context == <span class="keyword">null</span>) &#123;</span><br><span class="line">            context = <span class="keyword">new</span> ErrorContext();</span><br><span class="line">            LOCAL.set(context);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> context;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>构造函数是private修饰，具有一个static的局部instance变量和一个获取instance变量的方法，在获取实例的方法中，先判断是否为空如果是的话就先创建，然后返回构造好的对象。</p>
+<p>只是这里有个有趣的地方是，LOCAL的静态实例变量使用了<code>ThreadLocal</code>修饰，也就是说它属于每个线程各自的数据，而在<code>instance()</code>方法中，先获取本线程的该实例，如果没有就创建该线程独有的<code>ErrorContext</code>。</p>
+<h2 id="代理模式"><a href="#代理模式" class="headerlink" title="代理模式"></a>代理模式</h2><p>代理模式可以认为是Mybatis的核心使用的模式，正是由于这个模式，我们只需要编写<code>Mapper.java</code>接口，不需要实现，由Mybatis后台帮我们完成具体SQL的执行。</p>
+<p>代理模式(Proxy Pattern) ：给某一个对象提供一个代 理，并由代理对象控制对原对象的引用。代理模式的英 文叫做Proxy或Surrogate，它是一种对象结构型模式。</p>
+<p>代理模式包含如下角色：</p>
+<ul>
+<li>Subject: 抽象主题角色</li>
+<li>Proxy: 代理主题角色</li>
+<li>RealSubject: 真实主题角色</li>
+</ul>
+<p><img src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/57qXzr.jpg" alt="57qXzr"></p>
+<p>这里有两个步骤，第一个是提前创建一个Proxy，第二个是使用的时候会自动请求Proxy，然后由Proxy来执行具体事务；</p>
+<p>当我们使用<code>Configuration</code>的<code>getMapper</code>方法时，会调用<code>mapperRegistry.getMapper</code>方法，而该方法又会调用<code>mapperProxyFactory.newInstance(sqlSession)</code>来生成一个具体的代理：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">return</span> mapperInterface;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> Map&lt;Method, MapperMethod&gt; <span class="title">getMethodCache</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> methodCache;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@SuppressWarnings(&quot;unchecked&quot;)</span></span><br><span class="line">    <span class="function"><span class="keyword">protected</span> T <span class="title">newInstance</span><span class="params">(MapperProxy&lt;T&gt; mapperProxy)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> (T) Proxy.newProxyInstance(mapperInterface.getClassLoader(), </span><br><span class="line">                                          <span class="keyword">new</span> Class[] &#123; mapperInterface &#125;,</span><br><span class="line">                mapperProxy);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> T <span class="title">newInstance</span><span class="params">(SqlSession sqlSession)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">final</span> MapperProxy&lt;T&gt; mapperProxy = <span class="keyword">new</span> MapperProxy&lt;T&gt;(sqlSession, </span><br><span class="line">                                                              mapperInterface, methodCache);</span><br><span class="line">        <span class="keyword">return</span> newInstance(mapperProxy);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>在这里，先通过<code>T newInstance(SqlSession sqlSession)</code>方法会得到一个<code>MapperProxy</code>对象，然后调用<code>T newInstance(MapperProxy mapperProxy)</code>生成代理对象然后返回。</p>
+<p>而查看<code>MapperProxy</code>的代码，可以看到如下内容：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">MapperProxy</span>&lt;<span class="title">T</span>&gt; <span class="keyword">implements</span> <span class="title">InvocationHandler</span>, <span class="title">Serializable</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> Object <span class="title">invoke</span><span class="params">(Object proxy, Method method, Object[] args)</span> <span class="keyword">throws</span> Throwable </span>&#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="keyword">if</span> (Object.class.equals(method.getDeclaringClass())) &#123;</span><br><span class="line">                <span class="keyword">return</span> method.invoke(<span class="keyword">this</span>, args);</span><br><span class="line">            &#125; <span class="keyword">else</span> <span class="keyword">if</span> (isDefaultMethod(method)) &#123;</span><br><span class="line">                <span class="keyword">return</span> invokeDefaultMethod(proxy, method, args);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; <span class="keyword">catch</span> (Throwable t) &#123;</span><br><span class="line">            <span class="keyword">throw</span> ExceptionUtil.unwrapThrowable(t);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">final</span> MapperMethod mapperMethod = cachedMapperMethod(method);</span><br><span class="line">        <span class="keyword">return</span> mapperMethod.execute(sqlSession, args);</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>非常典型的，该<code>MapperProxy</code>类实现了<code>InvocationHandler</code>接口，并且实现了该接口的<code>invoke</code>方法。</p>
+<p>通过这种方式，我们只需要编写<code>Mapper.java</code>接口类，当真正执行一个<code>Mapper</code>接口的时候，就会转发给<code>MapperProxy.invoke</code>方法，而该方法则会调用后续的<code>sqlSession.cud&gt;executor.execute&gt;prepareStatement</code>等一系列方法，完成SQL的执行和返回。</p>
+<h2 id="组合模式"><a href="#组合模式" class="headerlink" title="组合模式"></a>组合模式</h2><p>组合模式组合多个对象形成树形结构以表示“整体-部分”的结构层次。</p>
+<p>组合模式对单个对象(叶子对象)和组合对象(组合对象)具有一致性，它将对象组织到树结构中，可以用来描述整体与部分的关系。同时它也模糊了简单元素(叶子对象)和复杂元素(容器对象)的概念，使得客户能够像处理简单元素一样来处理复杂元素，从而使客户程序能够与复杂元素的内部结构解耦。</p>
+<p>在使用组合模式中需要注意一点也是组合模式最关键的地方：叶子对象和组合对象实现相同的接口。这就是组合模式能够将叶子节点和对象节点进行一致处理的原因。</p>
+<p><img src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/kEL5d7.jpg" alt="kEL5d7"></p>
+<p>Mybatis支持动态SQL的强大功能，比如下面的这个SQL：</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">update</span> <span class="attr">id</span>=<span class="string">&quot;update&quot;</span> <span class="attr">parameterType</span>=<span class="string">&quot;org.format.dynamicproxy.mybatis.bean.User&quot;</span>&gt;</span></span><br><span class="line">    UPDATE users</span><br><span class="line">    <span class="tag">&lt;<span class="name">trim</span> <span class="attr">prefix</span>=<span class="string">&quot;SET&quot;</span> <span class="attr">prefixOverrides</span>=<span class="string">&quot;,&quot;</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">if</span> <span class="attr">test</span>=<span class="string">&quot;name != null and name != &#x27;&#x27;&quot;</span>&gt;</span></span><br><span class="line">            name = #&#123;name&#125;</span><br><span class="line">        <span class="tag">&lt;/<span class="name">if</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">if</span> <span class="attr">test</span>=<span class="string">&quot;age != null and age != &#x27;&#x27;&quot;</span>&gt;</span></span><br><span class="line">            , age = #&#123;age&#125;</span><br><span class="line">        <span class="tag">&lt;/<span class="name">if</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">if</span> <span class="attr">test</span>=<span class="string">&quot;birthday != null and birthday != &#x27;&#x27;&quot;</span>&gt;</span></span><br><span class="line">            , birthday = #&#123;birthday&#125;</span><br><span class="line">        <span class="tag">&lt;/<span class="name">if</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">trim</span>&gt;</span></span><br><span class="line">    where id = $&#123;id&#125;</span><br><span class="line"><span class="tag">&lt;/<span class="name">update</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<p>在这里面使用到了trim、if等动态元素，可以根据条件来生成不同情况下的SQL；</p>
+<p>在<code>DynamicSqlSource.getBoundSql</code>方法里，调用了<code>rootSqlNode.apply(context)</code>方法，<code>apply</code>方法是所有的动态节点都实现的接口：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">SqlNode</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">boolean</span> <span class="title">apply</span><span class="params">(DynamicContext context)</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>对于实现该<code>SqlSource</code>接口的所有节点，就是整个组合模式树的各个节点：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/4eSz9o.jpg" alt="4eSz9o"></p>
+<p>组合模式的简单之处在于，所有的子节点都是同一类节点，可以递归的向下执行，比如对于TextSqlNode，因为它是最底层的叶子节点，所以直接将对应的内容append到SQL语句中：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">apply</span><span class="params">(DynamicContext context)</span> </span>&#123;</span><br><span class="line">  GenericTokenParser parser = createParser(<span class="keyword">new</span> BindingTokenParser(context,</span><br><span class="line">                                                                  injectionFilter));</span><br><span class="line">  context.appendSql(parser.parse(text));</span><br><span class="line">  <span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>但是对于IfSqlNode，就需要先做判断，如果判断通过，仍然会调用子元素的SqlNode，即<code>contents.apply</code>方法，实现递归的解析。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">apply</span><span class="params">(DynamicContext context)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (evaluator.evaluateBoolean(test, context.getBindings())) &#123;</span><br><span class="line">        contents.apply(context);</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">false</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="模板方法模式"><a href="#模板方法模式" class="headerlink" title="模板方法模式"></a>模板方法模式</h2><p>模板方法模式是所有模式中最为常见的几个模式之一，是基于继承的代码复用的基本技术。</p>
+<p>模板方法模式需要开发抽象类和具体子类的设计师之间的协作。一个设计师负责给出一个算法的轮廓和骨架，另一些设计师则负责给出这个算法的各个逻辑步骤。代表这些具体逻辑步骤的方法称做基本方法(primitive method)；而将这些基本方法汇总起来的方法叫做模板方法(template method)，这个设计模式的名字就是从此而来。</p>
+<p>模板类定义一个操作中的算法的骨架，而将一些步骤延迟到子类中。使得子类可以不改变一个算法的结构即可重定义该算法的某些特定步骤。</p>
+<p><img src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/mPNlOa.jpg" alt="mPNlOa"></p>
+<p>在Mybatis中，sqlSession的SQL执行，都是委托给Executor实现的，Executor包含以下结构：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/dq9xXH.jpg" alt="dq9xXH"></p>
+<p>其中的BaseExecutor就采用了模板方法模式，它实现了大部分的SQL执行逻辑，然后把以下几个方法交给子类定制化完成：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"> <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">apply</span><span class="params">(DynamicContext context)</span> </span>&#123;</span><br><span class="line">   <span class="keyword">if</span> (evaluator.evaluateBoolean(test, context.getBindings())) &#123;</span><br><span class="line">     contents.apply(context);</span><br><span class="line">     <span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">   &#125;</span><br><span class="line">   <span class="keyword">return</span> <span class="keyword">false</span>;</span><br><span class="line"> &#125;</span><br></pre></td></tr></table></figure>
+<p>该模板方法类有几个子类的具体实现，使用了不同的策略：</p>
+<ul>
+<li>简单<code>SimpleExecutor</code>：每执行一次<code>update</code>或<code>select</code>，就开启一个<code>Statement</code>对象，用完立刻关闭<code>Statement</code>对象。（可以是<code>Statement</code>或<code>PrepareStatement</code>对象）</li>
+<li>重用<code>ReuseExecutor</code>：执行<code>update</code>或<code>select</code>，以sql作为key查找<code>Statement</code>对象，存在就使用，不存在就创建，用完后，不关闭<code>Statement</code>对象，而是放置于<code>Map</code>内，供下一次使用。（可以是<code>Statement</code>或<code>PrepareStatement</code>对象）</li>
+<li>批量<code>BatchExecutor</code>：执行update（没有select，JDBC批处理不支持select），将所有sql都添加到批处理中（<code>addBatch()</code>），等待统一执行（<code>executeBatch()</code>），它缓存了多个Statement对象，每个Statement对象都是<code>addBatch()</code>完毕后，等待逐一执行<code>executeBatch()</code>批处理的；<code>BatchExecutor</code>相当于维护了多个桶，每个桶里都装了很多属于自己的SQL，就像苹果蓝里装了很多苹果，番茄蓝里装了很多番茄，最后，再统一倒进仓库。（可以是Statement或PrepareStatement对象）</li>
+</ul>
+<p>比如在SimpleExecutor中这样实现update方法：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">doUpdate</span><span class="params">(MappedStatement ms, Object parameter)</span> <span class="keyword">throws</span> SQLException </span>&#123;</span><br><span class="line">    Statement stmt = <span class="keyword">null</span>;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        Configuration configuration = ms.getConfiguration();</span><br><span class="line">        StatementHandler handler = configuration.newStatementHandler(<span class="keyword">this</span>, ms, parameter, RowBounds.DEFAULT, <span class="keyword">null</span>,</span><br><span class="line">                <span class="keyword">null</span>);</span><br><span class="line">        stmt = prepareStatement(handler, ms.getStatementLog());</span><br><span class="line">        <span class="keyword">return</span> handler.update(stmt);</span><br><span class="line">    &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">        closeStatement(stmt);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="适配器模式"><a href="#适配器模式" class="headerlink" title="适配器模式"></a>适配器模式</h2><p>适配器模式(Adapter Pattern) ：将一个接口转换成客户希望的另一个接口，适配器模式使接口不兼容的那些类可以一起工作，其别名为包装器(Wrapper)。适配器模式既可以作为类结构型模式，也可以作为对象结构型模式。</p>
+<p><img src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/rkEM6Y.jpg" alt="rkEM6Y"></p>
+<p>在Mybatsi的logging包中，有一个Log接口：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">Log</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">boolean</span> <span class="title">isDebugEnabled</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">boolean</span> <span class="title">isTraceEnabled</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">error</span><span class="params">(String s, Throwable e)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">error</span><span class="params">(String s)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">debug</span><span class="params">(String s)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">trace</span><span class="params">(String s)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">warn</span><span class="params">(String s)</span></span>;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>该接口定义了Mybatis直接使用的日志方法，而Log接口具体由谁来实现呢？Mybatis提供了多种日志框架的实现，这些实现都匹配这个Log接口所定义的接口方法，最终实现了所有外部日志框架到Mybatis日志包的适配：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/uVGQZ0.jpg" alt="uVGQZ0"></p>
+<p>比如对于<code>Log4jImpl</code>的实现来说，该实现持有了<code>org.apache.log4j.Logger</code>的实例，然后所有的日志方法，均委托该实例来实现。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Log4jImpl</span> <span class="keyword">implements</span> <span class="title">Log</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> String FQCN = Log4jImpl.class.getName();</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> Logger log;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">Log4jImpl</span><span class="params">(String clazz)</span> </span>&#123;</span><br><span class="line">        log = Logger.getLogger(clazz);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">isDebugEnabled</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> log.isDebugEnabled();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">isTraceEnabled</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> log.isTraceEnabled();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">error</span><span class="params">(String s, Throwable e)</span> </span>&#123;</span><br><span class="line">        log.log(FQCN, Level.ERROR, s, e);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">error</span><span class="params">(String s)</span> </span>&#123;</span><br><span class="line">        log.log(FQCN, Level.ERROR, s, <span class="keyword">null</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">debug</span><span class="params">(String s)</span> </span>&#123;</span><br><span class="line">        log.log(FQCN, Level.DEBUG, s, <span class="keyword">null</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">trace</span><span class="params">(String s)</span> </span>&#123;</span><br><span class="line">        log.log(FQCN, Level.TRACE, s, <span class="keyword">null</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">warn</span><span class="params">(String s)</span> </span>&#123;</span><br><span class="line">        log.log(FQCN, Level.WARN, s, <span class="keyword">null</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="装饰者模式"><a href="#装饰者模式" class="headerlink" title="装饰者模式"></a>装饰者模式</h2><p>装饰模式(Decorator Pattern) ：动态地给一个对象增加一些额外的职责(Responsibility)，就增加对象功能来说，装饰模式比生成子类实现更为灵活。其别名也可以称为包装器(Wrapper)，与适配器模式的别名相同，但它们适用于不同的场合。根据翻译的不同，装饰模式也有人称之为“油漆工模式”，它是一种对象结构型模式。</p>
+<p><img src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/BdaHcM.jpg" alt="BdaHcM"></p>
+<p>在mybatis中，缓存的功能由根接口<code>Cache（org.apache.ibatis.cache.Cache）</code>定义。整个体系采用装饰器设计模式，数据存储和缓存的基本功能由<code>PerpetualCache（org.apache.ibatis.cache.impl.PerpetualCache）</code>永久缓存实现，然后通过一系列的装饰器来对<code>PerpetualCache</code>永久缓存进行缓存策略等方便的控制。如下图：</p>
+<p>用于装饰PerpetualCache的标准装饰器共有8个（全部在org.apache.ibatis.cache.decorators包中）：</p>
+<ol>
+<li><code>FifoCache</code>：先进先出算法，缓存回收策略</li>
+<li><code>LoggingCache</code>：输出缓存命中的日志信息</li>
+<li><code>LruCache</code>：最近最少使用算法，缓存回收策略</li>
+<li><code>ScheduledCache</code>：调度缓存，负责定时清空缓存</li>
+<li><code>SerializedCache</code>：缓存序列化和反序列化存储</li>
+<li><code>SoftCache</code>：基于软引用实现的缓存管理策略</li>
+<li><code>SynchronizedCache</code>：同步的缓存装饰器，用于防止多线程并发访问</li>
+<li><code>WeakCache</code>：基于弱引用实现的缓存管理策略</li>
+</ol>
+<p>另外，还有一个特殊的装饰器<code>TransactionalCache</code>：事务性的缓存正如大多数持久层框架一样，mybatis缓存同样分为一级缓存和二级缓存</p>
+<ul>
+<li>一级缓存，又叫本地缓存，是<code>PerpetualCache</code>类型的永久缓存，保存在执行器中（<code>BaseExecutor</code>），而执行器又在<code>SqlSession</code>（<code>DefaultSqlSession</code>）中，所以一级缓存的生命周期与<code>SqlSession</code>是相同的。</li>
+<li>二级缓存，又叫自定义缓存，实现了<code>Cache</code>接口的类都可以作为二级缓存，所以可配置如encache等的第三方缓存。二级缓存以namespace名称空间为其唯一标识，被保存在<code>Configuration</code>核心配置对象中。</li>
+</ul>
+<p>二级缓存对象的默认类型为PerpetualCache，如果配置的缓存是默认类型，则mybatis会根据配置自动追加一系列装饰器。</p>
+<p>Cache对象之间的引用顺序为：</p>
+<p><code>SynchronizedCache</code>–&gt;<code>LoggingCache</code>–&gt;<code>SerializedCache</code>–&gt;<code>ScheduledCache</code>–&gt;<code>LruCache</code>–&gt;<code>PerpetualCache</code></p>
+<h2 id="迭代器模式"><a href="#迭代器模式" class="headerlink" title="迭代器模式"></a>迭代器模式</h2><p>迭代器（Iterator）模式，又叫做游标（Cursor）模式。GOF给出的定义为：提供一种方法访问一个容器（container）对象中各个元素，而又不需暴露该对象的内部细节。</p>
+<p><img src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/49UcwT.jpg" alt="49UcwT"></p>
+<p>Java的<code>Iterator</code>就是迭代器模式的接口，只要实现了该接口，就相当于应用了迭代器模式：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/dsNpxb.jpg" alt="dsNpxb"></p>
+<p>比如Mybatis的<code>PropertyTokenizer</code>是property包中的重量级类，该类会被reflection包中其他的类频繁的引用到。这个类实现了<code>Iterator</code>接口，在使用时经常被用到的是<code>Iterator</code>接口中的<code>hasNext</code>这个函数。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">PropertyTokenizer</span> <span class="keyword">implements</span> <span class="title">Iterator</span>&lt;<span class="title">PropertyTokenizer</span>&gt; </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> String name;</span><br><span class="line">    <span class="keyword">private</span> String indexedName;</span><br><span class="line">    <span class="keyword">private</span> String index;</span><br><span class="line">    <span class="keyword">private</span> String children;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">PropertyTokenizer</span><span class="params">(String fullname)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">int</span> delim = fullname.indexOf(<span class="string">&#x27;.&#x27;</span>);</span><br><span class="line">        <span class="keyword">if</span> (delim &gt; -<span class="number">1</span>) &#123;</span><br><span class="line">            name = fullname.substring(<span class="number">0</span>, delim);</span><br><span class="line">            children = fullname.substring(delim + <span class="number">1</span>);</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            name = fullname;</span><br><span class="line">            children = <span class="keyword">null</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        indexedName = name;</span><br><span class="line">        delim = name.indexOf(<span class="string">&#x27;[&#x27;</span>);</span><br><span class="line">        <span class="keyword">if</span> (delim &gt; -<span class="number">1</span>) &#123;</span><br><span class="line">            index = name.substring(delim + <span class="number">1</span>, name.length() - <span class="number">1</span>);</span><br><span class="line">            name = name.substring(<span class="number">0</span>, delim);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> String <span class="title">getName</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> name;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> String <span class="title">getIndex</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> index;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> String <span class="title">getIndexedName</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> indexedName;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> String <span class="title">getChildren</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> children;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">hasNext</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> children != <span class="keyword">null</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> PropertyTokenizer <span class="title">next</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> PropertyTokenizer(children);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">remove</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> UnsupportedOperationException(</span><br><span class="line">                <span class="string">&quot;Remove is not supported, as it has no meaning in the context of properties.&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>可以看到，这个类传入一个字符串到构造函数，然后提供了iterator方法对解析后的子串进行遍历，是一个很常用的方法类。</p>
+<p><strong>参考资料</strong></p>
+<ul>
+<li><a target="_blank" rel="external nofollow noopener noreferrer" href="http://design-patterns.readthedocs.io/zh_CN/latest/index.html">图说设计模式</a></li>
+<li><a target="_blank" rel="external nofollow noopener noreferrer" href="http://www.cnblogs.com/dongying/p/4142476.html">深入浅出Mybatis系列（十）—SQL执行流程分析（源码篇）</a></li>
+<li><a target="_blank" rel="external nofollow noopener noreferrer" href="http://www.cnblogs.com/chenssy/p/3299719.html">设计模式读书笔记—–组合模式</a></li>
+<li><a target="_blank" rel="external nofollow noopener noreferrer" href="http://blog.csdn.net/wagcy/article/details/32963235">Mybatis3.3.x技术内幕（四）：五鼠闹东京之执行器Executor设计原本</a></li>
+<li><a target="_blank" rel="external nofollow noopener noreferrer" href="https://my.oschina.net/lixin91/blog/620068">mybatis缓存机制详解（一）——Cache</a></li>
+</ul>
+
+  </div>
+
+  
+    <div style="text-align:center;width:100%">
+      <img src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/640-2.gif">
+    </div>
+  
+
+  
+    <div>
+      <h4>版权声明</h4>
+      <pre>
+        
+        <strong>本文来源： </strong><a href="http://www.crazyant.net/2022.html" title="蚂蚁学Python" rel="external nofollow noopener noreferrer" target="_blank">http://www.crazyant.net/2022.html</a>
+
+        <strong>本文链接：</strong><a href="https://www.cayzlh.com/2020/03/23/26b455b4.html" title="/blog/Mybatis%E4%B8%AD%E7%94%A8%E5%88%B0%E7%9A%84%E5%87%A0%E7%A7%8D%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F">https://www.cayzlh.com/2020/03/23/26b455b4.html</a>
+
+        <strong>版权声明： </strong>
+        
+          文章内容仅用作学习和分享，转载请注明出处
+        
+      </pre>
+    </div>
+  
+
+</article>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/blog/">Home</a></li>
+        
+          <li><a href="/blog/archives/">Articles</a></li>
+        
+          <li><a href="/blog/about/">About</a></li>
+        
+          <li><a href="/blog/search/">Search</a></li>
+        
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#Builder%E6%A8%A1%E5%BC%8F"><span class="toc-number">1.</span> <span class="toc-text">Builder模式</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%B7%A5%E5%8E%82%E6%A8%A1%E5%BC%8F"><span class="toc-number">2.</span> <span class="toc-text">工厂模式</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8D%95%E4%BE%8B%E6%A8%A1%E5%BC%8F"><span class="toc-number">3.</span> <span class="toc-text">单例模式</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BB%A3%E7%90%86%E6%A8%A1%E5%BC%8F"><span class="toc-number">4.</span> <span class="toc-text">代理模式</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%BB%84%E5%90%88%E6%A8%A1%E5%BC%8F"><span class="toc-number">5.</span> <span class="toc-text">组合模式</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%A8%A1%E6%9D%BF%E6%96%B9%E6%B3%95%E6%A8%A1%E5%BC%8F"><span class="toc-number">6.</span> <span class="toc-text">模板方法模式</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%80%82%E9%85%8D%E5%99%A8%E6%A8%A1%E5%BC%8F"><span class="toc-number">7.</span> <span class="toc-text">适配器模式</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%A3%85%E9%A5%B0%E8%80%85%E6%A8%A1%E5%BC%8F"><span class="toc-number">8.</span> <span class="toc-text">装饰者模式</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%BF%AD%E4%BB%A3%E5%99%A8%E6%A8%A1%E5%BC%8F"><span class="toc-number">9.</span> <span class="toc-text">迭代器模式</span></a></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.facebook.com/sharer.php?u=https://www.cayzlh.com/2020/03/23/26b455b4.html"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://twitter.com/share?url=https://www.cayzlh.com/2020/03/23/26b455b4.html&text=Mybatis中用到的几种设计模式"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.linkedin.com/shareArticle?url=https://www.cayzlh.com/2020/03/23/26b455b4.html&title=Mybatis中用到的几种设计模式"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://pinterest.com/pin/create/bookmarklet/?url=https://www.cayzlh.com/2020/03/23/26b455b4.html&is_video=false&description=Mybatis中用到的几种设计模式"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Mybatis中用到的几种设计模式&body=Check out this article: https://www.cayzlh.com/2020/03/23/26b455b4.html"><i class="fas fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://getpocket.com/save?url=https://www.cayzlh.com/2020/03/23/26b455b4.html&title=Mybatis中用到的几种设计模式"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://reddit.com/submit?url=https://www.cayzlh.com/2020/03/23/26b455b4.html&title=Mybatis中用到的几种设计模式"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.stumbleupon.com/submit?url=https://www.cayzlh.com/2020/03/23/26b455b4.html&title=Mybatis中用到的几种设计模式"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://digg.com/submit?url=https://www.cayzlh.com/2020/03/23/26b455b4.html&title=Mybatis中用到的几种设计模式"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.tumblr.com/share/link?url=https://www.cayzlh.com/2020/03/23/26b455b4.html&name=Mybatis中用到的几种设计模式&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://news.ycombinator.com/submitlink?u=https://www.cayzlh.com/2020/03/23/26b455b4.html&t=Mybatis中用到的几种设计模式"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fas fa-bars fa-lg" aria-hidden="true"></i> Menu</a>
+        <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fas fa-list fa-lg" aria-hidden="true"></i> TOC</a>
+<!--        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fas fa-share-alt fa-lg" aria-hidden="true"></i> Share</a>-->
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    CAYZLH &copy;
+    
+    
+    2019-2021
+    粤ICP备20058712号-1
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        
+          <li><a href="/blog/tools/">tools</a></li>
+        
+          <li><a href="/blog/links/">links</a></li>
+        
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+<link rel="stylesheet" href="/blog/lib/font-awesome/css/all.min.css">
+
+
+<link rel="stylesheet" href="/blog/lib/justified-gallery/css/justifiedGallery.min.css">
+
+
+    <!-- jquery -->
+
+<script src="/blog/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/blog/lib/justified-gallery/js/jquery.justifiedGallery.min.js"></script>
+
+<!-- clipboard -->
+
+  
+<script src="/blog/lib/clipboard/clipboard.min.js"></script>
+
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"Copy to clipboard!\">";
+    btn += '<i class="far fa-clone"></i>';
+    btn += '</span>'; 
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "Copied!");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/blog/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Google Analytics -->
+
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-129095667-1"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'UA-129095667-1');
+    </script>
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Umami Analytics -->
+
+<!-- Disqus Comments -->
+
+
+</body>
+</html>

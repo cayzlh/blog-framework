@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="description" content="MyBatis基础支持层位于 Mybatis 整体架构的最底层，支撑着 Mybatis 的核心处理层，是整个框架的基石。基础支持层中封装了多个较为通用的、独立的模块，不仅仅为 Mybatis 提供基础支撑，也可以在合适的场景中直接复用。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="基础支持层——资源加载">
+<meta property="og:url" content="https://www.cayzlh.com/blog">
+<meta property="og:site_name" content="CAYZLH">
+<meta property="og:description" content="MyBatis基础支持层位于 Mybatis 整体架构的最底层，支撑着 Mybatis 的核心处理层，是整个框架的基石。基础支持层中封装了多个较为通用的、独立的模块，不仅仅为 Mybatis 提供基础支撑，也可以在合适的场景中直接复用。">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2020/05/21/2_c5SKkm.png">
+<meta property="og:image" content="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/08/image-20200608173325045_78JEcv.png">
+<meta property="og:image" content="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/08/image-20200608175854576_mu9XKh.png">
+<meta property="og:image" content="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/08/image-20200608214416619_RmQAqH.png">
+<meta property="og:image" content="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/08/image-20200608220219508_W9RlCv.png">
+<meta property="article:published_time" content="2019-10-27T01:09:42.000Z">
+<meta property="article:modified_time" content="2020-08-21T08:27:06.245Z">
+<meta property="article:author" content="🐳Ant丶">
+<meta property="article:tag" content="MyBatis">
+<meta property="article:tag" content="《MyBatis技术内幕》">
+<meta property="article:tag" content="基础支持层">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2020/05/21/2_c5SKkm.png">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/blog/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/blog/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/blog/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>基础支持层——资源加载</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/blog/css/style.css">
+
+    <!-- persian styles -->
+    
+      
+<link rel="stylesheet" href="/blog/css/rtl.css">
+
+    
+    <!-- rss -->
+    
+    
+      <link rel="alternate" href="/blog/true" title="CAYZLH" type="application/atom+xml">
+    
+<meta name="generator" content="Hexo 5.3.0"></head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fas fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fas fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fas fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a href="/blog/">Home</a></li>
+        
+          <li><a href="/blog/archives/">Articles</a></li>
+        
+          <li><a href="/blog/about/">About</a></li>
+        
+          <li><a href="/blog/search/">Search</a></li>
+        
+      </ul>
+    </span>
+    <br>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/blog/2019/10/28/899df03d.html"><i class="fas fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/blog/2019/10/26/899df03d.html"><i class="fas fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+<!--        <li><a class="icon" href="#"><i class="fas fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>-->
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous</span>
+      <span id="i-next" class="info" style="display:none;">Next</span>
+      <span id="i-top" class="info" style="display:none;">Back to top</span>
+      <span id="i-share" class="info" style="display:none;">Share post</span>
+    </span>
+    <br>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.facebook.com/sharer.php?u=https://www.cayzlh.com/2019/10/27/899df03d.html"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://twitter.com/share?url=https://www.cayzlh.com/2019/10/27/899df03d.html&text=基础支持层——资源加载"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.linkedin.com/shareArticle?url=https://www.cayzlh.com/2019/10/27/899df03d.html&title=基础支持层——资源加载"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://pinterest.com/pin/create/bookmarklet/?url=https://www.cayzlh.com/2019/10/27/899df03d.html&is_video=false&description=基础支持层——资源加载"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=基础支持层——资源加载&body=Check out this article: https://www.cayzlh.com/2019/10/27/899df03d.html"><i class="fas fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://getpocket.com/save?url=https://www.cayzlh.com/2019/10/27/899df03d.html&title=基础支持层——资源加载"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://reddit.com/submit?url=https://www.cayzlh.com/2019/10/27/899df03d.html&title=基础支持层——资源加载"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.stumbleupon.com/submit?url=https://www.cayzlh.com/2019/10/27/899df03d.html&title=基础支持层——资源加载"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://digg.com/submit?url=https://www.cayzlh.com/2019/10/27/899df03d.html&title=基础支持层——资源加载"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.tumblr.com/share/link?url=https://www.cayzlh.com/2019/10/27/899df03d.html&name=基础支持层——资源加载&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://news.ycombinator.com/submitlink?u=https://www.cayzlh.com/2019/10/27/899df03d.html&t=基础支持层——资源加载"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    <div id="toc">
+      <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%B1%BB%E5%8A%A0%E8%BD%BD%E5%99%A8"><span class="toc-number">1.</span> <span class="toc-text">类加载器</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#ClassLoaderWrapper"><span class="toc-number">2.</span> <span class="toc-text">ClassLoaderWrapper</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#ResolverUtil"><span class="toc-number">3.</span> <span class="toc-text">ResolverUtil</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#VFS"><span class="toc-number">4.</span> <span class="toc-text">VFS</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%8F%82%E8%80%83"><span class="toc-number">5.</span> <span class="toc-text">参考</span></a></li></ol>
+    </div>
+  </span>
+</div>
+
+    
+    <div class="content index py4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        基础支持层——资源加载
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">🐳Ant丶</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2019-10-27T01:09:42.000Z" itemprop="datePublished">2019-10-27</time>
+        
+      
+    </div>
+
+
+      
+    <div class="article-category">
+        <i class="fas fa-archive"></i>
+        <a class="category-link" href="/blog/categories/%E4%B9%A6%E7%B1%8D/">书籍</a> › <a class="category-link" href="/blog/categories/%E4%B9%A6%E7%B1%8D/%E3%80%8AMyBatis%E6%8A%80%E6%9C%AF%E5%86%85%E5%B9%95%E3%80%8B/">《MyBatis技术内幕》</a>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fas fa-tag"></i>
+        <a class="tag-link-link" href="/blog/tags/MyBatis/" rel="tag">MyBatis</a>, <a class="tag-link-link" href="/blog/tags/%E3%80%8AMyBatis%E6%8A%80%E6%9C%AF%E5%86%85%E5%B9%95%E3%80%8B/" rel="tag">《MyBatis技术内幕》</a>, <a class="tag-link-link" href="/blog/tags/%E5%9F%BA%E7%A1%80%E6%94%AF%E6%8C%81%E5%B1%82/" rel="tag">基础支持层</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <p>MyBatis基础支持层位于 Mybatis 整体架构的最底层，支撑着 Mybatis 的核心处理层，是整个框架的基石。基础支持层中封装了多个较为通用的、独立的模块，不仅仅为 Mybatis 提供基础支撑，也可以在合适的场景中直接复用。</p>
+<p><img src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2020/05/21/2_c5SKkm.png" alt="整体架构"></p>
+<blockquote>
+<p>这篇文章介绍MyBatis的资源加载模块</p>
+</blockquote>
+<h3 id="类加载器"><a href="#类加载器" class="headerlink" title="类加载器"></a>类加载器</h3><p>Java虚 拟 机中的类 加载 器(ClassLoader)负 责 加载 来 自文件系统 、网 络 或其他来 源的类 文 件。Java虚 拟 机中的类 加载 器默认 使用的是<strong>双 亲 委派模式</strong>，如图所示，其中有三种 默认 使 用 的 类 加 载 器 ，分 别 是 <code>Bootstrap ClassLoader</code>、<code>Extension ClassLoader</code> 和 <code>System ClassLoader</code> (也 被称 为 <code>ApplicationClassLoader</code>)，每种 类 加载 器都己经 确 定从 哪 个 位置加载 类 文件。</p>
+<p><code>BootstrapClassLoader</code>负 责 加载 JDK自带 的<code>rt.jar</code>包中的类 文件，它 是所有类 加载 器的父加载 器，<code>Bootstrap ClassLoader</code>没 有任何父类 加载 器。<code>Extension ClassLoader</code>负 责 加 载 Java的扩 展类 库 ，也就是从 <code>jre/lib/ext</code>目录 下或者<code>java.ext.dirs</code>系统 属 性指定的目录 下加载 类 。</p>
+<p><code>SystemClassLoader</code>负 责 从 <code>classpath</code>环 境变 量中加载 类 文件，<code>classpath</code>环 境变 量通常由<code>-classpath</code>或 <code>-cp</code>命令行选 项 来 定义 ，或 是 由 JAR中 Manifest文 件 的 classpath属 性指定。<code>System ClassLoader</code>是<code>ExtensionClassLoader</code>的子加载 器。</p>
+<p><img src="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/08/image-20200608173325045_78JEcv.png" alt="image-20200608173325045"></p>
+<p>根据双亲委派模式，在加载类文件时，子加载器首先会将加载请求委托给它的父加载器。</p>
+<p>父加载器会检测自己是否已经加载过该类，如果己加载则加载过程结束;如果未加载则请求继 续 向上传 递 ，直到BootstrapClassLoader。</p>
+<p>如果在请 求向上委托的过 程中，始终 未检 测 到该 类 己 加载 ，则 从 BootstrapClassLoader开 始尝 试 从 其对 应 路径 中加载 该 类 文件，如果加载 失败 则 由 子加载器继续尝试加载，直至发起加载请求的子加载器位为止。</p>
+<blockquote>
+<p>双 亲 委派模式可以保证 两 点:</p>
+<p>一是子加载 器可以使用父加载 器己加载 的类 ，而父加载 器无 法使用子加载 器已加载 的类 ;</p>
+<p>二是父加载 器已加载 过 的类 无法被子加载 器再次加载 。</p>
+<p>这 样 就可以保证 JVM的安全性和稳 定性。</p>
+</blockquote>
+<h3 id="ClassLoaderWrapper"><a href="#ClassLoaderWrapper" class="headerlink" title="ClassLoaderWrapper"></a>ClassLoaderWrapper</h3><p>上上一小节中了解了类 加载 器的常见 使用方式。在 MyBatis的 <code>IO</code> 包中封装 了 ClassLoader以及读 取资 源文件的相关 API。</p>
+<p>在 <code>IO</code>包 中 提 供 的 <code>ClassLoaderWrapper</code>是 一 个 <code>ClassLoader</code>的包装 器，其中包含了多个<code>ClassLoader</code>对 象。</p>
+<p>通过 调 整多个 类 加载 器的使用顺 序，<code>ClassLoaderWrapper</code>可以确 保返回给 系 统 使用的是正确 的类 加载 器。</p>
+<p>使 用 <code>ClassLoaderWrapper</code>就如同使用一个 <code>ClassLoader</code>对 象， <code>ClassLoaderWrapper</code>会 按照指定的顺 序依次检 测 其中封装 的<code>ClassLoader</code>对 象，并 从 中选 取第一 个 可用的<code>ClassLoader</code>完成相关 功能。</p>
+<p><code>ClassLoaderWrapper</code>的 主 要 功 能 可 以 分 为 三 类 ， 分 别 是 <code>getResourceAsURL()方 法</code> 、 <code>classForName()方法</code>、<code>getResourceAsStream()方法</code>，这 三个 方法都有多个 重载 ，这 三类 方法最终 都会 调 用参 数 为 <code>String</code>和<code>ClassLoader[]</code>的重载 。</p>
+<p><code>getResourceAsURL()</code>代码如下，其他的类似：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> URL <span class="title">getResourceAsURL</span><span class="params">(String resource, ClassLoader classLoader)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> getResourceAsURL(resource, getClassLoaders(classLoader));</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 返回ClassLoader[], 该方法指明类加载器的使用顺序</span></span><br><span class="line">ClassLoader[] getClassLoaders(ClassLoader classLoader) &#123;</span><br><span class="line">  <span class="keyword">return</span> <span class="keyword">new</span> ClassLoader[]&#123;</span><br><span class="line">    classLoader,</span><br><span class="line">    defaultClassLoader,</span><br><span class="line">    Thread.currentThread().getContextClassLoader(),</span><br><span class="line">    getClass().getClassLoader(),</span><br><span class="line">    systemClassLoader&#125;;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function">URL <span class="title">getResourceAsURL</span><span class="params">(String resource, ClassLoader[] classLoader)</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">  URL url;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">for</span> (ClassLoader cl : classLoader) &#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (<span class="keyword">null</span> != cl) &#123;</span><br><span class="line"></span><br><span class="line">      <span class="comment">// look for the resource as passed in...</span></span><br><span class="line">      url = cl.getResource(resource);</span><br><span class="line"></span><br><span class="line">      <span class="comment">// ...but some class loaders want this leading &quot;/&quot;, so we&#x27;ll add it</span></span><br><span class="line">      <span class="comment">// and try again if we didn&#x27;t find the resource</span></span><br><span class="line">      <span class="keyword">if</span> (<span class="keyword">null</span> == url) &#123;</span><br><span class="line">        url = cl.getResource(<span class="string">&quot;/&quot;</span> + resource);</span><br><span class="line">      &#125;</span><br><span class="line"></span><br><span class="line">      <span class="comment">// &quot;It&#x27;s always in the last place I look for it!&quot;</span></span><br><span class="line">      <span class="comment">// ... because only an idiot would keep looking for it after finding it, so stop looking already.</span></span><br><span class="line">      <span class="keyword">if</span> (<span class="keyword">null</span> != url) &#123;</span><br><span class="line">        <span class="keyword">return</span> url;</span><br><span class="line">      &#125;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// didn&#x27;t find it anywhere.</span></span><br><span class="line">  <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>Resources是一个 提供了多个 静 态 方法的工具类 ，其中封装 了一个 ClassLoaderWrapper类 型 的静 态 字段，Resources提供的这 些静 态 工具都是通过 调 用该 ClassLoaderWrapper对 象的相应 方 法实 现 的。</p>
+<h3 id="ResolverUtil"><a href="#ResolverUtil" class="headerlink" title="ResolverUtil"></a>ResolverUtil</h3><p><code>ResolverUtil</code>可以根据指定的条件查找指定包下的类 ，其中使用的条件由Test接口表示。 </p>
+<p><code>ResolverUtil</code>中使用<code>classLoader</code>字 段 (<code>ClassLoader</code>类 型)记 录 了当 前使用的类 加载 器，默认 情 况 下，使用的是当 前线 程上下文绑 定的<code>ClassLoader</code>，我们 可以通过 <code>setClassLoader()</code>方法修改使 用类加载器。</p>
+<p>MyBatis提供了两 个 常用的<code>Test</code>接口实 现 ，分别 是<code>IsA</code>和<code>AnnotatedWith</code>,如图 所示。 <code>IsA</code>用于检 测 类 是否继 承了指定的类 或接口，<code>AnnotatedWith</code>用于检 测 类 是否添加了指定的注解。 开 发 人员 也可以自己实 现 <code>Test</code>接口，实 现 指定条 件的检 测 。</p>
+<p><img src="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/08/image-20200608175854576_mu9XKh.png" alt="image-20200608175854576"></p>
+<p>Test接口中定义 了 matches()方法，它 用于检 测 指定类 是否符合条 件:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">Test</span> </span>&#123;</span><br><span class="line">  <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * Will be called repeatedly with candidate classes. Must return True if a class</span></span><br><span class="line"><span class="comment">     * is to be included in the results, false otherwise.</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">  <span class="function"><span class="keyword">boolean</span> <span class="title">matches</span><span class="params">(Class&lt;?&gt; type)</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><code>IsA</code>和 <code>AnnotatedWith</code>的具体 实 现 如下</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">IsA</span> <span class="keyword">implements</span> <span class="title">Test</span> </span>&#123;</span><br><span class="line">  <span class="keyword">private</span> Class&lt;?&gt; parent;</span><br><span class="line"></span><br><span class="line">  <span class="comment">/** Constructs an IsA test using the supplied Class as the parent class/interface. */</span></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="title">IsA</span><span class="params">(Class&lt;?&gt; parentType)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">this</span>.parent = parentType;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">/** Returns true if type is assignable to the parent type supplied in the constructor. */</span></span><br><span class="line">  <span class="meta">@Override</span></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">matches</span><span class="params">(Class&lt;?&gt; type)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> type != <span class="keyword">null</span> &amp;&amp; parent.isAssignableFrom(type);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="meta">@Override</span></span><br><span class="line">  <span class="function"><span class="keyword">public</span> String <span class="title">toString</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="string">&quot;is assignable to &quot;</span> + parent.getSimpleName();</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">AnnotatedWith</span> <span class="keyword">implements</span> <span class="title">Test</span> </span>&#123;</span><br><span class="line">  <span class="keyword">private</span> Class&lt;? extends Annotation&gt; annotation;</span><br><span class="line"></span><br><span class="line">  <span class="comment">/** Constructs an AnnotatedWith test for the specified annotation type. */</span></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="title">AnnotatedWith</span><span class="params">(Class&lt;? extends Annotation&gt; annotation)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">this</span>.annotation = annotation;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">/** Returns true if the type is annotated with the class provided to the constructor. */</span></span><br><span class="line">  <span class="meta">@Override</span></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">matches</span><span class="params">(Class&lt;?&gt; type)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> type != <span class="keyword">null</span> &amp;&amp; type.isAnnotationPresent(annotation);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="meta">@Override</span></span><br><span class="line">  <span class="function"><span class="keyword">public</span> String <span class="title">toString</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="string">&quot;annotated with @&quot;</span> + annotation.getSimpleName();</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>默认 情况 下，使用<code>Thread.currentThread().getContextClassLoader()</code>这 个 类 加载 器加载 符合条 件的类 ，我们 可以在调 用<code>find()</code>方法之前，调 用 <code>setClassLoader(ClassLoader)</code>设 置需要使用的 <code>ClassLoader</code>，这 个 <code>ClassLoader</code>可 以 从 <code>ClassLoaderWrapper</code>中 获 取 合 适 的 类 加 载 器 。</p>
+</blockquote>
+<p>ResolverUtil的使用案例：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">ResolverUtil&lt;ActionBean&gt; resolver = <span class="keyword">new</span> ResolverUtil&lt;ActionBean&gt;();</span><br><span class="line"><span class="comment">// 在pkg1和pkg2这个包下查找实现了ActionBean这个接口的类</span></span><br><span class="line">resolver.findImplementation(ActionBean.class,  pkg1, pkg2);</span><br><span class="line"><span class="comment">// 在pkg1包下查找符合CustomerTest条件的类</span></span><br><span class="line">resolver.find(<span class="keyword">new</span> CustomTest(), pkg1);</span><br><span class="line"><span class="comment">// 在pkg2包下查找符合CustomerTest条件的类</span></span><br><span class="line">resolver.find(<span class="keyword">new</span> CustomTest(), pkg2);</span><br><span class="line"><span class="comment">// 获取上面三次查找的结果</span></span><br><span class="line">Collection&lt;ActionBean&gt; beans = resolver.getClasses();</span><br></pre></td></tr></table></figure>
+<p><code>ResolverUtil.findImplementations()</code>方法和<code>ResolverUtil.findAnnotated()</code>方法都是依赖<code>RescolverUtil.find()</code>方法实现的，<code>findImplementations()</code>方法会创建<code>IsA</code>对象作为检测条件，<code>findAnnotated()</code>方法会创建<code>AnnotatedWith</code>对象作为检测条件。</p>
+<p><img src="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/08/image-20200608214416619_RmQAqH.png" alt="image-20200608214416619"></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> ResolverUtil&lt;T&gt; <span class="title">find</span><span class="params">(Test test, String packageName)</span> </span>&#123;</span><br><span class="line">  String path = getPackagePath(packageName);</span><br><span class="line"></span><br><span class="line">  <span class="keyword">try</span> &#123;</span><br><span class="line">    List&lt;String&gt; children = VFS.getInstance().list(path);</span><br><span class="line">    <span class="keyword">for</span> (String child : children) &#123;</span><br><span class="line">      <span class="keyword">if</span> (child.endsWith(<span class="string">&quot;.class&quot;</span>)) &#123;</span><br><span class="line">        addIfMatching(test, child);</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125; <span class="keyword">catch</span> (IOException ioe) &#123;</span><br><span class="line">    log.error(<span class="string">&quot;Could not read package: &quot;</span> + packageName, ioe);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> <span class="keyword">this</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title">addIfMatching</span><span class="params">(Test test, String fqn)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">try</span> &#123;</span><br><span class="line">    <span class="comment">// fqn是类所在完全限定名，即包括其所在包的包名</span></span><br><span class="line">    String externalName = fqn.substring(<span class="number">0</span>, fqn.indexOf(<span class="string">&#x27;.&#x27;</span>)).replace(<span class="string">&#x27;/&#x27;</span>, <span class="string">&#x27;.&#x27;</span>);</span><br><span class="line">    ClassLoader loader = getClassLoader();</span><br><span class="line">    <span class="keyword">if</span> (log.isDebugEnabled()) &#123;</span><br><span class="line">      log.debug(<span class="string">&quot;...&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    Class&lt;?&gt; type = loader.loadClass(externalName);</span><br><span class="line">    <span class="keyword">if</span> (test.matches(type)) &#123;</span><br><span class="line">      matches.add((Class&lt;T&gt;) type);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125; <span class="keyword">catch</span> (Throwable t) &#123;</span><br><span class="line">    log.warn(<span class="string">&quot;...&quot;</span>);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="VFS"><a href="#VFS" class="headerlink" title="VFS"></a>VFS</h3><p>VFS表示虚 拟 文件系统 (VirtualFileSystem),它 用来 査找 指定路径 下的资 源。VFS是一个 抽象类 ，MyBatis中提供了 JBoss6VFS和 DefaultVFS两 个 VFS的实 现 ，如图所示。用户 也可以提供自定义 的VFS实 现 类 。</p>
+<blockquote>
+<p>VFS采用单例模式实现</p>
+</blockquote>
+<p><img src="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/08/image-20200608220219508_W9RlCv.png" alt="image-20200608220219508"></p>
+<h3 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h3><ul>
+<li><p><strong>《MyBatis技术内幕》</strong></p>
+</li>
+<li><p>部分图片来源——<strong>《MyBatis技术内幕》</strong></p>
+</li>
+</ul>
+
+  </div>
+
+  
+    <div style="text-align:center;width:100%">
+      <img src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/640-2.gif">
+    </div>
+  
+
+  
+    <div>
+      <h4>版权声明</h4>
+      <pre>
+        
+        <strong>本文来源： </strong><a href="https://www.cayzlh.com/blog" title="🐳Ant丶" rel="noopener external nofollow noreferrer" target="_blank">https://www.cayzlh.com/blog</a>
+
+        <strong>本文链接：</strong><a href="https://www.cayzlh.com/2019/10/27/899df03d.html" title="/blog/%E5%9F%BA%E7%A1%80%E6%94%AF%E6%8C%81%E5%B1%82%E2%80%94%E2%80%94%E8%B5%84%E6%BA%90%E5%8A%A0%E8%BD%BD">https://www.cayzlh.com/2019/10/27/899df03d.html</a>
+
+        <strong>版权声明： </strong>
+        
+          文章内容仅用作学习和分享，转载请注明出处
+        
+      </pre>
+    </div>
+  
+
+</article>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/blog/">Home</a></li>
+        
+          <li><a href="/blog/archives/">Articles</a></li>
+        
+          <li><a href="/blog/about/">About</a></li>
+        
+          <li><a href="/blog/search/">Search</a></li>
+        
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%B1%BB%E5%8A%A0%E8%BD%BD%E5%99%A8"><span class="toc-number">1.</span> <span class="toc-text">类加载器</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#ClassLoaderWrapper"><span class="toc-number">2.</span> <span class="toc-text">ClassLoaderWrapper</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#ResolverUtil"><span class="toc-number">3.</span> <span class="toc-text">ResolverUtil</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#VFS"><span class="toc-number">4.</span> <span class="toc-text">VFS</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%8F%82%E8%80%83"><span class="toc-number">5.</span> <span class="toc-text">参考</span></a></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.facebook.com/sharer.php?u=https://www.cayzlh.com/2019/10/27/899df03d.html"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://twitter.com/share?url=https://www.cayzlh.com/2019/10/27/899df03d.html&text=基础支持层——资源加载"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.linkedin.com/shareArticle?url=https://www.cayzlh.com/2019/10/27/899df03d.html&title=基础支持层——资源加载"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://pinterest.com/pin/create/bookmarklet/?url=https://www.cayzlh.com/2019/10/27/899df03d.html&is_video=false&description=基础支持层——资源加载"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=基础支持层——资源加载&body=Check out this article: https://www.cayzlh.com/2019/10/27/899df03d.html"><i class="fas fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://getpocket.com/save?url=https://www.cayzlh.com/2019/10/27/899df03d.html&title=基础支持层——资源加载"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://reddit.com/submit?url=https://www.cayzlh.com/2019/10/27/899df03d.html&title=基础支持层——资源加载"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.stumbleupon.com/submit?url=https://www.cayzlh.com/2019/10/27/899df03d.html&title=基础支持层——资源加载"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://digg.com/submit?url=https://www.cayzlh.com/2019/10/27/899df03d.html&title=基础支持层——资源加载"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.tumblr.com/share/link?url=https://www.cayzlh.com/2019/10/27/899df03d.html&name=基础支持层——资源加载&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://news.ycombinator.com/submitlink?u=https://www.cayzlh.com/2019/10/27/899df03d.html&t=基础支持层——资源加载"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fas fa-bars fa-lg" aria-hidden="true"></i> Menu</a>
+        <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fas fa-list fa-lg" aria-hidden="true"></i> TOC</a>
+<!--        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fas fa-share-alt fa-lg" aria-hidden="true"></i> Share</a>-->
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    CAYZLH &copy;
+    
+    
+    2019-2021
+    粤ICP备20058712号-1
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        
+          <li><a href="/blog/tools/">tools</a></li>
+        
+          <li><a href="/blog/links/">links</a></li>
+        
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+<link rel="stylesheet" href="/blog/lib/font-awesome/css/all.min.css">
+
+
+<link rel="stylesheet" href="/blog/lib/justified-gallery/css/justifiedGallery.min.css">
+
+
+    <!-- jquery -->
+
+<script src="/blog/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/blog/lib/justified-gallery/js/jquery.justifiedGallery.min.js"></script>
+
+<!-- clipboard -->
+
+  
+<script src="/blog/lib/clipboard/clipboard.min.js"></script>
+
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"Copy to clipboard!\">";
+    btn += '<i class="far fa-clone"></i>';
+    btn += '</span>'; 
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "Copied!");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/blog/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Google Analytics -->
+
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-129095667-1"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'UA-129095667-1');
+    </script>
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Umami Analytics -->
+
+<!-- Disqus Comments -->
+
+
+</body>
+</html>

@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="description" content="在一开始学习 Spring 的时候，我们就接触 IoC 了，作为 Spring 第一个最核心的概念，我们在解读它源码之前一定需要对其有深入的认识，本篇为【死磕 Spring】系列博客的第一篇博文，主要介绍 IoC 基本概念和各个组件。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="IOC之深入理解SpringIoC">
+<meta property="og:url" content="http://cmsblogs.com/?p=2652">
+<meta property="og:site_name" content="CAYZLH">
+<meta property="og:description" content="在一开始学习 Spring 的时候，我们就接触 IoC 了，作为 Spring 第一个最核心的概念，我们在解读它源码之前一定需要对其有深入的认识，本篇为【死磕 Spring】系列博客的第一篇博文，主要介绍 IoC 基本概念和各个组件。">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/kJbaSJ.jpg">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/KyiN5i.jpg">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/gUeoM5.jpg">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/FKcAl6.jpg">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/EXiivT.jpg">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/ROyten.jpg">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/le62Sh.jpg">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/NFNQp8.jpg">
+<meta property="article:published_time" content="2020-01-01T15:41:06.000Z">
+<meta property="article:modified_time" content="2020-05-21T13:38:03.873Z">
+<meta property="article:author" content="🐳Ant丶">
+<meta property="article:tag" content="Spring">
+<meta property="article:tag" content="死磕Spring">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/kJbaSJ.jpg">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/blog/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/blog/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/blog/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>IOC之深入理解SpringIoC</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/blog/css/style.css">
+
+    <!-- persian styles -->
+    
+      
+<link rel="stylesheet" href="/blog/css/rtl.css">
+
+    
+    <!-- rss -->
+    
+    
+      <link rel="alternate" href="/blog/true" title="CAYZLH" type="application/atom+xml">
+    
+<meta name="generator" content="Hexo 5.3.0"></head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fas fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fas fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fas fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a href="/blog/">Home</a></li>
+        
+          <li><a href="/blog/archives/">Articles</a></li>
+        
+          <li><a href="/blog/about/">About</a></li>
+        
+          <li><a href="/blog/search/">Search</a></li>
+        
+      </ul>
+    </span>
+    <br>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/blog/2020/01/02/8f7aa5ac.html"><i class="fas fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/blog/2019/10/31/fce458a9.html"><i class="fas fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+<!--        <li><a class="icon" href="#"><i class="fas fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>-->
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous</span>
+      <span id="i-next" class="info" style="display:none;">Next</span>
+      <span id="i-top" class="info" style="display:none;">Back to top</span>
+      <span id="i-share" class="info" style="display:none;">Share post</span>
+    </span>
+    <br>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.facebook.com/sharer.php?u=https://www.cayzlh.com/2020/01/01/a426e6ea.html"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://twitter.com/share?url=https://www.cayzlh.com/2020/01/01/a426e6ea.html&text=IOC之深入理解SpringIoC"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.linkedin.com/shareArticle?url=https://www.cayzlh.com/2020/01/01/a426e6ea.html&title=IOC之深入理解SpringIoC"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://pinterest.com/pin/create/bookmarklet/?url=https://www.cayzlh.com/2020/01/01/a426e6ea.html&is_video=false&description=IOC之深入理解SpringIoC"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=IOC之深入理解SpringIoC&body=Check out this article: https://www.cayzlh.com/2020/01/01/a426e6ea.html"><i class="fas fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://getpocket.com/save?url=https://www.cayzlh.com/2020/01/01/a426e6ea.html&title=IOC之深入理解SpringIoC"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://reddit.com/submit?url=https://www.cayzlh.com/2020/01/01/a426e6ea.html&title=IOC之深入理解SpringIoC"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.stumbleupon.com/submit?url=https://www.cayzlh.com/2020/01/01/a426e6ea.html&title=IOC之深入理解SpringIoC"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://digg.com/submit?url=https://www.cayzlh.com/2020/01/01/a426e6ea.html&title=IOC之深入理解SpringIoC"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.tumblr.com/share/link?url=https://www.cayzlh.com/2020/01/01/a426e6ea.html&name=IOC之深入理解SpringIoC&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://news.ycombinator.com/submitlink?u=https://www.cayzlh.com/2020/01/01/a426e6ea.html&t=IOC之深入理解SpringIoC"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    <div id="toc">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%91%98%E8%A6%81"><span class="toc-number">1.</span> <span class="toc-text">摘要</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#IOC-%E7%90%86%E8%AE%BA"><span class="toc-number">2.</span> <span class="toc-text">IOC 理论</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%9E%84%E9%80%A0%E5%99%A8%E6%B3%A8%E5%85%A5"><span class="toc-number">2.1.</span> <span class="toc-text">构造器注入</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#setter-%E6%96%B9%E6%B3%95%E6%B3%A8%E5%85%A5"><span class="toc-number">2.2.</span> <span class="toc-text">setter 方法注入</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%8E%A5%E5%8F%A3%E6%96%B9%E5%BC%8F%E6%B3%A8%E5%85%A5"><span class="toc-number">2.3.</span> <span class="toc-text">接口方式注入</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%90%84%E4%B8%AA%E7%BB%84%E4%BB%B6"><span class="toc-number">3.</span> <span class="toc-text">各个组件</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Resource%E4%BD%93%E7%B3%BB"><span class="toc-number">3.1.</span> <span class="toc-text">Resource体系</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#BeanFactory-%E4%BD%93%E7%B3%BB"><span class="toc-number">3.2.</span> <span class="toc-text">BeanFactory 体系</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Beandefinition-%E4%BD%93%E7%B3%BB"><span class="toc-number">3.3.</span> <span class="toc-text">Beandefinition 体系</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#BeandefinitionReader%E4%BD%93%E7%B3%BB"><span class="toc-number">3.4.</span> <span class="toc-text">BeandefinitionReader体系</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#ApplicationContext%E4%BD%93%E7%B3%BB"><span class="toc-number">3.5.</span> <span class="toc-text">ApplicationContext体系</span></a></li></ol></li></ol>
+    </div>
+  </span>
+</div>
+
+    
+    <div class="content index py4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        IOC之深入理解SpringIoC
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">Java技术驿站-chenssy-【死磕 Spring】—– IOC之深入理解SpringIoC</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2020-01-01T15:41:06.000Z" itemprop="datePublished">2020-01-01</time>
+        
+      
+    </div>
+
+
+      
+    <div class="article-category">
+        <i class="fas fa-archive"></i>
+        <a class="category-link" href="/blog/categories/Spring/">Spring</a> › <a class="category-link" href="/blog/categories/Spring/%E3%80%8ASpring%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E3%80%8B/">《Spring源码分析》</a>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fas fa-tag"></i>
+        <a class="tag-link-link" href="/blog/tags/Spring/" rel="tag">Spring</a>, <a class="tag-link-link" href="/blog/tags/%E6%AD%BB%E7%A3%95Spring/" rel="tag">死磕Spring</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <h2 id="摘要"><a href="#摘要" class="headerlink" title="摘要"></a>摘要</h2><blockquote>
+<p>本文作者：chenssy</p>
+<p>出处：<a target="_blank" rel="external nofollow noopener noreferrer" href="http://cmsblogs.com/?p=2652">http://cmsblogs.com/?p=2652</a></p>
+<p>在学习<code>Spring源码</code>的过程中发现的好站+好贴，感谢作者。Spring版本：<strong>Spring 5.0.6.RELEASE</strong></p>
+</blockquote>
+<h2 id="IOC-理论"><a href="#IOC-理论" class="headerlink" title="IOC 理论"></a>IOC 理论</h2><p>IoC 全称为 <code>Inversion of Control</code>，翻译为 “控制反转”，它还有一个别名为 DI（<code>Dependency Injection</code>）,即依赖注入。</p>
+<p>如何理解“控制反转”好呢？理解好它的关键在于我们需要回答如下四个问题：</p>
+<ol>
+<li><strong>谁控制谁</strong></li>
+<li><strong>控制什么</strong></li>
+<li><strong>为何是反转</strong></li>
+<li><strong>哪些方面反转了</strong></li>
+</ol>
+<p>在回答这四个问题之前，我们先看 IOC 的定义：</p>
+<blockquote>
+<p><strong>所谓 IOC ，就是由 Spring IOC 容器来负责对象的生命周期和对象之间的关系</strong></p>
+</blockquote>
+<p>上面这句话是整个 IoC 理论的核心。如何来理解这句话？我们引用一个例子来走阐述（看完该例子上面四个问题也就不是问题了）。</p>
+<p>以找女朋友为例（对于程序猿来说这个值得探究的问题）。一般情况下我们是如何来找女朋友的呢？首先我们需要根据自己的需求（漂亮、身材好、性格好）找一个妹子，然后到处打听她的兴趣爱好、微信、电话号码，然后各种投其所好送其所要，最后追到手。如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 年轻小伙子</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">YoungMan</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> BeautifulGirl beautifulGirl;</span><br><span class="line"></span><br><span class="line">    YoungMan()&#123;</span><br><span class="line">        <span class="comment">// 可能你比较牛逼，指腹为婚</span></span><br><span class="line">        <span class="comment">// beautifulGirl = new BeautifulGirl();</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">setBeautifulGirl</span><span class="params">(BeautifulGirl beautifulGirl)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">this</span>.beautifulGirl = beautifulGirl;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span></span>&#123;</span><br><span class="line">        YoungMan you = <span class="keyword">new</span> YoungMan();</span><br><span class="line">        BeautifulGirl beautifulGirl = <span class="keyword">new</span> BeautifulGirl(<span class="string">&quot;你的各种条件&quot;</span>);</span><br><span class="line">        beautifulGirl.setxxx(<span class="string">&quot;各种投其所好&quot;</span>);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 然后你有女票了</span></span><br><span class="line">        you.setBeautifulGirl(beautifulGirl);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这就是我们通常做事的方式，如果我们需要某个对象，一般都是采用这种直接创建的方式(<code>new BeautifulGirl()</code>)，这个过程复杂而又繁琐，而且我们必须要面对每个环节，同时使用完成之后我们还要负责销毁它，在这种情况下我们的对象与它所依赖的对象耦合在一起。</p>
+<p>其实我们需要思考一个问题？我们每次用到自己依赖的对象真的需要自己去创建吗？我们知道，我们依赖对象其实并不是依赖该对象本身，而是依赖它所提供的服务，只要在我们需要它的时候，它能够及时提供服务即可，至于它是我们主动去创建的还是别人送给我们的，其实并不是那么重要。再说了，相比于自己千辛万苦去创建它还要管理、善后而言，直接有人送过来是不是显得更加好呢？</p>
+<p>这个给我们送东西的“人” 就是 IoC，在上面的例子中，它就相当于一个婚介公司，作为一个婚介公司它管理着很多男男女女的资料，当我们需要一个女朋友的时候，直接跟婚介公司提出我们的需求，婚介公司则会根据我们的需求提供一个妹子给我们，我们只需要负责谈恋爱，生猴子就行了。你看，这样是不是很简单明了。</p>
+<p>诚然，作为婚介公司的 IoC 帮我们省略了找女朋友的繁杂过程，将原来的主动寻找变成了现在的被动接受（符合我们的要求），更加简洁轻便。你想啊，原来你还得鞍马前后，各种巴结，什么东西都需要自己去亲力亲为，现在好了，直接有人把现成的送过来，多么美妙的事情啊。所以，简单点说，IoC 的理念就是<strong>让别人为你服务</strong>，如下图（<strong>摘自Spring揭秘</strong>）：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/kJbaSJ.jpg" alt="kJbaSJ"></p>
+<p>在没有引入 IoC 的时候，被注入的对象直接依赖于被依赖的对象，有了 IoC 后，两者及其他们的关系都是通过 Ioc Service Provider 来统一管理维护的。被注入的对象需要什么，直接跟 IoC Service Provider 打声招呼，后者就会把相应的被依赖对象注入到被注入的对象中，从而达到 IOC Service Provider 为被注入对象服务的目的。<strong>所以 IoC 就是这么简单！原来是需要什么东西自己去拿，现在是需要什么东西让别人（IOC Service Provider）送过来</strong></p>
+<p>现在在看上面那四个问题，答案就显得非常明显了:</p>
+<ol>
+<li><strong>谁控制谁</strong>：在传统的开发模式下，我们都是采用直接 new 一个对象的方式来创建对象，也就是说你依赖的对象直接由你自己控制，但是有了 IOC 容器后，则直接由 IoC 容器来控制。所以“谁控制谁”，当然是 IoC 容器控制对象。</li>
+<li><strong>控制什么</strong>：控制对象。</li>
+<li><strong>为何是反转</strong>：没有 IoC 的时候我们都是在自己对象中主动去创建被依赖的对象，这是正转。但是有了 IoC 后，所依赖的对象直接由 IoC 容器创建后注入到被注入的对象中，依赖的对象由原来的主动获取变成被动接受，所以是反转。</li>
+<li><strong>哪些方面反转了</strong>：所依赖对象的获取被反转了。</li>
+</ol>
+<p>妹子有了，但是如何拥有妹子呢？这也是一门学问。</p>
+<ol>
+<li>可能你比较牛逼，刚刚出生的时候就指腹为婚了。</li>
+<li>大多数情况我们还是会考虑自己想要什么样的妹子，所以还是需要向婚介公司打招呼的。</li>
+<li>还有一种情况就是，你根本就不知道自己想要什么样的妹子，直接跟婚介公司说，我就要一个这样的妹子。</li>
+</ol>
+<p>所以，<code>IOC Service Provider</code> 为被注入对象提供被依赖对象也有如下几种方式：<code>构造方法注入</code>、<code>setter方法注入</code>、<code>接口注入</code>。</p>
+<h3 id="构造器注入"><a href="#构造器注入" class="headerlink" title="构造器注入"></a>构造器注入</h3><p>构造器注入，顾名思义就是被注入的对象通过在其构造方法中声明依赖对象的参数列表，让外部知道它需要哪些依赖对象。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">YoungMan(BeautifulGirl beautifulGirl)&#123;</span><br><span class="line">        <span class="keyword">this</span>.beautifulGirl = beautifulGirl;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>构造器注入方式比较直观，对象构造完毕后就可以直接使用，这就好比你出生你家里就给你指定了你媳妇。</p>
+<h3 id="setter-方法注入"><a href="#setter-方法注入" class="headerlink" title="setter 方法注入"></a>setter 方法注入</h3><p>对于 JavaBean 对象而言，我们一般都是通过 getter 和 setter 方法来访问和设置对象的属性。所以，当前对象只需要为其所依赖的对象提供相对应的 setter 方法，就可以通过该方法将相应的依赖对象设置到被注入对象中。如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">YoungMan</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> BeautifulGirl beautifulGirl;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">setBeautifulGirl</span><span class="params">(BeautifulGirl beautifulGirl)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">this</span>.beautifulGirl = beautifulGirl;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>相比于构造器注入，setter 方式注入会显得比较宽松灵活些，它可以在任何时候进行注入（当然是在使用依赖对象之前），这就好比你可以先把自己想要的妹子想好了，然后再跟婚介公司打招呼，你可以要林志玲款式的，赵丽颖款式的，甚至凤姐哪款的，随意性较强。</p>
+<h3 id="接口方式注入"><a href="#接口方式注入" class="headerlink" title="接口方式注入"></a>接口方式注入</h3><p>接口方式注入显得比较霸道，因为它需要被依赖的对象实现不必要的接口，带有侵入性。一般都不推荐这种方式。</p>
+<hr>
+<p>关于 IOC 理论部分，笔者不在阐述，这里推荐几篇博客阅读：</p>
+<ul>
+<li><a target="_blank" rel="external nofollow noopener noreferrer" href="http://www.cnblogs.com/xdp-gacl/p/4249939.html">谈谈对Spring IOC的理解</a>：<a target="_blank" rel="external nofollow noopener noreferrer" href="http://www.cnblogs.com/xdp-gacl/p/4249939.html">http://www.cnblogs.com/xdp-gacl/p/4249939.html</a></li>
+<li>[Spring的IOC原理<a target="_blank" rel="external nofollow noopener noreferrer" href="https://blog.csdn.net/m13666368773/article/details/7802126">通俗解释一下]</a>：<a target="_blank" rel="external nofollow noopener noreferrer" href="https://blog.csdn.net/m13666368773/article/details/7802126">https://blog.csdn.net/m13666368773/article/details/7802126</a></li>
+<li><a target="_blank" rel="external nofollow noopener noreferrer" href="https://blog.csdn.net/it_man/article/details/4402245">spring ioc原理（看完后大家可以自己写一个spring）</a>：<a target="_blank" rel="external nofollow noopener noreferrer" href="https://blog.csdn.net/it_man/article/details/4402245">https://blog.csdn.net/it_man/article/details/4402245</a></li>
+</ul>
+<h2 id="各个组件"><a href="#各个组件" class="headerlink" title="各个组件"></a>各个组件</h2><p>先看下图（摘自:<a target="_blank" rel="external nofollow noopener noreferrer" href="http://singleant.iteye.com/blog/1177358%EF%BC%89">http://singleant.iteye.com/blog/1177358）</a></p>
+<p><img src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/KyiN5i.jpg" alt="KyiN5i"></p>
+<p>该图为 <code>ClassPathXmlApplicationContext</code> 的类继承体系结构，虽然只有一部分，但是它基本上包含了 IOC 体系中大部分的核心类和接口。</p>
+<p>下面我们就针对这个图进行简单的拆分和补充说明。</p>
+<h3 id="Resource体系"><a href="#Resource体系" class="headerlink" title="Resource体系"></a>Resource体系</h3><p><code>Resource</code>，对资源的抽象，它的每一个实现类都代表了一种资源的访问策略，如<code>ClasspathResource</code> 、 <code>URLResource</code> ，<code>FileSystemResource</code> 等。</p>
+<p>[<img src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/gUeoM5.jpg" alt="gUeoM5"></p>
+<p>有了资源，就应该有资源加载，<code>Spring</code> 利用 <code>ResourceLoader</code> 来进行统一资源加载，类图如下：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/FKcAl6.jpg" alt="FKcAl6"></p>
+<h3 id="BeanFactory-体系"><a href="#BeanFactory-体系" class="headerlink" title="BeanFactory 体系"></a>BeanFactory 体系</h3><p><code>BeanFactory</code> 是一个非常纯粹的 <code>bean</code> 容器，它是 <code>IOC</code> 必备的数据结构，其中 <code>BeanDefinition</code> 是她的基本结构，它内部维护着一个 <code>BeanDefinition map</code> ，并可根据 <code>BeanDefinition</code> 的描述进行 <code>bean</code> 的创建和管理。</p>
+<p><img src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/EXiivT.jpg" alt="EXiivT"></p>
+<p><code>BeanFacoty</code> 有三个直接子类 <code>ListableBeanFactory</code>、<code>HierarchicalBeanFactory</code> 和 <code>AutowireCapableBeanFactory</code>，<code>DefaultListableBeanFactory</code> 为最终默认实现，它实现了所有接口。</p>
+<h3 id="Beandefinition-体系"><a href="#Beandefinition-体系" class="headerlink" title="Beandefinition 体系"></a>Beandefinition 体系</h3><p><code>BeanDefinition</code> 用来描述 <code>Spring</code> 中的 <code>Bean</code> 对象。</p>
+<p><img src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/ROyten.jpg" alt="ROyten"></p>
+<h3 id="BeandefinitionReader体系"><a href="#BeandefinitionReader体系" class="headerlink" title="BeandefinitionReader体系"></a>BeandefinitionReader体系</h3><p><code>BeanDefinitionReader</code> 的作用是读取 <code>Spring</code> 的配置文件的内容，并将其转换成 <code>Ioc</code> 容器内部的数据结构：<code>BeanDefinition</code>。</p>
+<p>[<img src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/le62Sh.jpg" alt="le62Sh"></p>
+<h3 id="ApplicationContext体系"><a href="#ApplicationContext体系" class="headerlink" title="ApplicationContext体系"></a>ApplicationContext体系</h3><p>这个就是大名鼎鼎的 <code>Spring</code> 容器，它叫做应用上下文，与我们应用息息相关，她继承 <code>BeanFactory</code>，所以它是 <code>BeanFactory</code> 的扩展升级版，如果<code>BeanFactory</code> 是屌丝的话，那么 <code>ApplicationContext</code> 则是名副其实的高富帅。由于 <code>ApplicationContext</code> 的结构就决定了它与 <code>BeanFactory</code> 的不同，其主要区别有：</p>
+<ol>
+<li>继承 <code>MessageSource</code>，提供国际化的标准访问策略。</li>
+<li>继承 <code>ApplicationEventPublisher</code> ，提供强大的事件机制。</li>
+<li>扩展 <code>ResourceLoader</code>，可以用来加载多个 <code>Resource</code>，可以灵活访问不同的资源。</li>
+<li>对 <code>Web</code> 应用的支持。</li>
+</ol>
+<p>下图来源：<a target="_blank" rel="external nofollow noopener noreferrer" href="https://blog.csdn.net/yujin753/article/details/47043143">https://blog.csdn.net/yujin753/article/details/47043143</a></p>
+<p><img src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/NFNQp8.jpg" alt="NFNQp8"></p>
+<p>上面五个体系可以说是<code>Spring IoC</code>中最核心的部分，后面博文也是针对这五个部分进行源码分析。其实 <code>IoC</code> 咋一看还是挺简单的，无非就是将配置文件（暂且认为是 <code>xml</code> 文件）进行解析（分析 <code>xml</code> 谁不会啊），然后放到一个 <code>Map</code> 里面就差不多了，初看有道理，其实要面临的问题还是有很多的，下面就劳烦各位看客跟着 LZ 博客来一步一步揭开 <code>Spring IoC</code> 的神秘面纱。</p>
+<blockquote>
+<p><strong>此系列博文为 LZ 学习、研究 Spring 机制和源码的学习笔记，会涉及参考别人的博文和书籍内容，如有雷同，纯属借鉴，当然 LZ 会标明参考来源。同时由于知识面和能力的问题，文章中难免会出现错误之处，如有，望各位大佬指出，不胜感激</strong>。 <strong>LZ 写此系列博客时，Spring 最新版本为 5.0.6.RELEASE ，所以此系列博客所有源码来源均为 5.0.6.RELEASE</strong>。</p>
+</blockquote>
+
+  </div>
+
+  
+    <div style="text-align:center;width:100%">
+      <img src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/640-2.gif">
+    </div>
+  
+
+  
+    <div>
+      <h4>版权声明</h4>
+      <pre>
+        
+        <strong>本文来源： </strong><a href="http://cmsblogs.com/?p=2652" title="Java技术驿站-chenssy-【死磕 Spring】—– IOC之深入理解SpringIoC" rel="external nofollow noopener noreferrer" target="_blank">http://cmsblogs.com/?p=2652</a>
+
+        <strong>本文链接：</strong><a href="https://www.cayzlh.com/2020/01/01/a426e6ea.html" title="/blog/IOC%E4%B9%8B%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3SpringIoC">https://www.cayzlh.com/2020/01/01/a426e6ea.html</a>
+
+        <strong>版权声明： </strong>
+        
+          文章内容仅用作学习和分享，转载请注明出处
+        
+      </pre>
+    </div>
+  
+
+</article>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/blog/">Home</a></li>
+        
+          <li><a href="/blog/archives/">Articles</a></li>
+        
+          <li><a href="/blog/about/">About</a></li>
+        
+          <li><a href="/blog/search/">Search</a></li>
+        
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%91%98%E8%A6%81"><span class="toc-number">1.</span> <span class="toc-text">摘要</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#IOC-%E7%90%86%E8%AE%BA"><span class="toc-number">2.</span> <span class="toc-text">IOC 理论</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%9E%84%E9%80%A0%E5%99%A8%E6%B3%A8%E5%85%A5"><span class="toc-number">2.1.</span> <span class="toc-text">构造器注入</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#setter-%E6%96%B9%E6%B3%95%E6%B3%A8%E5%85%A5"><span class="toc-number">2.2.</span> <span class="toc-text">setter 方法注入</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%8E%A5%E5%8F%A3%E6%96%B9%E5%BC%8F%E6%B3%A8%E5%85%A5"><span class="toc-number">2.3.</span> <span class="toc-text">接口方式注入</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%90%84%E4%B8%AA%E7%BB%84%E4%BB%B6"><span class="toc-number">3.</span> <span class="toc-text">各个组件</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Resource%E4%BD%93%E7%B3%BB"><span class="toc-number">3.1.</span> <span class="toc-text">Resource体系</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#BeanFactory-%E4%BD%93%E7%B3%BB"><span class="toc-number">3.2.</span> <span class="toc-text">BeanFactory 体系</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Beandefinition-%E4%BD%93%E7%B3%BB"><span class="toc-number">3.3.</span> <span class="toc-text">Beandefinition 体系</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#BeandefinitionReader%E4%BD%93%E7%B3%BB"><span class="toc-number">3.4.</span> <span class="toc-text">BeandefinitionReader体系</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#ApplicationContext%E4%BD%93%E7%B3%BB"><span class="toc-number">3.5.</span> <span class="toc-text">ApplicationContext体系</span></a></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.facebook.com/sharer.php?u=https://www.cayzlh.com/2020/01/01/a426e6ea.html"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://twitter.com/share?url=https://www.cayzlh.com/2020/01/01/a426e6ea.html&text=IOC之深入理解SpringIoC"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.linkedin.com/shareArticle?url=https://www.cayzlh.com/2020/01/01/a426e6ea.html&title=IOC之深入理解SpringIoC"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://pinterest.com/pin/create/bookmarklet/?url=https://www.cayzlh.com/2020/01/01/a426e6ea.html&is_video=false&description=IOC之深入理解SpringIoC"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=IOC之深入理解SpringIoC&body=Check out this article: https://www.cayzlh.com/2020/01/01/a426e6ea.html"><i class="fas fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://getpocket.com/save?url=https://www.cayzlh.com/2020/01/01/a426e6ea.html&title=IOC之深入理解SpringIoC"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://reddit.com/submit?url=https://www.cayzlh.com/2020/01/01/a426e6ea.html&title=IOC之深入理解SpringIoC"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.stumbleupon.com/submit?url=https://www.cayzlh.com/2020/01/01/a426e6ea.html&title=IOC之深入理解SpringIoC"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://digg.com/submit?url=https://www.cayzlh.com/2020/01/01/a426e6ea.html&title=IOC之深入理解SpringIoC"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.tumblr.com/share/link?url=https://www.cayzlh.com/2020/01/01/a426e6ea.html&name=IOC之深入理解SpringIoC&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://news.ycombinator.com/submitlink?u=https://www.cayzlh.com/2020/01/01/a426e6ea.html&t=IOC之深入理解SpringIoC"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fas fa-bars fa-lg" aria-hidden="true"></i> Menu</a>
+        <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fas fa-list fa-lg" aria-hidden="true"></i> TOC</a>
+<!--        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fas fa-share-alt fa-lg" aria-hidden="true"></i> Share</a>-->
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    CAYZLH &copy;
+    
+    
+    2019-2021
+    粤ICP备20058712号-1
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        
+          <li><a href="/blog/tools/">tools</a></li>
+        
+          <li><a href="/blog/links/">links</a></li>
+        
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+<link rel="stylesheet" href="/blog/lib/font-awesome/css/all.min.css">
+
+
+<link rel="stylesheet" href="/blog/lib/justified-gallery/css/justifiedGallery.min.css">
+
+
+    <!-- jquery -->
+
+<script src="/blog/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/blog/lib/justified-gallery/js/jquery.justifiedGallery.min.js"></script>
+
+<!-- clipboard -->
+
+  
+<script src="/blog/lib/clipboard/clipboard.min.js"></script>
+
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"Copy to clipboard!\">";
+    btn += '<i class="far fa-clone"></i>';
+    btn += '</span>'; 
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "Copied!");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/blog/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Google Analytics -->
+
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-129095667-1"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'UA-129095667-1');
+    </script>
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Umami Analytics -->
+
+<!-- Disqus Comments -->
+
+
+</body>
+</html>

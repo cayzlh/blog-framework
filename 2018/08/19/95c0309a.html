@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="description" content="认识JVM，了解内存区域控制参数及对应溢出异常">
+<meta property="og:type" content="article">
+<meta property="og:title" content="JVM (内存区域控制参数及对应溢出异常)">
+<meta property="og:url" content="https://www.cayzlh.com/blog">
+<meta property="og:site_name" content="CAYZLH">
+<meta property="og:description" content="认识JVM，了解内存区域控制参数及对应溢出异常">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2018-08-19T09:16:34.000Z">
+<meta property="article:modified_time" content="2020-06-22T01:29:05.978Z">
+<meta property="article:author" content="🐳Ant丶">
+<meta property="article:tag" content="Java">
+<meta property="article:tag" content="JVM">
+<meta name="twitter:card" content="summary">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/blog/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/blog/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/blog/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>JVM (内存区域控制参数及对应溢出异常)</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/blog/css/style.css">
+
+    <!-- persian styles -->
+    
+      
+<link rel="stylesheet" href="/blog/css/rtl.css">
+
+    
+    <!-- rss -->
+    
+    
+      <link rel="alternate" href="/blog/true" title="CAYZLH" type="application/atom+xml">
+    
+<meta name="generator" content="Hexo 5.3.0"></head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fas fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fas fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fas fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a href="/blog/">Home</a></li>
+        
+          <li><a href="/blog/archives/">Articles</a></li>
+        
+          <li><a href="/blog/about/">About</a></li>
+        
+          <li><a href="/blog/search/">Search</a></li>
+        
+      </ul>
+    </span>
+    <br>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/blog/2018/08/23/27eb40a8.html"><i class="fas fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/blog/2018/08/19/99ebe472.html"><i class="fas fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+<!--        <li><a class="icon" href="#"><i class="fas fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>-->
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous</span>
+      <span id="i-next" class="info" style="display:none;">Next</span>
+      <span id="i-top" class="info" style="display:none;">Back to top</span>
+      <span id="i-share" class="info" style="display:none;">Share post</span>
+    </span>
+    <br>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.facebook.com/sharer.php?u=https://www.cayzlh.com/2018/08/19/95c0309a.html"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://twitter.com/share?url=https://www.cayzlh.com/2018/08/19/95c0309a.html&text=JVM (内存区域控制参数及对应溢出异常)"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.linkedin.com/shareArticle?url=https://www.cayzlh.com/2018/08/19/95c0309a.html&title=JVM (内存区域控制参数及对应溢出异常)"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://pinterest.com/pin/create/bookmarklet/?url=https://www.cayzlh.com/2018/08/19/95c0309a.html&is_video=false&description=JVM (内存区域控制参数及对应溢出异常)"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=JVM (内存区域控制参数及对应溢出异常)&body=Check out this article: https://www.cayzlh.com/2018/08/19/95c0309a.html"><i class="fas fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://getpocket.com/save?url=https://www.cayzlh.com/2018/08/19/95c0309a.html&title=JVM (内存区域控制参数及对应溢出异常)"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://reddit.com/submit?url=https://www.cayzlh.com/2018/08/19/95c0309a.html&title=JVM (内存区域控制参数及对应溢出异常)"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.stumbleupon.com/submit?url=https://www.cayzlh.com/2018/08/19/95c0309a.html&title=JVM (内存区域控制参数及对应溢出异常)"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://digg.com/submit?url=https://www.cayzlh.com/2018/08/19/95c0309a.html&title=JVM (内存区域控制参数及对应溢出异常)"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.tumblr.com/share/link?url=https://www.cayzlh.com/2018/08/19/95c0309a.html&name=JVM (内存区域控制参数及对应溢出异常)&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://news.ycombinator.com/submitlink?u=https://www.cayzlh.com/2018/08/19/95c0309a.html&t=JVM (内存区域控制参数及对应溢出异常)"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    <div id="toc">
+      <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%8F%82%E6%95%B0%E7%B1%BB%E5%9E%8B"><span class="toc-number">1.</span> <span class="toc-text">参数类型</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%BC%82%E5%B8%B8%E7%B1%BB%E5%9E%8B"><span class="toc-number">2.</span> <span class="toc-text">异常类型</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%BE%85%E5%8A%A9%E5%8F%82%E6%95%B0%E8%AF%B4%E6%98%8E"><span class="toc-number">3.</span> <span class="toc-text">辅助参数说明</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%8F%82%E6%95%B0%E8%AF%B4%E6%98%8E%E3%80%81%E5%AF%B9%E5%BA%94%E5%9C%BA%E6%99%AF%E7%9A%84%E5%BC%82%E5%B8%B8"><span class="toc-number">4.</span> <span class="toc-text">参数说明、对应场景的异常</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%A0%86%E5%86%85%E5%AD%98%E5%8F%82%E6%95%B0"><span class="toc-number">4.1.</span> <span class="toc-text">堆内存参数</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%A0%88%E5%86%85%E5%AD%98%E5%8F%82%E6%95%B0"><span class="toc-number">4.2.</span> <span class="toc-text">栈内存参数</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%96%B9%E6%B3%95%E5%8C%BA%E5%8F%82%E6%95%B0"><span class="toc-number">4.3.</span> <span class="toc-text">方法区参数</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%9C%AC%E6%9C%BA%E7%9B%B4%E6%8E%A5%E5%86%85%E5%AD%98%E5%8F%82%E6%95%B0"><span class="toc-number">4.4.</span> <span class="toc-text">本机直接内存参数</span></a></li></ol></li></ol>
+    </div>
+  </span>
+</div>
+
+    
+    <div class="content index py4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        JVM (内存区域控制参数及对应溢出异常)
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">🐳Ant丶</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2018-08-19T09:16:34.000Z" itemprop="datePublished">2018-08-19</time>
+        
+      
+    </div>
+
+
+      
+    <div class="article-category">
+        <i class="fas fa-archive"></i>
+        <a class="category-link" href="/blog/categories/Java/">Java</a> › <a class="category-link" href="/blog/categories/Java/JVM/">JVM</a>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fas fa-tag"></i>
+        <a class="tag-link-link" href="/blog/tags/JVM/" rel="tag">JVM</a>, <a class="tag-link-link" href="/blog/tags/Java/" rel="tag">Java</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <blockquote>
+<p>开发过程中，或程序运行过程中每次遇到OutOfMemory异常或GC异常或StackOverflowError异常我们都是一堆参数乱配，<br>都把值调大，只是大体知道是跟jvm内存分配有关, 具体应该怎么调，对应的异常应该调整那些参数，<br>或者换句话说，jvm内存分配区域中都分别对应那些参数大多数情况下都是不知道的，只是把相关的参数跳上去，预期结果都是应该起作用，到底能不能起作用，自己心里也没底。<br>下面就来说一下jvm堆、栈、方法区等内存区域对应的参数，及每个区域可能抛出的异常类型，发生异常的场景分析。 </p>
+</blockquote>
+<h3 id="参数类型"><a href="#参数类型" class="headerlink" title="参数类型"></a>参数类型</h3><ul>
+<li>堆空间参数</li>
+<li>栈空间参数</li>
+<li>方法区空间参数</li>
+<li>本机直接内存参数</li>
+</ul>
+<h3 id="异常类型"><a href="#异常类型" class="headerlink" title="异常类型"></a>异常类型</h3><ul>
+<li>1.OutOfMemory异常</li>
+<li>2.StackOverflowError异常</li>
+</ul>
+<h3 id="辅助参数说明"><a href="#辅助参数说明" class="headerlink" title="辅助参数说明"></a>辅助参数说明</h3><ul>
+<li>-XX:+HeapDumpOnOutOfMemoryError 打印堆内存异常时打印出快照信息</li>
+<li>-XX:+HeapDumpPath 快照输出路径</li>
+<li>-Xmn指定eden区的大小</li>
+<li>-XX:SurvirorRation来调整幸存区的大小</li>
+<li>-XX:PretenureSizeThreshold设置进入老年代的阀值</li>
+</ul>
+<h3 id="参数说明、对应场景的异常"><a href="#参数说明、对应场景的异常" class="headerlink" title="参数说明、对应场景的异常"></a>参数说明、对应场景的异常</h3><h4 id="堆内存参数"><a href="#堆内存参数" class="headerlink" title="堆内存参数"></a>堆内存参数</h4><p>-Xms：堆最小值（新生代和老年代之和）</p>
+<p>-Xmx：堆最大值（新生代和老年代之和）</p>
+<p>当最小值=最大值时，这时堆内存是不可扩展的。</p>
+<p>例：-Xms80M -Xmx80M</p>
+<p>通常将-Xmx和-Xms设置为一样的大小来减少gc的次数，堆内存不足时抛出OutOfMemoryError异常。</p>
+<h4 id="栈内存参数"><a href="#栈内存参数" class="headerlink" title="栈内存参数"></a>栈内存参数</h4><p>-Xss</p>
+<p>例：-Xss128k</p>
+<p>单线程下无论栈帧太大还是栈容量太小，及引用深度超过虚拟机允许深度都会抛出StackOverflowError每个方法压入栈的帧大小是不一致的。<br>多线程下当每个线程分配栈帧太大内存不能够扩展时抛出OutOfMemoryError异常线程栈帧越大，可创建的线程越少。</p>
+<h4 id="方法区参数"><a href="#方法区参数" class="headerlink" title="方法区参数"></a>方法区参数</h4><p>-XX:PermSize方法区内存最小值</p>
+<p>-XX:MaxPermSize 方法区内存最大值</p>
+<p>各个线程共享的内存区域，主要用来存储类的元数据、常量、静态变量、即时编译器编译后的代码等数据</p>
+<p>例：-XX:PermSize=20M -XX:MaxPermSize=20M</p>
+<p>异常类型 OutOfMemoryError :</p>
+<p>原因：常量过多，或代理反射等使用频繁</p>
+<h4 id="本机直接内存参数"><a href="#本机直接内存参数" class="headerlink" title="本机直接内存参数"></a>本机直接内存参数</h4><p>-XX:MaxDirectMemorySize</p>
+<p>例：-XX:MaxDirectMemorySize=10M</p>
+<p>不足时抛出OutOfMemory异常</p>
+
+  </div>
+
+  
+    <div style="text-align:center;width:100%">
+      <img src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/640-2.gif">
+    </div>
+  
+
+  
+    <div>
+      <h4>版权声明</h4>
+      <pre>
+        
+        <strong>本文来源： </strong><a href="https://www.cayzlh.com/blog" title="🐳Ant丶" rel="noopener external nofollow noreferrer" target="_blank">https://www.cayzlh.com/blog</a>
+
+        <strong>本文链接：</strong><a href="https://www.cayzlh.com/2018/08/19/95c0309a.html" title="/blog/JVM%20(%E5%86%85%E5%AD%98%E5%8C%BA%E5%9F%9F%E6%8E%A7%E5%88%B6%E5%8F%82%E6%95%B0%E5%8F%8A%E5%AF%B9%E5%BA%94%E6%BA%A2%E5%87%BA%E5%BC%82%E5%B8%B8)">https://www.cayzlh.com/2018/08/19/95c0309a.html</a>
+
+        <strong>版权声明： </strong>
+        
+          文章内容仅用作学习和分享，转载请注明出处
+        
+      </pre>
+    </div>
+  
+
+</article>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/blog/">Home</a></li>
+        
+          <li><a href="/blog/archives/">Articles</a></li>
+        
+          <li><a href="/blog/about/">About</a></li>
+        
+          <li><a href="/blog/search/">Search</a></li>
+        
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%8F%82%E6%95%B0%E7%B1%BB%E5%9E%8B"><span class="toc-number">1.</span> <span class="toc-text">参数类型</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%BC%82%E5%B8%B8%E7%B1%BB%E5%9E%8B"><span class="toc-number">2.</span> <span class="toc-text">异常类型</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%BE%85%E5%8A%A9%E5%8F%82%E6%95%B0%E8%AF%B4%E6%98%8E"><span class="toc-number">3.</span> <span class="toc-text">辅助参数说明</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%8F%82%E6%95%B0%E8%AF%B4%E6%98%8E%E3%80%81%E5%AF%B9%E5%BA%94%E5%9C%BA%E6%99%AF%E7%9A%84%E5%BC%82%E5%B8%B8"><span class="toc-number">4.</span> <span class="toc-text">参数说明、对应场景的异常</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%A0%86%E5%86%85%E5%AD%98%E5%8F%82%E6%95%B0"><span class="toc-number">4.1.</span> <span class="toc-text">堆内存参数</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%A0%88%E5%86%85%E5%AD%98%E5%8F%82%E6%95%B0"><span class="toc-number">4.2.</span> <span class="toc-text">栈内存参数</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%96%B9%E6%B3%95%E5%8C%BA%E5%8F%82%E6%95%B0"><span class="toc-number">4.3.</span> <span class="toc-text">方法区参数</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%9C%AC%E6%9C%BA%E7%9B%B4%E6%8E%A5%E5%86%85%E5%AD%98%E5%8F%82%E6%95%B0"><span class="toc-number">4.4.</span> <span class="toc-text">本机直接内存参数</span></a></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.facebook.com/sharer.php?u=https://www.cayzlh.com/2018/08/19/95c0309a.html"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://twitter.com/share?url=https://www.cayzlh.com/2018/08/19/95c0309a.html&text=JVM (内存区域控制参数及对应溢出异常)"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.linkedin.com/shareArticle?url=https://www.cayzlh.com/2018/08/19/95c0309a.html&title=JVM (内存区域控制参数及对应溢出异常)"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://pinterest.com/pin/create/bookmarklet/?url=https://www.cayzlh.com/2018/08/19/95c0309a.html&is_video=false&description=JVM (内存区域控制参数及对应溢出异常)"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=JVM (内存区域控制参数及对应溢出异常)&body=Check out this article: https://www.cayzlh.com/2018/08/19/95c0309a.html"><i class="fas fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://getpocket.com/save?url=https://www.cayzlh.com/2018/08/19/95c0309a.html&title=JVM (内存区域控制参数及对应溢出异常)"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://reddit.com/submit?url=https://www.cayzlh.com/2018/08/19/95c0309a.html&title=JVM (内存区域控制参数及对应溢出异常)"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.stumbleupon.com/submit?url=https://www.cayzlh.com/2018/08/19/95c0309a.html&title=JVM (内存区域控制参数及对应溢出异常)"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://digg.com/submit?url=https://www.cayzlh.com/2018/08/19/95c0309a.html&title=JVM (内存区域控制参数及对应溢出异常)"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.tumblr.com/share/link?url=https://www.cayzlh.com/2018/08/19/95c0309a.html&name=JVM (内存区域控制参数及对应溢出异常)&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://news.ycombinator.com/submitlink?u=https://www.cayzlh.com/2018/08/19/95c0309a.html&t=JVM (内存区域控制参数及对应溢出异常)"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fas fa-bars fa-lg" aria-hidden="true"></i> Menu</a>
+        <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fas fa-list fa-lg" aria-hidden="true"></i> TOC</a>
+<!--        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fas fa-share-alt fa-lg" aria-hidden="true"></i> Share</a>-->
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    CAYZLH &copy;
+    
+    
+    2019-2021
+    粤ICP备20058712号-1
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        
+          <li><a href="/blog/tools/">tools</a></li>
+        
+          <li><a href="/blog/links/">links</a></li>
+        
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+<link rel="stylesheet" href="/blog/lib/font-awesome/css/all.min.css">
+
+
+<link rel="stylesheet" href="/blog/lib/justified-gallery/css/justifiedGallery.min.css">
+
+
+    <!-- jquery -->
+
+<script src="/blog/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/blog/lib/justified-gallery/js/jquery.justifiedGallery.min.js"></script>
+
+<!-- clipboard -->
+
+  
+<script src="/blog/lib/clipboard/clipboard.min.js"></script>
+
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"Copy to clipboard!\">";
+    btn += '<i class="far fa-clone"></i>';
+    btn += '</span>'; 
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "Copied!");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/blog/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Google Analytics -->
+
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-129095667-1"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'UA-129095667-1');
+    </script>
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Umami Analytics -->
+
+<!-- Disqus Comments -->
+
+
+</body>
+</html>

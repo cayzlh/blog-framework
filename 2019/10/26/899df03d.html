@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="description" content="MyBatis基础支持层位于 Mybatis 整体架构的最底层，支撑着 Mybatis 的核心处理层，是整个框架的基石。基础支持层中封装了多个较为通用的、独立的模块，不仅仅为 Mybatis 提供基础支撑，也可以在合适的场景中直接复用。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="基础支持层——日志模块">
+<meta property="og:url" content="https://www.cayzlh.com/blog">
+<meta property="og:site_name" content="CAYZLH">
+<meta property="og:description" content="MyBatis基础支持层位于 Mybatis 整体架构的最底层，支撑着 Mybatis 的核心处理层，是整个框架的基石。基础支持层中封装了多个较为通用的、独立的模块，不仅仅为 Mybatis 提供基础支撑，也可以在合适的场景中直接复用。">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/09/2_c5SKkm-20200609155948653_2YZD6l.png">
+<meta property="og:image" content="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/08/image-20200608165414581_Ty7boQ.png">
+<meta property="og:image" content="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/08/image-20200608171903948_fKzybU.png">
+<meta property="og:image" content="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/08/image-20200608172259632_8cistF.png">
+<meta property="article:published_time" content="2019-10-26T01:09:42.000Z">
+<meta property="article:modified_time" content="2020-08-21T08:27:00.270Z">
+<meta property="article:author" content="🐳Ant丶">
+<meta property="article:tag" content="MyBatis">
+<meta property="article:tag" content="《MyBatis技术内幕》">
+<meta property="article:tag" content="基础支持层">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/09/2_c5SKkm-20200609155948653_2YZD6l.png">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/blog/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/blog/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/blog/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>基础支持层——日志模块</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/blog/css/style.css">
+
+    <!-- persian styles -->
+    
+      
+<link rel="stylesheet" href="/blog/css/rtl.css">
+
+    
+    <!-- rss -->
+    
+    
+      <link rel="alternate" href="/blog/true" title="CAYZLH" type="application/atom+xml">
+    
+<meta name="generator" content="Hexo 5.3.0"></head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fas fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fas fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fas fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a href="/blog/">Home</a></li>
+        
+          <li><a href="/blog/archives/">Articles</a></li>
+        
+          <li><a href="/blog/about/">About</a></li>
+        
+          <li><a href="/blog/search/">Search</a></li>
+        
+      </ul>
+    </span>
+    <br>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/blog/2019/10/27/899df03d.html"><i class="fas fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/blog/2019/10/25/899df03d.html"><i class="fas fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+<!--        <li><a class="icon" href="#"><i class="fas fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>-->
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous</span>
+      <span id="i-next" class="info" style="display:none;">Next</span>
+      <span id="i-top" class="info" style="display:none;">Back to top</span>
+      <span id="i-share" class="info" style="display:none;">Share post</span>
+    </span>
+    <br>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.facebook.com/sharer.php?u=https://www.cayzlh.com/2019/10/26/899df03d.html"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://twitter.com/share?url=https://www.cayzlh.com/2019/10/26/899df03d.html&text=基础支持层——日志模块"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.linkedin.com/shareArticle?url=https://www.cayzlh.com/2019/10/26/899df03d.html&title=基础支持层——日志模块"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://pinterest.com/pin/create/bookmarklet/?url=https://www.cayzlh.com/2019/10/26/899df03d.html&is_video=false&description=基础支持层——日志模块"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=基础支持层——日志模块&body=Check out this article: https://www.cayzlh.com/2019/10/26/899df03d.html"><i class="fas fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://getpocket.com/save?url=https://www.cayzlh.com/2019/10/26/899df03d.html&title=基础支持层——日志模块"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://reddit.com/submit?url=https://www.cayzlh.com/2019/10/26/899df03d.html&title=基础支持层——日志模块"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.stumbleupon.com/submit?url=https://www.cayzlh.com/2019/10/26/899df03d.html&title=基础支持层——日志模块"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://digg.com/submit?url=https://www.cayzlh.com/2019/10/26/899df03d.html&title=基础支持层——日志模块"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.tumblr.com/share/link?url=https://www.cayzlh.com/2019/10/26/899df03d.html&name=基础支持层——日志模块&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://news.ycombinator.com/submitlink?u=https://www.cayzlh.com/2019/10/26/899df03d.html&t=基础支持层——日志模块"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    <div id="toc">
+      <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%80%82%E9%85%8D%E5%99%A8%E6%A8%A1%E5%BC%8F"><span class="toc-number">1.</span> <span class="toc-text">适配器模式</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%97%A5%E5%BF%97%E9%80%82%E9%85%8D%E5%99%A8"><span class="toc-number">2.</span> <span class="toc-text">日志适配器</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#JDBC%E8%B0%83%E8%AF%95"><span class="toc-number">3.</span> <span class="toc-text">JDBC调试</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%8F%82%E8%80%83"><span class="toc-number">4.</span> <span class="toc-text">参考</span></a></li></ol>
+    </div>
+  </span>
+</div>
+
+    
+    <div class="content index py4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        基础支持层——日志模块
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">🐳Ant丶</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2019-10-26T01:09:42.000Z" itemprop="datePublished">2019-10-26</time>
+        
+      
+    </div>
+
+
+      
+    <div class="article-category">
+        <i class="fas fa-archive"></i>
+        <a class="category-link" href="/blog/categories/%E4%B9%A6%E7%B1%8D/">书籍</a> › <a class="category-link" href="/blog/categories/%E4%B9%A6%E7%B1%8D/%E3%80%8AMyBatis%E6%8A%80%E6%9C%AF%E5%86%85%E5%B9%95%E3%80%8B/">《MyBatis技术内幕》</a>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fas fa-tag"></i>
+        <a class="tag-link-link" href="/blog/tags/MyBatis/" rel="tag">MyBatis</a>, <a class="tag-link-link" href="/blog/tags/%E3%80%8AMyBatis%E6%8A%80%E6%9C%AF%E5%86%85%E5%B9%95%E3%80%8B/" rel="tag">《MyBatis技术内幕》</a>, <a class="tag-link-link" href="/blog/tags/%E5%9F%BA%E7%A1%80%E6%94%AF%E6%8C%81%E5%B1%82/" rel="tag">基础支持层</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <p>MyBatis基础支持层位于 Mybatis 整体架构的最底层，支撑着 Mybatis 的核心处理层，是整个框架的基石。基础支持层中封装了多个较为通用的、独立的模块，不仅仅为 Mybatis 提供基础支撑，也可以在合适的场景中直接复用。</p>
+<p><img src="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/09/2_c5SKkm-20200609155948653_2YZD6l.png" alt="整体架构"></p>
+<blockquote>
+<p>这篇文章介绍MyBatis的日志模块</p>
+</blockquote>
+<p>在 Java 开 发 中常用的日志框 架有 <code>Log4j</code>、<code>Log4j2</code>、<code>Apache Commons Log</code>、<code>java.util.logging</code>、 <code>slf4j</code>等，这 些工具对 外的接口不尽 相同。</p>
+<p>为 了统 一这 些工具的接口，MyBatis定义 了一套统 一 的日志接口供上层 使用，并 为 上述常用的日志框 架提供了相应 的适配器。</p>
+<h3 id="适配器模式"><a href="#适配器模式" class="headerlink" title="适配器模式"></a>适配器模式</h3><p>先简单介绍一下设计模式中的六大原则</p>
+<ul>
+<li><p>单一职责原则</p>
+<p>不要存在多于一个导致类变更的原因，简单来说，一个类只负责唯一 项职责。</p>
+</li>
+<li><p>里氏替换原则</p>
+<p>如果对 每一个 类 型为 T1的对 象tl，都有类 型为 T2的对 象使得以 T1定义 的所有程序P在所有的对 象tl都代换 成t2时 ，程序P 的行为 没 有发 生变 化， 那么 类 型T2是类 型T1的子类 型。遵守里氏替换 原则 ，可以帮 助我们 设 计 出更为 合 理的继 承体 系。</p>
+</li>
+<li><p>依赖倒置原则</p>
+<p>系统的高层模块不应该依赖低层模块的具体实现，二者都应该依赖其 抽象类 或接口，抽象接口不应 该 依赖 具体 实 现 类 ，而具体 实 现 类 应 该 于依赖 抽象。简 单 来 说 ，我们 要面向接口编 程。当 需求发 生变 化时 对 外接口不变 ，只要提供新的实 现 类 即 可。</p>
+</li>
+<li><p>接口隔离原则</p>
+<p>一个类对另一个类的依赖应该建立在最小的接口上。简单来说，我们 在设 计 接口时 ，不要设 计 出庞 大臃 肿 的接口，因为 实 现 这 种 接口时 需要实 现 很 多不必 要的方法。我们 要尽 量设 计 出功能单 一的接口，这 样 也能保证 实 现 类 的职 责 单 一。</p>
+</li>
+<li><p>迪米特法则</p>
+<p>一个对象应该对其他对象保持最少的了解。简单来说，就是要求我们减 低类 间 耦 合。</p>
+</li>
+<li><p>开放-封闭原则</p>
+<p>程序要对扩展开放，对修改关闭。简单来说，当需求发生变化时，我 们 可以通过 添加新的模块 满 足新需求，而不是通过 修改原来 的实 现 代码 来 满 足新需求。</p>
+</li>
+</ul>
+<p><strong>在这 六条 原则 中，开 放-封闭 原则 是最基础 的原则 ，也是其他原则 以及后文介绍 的所有设 计 模式的最终 目标 。</strong></p>
+<p>适配器模式的主要目的是解决 由于接口不能兼容而导 致类 无 法使用的问 题 ，适配器模式会 将 需要适配的类 转 换 成调 用者能够 使用的目标 接口。这 里先介绍 适配器模式中涉及的几 个 角色，如下所述。</p>
+<ul>
+<li><p>目标接口</p>
+<p> 用者能够 直接使用的接口。</p>
+</li>
+<li><p>需要适配的类（Adaptee）</p>
+<p>—般情况下，Adaptee类中有真正的业务逻辑，但是其接口 不能被调 用者直接使用。</p>
+</li>
+<li><p>适配器（Adapter）</p>
+<p>Adapter 实 现 了 Target 接口，并 包装 了一个 Adaptee 对 象。Adapter 在实 现 Target接口中的方法时 ，会 将 调 用委托给 Adaptee对 象的相关 方法，由Adaptee 完成具体 的业 务 。</p>
+</li>
+</ul>
+<p>适配器模式类图：</p>
+<p><img src="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/08/image-20200608165414581_Ty7boQ.png" alt="image-20200608165414581"></p>
+<blockquote>
+<p>使用适配器模式的好处 就是复 用现 有组 件。</p>
+<p>应 用程序需要复 用现 有的类 ，但接口不能被该 应 用程序兼容，则 无法直接使用。</p>
+<p>这 种 场 景下就适合使用适配器模式实 现 接口的适配，从 而完 成组 件的复 用。</p>
+<p>很 明显 ，适配器模式通过 提供Adapter的方式完成接口适配，实 现 了程序复 用 Adaptee的需求，避免了修改Adaptee实 现 接口，这 符合“开 放-封闭 ”原则 。</p>
+<p>当 有新的Adaptee 需要被复 用时 ，只要添加新的Adapter即 可，这 也是符合“开 放-封闭 ”原则 的。</p>
+</blockquote>
+<p>在 MyBatis的日志模块 中，就使用了适配器模式。</p>
+<p>MyBatis内 部调 用其日志模块 时 ，使用 了其内 部接口(也就是后面要介绍 的<code>org.apache.ibatis.loggingLog</code> 接口)。但是 <code>Log4j</code>、<code>Log4j2</code> 等第三方日志组 件对 外提供的接口各不相同，MyBatis为 了集成和复 用这 些第三方日志组 件，</p>
+<p>在其日志模块 中提供了多种 <code>Adapter</code>, 将 这 些第三方日志组 件对 外的接口适配成了 <code>org.apache.ibatis.logging.Log</code> 接口，这 样 MyBatis 内 部就可以统 一通过 <code>org.apache.ibatis.logging.Log</code>接口调 用第三方日志组 件的功能了。</p>
+<h3 id="日志适配器"><a href="#日志适配器" class="headerlink" title="日志适配器"></a>日志适配器</h3><p>MyBatis 统 一提供了 <code>trace</code>、<code>debug</code>、 <code>warn</code>、<code>error</code>四个 级 别 用于对应上诉的各种第三方日志组件的级别，这 基本与 主流日志框 架的曰志级 别 类 似，可以满 足绝 大多数 场 景的日志 需求。</p>
+<p>MyBatis的日志模块 位于<code>org.apache.ibatis.logging</code>包中，该 模块 中通过 Log接口定义 了日志 模块 的功能，当 然日志适配器也会 实 现 此接口。LogFactory工厂 类 负 责 创 建对 应 的日志组 件适 配器。</p>
+<p>在LogFactory类 加载 时 会 执 行其静 态 代码 块 ，其逻 辑 是按序加载 并 实 例化对 应 日志组 件的 适配器，然后使用<code>LogFactory. logConstructor</code>这 个 静 态 字段，记 录 当 前使用的第三方日志组 件的 适配器，具体 代码 如下所示。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> Constructor&lt;? extends Log&gt; logConstructor;</span><br><span class="line"></span><br><span class="line"><span class="keyword">static</span> &#123;</span><br><span class="line">  tryImplementation(<span class="keyword">new</span> Runnable() &#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">run</span><span class="params">()</span> </span>&#123;</span><br><span class="line">      useSlf4jLogging();</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;);</span><br><span class="line">  tryImplementation(<span class="keyword">new</span> Runnable() &#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">run</span><span class="params">()</span> </span>&#123;</span><br><span class="line">      useCommonsLogging();</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;);</span><br><span class="line">  tryImplementation(<span class="keyword">new</span> Runnable() &#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">run</span><span class="params">()</span> </span>&#123;</span><br><span class="line">      useLog4J2Logging();</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;);</span><br><span class="line">  tryImplementation(<span class="keyword">new</span> Runnable() &#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">run</span><span class="params">()</span> </span>&#123;</span><br><span class="line">      useLog4JLogging();</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;);</span><br><span class="line">  tryImplementation(<span class="keyword">new</span> Runnable() &#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">run</span><span class="params">()</span> </span>&#123;</span><br><span class="line">      useJdkLogging();</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;);</span><br><span class="line">  tryImplementation(<span class="keyword">new</span> Runnable() &#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">run</span><span class="params">()</span> </span>&#123;</span><br><span class="line">      useNoLogging();</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><code>LogFactory.tryImplementation()</code>方 法 首 先 会 检 测 <code>logConstructor</code>字 段 ， 若 为 空 则 调 用 <code>Runnable.run()</code>方法(注意，不是**<em>start()**</em>方法)，如上述代码 所示，其中会 调 用<code>use*Logging()</code>方法。 这 里以<code>useJdkLogging()</code>为 例进 行介绍 ，具体 代码 如下:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">synchronized</span> <span class="keyword">void</span> <span class="title">useJdkLogging</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  setImplementation(org.apache.ibatis.logging.jdk14.Jdk14LoggingImpl.class);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">setImplementation</span><span class="params">(Class&lt;? extends Log&gt; implClass)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">try</span> &#123;</span><br><span class="line">    <span class="comment">// 获取指定适配器的构造方法</span></span><br><span class="line">    Constructor&lt;? extends Log&gt; candidate = implClass.getConstructor(String.class);</span><br><span class="line">    Log log = candidate.newInstance(LogFactory.class.getName());</span><br><span class="line">    <span class="keyword">if</span> (log.isDebugEnabled()) &#123;</span><br><span class="line">      log.debug(<span class="string">&quot;Logging initialized using &#x27;&quot;</span> + implClass + <span class="string">&quot;&#x27; adapter.&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 初始化logConstructor字段</span></span><br><span class="line">    logConstructor = candidate;</span><br><span class="line">  &#125; <span class="keyword">catch</span> (Throwable t) &#123;</span><br><span class="line">    <span class="keyword">throw</span> <span class="keyword">new</span> LogException(<span class="string">&quot;Error setting Log implementation.  Cause: &quot;</span> + t, t);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>相应的实现类都在<code>org.apache.ibatis.logging</code>的子包下。且都实 现 了 <code>org.apache.ibatis.logging.Log</code> 接口，并 封装 了 <code>java.util.logging. Logger</code> 对 象 ，<code>org.apache.ibatis.logging.Log</code> 接口 的功能全部通过 调 用 <code>java.util.logging.Logger</code> 对 象 实 现 ，这 与 前面介绍 的适配器模式完全一致。</p>
+<p><img src="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/08/image-20200608171903948_fKzybU.png" alt="image-20200608171903948"></p>
+<h3 id="JDBC调试"><a href="#JDBC调试" class="headerlink" title="JDBC调试"></a>JDBC调试</h3><p>在MyBatis的日志模块 中有一个 Jdbc包，它 并 不是将 日志信息通过 JDBC保存到数 据库 中， 而是通过 JDK动 态 代理的方式，将 JDBC操作通过 指定的日志框 架打印出来 。这 个 功能通常在 开 发 阶 段使用，它 可以输 出SQL语 句、用户 传 入的绑 定参 数 、SQL语 句影响 行数 等等信息，对 调 试 程序来 说 是非常重要的。</p>
+<p>BaseJdbcLogger是一个 抽象类 ，它 是Jdbc包下其他Logger类 的父类 ，继 承关 系如图所示。</p>
+<p><img src="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/08/image-20200608172259632_8cistF.png" alt="image-20200608172259632"></p>
+<h3 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h3><ul>
+<li><p><strong>《MyBatis技术内幕》</strong></p>
+</li>
+<li><p>部分图片来源——<strong>《MyBatis技术内幕》</strong></p>
+</li>
+</ul>
+
+  </div>
+
+  
+    <div style="text-align:center;width:100%">
+      <img src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/640-2.gif">
+    </div>
+  
+
+  
+    <div>
+      <h4>版权声明</h4>
+      <pre>
+        
+        <strong>本文来源： </strong><a href="https://www.cayzlh.com/blog" title="🐳Ant丶" rel="noopener external nofollow noreferrer" target="_blank">https://www.cayzlh.com/blog</a>
+
+        <strong>本文链接：</strong><a href="https://www.cayzlh.com/2019/10/26/899df03d.html" title="/blog/%E5%9F%BA%E7%A1%80%E6%94%AF%E6%8C%81%E5%B1%82%E2%80%94%E2%80%94%E6%97%A5%E5%BF%97%E6%A8%A1%E5%9D%97">https://www.cayzlh.com/2019/10/26/899df03d.html</a>
+
+        <strong>版权声明： </strong>
+        
+          文章内容仅用作学习和分享，转载请注明出处
+        
+      </pre>
+    </div>
+  
+
+</article>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/blog/">Home</a></li>
+        
+          <li><a href="/blog/archives/">Articles</a></li>
+        
+          <li><a href="/blog/about/">About</a></li>
+        
+          <li><a href="/blog/search/">Search</a></li>
+        
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%80%82%E9%85%8D%E5%99%A8%E6%A8%A1%E5%BC%8F"><span class="toc-number">1.</span> <span class="toc-text">适配器模式</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%97%A5%E5%BF%97%E9%80%82%E9%85%8D%E5%99%A8"><span class="toc-number">2.</span> <span class="toc-text">日志适配器</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#JDBC%E8%B0%83%E8%AF%95"><span class="toc-number">3.</span> <span class="toc-text">JDBC调试</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%8F%82%E8%80%83"><span class="toc-number">4.</span> <span class="toc-text">参考</span></a></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.facebook.com/sharer.php?u=https://www.cayzlh.com/2019/10/26/899df03d.html"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://twitter.com/share?url=https://www.cayzlh.com/2019/10/26/899df03d.html&text=基础支持层——日志模块"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.linkedin.com/shareArticle?url=https://www.cayzlh.com/2019/10/26/899df03d.html&title=基础支持层——日志模块"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://pinterest.com/pin/create/bookmarklet/?url=https://www.cayzlh.com/2019/10/26/899df03d.html&is_video=false&description=基础支持层——日志模块"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=基础支持层——日志模块&body=Check out this article: https://www.cayzlh.com/2019/10/26/899df03d.html"><i class="fas fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://getpocket.com/save?url=https://www.cayzlh.com/2019/10/26/899df03d.html&title=基础支持层——日志模块"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://reddit.com/submit?url=https://www.cayzlh.com/2019/10/26/899df03d.html&title=基础支持层——日志模块"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.stumbleupon.com/submit?url=https://www.cayzlh.com/2019/10/26/899df03d.html&title=基础支持层——日志模块"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://digg.com/submit?url=https://www.cayzlh.com/2019/10/26/899df03d.html&title=基础支持层——日志模块"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.tumblr.com/share/link?url=https://www.cayzlh.com/2019/10/26/899df03d.html&name=基础支持层——日志模块&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://news.ycombinator.com/submitlink?u=https://www.cayzlh.com/2019/10/26/899df03d.html&t=基础支持层——日志模块"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fas fa-bars fa-lg" aria-hidden="true"></i> Menu</a>
+        <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fas fa-list fa-lg" aria-hidden="true"></i> TOC</a>
+<!--        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fas fa-share-alt fa-lg" aria-hidden="true"></i> Share</a>-->
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    CAYZLH &copy;
+    
+    
+    2019-2021
+    粤ICP备20058712号-1
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        
+          <li><a href="/blog/tools/">tools</a></li>
+        
+          <li><a href="/blog/links/">links</a></li>
+        
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+<link rel="stylesheet" href="/blog/lib/font-awesome/css/all.min.css">
+
+
+<link rel="stylesheet" href="/blog/lib/justified-gallery/css/justifiedGallery.min.css">
+
+
+    <!-- jquery -->
+
+<script src="/blog/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/blog/lib/justified-gallery/js/jquery.justifiedGallery.min.js"></script>
+
+<!-- clipboard -->
+
+  
+<script src="/blog/lib/clipboard/clipboard.min.js"></script>
+
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"Copy to clipboard!\">";
+    btn += '<i class="far fa-clone"></i>';
+    btn += '</span>'; 
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "Copied!");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/blog/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Google Analytics -->
+
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-129095667-1"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'UA-129095667-1');
+    </script>
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Umami Analytics -->
+
+<!-- Disqus Comments -->
+
+
+</body>
+</html>

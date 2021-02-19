@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="description" content="核心处理层以基础支持层为基础，实现了MyBatis的核心功能。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="核心处理层-SqlNode&amp;SqlSource">
+<meta property="og:url" content="https://www.cayzlh.com/blog">
+<meta property="og:site_name" content="CAYZLH">
+<meta property="og:description" content="核心处理层以基础支持层为基础，实现了MyBatis的核心功能。">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/22/image-20200622175512211_aegXOG.png">
+<meta property="og:image" content="https://gitee.com/cayzlh/img-repo/raw/master/2020/08/17323715982615571598261557744.png">
+<meta property="og:image" content="https://gitee.com/cayzlh/img-repo/raw/master/2020/08/17400415982620041598262004554.png">
+<meta property="og:image" content="https://gitee.com/cayzlh/img-repo/raw/master/2020/08/16395615983447961598344796478.png">
+<meta property="og:image" content="https://gitee.com/cayzlh/img-repo/raw/master/2020/08/10441615985826561598582656771.png">
+<meta property="article:published_time" content="2020-08-21T08:43:42.000Z">
+<meta property="article:modified_time" content="2020-08-28T05:47:14.538Z">
+<meta property="article:author" content="🐳Ant丶">
+<meta property="article:tag" content="MyBatis">
+<meta property="article:tag" content="《MyBatis技术内幕》">
+<meta property="article:tag" content="核心处理层">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/22/image-20200622175512211_aegXOG.png">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/blog/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/blog/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/blog/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>核心处理层-SqlNode&amp;SqlSource</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/blog/css/style.css">
+
+    <!-- persian styles -->
+    
+      
+<link rel="stylesheet" href="/blog/css/rtl.css">
+
+    
+    <!-- rss -->
+    
+    
+      <link rel="alternate" href="/blog/true" title="CAYZLH" type="application/atom+xml">
+    
+<meta name="generator" content="Hexo 5.3.0"></head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fas fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fas fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fas fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a href="/blog/">Home</a></li>
+        
+          <li><a href="/blog/archives/">Articles</a></li>
+        
+          <li><a href="/blog/about/">About</a></li>
+        
+          <li><a href="/blog/search/">Search</a></li>
+        
+      </ul>
+    </span>
+    <br>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/blog/2020/09/29/138fc827.html"><i class="fas fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/blog/2020/08/15/c4d21d93.html"><i class="fas fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+<!--        <li><a class="icon" href="#"><i class="fas fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>-->
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous</span>
+      <span id="i-next" class="info" style="display:none;">Next</span>
+      <span id="i-top" class="info" style="display:none;">Back to top</span>
+      <span id="i-share" class="info" style="display:none;">Share post</span>
+    </span>
+    <br>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.facebook.com/sharer.php?u=https://www.cayzlh.com/2020/08/21/bebe404d.html"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://twitter.com/share?url=https://www.cayzlh.com/2020/08/21/bebe404d.html&text=核心处理层-SqlNode&amp;SqlSource"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.linkedin.com/shareArticle?url=https://www.cayzlh.com/2020/08/21/bebe404d.html&title=核心处理层-SqlNode&amp;SqlSource"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://pinterest.com/pin/create/bookmarklet/?url=https://www.cayzlh.com/2020/08/21/bebe404d.html&is_video=false&description=核心处理层-SqlNode&amp;SqlSource"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=核心处理层-SqlNode&amp;SqlSource&body=Check out this article: https://www.cayzlh.com/2020/08/21/bebe404d.html"><i class="fas fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://getpocket.com/save?url=https://www.cayzlh.com/2020/08/21/bebe404d.html&title=核心处理层-SqlNode&amp;SqlSource"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://reddit.com/submit?url=https://www.cayzlh.com/2020/08/21/bebe404d.html&title=核心处理层-SqlNode&amp;SqlSource"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.stumbleupon.com/submit?url=https://www.cayzlh.com/2020/08/21/bebe404d.html&title=核心处理层-SqlNode&amp;SqlSource"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://digg.com/submit?url=https://www.cayzlh.com/2020/08/21/bebe404d.html&title=核心处理层-SqlNode&amp;SqlSource"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.tumblr.com/share/link?url=https://www.cayzlh.com/2020/08/21/bebe404d.html&name=核心处理层-SqlNode&amp;SqlSource&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://news.ycombinator.com/submitlink?u=https://www.cayzlh.com/2020/08/21/bebe404d.html&t=核心处理层-SqlNode&amp;SqlSource"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    <div id="toc">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%BB%84%E5%90%88%E6%A8%A1%E5%BC%8F"><span class="toc-number">1.</span> <span class="toc-text">组合模式</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#OGNL%E8%A1%A8%E8%BE%BE%E5%BC%8F"><span class="toc-number">2.</span> <span class="toc-text">OGNL表达式</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#DynamicContext"><span class="toc-number">3.</span> <span class="toc-text">DynamicContext</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#SqlNode"><span class="toc-number">4.</span> <span class="toc-text">SqlNode</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#SqlSourceBuilder"><span class="toc-number">5.</span> <span class="toc-text">SqlSourceBuilder</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#DynamicSqlSource"><span class="toc-number">6.</span> <span class="toc-text">DynamicSqlSource</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#RawSqISource"><span class="toc-number">7.</span> <span class="toc-text">RawSqISource</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8F%82%E8%80%83"><span class="toc-number">8.</span> <span class="toc-text">参考</span></a></li></ol>
+    </div>
+  </span>
+</div>
+
+    
+    <div class="content index py4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        核心处理层-SqlNode&amp;SqlSource
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">🐳Ant丶</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2020-08-21T08:43:42.000Z" itemprop="datePublished">2020-08-21</time>
+        
+      
+    </div>
+
+
+      
+    <div class="article-category">
+        <i class="fas fa-archive"></i>
+        <a class="category-link" href="/blog/categories/%E4%B9%A6%E7%B1%8D/">书籍</a> › <a class="category-link" href="/blog/categories/%E4%B9%A6%E7%B1%8D/%E3%80%8AMyBatis%E6%8A%80%E6%9C%AF%E5%86%85%E5%B9%95%E3%80%8B/">《MyBatis技术内幕》</a>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fas fa-tag"></i>
+        <a class="tag-link-link" href="/blog/tags/MyBatis/" rel="tag">MyBatis</a>, <a class="tag-link-link" href="/blog/tags/%E3%80%8AMyBatis%E6%8A%80%E6%9C%AF%E5%86%85%E5%B9%95%E3%80%8B/" rel="tag">《MyBatis技术内幕》</a>, <a class="tag-link-link" href="/blog/tags/%E6%A0%B8%E5%BF%83%E5%A4%84%E7%90%86%E5%B1%82/" rel="tag">核心处理层</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <p>核心处理层以基础支持层为基础，实现了<code>MyBatis</code>的核心功能。这个部分将从<code>MyBatis</code>的初始化、动态<code>SQL</code>语句的解析、结果集的映射、参数解析以及<code>SQL</code>语句的执行等几个方面分析<code>MyBatis</code>的核心处理层，了解<code>MyBatis</code>的核心原理。</p>
+<p><img src="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/22/image-20200622175512211_aegXOG.png" alt="image-20200622175512211"></p>
+<blockquote>
+<p>本篇介绍SqINode&amp;SqISource</p>
+</blockquote>
+<p>映射配置文件中定义的<code>SQL</code>节点会被解析成<code>MappedStatement</code>对象，其中的<code>SQL</code>语句会被解析成<code>SqlSource</code>对象，<code>SQL</code>语句中定义的动态<code>SQL</code>节点、文本节点等，则由<code>SqlNode</code>接口的相应实现表示。</p>
+<p><code>SqlSource</code>接口的定义：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">SqlSource</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">  <span class="function">BoundSql <span class="title">getBoundSql</span><span class="params">(Object parameterObject)</span></span>;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><code>SqlSource</code>接口的实现类图：</p>
+<p><img src="https://gitee.com/cayzlh/img-repo/raw/master/2020/08/17323715982615571598261557744.png" alt="image-20200824173236987"></p>
+<ul>
+<li><code>DynamicSqlSource</code>负责处理动态<code>SQL</code>语句，<code>RawSqlSource</code>负责处理静态语句，两者最终都会将处理后的<code>SQL</code>语句封装成<code>StaticSqlSource</code>返回。</li>
+<li><code>DynamicSqlSource</code>与<code>StaticSqlSource</code>的主要区别：<ul>
+<li><code>StaticSqlSource</code>中记录的<code>SQL</code>语句中可能含有<code>?</code>占位符，但是可以直接提交给数据库执行</li>
+<li><code>DynamicSqlSource</code>中封装的<code>SQL</code>语句还需要进行一系列解析，才会最终形成数据库可执行的<code>SQL</code>语句</li>
+</ul>
+</li>
+</ul>
+<h2 id="组合模式"><a href="#组合模式" class="headerlink" title="组合模式"></a>组合模式</h2><p>组合模式是将对象组合成树形结构，以表示<code>部分-整体</code>的层次结构(一般是树形结构)，用户可以像处理一个简单对象一样来处理一个复杂对象，从而使得调用者无须了解复杂元素的内部结构。</p>
+<p><img src="https://gitee.com/cayzlh/img-repo/raw/master/2020/08/17400415982620041598262004554.png" alt="image-20200824174003381"></p>
+<p>组合模式中的各模式如下：</p>
+<ul>
+<li><p><strong>抽象组件(<code>Component</code>)</strong></p>
+<p><code>Component</code>接口定义了树形结构中所有类的公共行为，例如这里的<code>operation()</code>方法。</p>
+<p>一般情况下，其中还会定义一些用于管理子组件的方法，例如这里的<code>add()</code>、<code>remove()</code>、<code>getChild()</code>方法。</p>
+</li>
+<li><p><strong>树叶(<code>Leaf</code>)</strong></p>
+<p><code>Leaf</code>在树形结构中表示叶节点对象，叶节点没有子节点。</p>
+</li>
+<li><p><strong>树枝(<code>Composite</code>)</strong></p>
+<p>定义有子组件的那些组件的行为。该角色用于管理子组件，并通过<code>operation()</code>方法调用其管理的子组件的相关操作。</p>
+</li>
+<li><p><strong>调用者(<code>Client</code>)</strong></p>
+<p>通过<code>Component</code>接口操纵整个树形结构。</p>
+</li>
+</ul>
+<p><u>组合模式主要有两点好处</u>，<strong>首先组合模式可以帮助调用者屏蔽对象的复杂性</strong>。</p>
+<p>对于调用者来说，使用整个树形结构与使用单个<code>Component</code>对象没有任何区别，也就是说，调用者并不必关心自己处理的是单个<code>Component</code>对象还是整个树形结构，这样就可以将调用者与复杂对象进行解耦。</p>
+<p>另外，<strong>使用了组合模式之后，我们可以通过增加树中节点的方式，添加新的Component对象，从而实现功能上的扩展，这符合<code>开放-封闭</code>原则，也可以简化日后的维护工作。</strong></p>
+<p><u>组合模式在带来上述好处的同时，也会引入一些问题</u>。</p>
+<p>例如，有些场景下程序希望一个组合结构中只能有某些特定的组件，此时就很难直接通过组件类型进行限制(因为都是<code>Component</code>接口的实现类)，这就必须在运行时进行类型检测。而且，在递归程序中定位问题也是一件比较复杂的事情。</p>
+<p><code>MyBatis</code>在处理动态<code>SQL</code>节点时，应用到了组合设计模式。<code>MyBatis</code>会将动态<code>SQL</code>节点解析成对应的<code>SqlNode</code>实现，并形成树形结构。</p>
+<h2 id="OGNL表达式"><a href="#OGNL表达式" class="headerlink" title="OGNL表达式"></a>OGNL表达式</h2><p><code>OGNL</code>(<strong>Object Graphic Navigation Language，对象图导航语言</strong>)表达式在<code>Struts</code>、<code>MyBatis</code>等开源项目中有广泛的应用，其中<code>Struts</code>框架更是将<code>OGNL</code>作为默认的表达式语言。</p>
+<p>在<code>MyBatis</code>中涉及的<code>OGNL</code>表达式的功能主要是：<strong>存取<code>Java</code>对象树中的属性</strong>、<strong>调用<code>Java</code>对象树中的方法等</strong>。</p>
+<p><strong>OGNL中的几个概念：</strong></p>
+<ul>
+<li><p><strong>表达式</strong></p>
+<p><code>OGNL</code>表达式执行的所有操作都是根据表达式解析得到的。</p>
+<p>例如：</p>
+<p><code>对象名.方法名</code>表示调用指定对象的指定方法</p>
+<p><code>@[类的完全限定名]@[静态方法或静态字段]</code>表示调用指定类的静态方法或访问静态字段</p>
+<p><code>OGNL</code>表达式还可以完成<u>变量赋值</u>、<u>操作集合</u>等操作。</p>
+</li>
+<li><p><strong>root对象</strong></p>
+<p><code>OGNL</code>表达式指定了具体的操作，而<code>root</code>对象指定了需要操作的对象。</p>
+</li>
+<li><p><strong>OgnlContext（上下文对象）</strong></p>
+<p><code>OgnlContext</code>类继承了<code>Map</code>接口，<code>OgnlContext</code>对象说白了也就是一个<code>Map</code>对象。</p>
+<p>既然如此，<code>OgnIContext</code>对象中就可以存放除<code>root</code>对象之外的其他对象。</p>
+<p>在使用<code>OGNL</code>表达式操作非<code>root</code>对象时，需要使用<code>#</code>前缀，而操作<code>root</code>对象则不需要使用<code>#</code>前缀。</p>
+</li>
+</ul>
+<p>在<code>MyBatis</code>中，使用<code>OgnlCache</code>对原生的<code>OGNL</code>进行了封装。<code>OGNL</code>表达式的解析过程是比较耗时的，为了提高效率，<code>OgnlCache</code>中使用<code>expressionCache</code>字段(静态成员，<code>ConcurrentHashMap&lt;String,Object&gt;</code>类型)对解析后的<code>OGNL</code>表达式进行缓存。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> Map&lt;String, Object&gt; expressionCache = <span class="keyword">new</span> ConcurrentHashMap&lt;String, Object&gt;();</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> Object <span class="title">getValue</span><span class="params">(String expression, Object root)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">try</span> &#123;</span><br><span class="line">    Map&lt;Object, OgnlClassResolver&gt; context = Ognl.createDefaultContext(root, <span class="keyword">new</span> OgnlClassResolver());</span><br><span class="line">    <span class="keyword">return</span> Ognl.getValue(parseExpression(expression), context, root);</span><br><span class="line">  &#125; <span class="keyword">catch</span> (OgnlException e) &#123;</span><br><span class="line">    <span class="keyword">throw</span> <span class="keyword">new</span> BuilderException(<span class="string">&quot;Error evaluating expression &#x27;&quot;</span> + expression + <span class="string">&quot;&#x27;. Cause: &quot;</span> + e, e);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">static</span> Object <span class="title">parseExpression</span><span class="params">(String expression)</span> <span class="keyword">throws</span> OgnlException </span>&#123;</span><br><span class="line">  Object node = expressionCache.get(expression);</span><br><span class="line">  <span class="keyword">if</span> (node == <span class="keyword">null</span>) &#123;</span><br><span class="line">    node = Ognl.parseExpression(expression);</span><br><span class="line">    expressionCache.put(expression, node);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> node;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="DynamicContext"><a href="#DynamicContext" class="headerlink" title="DynamicContext"></a>DynamicContext</h2><p><code>DynamicContext</code>主要用于记录解析动态<code>SQL</code>语句之后产生的<code>SQL</code>语句片段，可以认为它是一个用于记录动态<code>SQL</code>语句解析结果的容器。</p>
+<p>其中有两个核心字段：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 参数上下文</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> ContextMap bindings;</span><br><span class="line"><span class="comment">// 在SqlNode解析动态sql的时候，会将解析后的sql语句片段添加到该属性中保存，最终拼凑出一条完整的sql语句</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> StringBuilder sqlBuilder = <span class="keyword">new</span> StringBuilder();</span><br></pre></td></tr></table></figure>
+<p><code>ContextMap</code>是<code>DynamicContext</code>中定义的内部类，它实现了<code>HashMap</code>并重写了<code>get()</code>方法。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">ContextMap</span> <span class="keyword">extends</span> <span class="title">HashMap</span>&lt;<span class="title">String</span>, <span class="title">Object</span>&gt; </span>&#123;</span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">long</span> serialVersionUID = <span class="number">2977601501966151582L</span>;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 将用户传的参数封装成MetaObject对象</span></span><br><span class="line">  <span class="keyword">private</span> MetaObject parameterMetaObject;</span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="title">ContextMap</span><span class="params">(MetaObject parameterMetaObject)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">this</span>.parameterMetaObject = parameterMetaObject;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="meta">@Override</span></span><br><span class="line">  <span class="function"><span class="keyword">public</span> Object <span class="title">get</span><span class="params">(Object key)</span> </span>&#123;</span><br><span class="line">    String strKey = (String) key;</span><br><span class="line">    <span class="keyword">if</span> (<span class="keyword">super</span>.containsKey(strKey)) &#123;</span><br><span class="line">      <span class="keyword">return</span> <span class="keyword">super</span>.get(strKey);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (parameterMetaObject != <span class="keyword">null</span>) &#123;</span><br><span class="line">      <span class="comment">// issue #61 do not modify the context when reading</span></span><br><span class="line">      <span class="keyword">return</span> parameterMetaObject.getValue(strKey);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><code>DynamicContext</code>的构造方法会初始化<code>bindings</code>集合，注意构造方法的第二个参数<code>pammeterObject</code>，它是运行时用户传入的参数，其中包含了后续用于替换<code>#&#123;&#125;</code>占位符的实参。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="title">DynamicContext</span><span class="params">(Configuration configuration, Object parameterObject)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (parameterObject != <span class="keyword">null</span> &amp;&amp; !(parameterObject <span class="keyword">instanceof</span> Map)) &#123;</span><br><span class="line">    <span class="comment">// 对于不是Map类型的参数，会创装MetaObject对象，并封装成ContextMap对象</span></span><br><span class="line">    MetaObject metaObject = configuration.newMetaObject(parameterObject);</span><br><span class="line">    bindings = <span class="keyword">new</span> ContextMap(metaObject);</span><br><span class="line">  &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    bindings = <span class="keyword">new</span> ContextMap(<span class="keyword">null</span>);</span><br><span class="line">  &#125;</span><br><span class="line">  bindings.put(PARAMETER_OBJECT_KEY, parameterObject);</span><br><span class="line">  bindings.put(DATABASE_ID_KEY, configuration.getDatabaseId());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="SqlNode"><a href="#SqlNode" class="headerlink" title="SqlNode"></a>SqlNode</h2><p>接下来看看SqlNode的实现类是如何解析其对应的SQL节点。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">SqlNode</span> </span>&#123;</span><br><span class="line">  <span class="comment">// apply()是SqlNode接口中定义的唯一方法，该方法会根据用户传入的实参，参数解析该SqlNode所</span></span><br><span class="line">  <span class="comment">// 记录的动态SQL节点，并调用DynamicContext.appendSql()方法将解析后的SQL片段追加到</span></span><br><span class="line">  <span class="comment">// DynamicContext.sqlBuilder中保存</span></span><br><span class="line">  <span class="comment">// 当SQL节点下的所有SqlNode完成解析后，我们就可以从DynamicContext中获取一条动态生成的、</span></span><br><span class="line">  <span class="comment">// 完整的SQL语句</span></span><br><span class="line">  <span class="function"><span class="keyword">boolean</span> <span class="title">apply</span><span class="params">(DynamicContext context)</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><code>SqlNode</code>接口有多个实现类，每个实现类对应一个动态<code>SQL</code>节点。按照组合模式的角色来划分，<code>SqlNode</code>扮演了抽象组件的角色，<code>MixedSqlNode</code>扮演了树枝节点的角色，<code>TextSqlNode</code>节点扮演了树叶节点的角色等等。</p>
+<p><img src="https://gitee.com/cayzlh/img-repo/raw/master/2020/08/16395615983447961598344796478.png" alt="image-20200825163955175"></p>
+<p><strong>1、StaticTextSqINode&amp;MixedSqINode</strong></p>
+<p><code>StaticTextSqINode</code>中使用<code>text</code>字段(<code>String</code>类型)记录了对应的非动态<code>SQL</code>语句节点，其<code>apply()</code>方法直接将<code>text</code>字段追加到<code>DynamicContext.sqlBuilder</code>字段中。</p>
+<p><code>MixedSqINode</code>中使用<code>contents</code>字段(<code>List&lt;SqlNode&gt;</code>类型)记录其子节点对应的<code>SqlNode</code>对象集合，其<code>apply()</code>方法会循环调用<code>contents</code>集合中所有<code>SqlNode</code>对象的<code>apply()</code>方法。</p>
+<p><strong>2、TextSqlNode</strong></p>
+<p><u><code>TextSqlNode</code>表示的是包含占位符的动态<code>SQL</code>节点。</u><code>TextSqlNode.apply()</code>方法会使用<code>GenericTokenParser</code>解析<code>$&#123;&#125;</code>占位符，并直接替换成用户给定的实际参数值。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">apply</span><span class="params">(DynamicContext context)</span> </span>&#123;</span><br><span class="line">  <span class="comment">// 创建GenericTokenParser解析器，</span></span><br><span class="line">  GenericTokenParser parser = createParser(<span class="keyword">new</span> BindingTokenParser(context, injectionFilter));</span><br><span class="line">  <span class="comment">// 将解析后的SQL片段添加到DynamicContext中</span></span><br><span class="line">  context.appendSql(parser.parse(text));</span><br><span class="line">  <span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">private</span> GenericTokenParser <span class="title">createParser</span><span class="params">(TokenHandler handler)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> <span class="keyword">new</span> GenericTokenParser(<span class="string">&quot;$&#123;&quot;</span>, <span class="string">&quot;&#125;&quot;</span>, handler);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>**<code>BindingTokenParser</code>**是<code>TextSqlNode</code>中定义的内部类，继承了<code>TokenHandler</code>接口，<u>它的主要功能是根据<code>DynamicContext.bindings</code>集合中的信息解析<code>SQL</code>语句节点中的<code>$&#123;&#125;</code>占位符</u>。<code>BindingTokenParser.context</code>字段指向了对应的<code>DynamicContext</code>对象。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">BindingTokenParser</span> <span class="keyword">implements</span> <span class="title">TokenHandler</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">private</span> DynamicContext context;</span><br><span class="line">  <span class="keyword">private</span> Pattern injectionFilter;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="title">BindingTokenParser</span><span class="params">(DynamicContext context, Pattern injectionFilter)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">this</span>.context = context;</span><br><span class="line">    <span class="keyword">this</span>.injectionFilter = injectionFilter;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="meta">@Override</span></span><br><span class="line">  <span class="function"><span class="keyword">public</span> String <span class="title">handleToken</span><span class="params">(String content)</span> </span>&#123;</span><br><span class="line">    Object parameter = context.getBindings().get(<span class="string">&quot;_parameter&quot;</span>);</span><br><span class="line">    <span class="keyword">if</span> (parameter == <span class="keyword">null</span>) &#123;</span><br><span class="line">      context.getBindings().put(<span class="string">&quot;value&quot;</span>, <span class="keyword">null</span>);</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (SimpleTypeRegistry.isSimpleType(parameter.getClass())) &#123;</span><br><span class="line">      context.getBindings().put(<span class="string">&quot;value&quot;</span>, parameter);</span><br><span class="line">    &#125;</span><br><span class="line">    Object value = OgnlCache.getValue(content, context.getBindings());</span><br><span class="line">    String srtValue = (value == <span class="keyword">null</span> ? <span class="string">&quot;&quot;</span> : String.valueOf(value)); <span class="comment">// issue #274 return &quot;&quot; instead of &quot;null&quot;</span></span><br><span class="line">    checkInjection(srtValue);</span><br><span class="line">    <span class="keyword">return</span> srtValue;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">checkInjection</span><span class="params">(String value)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (injectionFilter != <span class="keyword">null</span> &amp;&amp; !injectionFilter.matcher(value).matches()) &#123;</span><br><span class="line">      <span class="keyword">throw</span> <span class="keyword">new</span> ScriptingException(<span class="string">&quot;Invalid input. Please conform to regex&quot;</span> + injectionFilter.pattern());</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><strong>3、IfSqlNode</strong></p>
+<p><code>IfSqlNode</code>对应的动态<code>SQL</code>节点是<code>&lt;if&gt;</code>节点，以下是几个核心字段。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 用于解析if节点的test表达式的值</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> ExpressionEvaluator evaluator;</span><br><span class="line"><span class="comment">// 记录了test表达式</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> String test;</span><br><span class="line"><span class="comment">// 记录子节点</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> SqlNode contents;</span><br></pre></td></tr></table></figure>
+<p><code>IfSqlNode.apply()</code>方法首先会通过<code>ExpressionEvaluator.evaluateBoolean()</code>方法检测其<code>test</code>表达<br>式是否为<code>true</code>，然后根据<code>test</code>表达式的结果，决定是否执行其子节点的<code>apply()</code>方法。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">apply</span><span class="params">(DynamicContext context)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (evaluator.evaluateBoolean(test, context.getBindings())) &#123;</span><br><span class="line">    contents.apply(context);</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> <span class="keyword">false</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">evaluateBoolean</span><span class="params">(String expression, Object parameterObject)</span> </span>&#123;</span><br><span class="line">  Object value = OgnlCache.getValue(expression, parameterObject);</span><br><span class="line">  <span class="keyword">if</span> (value <span class="keyword">instanceof</span> Boolean) &#123;</span><br><span class="line">    <span class="keyword">return</span> (Boolean) value;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">if</span> (value <span class="keyword">instanceof</span> Number) &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">new</span> BigDecimal(String.valueOf(value)).compareTo(BigDecimal.ZERO) != <span class="number">0</span>;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> value != <span class="keyword">null</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><strong>4、TrimSqINode&amp;WhereSqINode&amp;SetSqINode</strong></p>
+<p><code>TrimSqlNode</code>会根据子节点的解析结果，添加或删除相应的前缀或后缀。其中几个字段如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 记录子节点</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> SqlNode contents;</span><br><span class="line"><span class="comment">// SQL语句添加的前缀</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> String prefix;</span><br><span class="line"><span class="comment">// SQL语句添加的后缀</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> String suffix;</span><br><span class="line"><span class="comment">// </span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> List&lt;String&gt; prefixesToOverride;</span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> List&lt;String&gt; suffixesToOverride;</span><br></pre></td></tr></table></figure>
+<p>在<code>TrimSqlNode</code>的构造函数中，会调用<code>parseOverrides()</code>方法对参数<code>prefixesToOverride</code>(对应<code>&lt;trim&gt;</code>节点的<code>prefixOverrides</code>属性)和参数<code>suffixesToOverride</code>(对应<code>&lt;trim&gt;</code>节点的<code>suffixOverrides</code>属性)进行解析，并初始化<code>prefixesToOverride</code>和<code>sufflxesToOverride</code>。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">static</span> List&lt;String&gt; <span class="title">parseOverrides</span><span class="params">(String overrides)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (overrides != <span class="keyword">null</span>) &#123;</span><br><span class="line">    <span class="keyword">final</span> StringTokenizer parser = <span class="keyword">new</span> StringTokenizer(overrides, <span class="string">&quot;|&quot;</span>, <span class="keyword">false</span>);</span><br><span class="line">    <span class="keyword">final</span> List&lt;String&gt; list = <span class="keyword">new</span> ArrayList&lt;String&gt;(parser.countTokens());</span><br><span class="line">    <span class="keyword">while</span> (parser.hasMoreTokens()) &#123;</span><br><span class="line">      list.add(parser.nextToken().toUpperCase(Locale.ENGLISH));</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> list;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> Collections.emptyList();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><code>TrimSqlNode.apply()</code>方法首先解析子节点，然后根据子节点的解析结果处理前缀和后缀。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">apply</span><span class="params">(DynamicContext context)</span> </span>&#123;</span><br><span class="line">  <span class="comment">// 创建FilteredDynamicContext对象，其中封装了DynamicContext</span></span><br><span class="line">  FilteredDynamicContext filteredDynamicContext = <span class="keyword">new</span> FilteredDynamicContext(context);</span><br><span class="line">  <span class="comment">// 调用子节点的apply方法进行解析</span></span><br><span class="line">  <span class="keyword">boolean</span> result = contents.apply(filteredDynamicContext);</span><br><span class="line">  <span class="comment">// 处理前缀和后缀</span></span><br><span class="line">  filteredDynamicContext.applyAll();</span><br><span class="line">  <span class="keyword">return</span> result;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>处理前缀和后缀的主要逻辑是在<code>FilteredDynamicContext</code>中实现的，它继承了<code>DynamicContext</code>，同时也是<code>DynamicContext</code>的代理类。</p>
+<p><code>FilteredDynamicContext</code>除了将对应方法调用委托给其中封装的<code>DynamicContext</code>对象，还提供了处理前缀和后缀的<code>applyAll()</code>方法。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="class"><span class="keyword">class</span> <span class="title">FilteredDynamicContext</span> <span class="keyword">extends</span> <span class="title">DynamicContext</span> </span>&#123;</span><br><span class="line">  <span class="comment">// 底层封装的DynamicContext对象</span></span><br><span class="line">  <span class="keyword">private</span> DynamicContext delegate;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 是否已经处理过前缀和后缀</span></span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">boolean</span> prefixApplied;</span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">boolean</span> suffixApplied;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 记录子节点解析过后的结果</span></span><br><span class="line">  <span class="keyword">private</span> StringBuilder sqlBuffer;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// ...</span></span><br><span class="line">  <span class="comment">// ...</span></span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">applyAll</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="comment">// 获取子节点解析过后的结果，并全部转换为大写</span></span><br><span class="line">    sqlBuffer = <span class="keyword">new</span> StringBuilder(sqlBuffer.toString().trim());</span><br><span class="line">    String trimmedUppercaseSql = sqlBuffer.toString().toUpperCase(Locale.ENGLISH);</span><br><span class="line">    <span class="keyword">if</span> (trimmedUppercaseSql.length() &gt; <span class="number">0</span>) &#123;</span><br><span class="line">      applyPrefix(sqlBuffer, trimmedUppercaseSql);<span class="comment">// 处理前缀</span></span><br><span class="line">      applySuffix(sqlBuffer, trimmedUppercaseSql);<span class="comment">// 处理后缀</span></span><br><span class="line">    &#125;</span><br><span class="line">    delegate.appendSql(sqlBuffer.toString());</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// ...</span></span><br><span class="line">  <span class="comment">// ...</span></span><br><span class="line"></span><br><span class="line">  <span class="comment">// 处理前缀</span></span><br><span class="line">  <span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">applyPrefix</span><span class="params">(StringBuilder sql, String trimmedUppercaseSql)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (!prefixApplied) &#123;</span><br><span class="line">      prefixApplied = <span class="keyword">true</span>;</span><br><span class="line">      <span class="keyword">if</span> (prefixesToOverride != <span class="keyword">null</span>) &#123;</span><br><span class="line">        <span class="keyword">for</span> (String toRemove : prefixesToOverride) &#123;</span><br><span class="line">          <span class="keyword">if</span> (trimmedUppercaseSql.startsWith(toRemove)) &#123;</span><br><span class="line">            sql.delete(<span class="number">0</span>, toRemove.trim().length());</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">          &#125;</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">if</span> (prefix != <span class="keyword">null</span>) &#123;</span><br><span class="line">        sql.insert(<span class="number">0</span>, <span class="string">&quot; &quot;</span>);</span><br><span class="line">        sql.insert(<span class="number">0</span>, prefix);</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 处理后缀</span></span><br><span class="line">  <span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">applySuffix</span><span class="params">(StringBuilder sql, String trimmedUppercaseSql)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (!suffixApplied) &#123;</span><br><span class="line">      suffixApplied = <span class="keyword">true</span>;</span><br><span class="line">      <span class="keyword">if</span> (suffixesToOverride != <span class="keyword">null</span>) &#123;</span><br><span class="line">        <span class="keyword">for</span> (String toRemove : suffixesToOverride) &#123;</span><br><span class="line">          <span class="keyword">if</span> (trimmedUppercaseSql.endsWith(toRemove) || </span><br><span class="line">              trimmedUppercaseSql.endsWith(toRemove.trim())) &#123;</span><br><span class="line">            <span class="keyword">int</span> start = sql.length() - toRemove.trim().length();</span><br><span class="line">            <span class="keyword">int</span> end = sql.length();</span><br><span class="line">            sql.delete(start, end);</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">          &#125;</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">if</span> (suffix != <span class="keyword">null</span>) &#123;</span><br><span class="line">        sql.append(<span class="string">&quot; &quot;</span>);</span><br><span class="line">        sql.append(suffix);</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><u><code>WhereSqlNode</code>和<code>SetSqlNode</code>都继承了<code>TrimSqlNode</code></u>。</p>
+<p>其中<code>WhereSqlNode</code>指定了<code>prefix</code>字段为<code>WHERE</code>，<code>prefixesToOverride</code>集合中的项为<code>AND</code>和<code>OR</code>，<code>suffix</code>字段和<code>suffixesToOverride</code>集合为<code>null</code>。也就是说，<code>&lt;where&gt;</code>节点解析后的<code>SQL</code>语句片段如果以<code>AND</code>或<code>OR</code>开头，则将开头处的<code>AND</code>或<code>OR</code>删除，之后再将<code>WHERE</code>关键字添加到<code>SQL</code>片段开始位置，从而得到该<code>&lt;where&gt;</code>节点最终生成的<code>SQL</code>片段。</p>
+<p><code>SetSqlNode</code>指定了<code>prefix</code>字段为<code>SET</code>，<code>suffixesToOverride</code>集合中的项只有<code>suffix</code>字段和<code>prefixesToOverride</code>集合为<code>null</code>。也就是说，<code>&lt;set&gt;</code>节点解析后的<code>SQL</code>语句片段如果以<code>,</code>结尾，则将结尾处的删除掉，之后再将<code>SET</code>关键字添加到<code>SQL</code>片段的开始位置，从而得到该<code>&lt;set&gt;</code>节点最终生成的<code>SQL</code>片段。</p>
+<p><strong>5、ForeachSqINode</strong></p>
+<p>在动态<code>SQL</code>语句中构建<code>IN</code>条件语句的时候，通常需要对一个集合进行迭代，<code>MyBatis</code>提供了<code>&lt;foreach&gt;</code>标签实现该功能。在使用<code>&lt;foreach&gt;</code>标签迭代集合时，不仅可以使用集合的元素和索引值，还可以在循环开始之前或结束之后添加指定的字符串，也允许在迭代过程中添加指定的分隔符。</p>
+<p>解析<code>&lt;foreach&gt;</code>节点对应的<code>sqlnode</code>实现类是<code>ForeachSqlNode</code>，以下是其中定义的字段：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 用于判断循环的终止条件，ForeachSqlNode构造方法中会创建该对象</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> ExpressionEvaluator evaluator;</span><br><span class="line"><span class="comment">// 迭代的集合表达式</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> String collectionExpression;</span><br><span class="line"><span class="comment">// 子节点</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> SqlNode contents;</span><br><span class="line"><span class="comment">// 循环开始前要添加的字符串</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> String open;</span><br><span class="line"><span class="comment">// 循环结束时要添加的字符串</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> String close;</span><br><span class="line"><span class="comment">// 分隔符</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> String separator;</span><br><span class="line"><span class="comment">// 本次迭代的元素</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> String item;</span><br><span class="line"><span class="comment">// 当前迭代的次数</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> String index;</span><br><span class="line"><span class="comment">// 配置</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> Configuration configuration;</span><br></pre></td></tr></table></figure>
+<p><code>ForeachSqINode</code>中有两个内部类，分别是<code>PrefixedContext</code>和<code>FilteredDynamicContext</code>，它们都继承了<code>DynamicContext</code>，同时也都是<code>DynamicContext</code>的代理类。</p>
+<p><strong><code>PreFixedContext</code></strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="class"><span class="keyword">class</span> <span class="title">PrefixedContext</span> <span class="keyword">extends</span> <span class="title">DynamicContext</span> </span>&#123;</span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">final</span> DynamicContext delegate;</span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">final</span> String prefix;</span><br><span class="line">  <span class="comment">// 是否已经处理过前缀</span></span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">boolean</span> prefixApplied;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// ...</span></span><br><span class="line">  </span><br><span class="line">  <span class="meta">@Override</span></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">appendSql</span><span class="params">(String sql)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (!prefixApplied &amp;&amp; sql != <span class="keyword">null</span> &amp;&amp; sql.trim().length() &gt; <span class="number">0</span>) &#123; <span class="comment">// 是否需要追加前缀</span></span><br><span class="line">      delegate.appendSql(prefix); <span class="comment">// 追加前缀</span></span><br><span class="line">      prefixApplied = <span class="keyword">true</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    delegate.appendSql(sql); <span class="comment">// 追加sql</span></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><strong><code>FilteredDynamicContext</code></strong></p>
+<p><code>FilteredDynamicContext</code>负责处理<code>#&#123;&#125;</code>占位符，但它并未完全解析<code>#&#123;&#125;</code>占位符。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">FilteredDynamicContext</span> <span class="keyword">extends</span> <span class="title">DynamicContext</span> </span>&#123;</span><br><span class="line">  <span class="comment">// DynamicContext对象</span></span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">final</span> DynamicContext delegate;</span><br><span class="line">  <span class="comment">// 索引位置</span></span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">final</span> <span class="keyword">int</span> index;</span><br><span class="line">  <span class="comment">// 对应集合项的index</span></span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">final</span> String itemIndex;</span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">final</span> String item;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// ...</span></span><br><span class="line"></span><br><span class="line">  <span class="meta">@Override</span></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">appendSql</span><span class="params">(String sql)</span> </span>&#123;</span><br><span class="line">    GenericTokenParser parser = <span class="keyword">new</span> GenericTokenParser(<span class="string">&quot;#&#123;&quot;</span>, <span class="string">&quot;&#125;&quot;</span>, <span class="keyword">new</span> TokenHandler() &#123;</span><br><span class="line">      <span class="meta">@Override</span></span><br><span class="line">      <span class="function"><span class="keyword">public</span> String <span class="title">handleToken</span><span class="params">(String content)</span> </span>&#123;</span><br><span class="line">        String newContent = </span><br><span class="line">          content.replaceFirst(<span class="string">&quot;^\\s*&quot;</span> + item + <span class="string">&quot;(?![^.,:\\s])&quot;</span>, itemizeItem(item, index));</span><br><span class="line">        <span class="keyword">if</span> (itemIndex != <span class="keyword">null</span> &amp;&amp; newContent.equals(content)) &#123;</span><br><span class="line">          newContent = </span><br><span class="line">            content.replaceFirst(<span class="string">&quot;^\\s*&quot;</span> + itemIndex + <span class="string">&quot;(?![^.,:\\s])&quot;</span>, </span><br><span class="line">                                 itemizeItem(itemIndex, index));</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> StringBuilder(<span class="string">&quot;#&#123;&quot;</span>).append(newContent).append(<span class="string">&quot;&#125;&quot;</span>).toString();</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;);</span><br><span class="line"></span><br><span class="line">    delegate.appendSql(parser.parse(sql));</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="meta">@Override</span></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">getUniqueNumber</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> delegate.getUniqueNumber();</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><strong>6、ChooseSqlNode</strong></p>
+<p>如果在编写动态<code>SQL</code>语句时需要类似<code>Java</code>中的<code>switch</code>语句的功能，可以考虑使用<code>&lt;choose&gt;</code>、<code>&lt;when&gt;</code>和<code>&lt;otherwise&gt;</code>三个标签的组合。<code>MyBatis</code>会将<code>&lt;choose&gt;</code>标签解析成<code>ChooseSqlNode</code>，将<code>&lt;when&gt;</code>标签解析成<code>IfSqlNode</code>，将<code>&lt;otherwise&gt;</code>标签解析成<code>MixedSqlNode</code>。</p>
+<p><code>ChooseSqlNode.apply()</code>方法的逻辑比较简单，首先遍历<code>ifSqlNodes</code>集合并调用其中<code>SqlNode</code><br>对象的<code>apply()</code>方法，然后根据前面的处理结果决定是否调用<code>defaultSqlNode</code>的<code>apply()</code>方法。</p>
+<p><strong>7、VarDecISqINode</strong></p>
+<p><code>VarDeclSqlNode</code>表示的是动态<code>SQL</code>语句中的<code>&lt;bind&gt;</code>节点,该节点可以从<code>OGNL</code>表达式中创建一个变量并将其记录到上下文中。</p>
+<p>在<code>VarDecISqINode</code>中通过<code>name</code>字段记录<code>&lt;bind&gt;</code>节点的<code>name</code>属性值，<code>expression</code>字段记录<code>&lt;bind&gt;</code>节点的<code>value</code>属性值。</p>
+<h2 id="SqlSourceBuilder"><a href="#SqlSourceBuilder" class="headerlink" title="SqlSourceBuilder"></a>SqlSourceBuilder</h2><p>在经过<code>SqlNode.apply()</code>方法的解析之后，<code>SQL</code>语句会被传递到<code>SqlSourceBuilder</code>中进行进一步的解析。</p>
+<p><code>SqISourceBuilder</code>主要完成了两方面的操作，一方面是解析<code>SQL</code>语句中的<code>#&#123;&#125;</code><br>占位符中定义的属性，格式类似于<code>#&#123;__frc_item_0,javaType=int,jdbcType=NUMERIC,typeHandler=MyTypeHandler&#125;</code>，另一方面是将<code>SQL</code>语句中的<code>#&#123;&#125;</code>占位符替换成<code>?</code>占位符。</p>
+<p><code>SqlSourceBuilder</code>也是<code>BaseBuilder</code>的子类之一，其核心逻辑位于<code>parse()</code>方法中。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> SqlSource <span class="title">parse</span><span class="params">(</span></span></span><br><span class="line"><span class="function"><span class="params">  String originalSql, Class&lt;?&gt; parameterType, Map&lt;String, Object&gt; additionalParameters)</span> </span>&#123;</span><br><span class="line">  <span class="comment">// 第一个参数是经过SqlNode.apply()方法处理之后的sql语句</span></span><br><span class="line">  <span class="comment">// 第二个参数是用户传入的实参类型</span></span><br><span class="line">  <span class="comment">// 第三个参数记录了形参与实参的对应关系，其实就是经过SqlNode.apply()方法处理后的DynamicContext.bindings集合</span></span><br><span class="line">  </span><br><span class="line">  <span class="comment">// 创建ParameterMappingTokenHandler对象， 它是解析#&#123;&#125;占位符中的参数属性以及替换占位符的核心</span></span><br><span class="line">  ParameterMappingTokenHandler handler = </span><br><span class="line">    <span class="keyword">new</span> ParameterMappingTokenHandler(configuration, parameterType, additionalParameters);</span><br><span class="line">  </span><br><span class="line">  <span class="comment">// 配合ParameterMappingTokenHandler解析占位符</span></span><br><span class="line">  GenericTokenParser parser = <span class="keyword">new</span> GenericTokenParser(<span class="string">&quot;#&#123;&quot;</span>, <span class="string">&quot;&#125;&quot;</span>, handler);</span><br><span class="line">  String sql = parser.parse(originalSql);</span><br><span class="line">  <span class="keyword">return</span> <span class="keyword">new</span> StaticSqlSource(configuration, sql, handler.getParameterMappings());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="DynamicSqlSource"><a href="#DynamicSqlSource" class="headerlink" title="DynamicSqlSource"></a>DynamicSqlSource</h2><p><code>DynamicSqlSource</code>负责解析动态<code>SQL</code>语句，也是最常用的<code>Sqlource</code>实现之一。<code>SqlNode</code>中使用了组合模式，形成了一个树状结构，<code>DynamicSqlSource</code>中使用<code>rootSqlNode</code>字段(<code>SqlNode</code>类型)记录了待解析的<code>SqlNode</code>树的根节点。</p>
+<p><code>DynamicSqlSource.getBoundSql()</code>方法：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> BoundSql <span class="title">getBoundSql</span><span class="params">(Object parameterObject)</span> </span>&#123;</span><br><span class="line">  <span class="comment">// 创建DynamicContext对象</span></span><br><span class="line">  DynamicContext context = <span class="keyword">new</span> DynamicContext(configuration, parameterObject);</span><br><span class="line">  </span><br><span class="line">  <span class="comment">// 通过调用rootSqlNode.apply()方法调用整个树形结构中全部SqlNode.apply()方法。</span></span><br><span class="line">  <span class="comment">// 每个SqlNode的apply()方法都将解析得到的SQL语句片段追加到context中，</span></span><br><span class="line">  <span class="comment">// 最终通过context.getSql()得到完整的SQL语句</span></span><br><span class="line">  rootSqlNode.apply(context);</span><br><span class="line">  SqlSourceBuilder sqlSourceParser = <span class="keyword">new</span> SqlSourceBuilder(configuration);</span><br><span class="line">  Class&lt;?&gt; parameterType = parameterObject == <span class="keyword">null</span> ? </span><br><span class="line">    Object.class : parameterObject.getClass();</span><br><span class="line">  SqlSource sqlSource = sqlSourceParser.parse(context.getSql(), </span><br><span class="line">                                              parameterType, context.getBindings());</span><br><span class="line">  </span><br><span class="line">  <span class="comment">// 创建BoundSql对象，并将DynamicContext.bindings中的参数信息复制到其</span></span><br><span class="line">  BoundSql boundSql = sqlSource.getBoundSql(parameterObject);</span><br><span class="line">  <span class="keyword">for</span> (Map.Entry&lt;String, Object&gt; entry : context.getBindings().entrySet()) &#123;</span><br><span class="line">    boundSql.setAdditionalParameter(entry.getKey(), entry.getValue());</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> boundSql;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><img src="https://gitee.com/cayzlh/img-repo/raw/master/2020/08/10441615985826561598582656771.png" alt="image-20200828104415997"></p>
+<h2 id="RawSqISource"><a href="#RawSqISource" class="headerlink" title="RawSqISource"></a>RawSqISource</h2><p><code>RawSqISource</code>是<code>SqlSource</code>的另一个实现，其逻辑与<code>DynamicSqlSource</code>类似，但是执行时机不一样，处理的<code>SQL</code>语句类型也不一样。</p>
+<p>前面介绍<code>XMLScriptBuilder.parseDynamicTags()</code>方法时提到过，如果节点只包含<code>#&#123;&#125;</code>占位符，而不包含动态<code>SQL</code>节点或未解析的<code>$&#123;&#125;</code>占位符的话，则不是动态<code>SQL</code>语句，会创建相应的<code>StaticTextSqlNode</code>对象。</p>
+<p>在<code>XMLScriptBuilder.parseScriptNode()</code>方法中会判断整个<code>SQL</code>节点是否为动态的，如果不是动态的<code>SQL</code>节点，则创建相应的<code>RawSqlSource</code>对象。</p>
+<p><strong><code>RawSqlSource</code>在构造方法中首先会调用<code>getSql()</code>方法，其中通过调用<code>SqlNode.apply()</code>方法完成<code>SQL</code>语句的拼装和初步处理；</strong>之后会使用<code>SqlSourceBuilder</code>完成占位符的替换和<code>ParameterMapping</code>集合的创建，并返回<code>StaticSqlSource</code>对象。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">RawSqlSource</span> <span class="keyword">implements</span> <span class="title">SqlSource</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">final</span> SqlSource sqlSource;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="title">RawSqlSource</span><span class="params">(Configuration configuration, SqlNode rootSqlNode, Class&lt;?&gt; parameterType)</span> </span>&#123;</span><br><span class="line">    <span class="comment">// 调用getsql()方法，完成SQL语句的拼装和初步解析</span></span><br><span class="line">    <span class="keyword">this</span>(configuration, getSql(configuration, rootSqlNode), parameterType);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="title">RawSqlSource</span><span class="params">(Configuration configuration, String sql, Class&lt;?&gt; parameterType)</span> </span>&#123;</span><br><span class="line">    SqlSourceBuilder sqlSourceParser = <span class="keyword">new</span> SqlSourceBuilder(configuration);</span><br><span class="line">    Class&lt;?&gt; clazz = parameterType == <span class="keyword">null</span> ? Object.class : parameterType;</span><br><span class="line">    sqlSource = sqlSourceParser.parse(sql, clazz, <span class="keyword">new</span> HashMap&lt;String, Object&gt;());</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">private</span> <span class="keyword">static</span> String <span class="title">getSql</span><span class="params">(Configuration configuration, SqlNode rootSqlNode)</span> </span>&#123;</span><br><span class="line">    DynamicContext context = <span class="keyword">new</span> DynamicContext(configuration, <span class="keyword">null</span>);</span><br><span class="line">    rootSqlNode.apply(context);</span><br><span class="line">    <span class="keyword">return</span> context.getSql();</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="meta">@Override</span></span><br><span class="line">  <span class="function"><span class="keyword">public</span> BoundSql <span class="title">getBoundSql</span><span class="params">(Object parameterObject)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> sqlSource.getBoundSql(parameterObject);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>无论是<code>StaticSqlSource</code>、<code>DynamicSqlSource</code>还是<code>RawSqlSource</code>，最终都会统一生成<code>BoundSql</code>对象，其中封装了<u>完整的<code>SQL</code>语句(可能包含<code>?</code>占位符)</u>、<u>参数映射关系(<code>parameterMappings</code>集合)</u>以及<u>用户传入的参数(<code>additionalParameters</code>集合)</u>。</p>
+<p>另外，<code>DynamicSqlSource</code>负责处理动态<code>SQL</code>语句，<code>RawSqlSource</code>负责处理静态<code>SQL</code>语句，除此之外，<u>两者解析<code>SQL</code>语句的时机也不一样，前者的解析时机是在实际执行<code>SQL</code>语句之前，而后者则是在<code>MyBatis</code>初始化时完成<code>SQL</code>语句的解析。</u></p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ul>
+<li><p><strong>《MyBatis技术内幕》</strong></p>
+</li>
+<li><p>部分图片来源——<strong>《MyBatis技术内幕》</strong></p>
+</li>
+</ul>
+
+  </div>
+
+  
+    <div style="text-align:center;width:100%">
+      <img src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/640-2.gif">
+    </div>
+  
+
+  
+    <div>
+      <h4>版权声明</h4>
+      <pre>
+        
+        <strong>本文来源： </strong><a href="https://www.cayzlh.com/blog" title="🐳Ant丶" rel="noopener external nofollow noreferrer" target="_blank">https://www.cayzlh.com/blog</a>
+
+        <strong>本文链接：</strong><a href="https://www.cayzlh.com/2020/08/21/bebe404d.html" title="/blog/%E6%A0%B8%E5%BF%83%E5%A4%84%E7%90%86%E5%B1%82-SqlNode&SqlSource">https://www.cayzlh.com/2020/08/21/bebe404d.html</a>
+
+        <strong>版权声明： </strong>
+        
+          文章内容仅用作学习和分享，转载请注明出处
+        
+      </pre>
+    </div>
+  
+
+</article>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/blog/">Home</a></li>
+        
+          <li><a href="/blog/archives/">Articles</a></li>
+        
+          <li><a href="/blog/about/">About</a></li>
+        
+          <li><a href="/blog/search/">Search</a></li>
+        
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%BB%84%E5%90%88%E6%A8%A1%E5%BC%8F"><span class="toc-number">1.</span> <span class="toc-text">组合模式</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#OGNL%E8%A1%A8%E8%BE%BE%E5%BC%8F"><span class="toc-number">2.</span> <span class="toc-text">OGNL表达式</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#DynamicContext"><span class="toc-number">3.</span> <span class="toc-text">DynamicContext</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#SqlNode"><span class="toc-number">4.</span> <span class="toc-text">SqlNode</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#SqlSourceBuilder"><span class="toc-number">5.</span> <span class="toc-text">SqlSourceBuilder</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#DynamicSqlSource"><span class="toc-number">6.</span> <span class="toc-text">DynamicSqlSource</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#RawSqISource"><span class="toc-number">7.</span> <span class="toc-text">RawSqISource</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8F%82%E8%80%83"><span class="toc-number">8.</span> <span class="toc-text">参考</span></a></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.facebook.com/sharer.php?u=https://www.cayzlh.com/2020/08/21/bebe404d.html"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://twitter.com/share?url=https://www.cayzlh.com/2020/08/21/bebe404d.html&text=核心处理层-SqlNode&amp;SqlSource"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.linkedin.com/shareArticle?url=https://www.cayzlh.com/2020/08/21/bebe404d.html&title=核心处理层-SqlNode&amp;SqlSource"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://pinterest.com/pin/create/bookmarklet/?url=https://www.cayzlh.com/2020/08/21/bebe404d.html&is_video=false&description=核心处理层-SqlNode&amp;SqlSource"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=核心处理层-SqlNode&amp;SqlSource&body=Check out this article: https://www.cayzlh.com/2020/08/21/bebe404d.html"><i class="fas fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://getpocket.com/save?url=https://www.cayzlh.com/2020/08/21/bebe404d.html&title=核心处理层-SqlNode&amp;SqlSource"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://reddit.com/submit?url=https://www.cayzlh.com/2020/08/21/bebe404d.html&title=核心处理层-SqlNode&amp;SqlSource"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.stumbleupon.com/submit?url=https://www.cayzlh.com/2020/08/21/bebe404d.html&title=核心处理层-SqlNode&amp;SqlSource"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://digg.com/submit?url=https://www.cayzlh.com/2020/08/21/bebe404d.html&title=核心处理层-SqlNode&amp;SqlSource"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.tumblr.com/share/link?url=https://www.cayzlh.com/2020/08/21/bebe404d.html&name=核心处理层-SqlNode&amp;SqlSource&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://news.ycombinator.com/submitlink?u=https://www.cayzlh.com/2020/08/21/bebe404d.html&t=核心处理层-SqlNode&amp;SqlSource"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fas fa-bars fa-lg" aria-hidden="true"></i> Menu</a>
+        <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fas fa-list fa-lg" aria-hidden="true"></i> TOC</a>
+<!--        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fas fa-share-alt fa-lg" aria-hidden="true"></i> Share</a>-->
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    CAYZLH &copy;
+    
+    
+    2019-2021
+    粤ICP备20058712号-1
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        
+          <li><a href="/blog/tools/">tools</a></li>
+        
+          <li><a href="/blog/links/">links</a></li>
+        
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+<link rel="stylesheet" href="/blog/lib/font-awesome/css/all.min.css">
+
+
+<link rel="stylesheet" href="/blog/lib/justified-gallery/css/justifiedGallery.min.css">
+
+
+    <!-- jquery -->
+
+<script src="/blog/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/blog/lib/justified-gallery/js/jquery.justifiedGallery.min.js"></script>
+
+<!-- clipboard -->
+
+  
+<script src="/blog/lib/clipboard/clipboard.min.js"></script>
+
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"Copy to clipboard!\">";
+    btn += '<i class="far fa-clone"></i>';
+    btn += '</span>'; 
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "Copied!");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/blog/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Google Analytics -->
+
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-129095667-1"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'UA-129095667-1');
+    </script>
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Umami Analytics -->
+
+<!-- Disqus Comments -->
+
+
+</body>
+</html>

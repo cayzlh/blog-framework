@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="description" content="介绍MyBatis的整体架构，简单介绍MyBatis的基础支持层、核心处理层中主要模块的功能。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MyBatis快速入门">
+<meta property="og:url" content="https://www.cayzlh.com/blog">
+<meta property="og:site_name" content="CAYZLH">
+<meta property="og:description" content="介绍MyBatis的整体架构，简单介绍MyBatis的基础支持层、核心处理层中主要模块的功能。">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/09/1_3tUMVN.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2020/05/21/2_c5SKkm.png">
+<meta property="og:image" content="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/10/3_aix99F.png">
+<meta property="og:image" content="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/10/4_SAR13A.png">
+<meta property="article:published_time" content="2019-10-21T03:31:35.000Z">
+<meta property="article:modified_time" content="2020-08-21T08:27:19.686Z">
+<meta property="article:author" content="🐳Ant丶">
+<meta property="article:tag" content="MyBatis">
+<meta property="article:tag" content="《MyBatis技术内幕》">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/09/1_3tUMVN.png">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/blog/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/blog/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/blog/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>MyBatis快速入门</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/blog/css/style.css">
+
+    <!-- persian styles -->
+    
+      
+<link rel="stylesheet" href="/blog/css/rtl.css">
+
+    
+    <!-- rss -->
+    
+    
+      <link rel="alternate" href="/blog/true" title="CAYZLH" type="application/atom+xml">
+    
+<meta name="generator" content="Hexo 5.3.0"></head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fas fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fas fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fas fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a href="/blog/">Home</a></li>
+        
+          <li><a href="/blog/archives/">Articles</a></li>
+        
+          <li><a href="/blog/about/">About</a></li>
+        
+          <li><a href="/blog/search/">Search</a></li>
+        
+      </ul>
+    </span>
+    <br>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/blog/2019/10/24/94150c5.html"><i class="fas fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/blog/2019/10/11/dc5c5b71.html"><i class="fas fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+<!--        <li><a class="icon" href="#"><i class="fas fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>-->
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous</span>
+      <span id="i-next" class="info" style="display:none;">Next</span>
+      <span id="i-top" class="info" style="display:none;">Back to top</span>
+      <span id="i-share" class="info" style="display:none;">Share post</span>
+    </span>
+    <br>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.facebook.com/sharer.php?u=https://www.cayzlh.com/2019/10/21/3f93d624.html"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://twitter.com/share?url=https://www.cayzlh.com/2019/10/21/3f93d624.html&text=MyBatis快速入门"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.linkedin.com/shareArticle?url=https://www.cayzlh.com/2019/10/21/3f93d624.html&title=MyBatis快速入门"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://pinterest.com/pin/create/bookmarklet/?url=https://www.cayzlh.com/2019/10/21/3f93d624.html&is_video=false&description=MyBatis快速入门"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=MyBatis快速入门&body=Check out this article: https://www.cayzlh.com/2019/10/21/3f93d624.html"><i class="fas fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://getpocket.com/save?url=https://www.cayzlh.com/2019/10/21/3f93d624.html&title=MyBatis快速入门"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://reddit.com/submit?url=https://www.cayzlh.com/2019/10/21/3f93d624.html&title=MyBatis快速入门"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.stumbleupon.com/submit?url=https://www.cayzlh.com/2019/10/21/3f93d624.html&title=MyBatis快速入门"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://digg.com/submit?url=https://www.cayzlh.com/2019/10/21/3f93d624.html&title=MyBatis快速入门"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.tumblr.com/share/link?url=https://www.cayzlh.com/2019/10/21/3f93d624.html&name=MyBatis快速入门&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://news.ycombinator.com/submitlink?u=https://www.cayzlh.com/2019/10/21/3f93d624.html&t=MyBatis快速入门"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    <div id="toc">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9F%BA%E7%A1%80%E6%94%AF%E6%8C%81%E5%B1%82"><span class="toc-number">1.</span> <span class="toc-text">基础支持层</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%8F%8D%E5%B0%84%E6%A8%A1%E5%9D%97"><span class="toc-number">1.1.</span> <span class="toc-text">反射模块</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%B1%BB%E5%9E%8B%E8%BD%AC%E6%8D%A2%E6%A8%A1%E5%9D%97"><span class="toc-number">1.2.</span> <span class="toc-text">类型转换模块</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%A7%A3%E6%9E%90%E5%99%A8%E6%A8%A1%E5%9D%97"><span class="toc-number">1.3.</span> <span class="toc-text">解析器模块</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BA%8B%E5%8A%A1%E7%AE%A1%E7%90%86"><span class="toc-number">1.4.</span> <span class="toc-text">事务管理</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%BC%93%E5%AD%98%E6%A8%A1%E5%9D%97"><span class="toc-number">1.5.</span> <span class="toc-text">缓存模块</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Binding-%E6%A8%A1%E5%9D%97"><span class="toc-number">1.6.</span> <span class="toc-text">Binding 模块</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%A0%B8%E5%BF%83%E5%A4%84%E7%90%86%E5%B1%82"><span class="toc-number">2.</span> <span class="toc-text">核心处理层</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%85%8D%E7%BD%AE%E8%A7%A3%E6%9E%90"><span class="toc-number">2.1.</span> <span class="toc-text">配置解析</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#SQL-%E8%A7%A3%E6%9E%90%E4%B8%8E-scripting-%E6%A8%A1%E5%9D%97"><span class="toc-number">2.2.</span> <span class="toc-text">SQL 解析与 scripting 模块</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#SQL-%E6%89%A7%E8%A1%8C"><span class="toc-number">2.3.</span> <span class="toc-text">SQL 执行</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%8F%92%E4%BB%B6"><span class="toc-number">2.4.</span> <span class="toc-text">插件</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%8E%A5%E5%8F%A3%E5%B1%82"><span class="toc-number">3.</span> <span class="toc-text">接口层</span></a></li></ol>
+    </div>
+  </span>
+</div>
+
+    
+    <div class="content index py4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        MyBatis快速入门
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">🐳Ant丶</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2019-10-21T03:31:35.000Z" itemprop="datePublished">2019-10-21</time>
+        
+      
+    </div>
+
+
+      
+    <div class="article-category">
+        <i class="fas fa-archive"></i>
+        <a class="category-link" href="/blog/categories/%E4%B9%A6%E7%B1%8D/">书籍</a> › <a class="category-link" href="/blog/categories/%E4%B9%A6%E7%B1%8D/%E3%80%8AMyBatis%E6%8A%80%E6%9C%AF%E5%86%85%E5%B9%95%E3%80%8B/">《MyBatis技术内幕》</a>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fas fa-tag"></i>
+        <a class="tag-link-link" href="/blog/tags/MyBatis/" rel="tag">MyBatis</a>, <a class="tag-link-link" href="/blog/tags/%E3%80%8AMyBatis%E6%8A%80%E6%9C%AF%E5%86%85%E5%B9%95%E3%80%8B/" rel="tag">《MyBatis技术内幕》</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <blockquote>
+<p>心血来潮，搞了本《MyBatis技术内幕》，整理一些核心内容</p>
+</blockquote>
+<p><strong>思维导图：</strong></p>
+<p><img src="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/09/1_3tUMVN.png" alt="1"></p>
+<p><strong>整体架构：</strong></p>
+<p><img src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2020/05/21/2_c5SKkm.png" alt="整体架构"></p>
+<h2 id="基础支持层"><a href="#基础支持层" class="headerlink" title="基础支持层"></a>基础支持层</h2><p>基础支持层包含整个 <code>Mybatis</code> 的基础模块，这些模块为核心处理层的功能提供了良好的支撑。</p>
+<h3 id="反射模块"><a href="#反射模块" class="headerlink" title="反射模块"></a>反射模块</h3><p><code>Java</code> 中的反射虽然功能强大，但对大多数开发人员来说，写出高质量的反射代码还是</p>
+<p>有一定难度的。<code>Mybatis</code>  中专门提供了反射模块，该模块对 <code>Java</code> 原生的反射进行了良好的封装，提供了更加简洁易用的 AP，方便上层使调用，并且对反射操作进行了系列优化，例如缓存了类的元数据，提高了反射操作的性能。</p>
+<h3 id="类型转换模块"><a href="#类型转换模块" class="headerlink" title="类型转换模块"></a>类型转换模块</h3><p>正如前面示例所示，<code>Mybatis</code> 为简化配置文件提供了别名机制，该机制是类型转换模块的主要功能之一。</p>
+<p>类型转换模块的另一个功能是实现 <code>JDBC</code> 类型与 <code>Java</code> 类型之间的转换，该功能在为 <code>SQL</code> 语句绑定实参以及映射查询结果集时都会涉及。在为 <code>SQL</code> 语句绑定实参时，会将数据由 <code>Java</code> 类型转换成 <code>JDBC</code> 类型；而在映射结果集时，会将数据由 <code>JDBC</code> 类型转换成 <code>Java</code> 类型。</p>
+<p>###日志模块</p>
+<p>无论在开发测试环境中，还是在线上生产环境中，日志在整个系统中的地位都是非常重要的。良好的日志功能可以帮助开发人员和测试人员快速定位 <code>Bug</code> 代码，也可以帮助运维人员快速定位性能瓶颈等问题。目前的 <code>Java</code> 世界中存在很多优秀的日志框架，例如 <code>Log4j</code>、<code>Log4j2</code>、<code>slf4</code> 等。<code>Mybatis</code> 作为一个设计优良的框架，除了提供详细的日志输出信息，还要能够集成多种日志框架，其日志模块的一个主要功能就是集成第三方日志框架。资源加载模块</p>
+<p>资源加载模块主要是对类加载器进行封装，确定类加载器的使用顺序，并提供了加载类文件以及其他资源文件的功能。</p>
+<h3 id="解析器模块"><a href="#解析器模块" class="headerlink" title="解析器模块"></a>解析器模块</h3><p>解析器模块的主要提供了两个功能：一个功能是对 Xpath 进行封装，为 <code>Mybatis</code> 初始化时解析 mybatis-config, xml 配置文件以及映射配置文件提供支持；另一个功能是为处理动态 SQL 语句中的占位符提供支持。数据源模块</p>
+<p>数据源是实际开发中常用的组件之一。现在开源的数据源都提供了比较丰富的功能，例如，连接池功能、检测连接状态等，选择性能优秀的数据源组件对于提升 ORM 框架乃至整个应用的性能都是非常重要的。Mybatis 自身提供了相应的数据源实现，当然 Mybatis 也提供了与第三方数据源集成的接口，这些功能都位于数据源模块之中。</p>
+<h3 id="事务管理"><a href="#事务管理" class="headerlink" title="事务管理"></a>事务管理</h3><p>Mybatis 对数据库中的事务进行了抽象，其自身提供了相应的事务接口和简单实现。在很多场景中，My Batis 会与 Spring 框架集成，并由 Spring 框架管理事务，在第 4 章会介绍 Mybatis 如何与 Spring 集成开发，其中就会涉及 Spring 框架管理事务相关的配置。</p>
+<h3 id="缓存模块"><a href="#缓存模块" class="headerlink" title="缓存模块"></a>缓存模块</h3><p>在优化系统性能时，优化数据库性能是非常重要的一个环节，而添加缓存则是优化数据库时最有效的手段之一。正确、合理地使用缓存可以将一部分数据库请求拦截在缓存这一层，这就能够减少相当一部分数据库的压力。</p>
+<p>Mybatis 中提供了一级缓存和二级缓存，而这两级缓存都是依赖于基础支持层中的缓存模块实现的。这里需要读者注意的是，Mybatis 中自带的这两级缓存与 Mybatis 以及整个应用是运行在同一个 JM 中的，共享同一块堆内存。如果这两级缓存中的数据量较大，则可能影响系统中其他功能的运行，所以当需要缓存大量数据时，优先考虑使用 Redis、Memcache 等缓存产品。</p>
+<p><img src="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/10/3_aix99F.png" alt="缓存模块"></p>
+<h3 id="Binding-模块"><a href="#Binding-模块" class="headerlink" title="Binding 模块"></a>Binding 模块</h3><p>通过前面的示例我们知道，在调用 Sqlsession 相应方法执行数据库操作时，需要指定映射文件中定义的 SQL 节点，如果出现拼写错误，我们只能在运行时才能发现相应的异常。为了尽早发现这种错误，Mybatis 通过 Binding 模块将用户自定义的 Mapper 1 接口与映射配置文件关联起来，系统可以通过调用自定义 Mapper 接口中的方法执行相应的 SQL 语句完成数据库操作，从而避免上述问题。</p>
+<p>值得读者注意的是，开发人员无须编写自定义 Mapper 接口的实现，My Batis 会自动为其创建动态代理对象。在有些场景中，自定义 Mapper 接口可以完全代替映射配置文件，但有的映射规则和 SQL 语句的定义还是写在映射配置文件中比较方便，例如<strong>动态 SQL 语句的定义</strong>。</p>
+<h2 id="核心处理层"><a href="#核心处理层" class="headerlink" title="核心处理层"></a>核心处理层</h2><h3 id="配置解析"><a href="#配置解析" class="headerlink" title="配置解析"></a>配置解析</h3><p>在 Mybatis 初始化过程中，会加载 mybatis-config. Xml 配置文件、映射配置文件以及 Mapper 接口中的注解信息，解析后的配置信息会形成相应的对象并保存到 Configuration 对象中。例如，示例中定义的~  &lt;resultmap》节点（即 Resultset I 的映射规则）会被解析成 Resultmap 对象；示例中定义的《result 节点（即属性映射）会被解析成 Resultmapping 对象。之后，利用该 Configuration 对象创建 Sqlsessionfactory 对象。待 Mybatis 初始化之后，开发人员可以通过初始化得到 Sqlsessionfactory 创建 Sqlsession 对象并完成数据库操作。</p>
+<h3 id="SQL-解析与-scripting-模块"><a href="#SQL-解析与-scripting-模块" class="headerlink" title="SQL 解析与 scripting 模块"></a>SQL 解析与 scripting 模块</h3><p>拼凑 SQL 语句是一件烦琐且易出错的过程，为了将开发人员从这项枯燥无趣的工作中解脱出来，Mybatis 实现动态 SQL 语句的功能，提供了多种动态 SQL 语句对应的节点，例如，<code>where</code>节点、<code>if</code>节点、<code>foreach</code>节点等。通过这些节点的组合使用，开发人员可以写出几乎满足所有需求的动态 SQL 语句。</p>
+<p>Mybatis 中的 scripting 模块会根据用户传入的实参，解析映射文件中定义的动态 SQL 节点，并形成数据库可执行的 SQL 语句。之后会处理 SQL 语句中的占位符，绑定用户传入的实参。</p>
+<h3 id="SQL-执行"><a href="#SQL-执行" class="headerlink" title="SQL 执行"></a>SQL 执行</h3><p>SQL 语句的执行涉及多个组件，其中比较重要的是 Executor、Statementhandler、Parameterhandler 和 Resultsethandler。Executor 主要负责维护一级缓存和二级缓存并提供事务管理的相关操作，它会将数据库相关操作委托给 Statementhandler 完成 Statementhandler 首先通过 Parameter Handler 完成 SQL 语句的实参绑定，然后通过 iava, sql Statement 对象执行 <code>SQL</code> 语句并得到结果集，最后通过 <code>Resultset Handler</code> 完成结果集的映射，得到结果对象并返回。</p>
+<p><img src="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/10/4_SAR13A.png" alt="Mybatis 执行一条 SQL 语句的大致过程"></p>
+<h3 id="插件"><a href="#插件" class="headerlink" title="插件"></a>插件</h3><p><code>Mybatis</code> 自身的功能虽然强大，但是并不能完美切合所有的应用场景，因此 <code>Mybatis</code> 提供了插件接口，我们可以通过添加用户自定义插件的方式对 <code>Mybatis</code> 进行扩展。用户自定义插件也可以改变 <code>Mybatis</code> 的默认行为，例如，我们可以拦截 <code>SQL</code> 语句并对其进行重写。由于用户自定义插件会影响 <code>Mybatis</code> 的核心行为，在使用自定义插件之前，开发人员需要了解 <code>Mybatis</code> 内部的原理，这样才能编写出安全、高效的插件</p>
+<h2 id="接口层"><a href="#接口层" class="headerlink" title="接口层"></a>接口层</h2><p>接口层相对简单，其核心是 <code>Sqlsession</code> 接口，该接口中定义了 <code>Mybatis</code> 暴露给应用程序调用的 <code>API</code>，也就是上层应用与 <code>MyBatis</code> 交互的桥梁。接口层在接收到调用请求时，会调用核心处理层的相应模块来完成具体的数据库操作。</p>
+
+  </div>
+
+  
+    <div style="text-align:center;width:100%">
+      <img src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/640-2.gif">
+    </div>
+  
+
+  
+    <div>
+      <h4>版权声明</h4>
+      <pre>
+        
+        <strong>本文来源： </strong><a href="https://www.cayzlh.com/blog" title="🐳Ant丶" rel="noopener external nofollow noreferrer" target="_blank">https://www.cayzlh.com/blog</a>
+
+        <strong>本文链接：</strong><a href="https://www.cayzlh.com/2019/10/21/3f93d624.html" title="/blog/MyBatis%E5%BF%AB%E9%80%9F%E5%85%A5%E9%97%A8">https://www.cayzlh.com/2019/10/21/3f93d624.html</a>
+
+        <strong>版权声明： </strong>
+        
+          文章内容仅用作学习和分享，转载请注明出处
+        
+      </pre>
+    </div>
+  
+
+</article>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/blog/">Home</a></li>
+        
+          <li><a href="/blog/archives/">Articles</a></li>
+        
+          <li><a href="/blog/about/">About</a></li>
+        
+          <li><a href="/blog/search/">Search</a></li>
+        
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9F%BA%E7%A1%80%E6%94%AF%E6%8C%81%E5%B1%82"><span class="toc-number">1.</span> <span class="toc-text">基础支持层</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%8F%8D%E5%B0%84%E6%A8%A1%E5%9D%97"><span class="toc-number">1.1.</span> <span class="toc-text">反射模块</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%B1%BB%E5%9E%8B%E8%BD%AC%E6%8D%A2%E6%A8%A1%E5%9D%97"><span class="toc-number">1.2.</span> <span class="toc-text">类型转换模块</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%A7%A3%E6%9E%90%E5%99%A8%E6%A8%A1%E5%9D%97"><span class="toc-number">1.3.</span> <span class="toc-text">解析器模块</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BA%8B%E5%8A%A1%E7%AE%A1%E7%90%86"><span class="toc-number">1.4.</span> <span class="toc-text">事务管理</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%BC%93%E5%AD%98%E6%A8%A1%E5%9D%97"><span class="toc-number">1.5.</span> <span class="toc-text">缓存模块</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Binding-%E6%A8%A1%E5%9D%97"><span class="toc-number">1.6.</span> <span class="toc-text">Binding 模块</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%A0%B8%E5%BF%83%E5%A4%84%E7%90%86%E5%B1%82"><span class="toc-number">2.</span> <span class="toc-text">核心处理层</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%85%8D%E7%BD%AE%E8%A7%A3%E6%9E%90"><span class="toc-number">2.1.</span> <span class="toc-text">配置解析</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#SQL-%E8%A7%A3%E6%9E%90%E4%B8%8E-scripting-%E6%A8%A1%E5%9D%97"><span class="toc-number">2.2.</span> <span class="toc-text">SQL 解析与 scripting 模块</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#SQL-%E6%89%A7%E8%A1%8C"><span class="toc-number">2.3.</span> <span class="toc-text">SQL 执行</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%8F%92%E4%BB%B6"><span class="toc-number">2.4.</span> <span class="toc-text">插件</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%8E%A5%E5%8F%A3%E5%B1%82"><span class="toc-number">3.</span> <span class="toc-text">接口层</span></a></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.facebook.com/sharer.php?u=https://www.cayzlh.com/2019/10/21/3f93d624.html"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://twitter.com/share?url=https://www.cayzlh.com/2019/10/21/3f93d624.html&text=MyBatis快速入门"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.linkedin.com/shareArticle?url=https://www.cayzlh.com/2019/10/21/3f93d624.html&title=MyBatis快速入门"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://pinterest.com/pin/create/bookmarklet/?url=https://www.cayzlh.com/2019/10/21/3f93d624.html&is_video=false&description=MyBatis快速入门"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=MyBatis快速入门&body=Check out this article: https://www.cayzlh.com/2019/10/21/3f93d624.html"><i class="fas fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://getpocket.com/save?url=https://www.cayzlh.com/2019/10/21/3f93d624.html&title=MyBatis快速入门"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://reddit.com/submit?url=https://www.cayzlh.com/2019/10/21/3f93d624.html&title=MyBatis快速入门"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.stumbleupon.com/submit?url=https://www.cayzlh.com/2019/10/21/3f93d624.html&title=MyBatis快速入门"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://digg.com/submit?url=https://www.cayzlh.com/2019/10/21/3f93d624.html&title=MyBatis快速入门"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.tumblr.com/share/link?url=https://www.cayzlh.com/2019/10/21/3f93d624.html&name=MyBatis快速入门&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://news.ycombinator.com/submitlink?u=https://www.cayzlh.com/2019/10/21/3f93d624.html&t=MyBatis快速入门"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fas fa-bars fa-lg" aria-hidden="true"></i> Menu</a>
+        <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fas fa-list fa-lg" aria-hidden="true"></i> TOC</a>
+<!--        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fas fa-share-alt fa-lg" aria-hidden="true"></i> Share</a>-->
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    CAYZLH &copy;
+    
+    
+    2019-2021
+    粤ICP备20058712号-1
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        
+          <li><a href="/blog/tools/">tools</a></li>
+        
+          <li><a href="/blog/links/">links</a></li>
+        
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+<link rel="stylesheet" href="/blog/lib/font-awesome/css/all.min.css">
+
+
+<link rel="stylesheet" href="/blog/lib/justified-gallery/css/justifiedGallery.min.css">
+
+
+    <!-- jquery -->
+
+<script src="/blog/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/blog/lib/justified-gallery/js/jquery.justifiedGallery.min.js"></script>
+
+<!-- clipboard -->
+
+  
+<script src="/blog/lib/clipboard/clipboard.min.js"></script>
+
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"Copy to clipboard!\">";
+    btn += '<i class="far fa-clone"></i>';
+    btn += '</span>'; 
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "Copied!");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/blog/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Google Analytics -->
+
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-129095667-1"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'UA-129095667-1');
+    </script>
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Umami Analytics -->
+
+<!-- Disqus Comments -->
+
+
+</body>
+</html>

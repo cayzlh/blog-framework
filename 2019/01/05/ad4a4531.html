@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="description" content="学习认识一下Docker的几种网络模式">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Docker的网络模式">
+<meta property="og:url" content="https://www.cayzlh.com/blog">
+<meta property="og:site_name" content="CAYZLH">
+<meta property="og:description" content="学习认识一下Docker的几种网络模式">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://github.com/cayzlh/git-img-repository/raw/master/blog/2019/01/05/1.png">
+<meta property="og:image" content="https://github.com/cayzlh/git-img-repository/raw/master/blog/2019/01/05/2.png">
+<meta property="article:published_time" content="2019-01-05T13:18:26.000Z">
+<meta property="article:modified_time" content="2020-06-22T01:29:05.915Z">
+<meta property="article:author" content="🐳Ant丶">
+<meta property="article:tag" content="Docker">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://github.com/cayzlh/git-img-repository/raw/master/blog/2019/01/05/1.png">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/blog/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/blog/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/blog/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>Docker的网络模式</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/blog/css/style.css">
+
+    <!-- persian styles -->
+    
+      
+<link rel="stylesheet" href="/blog/css/rtl.css">
+
+    
+    <!-- rss -->
+    
+    
+      <link rel="alternate" href="/blog/true" title="CAYZLH" type="application/atom+xml">
+    
+<meta name="generator" content="Hexo 5.3.0"></head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fas fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fas fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fas fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a href="/blog/">Home</a></li>
+        
+          <li><a href="/blog/archives/">Articles</a></li>
+        
+          <li><a href="/blog/about/">About</a></li>
+        
+          <li><a href="/blog/search/">Search</a></li>
+        
+      </ul>
+    </span>
+    <br>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/blog/2019/01/14/4d8cd619.html"><i class="fas fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/blog/2019/01/04/a773bf3d.html"><i class="fas fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+<!--        <li><a class="icon" href="#"><i class="fas fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>-->
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous</span>
+      <span id="i-next" class="info" style="display:none;">Next</span>
+      <span id="i-top" class="info" style="display:none;">Back to top</span>
+      <span id="i-share" class="info" style="display:none;">Share post</span>
+    </span>
+    <br>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.facebook.com/sharer.php?u=https://www.cayzlh.com/2019/01/05/ad4a4531.html"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://twitter.com/share?url=https://www.cayzlh.com/2019/01/05/ad4a4531.html&text=Docker的网络模式"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.linkedin.com/shareArticle?url=https://www.cayzlh.com/2019/01/05/ad4a4531.html&title=Docker的网络模式"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://pinterest.com/pin/create/bookmarklet/?url=https://www.cayzlh.com/2019/01/05/ad4a4531.html&is_video=false&description=Docker的网络模式"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Docker的网络模式&body=Check out this article: https://www.cayzlh.com/2019/01/05/ad4a4531.html"><i class="fas fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://getpocket.com/save?url=https://www.cayzlh.com/2019/01/05/ad4a4531.html&title=Docker的网络模式"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://reddit.com/submit?url=https://www.cayzlh.com/2019/01/05/ad4a4531.html&title=Docker的网络模式"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.stumbleupon.com/submit?url=https://www.cayzlh.com/2019/01/05/ad4a4531.html&title=Docker的网络模式"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://digg.com/submit?url=https://www.cayzlh.com/2019/01/05/ad4a4531.html&title=Docker的网络模式"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.tumblr.com/share/link?url=https://www.cayzlh.com/2019/01/05/ad4a4531.html&name=Docker的网络模式&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://news.ycombinator.com/submitlink?u=https://www.cayzlh.com/2019/01/05/ad4a4531.html&t=Docker的网络模式"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    <div id="toc">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%BD%91%E7%BB%9C%E6%A8%A1%E5%BC%8F"><span class="toc-number">1.</span> <span class="toc-text">网络模式</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#host%E6%A8%A1%E5%BC%8F"><span class="toc-number">2.</span> <span class="toc-text">host模式</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#container%E6%A8%A1%E5%BC%8F"><span class="toc-number">3.</span> <span class="toc-text">container模式</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#none%E6%A8%A1%E5%BC%8F"><span class="toc-number">4.</span> <span class="toc-text">none模式</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#bridge%E6%A8%A1%E5%BC%8F"><span class="toc-number">5.</span> <span class="toc-text">bridge模式</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#bridge%E6%A8%A1%E5%BC%8F%E7%9A%84%E6%8B%93%E6%89%91"><span class="toc-number">5.1.</span> <span class="toc-text">bridge模式的拓扑</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%BB%98%E8%AE%A4%E6%A8%A1%E5%BC%8F"><span class="toc-number">5.2.</span> <span class="toc-text">默认模式</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%BB%98%E8%AE%A4%E7%BD%91%E6%A1%A5"><span class="toc-number">5.3.</span> <span class="toc-text">默认网桥</span></a></li></ol></li></ol>
+    </div>
+  </span>
+</div>
+
+    
+    <div class="content index py4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        Docker的网络模式
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">🐳Ant丶</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2019-01-05T13:18:26.000Z" itemprop="datePublished">2019-01-05</time>
+        
+      
+    </div>
+
+
+      
+    <div class="article-category">
+        <i class="fas fa-archive"></i>
+        <a class="category-link" href="/blog/categories/%E5%BE%AE%E6%9C%8D%E5%8A%A1/">微服务</a> › <a class="category-link" href="/blog/categories/%E5%BE%AE%E6%9C%8D%E5%8A%A1/Docker/">Docker</a>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fas fa-tag"></i>
+        <a class="tag-link-link" href="/blog/tags/Docker/" rel="tag">Docker</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <p><code>Docker</code>在创建容器的时候，可以使用<code>--net</code>选项指定容器的的网络模式。</p>
+<h2 id="网络模式"><a href="#网络模式" class="headerlink" title="网络模式"></a>网络模式</h2><p><code>Docker</code>支持4种网络模式供大家选择：</p>
+<ul>
+<li><strong>host</strong>模式，使用<code>- -net=host</code>指定。</li>
+<li><strong>container</strong>模式，使用<code>- -net=container:NAME_or_ID</code>指定。</li>
+<li><strong>none</strong>模式，使用<code>- -net=none</code>指定。</li>
+<li><strong>bridge</strong>模式，使用<code>- -net=bridge</code>指定，默认设置。</li>
+</ul>
+<h2 id="host模式"><a href="#host模式" class="headerlink" title="host模式"></a>host模式</h2><p>众所周知，<code>Docker</code>使用了<code>Linux</code>的<code>Namespaces</code>技术来进行资源隔离，如<code>PID Namespace</code>隔离进程，<code>Mount Namespace</code>隔离文件系统，<code>Network Namespace</code>隔离网络等。一个<code>Network Namespace</code>提供了一份独立的网络环境，包括<strong>网卡</strong>、<strong>路由</strong>、<strong>Iptable</strong>规则等都与其他的<code>Network Namespace</code>隔离。一个<code>Docker</code>容器一般会分配一个独立的<code>Network Namespace</code>。但如果启动容器的时候使用ho<code>st</code>模式，那么这个容器将不会获得一个独立的<code>Network Namespace</code>，而是和宿主机共用一个<code>Network Namespace</code>。容器将不会虚拟出自己的网卡，配置自己的<code>IP</code>等，而是使用宿主机的<code>IP</code>和端口。</p>
+<p>例如，我们在<code>10.10.101.105/24</code>的机器上用<code>host</code>模式启动一个含有<code>web</code>应用的<code>Docker</code>容器，监听<code>tcp80</code>端口。当我们在容器中执行任何类似<code>ifconfig</code>命令查看网络环境时，看到的都是宿主机上的信息。而外界访问容器中的应用，则直接使用<code>10.10.101.105:80</code>即可，不用任何<code>NAT</code>转换，就如直接跑在宿主机中一样。但是，容器的其他方面，如文件系统、进程列表等还是和宿主机隔离的。</p>
+<h2 id="container模式"><a href="#container模式" class="headerlink" title="container模式"></a>container模式</h2><p>在理解了<code>host</code>模式后，这个模式也就好理解了。这个模式指定新创建的容器和已经存在的一个容器共享一个<code>Network Namespace</code>，而不是和宿主机共享。新创建的容器不会创建自己的网卡，配置自己的<code>IP</code>，而是和一个指定的<strong>容器共享IP</strong>、<strong>端口范围</strong>等。同样，两个容器除了网络方面，其他的如文件系统、进程列表等还是隔离的。两个容器的进程可以通过lo网卡设备通信。</p>
+<h2 id="none模式"><a href="#none模式" class="headerlink" title="none模式"></a>none模式</h2><p>这个模式和前两个不同。在这种模式下，<code>Docker</code>容器拥有自己的<code>Network Namespace</code>，但是，并不为<code>Docker</code>容器进行任何网络配置。也就是说，这个<code>Docker</code>容器没有网卡、IP、路由等信息。需要我们自己为<code>Docker</code>容器添加网卡、配置<code>IP</code>等。</p>
+<h2 id="bridge模式"><a href="#bridge模式" class="headerlink" title="bridge模式"></a>bridge模式</h2><p><code>bridge</code>模式是<code>Docker</code>默认的网络设置，此模式会为每一个容器分配<code>Network Namespace</code>、设置<code>IP</code>等，并将一个主机上的<code>Docker</code>容器连接到一个虚拟网桥上。</p>
+<h3 id="bridge模式的拓扑"><a href="#bridge模式的拓扑" class="headerlink" title="bridge模式的拓扑"></a>bridge模式的拓扑</h3><p>当<code>Docker server</code>启动时，会在主机上创建一个名为<code>docker0</code>的虚拟网桥，此主机上启动的<code>Docker</code>容器会连接到这个虚拟网桥上。虚拟网桥的工作方式和物理交换机类似，这样主机上的所有容器就通过交换机连在了一个二层网络中。接下来就要为容器分配IP了，<code>Docker</code>会从<code>RFC1918</code>所定义的私有<code>IP</code>网段中，选择一个和宿主机不同的IP地址和子网分配给<code>docker0</code>，连接到<code>docker0</code>的容器就从这个子网中选择一个未占用的IP使用。如一般<code>Docker</code>会使用<code>172.17.0.0/16</code>这个网段，并将<code>172.17.42.1/16</code>分配给<code>docker0</code>网桥（在主机上使用<code>ifconfig</code>命令是可以看到<code>docker0</code>的，可以认为它是网桥的管理接口，在宿主机上作为一块虚拟网卡使用）。单机环境下的网络拓扑如下，主机地址为<code>10.10.101.105/24</code>。</p>
+<p><img src="https://github.com/cayzlh/git-img-repository/raw/master/blog/2019/01/05/1.png" alt="bridge的拓扑"></p>
+<p>-</p>
+<p><img src="https://github.com/cayzlh/git-img-repository/raw/master/blog/2019/01/05/2.png" alt="bridge的拓扑"></p>
+<p>-</p>
+<h3 id="默认模式"><a href="#默认模式" class="headerlink" title="默认模式"></a>默认模式</h3><p>安装完<code>Docker</code>的时候，会自动创建三个网络。使用<code>docker network ls</code>命令可以查看这些网络：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> docker network ls</span>               </span><br><span class="line"></span><br><span class="line">NETWORK ID          NAME                DRIVER              SCOPE</span><br><span class="line">75b73b341642        bridge              bridge              local</span><br><span class="line">dbef3961eb84        host                host                local</span><br><span class="line">90741a2555ee        none                null                local</span><br></pre></td></tr></table></figure>
+<p>这三个网络都建在<code>Docker</code>中。运行容器时，可以使用该<code>--network</code>标志来指定容器应连接到的网络。</p>
+<h3 id="默认网桥"><a href="#默认网桥" class="headerlink" title="默认网桥"></a>默认网桥</h3><p><code>Docker</code> 服务启动后默认会创建一个 <code>docker0</code> 网桥（其上有一个 <code>docker0</code> 内部接口），它在内核层连通了其他的物理或虚拟网卡，这就将所有容器和本地主机都放到同一个物理网络。</p>
+<p><code>Docker</code> 默认指定了 <code>docker0</code> 接口 的 <code>IP</code> 地址和子网掩码，让主机和容器之间可以通过网桥相互通信，它还给出了 <code>MTU</code>（接口允许接收的最大传输单元），通常是 <code>1500 Bytes</code>，或宿主主机网络路由上支持的默认值。这些值都可以在服务启动的时候进行配置。</p>
+<p><code>bridge</code>所有<code>Docker</code>主机上都存在默认网络。如果您不指定其他网络，则新的容器会自动连接到默认<code>bridge</code>网络。</p>
+<p>使用<code>docker network inspect</code>命令可以查看相关的网络信息：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> docker network inspect 75b73b341642</span></span><br><span class="line"></span><br><span class="line">[</span><br><span class="line">    &#123;</span><br><span class="line">        &quot;Name&quot;: &quot;bridge&quot;,</span><br><span class="line">        &quot;Id&quot;: &quot;75b73b3416429364a268ba6db607cb6bffbc921241714228d22fd95c15cde76f&quot;,</span><br><span class="line">        &quot;Created&quot;: &quot;2019-01-01T05:13:00.609463Z&quot;,</span><br><span class="line">        &quot;Scope&quot;: &quot;local&quot;,</span><br><span class="line">        &quot;Driver&quot;: &quot;bridge&quot;,</span><br><span class="line">        &quot;EnableIPv6&quot;: false,</span><br><span class="line">        &quot;IPAM&quot;: &#123;</span><br><span class="line">            &quot;Driver&quot;: &quot;default&quot;,</span><br><span class="line">            &quot;Options&quot;: null,</span><br><span class="line">            &quot;Config&quot;: [</span><br><span class="line">                &#123;</span><br><span class="line">                    &quot;Subnet&quot;: &quot;172.17.0.0/16&quot;,</span><br><span class="line">                    &quot;Gateway&quot;: &quot;172.17.0.1&quot;</span><br><span class="line">                &#125;</span><br><span class="line">            ]</span><br><span class="line">        &#125;,</span><br><span class="line">        &quot;Internal&quot;: false,</span><br><span class="line">        &quot;Attachable&quot;: false,</span><br><span class="line">        &quot;Ingress&quot;: false,</span><br><span class="line">        &quot;ConfigFrom&quot;: &#123;</span><br><span class="line">            &quot;Network&quot;: &quot;&quot;</span><br><span class="line">        &#125;,</span><br><span class="line">        &quot;ConfigOnly&quot;: false,</span><br><span class="line">        &quot;Containers&quot;: &#123;</span><br><span class="line">            &quot;1bd6dc5dbb7c6a73801ce682d4fe590cff14ba046837c75de70b7a2f756cdd21&quot;: &#123;</span><br><span class="line">                &quot;Name&quot;: &quot;boring_nash&quot;,</span><br><span class="line">                &quot;EndpointID&quot;: &quot;060084e59605428932e9862193ede495b23459d4d8039b1ef4e0f25099726599&quot;,</span><br><span class="line">                &quot;MacAddress&quot;: &quot;02:42:ac:11:00:03&quot;,</span><br><span class="line">                &quot;IPv4Address&quot;: &quot;172.17.0.3/16&quot;,</span><br><span class="line">                &quot;IPv6Address&quot;: &quot;&quot;</span><br><span class="line">            &#125;,</span><br><span class="line">            &quot;3dc606b07fbbbc2e2040104764b81cf6fbccf1594f4da99fcf03264ad2fcb9d6&quot;: &#123;</span><br><span class="line">                &quot;Name&quot;: &quot;rabbitmq&quot;,</span><br><span class="line">                &quot;EndpointID&quot;: &quot;08031fb6659f74caa2940d473f3c5ccbc849a5af485361705e63c3df66927e8c&quot;,</span><br><span class="line">                &quot;MacAddress&quot;: &quot;02:42:ac:11:00:02&quot;,</span><br><span class="line">                &quot;IPv4Address&quot;: &quot;172.17.0.2/16&quot;,</span><br><span class="line">                &quot;IPv6Address&quot;: &quot;&quot;</span><br><span class="line">            &#125;,</span><br><span class="line">            &quot;4b8887d1cf1cbe7c8d17990d2c91dce95f7099e9a9f178b6feed525b7879a369&quot;: &#123;</span><br><span class="line">                &quot;Name&quot;: &quot;objective-mysql&quot;,</span><br><span class="line">                &quot;EndpointID&quot;: &quot;9732e3b010e7053cf8e3d0f0985e5e26557d75a4930d100452ac71c5e97ecc15&quot;,</span><br><span class="line">                &quot;MacAddress&quot;: &quot;02:42:ac:11:00:04&quot;,</span><br><span class="line">                &quot;IPv4Address&quot;: &quot;172.17.0.4/16&quot;,</span><br><span class="line">                &quot;IPv6Address&quot;: &quot;&quot;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;,</span><br><span class="line">        &quot;Options&quot;: &#123;</span><br><span class="line">            &quot;com.docker.network.bridge.default_bridge&quot;: &quot;true&quot;,</span><br><span class="line">            &quot;com.docker.network.bridge.enable_icc&quot;: &quot;true&quot;,</span><br><span class="line">            &quot;com.docker.network.bridge.enable_ip_masquerade&quot;: &quot;true&quot;,</span><br><span class="line">            &quot;com.docker.network.bridge.host_binding_ipv4&quot;: &quot;0.0.0.0&quot;,</span><br><span class="line">            &quot;com.docker.network.bridge.name&quot;: &quot;docker0&quot;,</span><br><span class="line">            &quot;com.docker.network.driver.mtu&quot;: &quot;1500&quot;</span><br><span class="line">        &#125;,</span><br><span class="line">        &quot;Labels&quot;: &#123;&#125;</span><br><span class="line">    &#125;</span><br><span class="line">]</span><br></pre></td></tr></table></figure>
+
+  </div>
+
+  
+    <div style="text-align:center;width:100%">
+      <img src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/640-2.gif">
+    </div>
+  
+
+  
+    <div>
+      <h4>版权声明</h4>
+      <pre>
+        
+        <strong>本文来源： </strong><a href="https://www.cayzlh.com/blog" title="🐳Ant丶" rel="noopener external nofollow noreferrer" target="_blank">https://www.cayzlh.com/blog</a>
+
+        <strong>本文链接：</strong><a href="https://www.cayzlh.com/2019/01/05/ad4a4531.html" title="/blog/Docker%E7%9A%84%E7%BD%91%E7%BB%9C%E6%A8%A1%E5%BC%8F">https://www.cayzlh.com/2019/01/05/ad4a4531.html</a>
+
+        <strong>版权声明： </strong>
+        
+          文章内容仅用作学习和分享，转载请注明出处
+        
+      </pre>
+    </div>
+  
+
+</article>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/blog/">Home</a></li>
+        
+          <li><a href="/blog/archives/">Articles</a></li>
+        
+          <li><a href="/blog/about/">About</a></li>
+        
+          <li><a href="/blog/search/">Search</a></li>
+        
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%BD%91%E7%BB%9C%E6%A8%A1%E5%BC%8F"><span class="toc-number">1.</span> <span class="toc-text">网络模式</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#host%E6%A8%A1%E5%BC%8F"><span class="toc-number">2.</span> <span class="toc-text">host模式</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#container%E6%A8%A1%E5%BC%8F"><span class="toc-number">3.</span> <span class="toc-text">container模式</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#none%E6%A8%A1%E5%BC%8F"><span class="toc-number">4.</span> <span class="toc-text">none模式</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#bridge%E6%A8%A1%E5%BC%8F"><span class="toc-number">5.</span> <span class="toc-text">bridge模式</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#bridge%E6%A8%A1%E5%BC%8F%E7%9A%84%E6%8B%93%E6%89%91"><span class="toc-number">5.1.</span> <span class="toc-text">bridge模式的拓扑</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%BB%98%E8%AE%A4%E6%A8%A1%E5%BC%8F"><span class="toc-number">5.2.</span> <span class="toc-text">默认模式</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%BB%98%E8%AE%A4%E7%BD%91%E6%A1%A5"><span class="toc-number">5.3.</span> <span class="toc-text">默认网桥</span></a></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.facebook.com/sharer.php?u=https://www.cayzlh.com/2019/01/05/ad4a4531.html"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://twitter.com/share?url=https://www.cayzlh.com/2019/01/05/ad4a4531.html&text=Docker的网络模式"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.linkedin.com/shareArticle?url=https://www.cayzlh.com/2019/01/05/ad4a4531.html&title=Docker的网络模式"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://pinterest.com/pin/create/bookmarklet/?url=https://www.cayzlh.com/2019/01/05/ad4a4531.html&is_video=false&description=Docker的网络模式"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Docker的网络模式&body=Check out this article: https://www.cayzlh.com/2019/01/05/ad4a4531.html"><i class="fas fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://getpocket.com/save?url=https://www.cayzlh.com/2019/01/05/ad4a4531.html&title=Docker的网络模式"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://reddit.com/submit?url=https://www.cayzlh.com/2019/01/05/ad4a4531.html&title=Docker的网络模式"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.stumbleupon.com/submit?url=https://www.cayzlh.com/2019/01/05/ad4a4531.html&title=Docker的网络模式"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://digg.com/submit?url=https://www.cayzlh.com/2019/01/05/ad4a4531.html&title=Docker的网络模式"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.tumblr.com/share/link?url=https://www.cayzlh.com/2019/01/05/ad4a4531.html&name=Docker的网络模式&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://news.ycombinator.com/submitlink?u=https://www.cayzlh.com/2019/01/05/ad4a4531.html&t=Docker的网络模式"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fas fa-bars fa-lg" aria-hidden="true"></i> Menu</a>
+        <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fas fa-list fa-lg" aria-hidden="true"></i> TOC</a>
+<!--        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fas fa-share-alt fa-lg" aria-hidden="true"></i> Share</a>-->
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    CAYZLH &copy;
+    
+    
+    2019-2021
+    粤ICP备20058712号-1
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        
+          <li><a href="/blog/tools/">tools</a></li>
+        
+          <li><a href="/blog/links/">links</a></li>
+        
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+<link rel="stylesheet" href="/blog/lib/font-awesome/css/all.min.css">
+
+
+<link rel="stylesheet" href="/blog/lib/justified-gallery/css/justifiedGallery.min.css">
+
+
+    <!-- jquery -->
+
+<script src="/blog/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/blog/lib/justified-gallery/js/jquery.justifiedGallery.min.js"></script>
+
+<!-- clipboard -->
+
+  
+<script src="/blog/lib/clipboard/clipboard.min.js"></script>
+
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"Copy to clipboard!\">";
+    btn += '<i class="far fa-clone"></i>';
+    btn += '</span>'; 
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "Copied!");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/blog/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Google Analytics -->
+
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-129095667-1"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'UA-129095667-1');
+    </script>
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Umami Analytics -->
+
+<!-- Disqus Comments -->
+
+
+</body>
+</html>

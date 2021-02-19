@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="description" content="认识JVM的垃圾收集">
+<meta property="og:type" content="article">
+<meta property="og:title" content="JVM (垃圾收集)">
+<meta property="og:url" content="https://www.cayzlh.com/blog">
+<meta property="og:site_name" content="CAYZLH">
+<meta property="og:description" content="认识JVM的垃圾收集">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://github.com/cayzlh/git-img-repository/raw/master/blog/before.png">
+<meta property="og:image" content="https://github.com/cayzlh/git-img-repository/raw/master/blog/before.png">
+<meta property="og:image" content="https://github.com/cayzlh/git-img-repository/raw/master/blog/Eden8.png">
+<meta property="og:image" content="https://github.com/cayzlh/git-img-repository/raw/master/blog/Survivor1.png">
+<meta property="og:image" content="https://github.com/cayzlh/git-img-repository/raw/master/blog/Survivor2.png">
+<meta property="og:image" content="https://github.com/cayzlh/git-img-repository/raw/master/blog/Eden_Survivor_8-1.png">
+<meta property="og:image" content="https://github.com/cayzlh/git-img-repository/raw/master/blog/aftergc.png">
+<meta property="og:image" content="https://github.com/cayzlh/git-img-repository/raw/master/blog/Survivor11.png">
+<meta property="og:image" content="https://github.com/cayzlh/git-img-repository/raw/master/blog/EdenSurvivor8-1.png">
+<meta property="og:image" content="https://github.com/cayzlh/git-img-repository/raw/master/blog/201808190401.png">
+<meta property="og:image" content="https://github.com/cayzlh/git-img-repository/raw/master/blog/201808190402.png">
+<meta property="og:image" content="https://github.com/cayzlh/git-img-repository/raw/master/blog/201808190403.png">
+<meta property="article:published_time" content="2018-08-19T09:16:34.000Z">
+<meta property="article:modified_time" content="2020-06-22T01:29:06.034Z">
+<meta property="article:author" content="🐳Ant丶">
+<meta property="article:tag" content="Java">
+<meta property="article:tag" content="JVM">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://github.com/cayzlh/git-img-repository/raw/master/blog/before.png">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/blog/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/blog/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/blog/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>JVM (垃圾收集)</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/blog/css/style.css">
+
+    <!-- persian styles -->
+    
+      
+<link rel="stylesheet" href="/blog/css/rtl.css">
+
+    
+    <!-- rss -->
+    
+    
+      <link rel="alternate" href="/blog/true" title="CAYZLH" type="application/atom+xml">
+    
+<meta name="generator" content="Hexo 5.3.0"></head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fas fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fas fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fas fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a href="/blog/">Home</a></li>
+        
+          <li><a href="/blog/archives/">Articles</a></li>
+        
+          <li><a href="/blog/about/">About</a></li>
+        
+          <li><a href="/blog/search/">Search</a></li>
+        
+      </ul>
+    </span>
+    <br>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/blog/2018/08/19/95c0309a.html"><i class="fas fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/blog/2018/08/19/e43d0ef1.html"><i class="fas fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+<!--        <li><a class="icon" href="#"><i class="fas fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>-->
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous</span>
+      <span id="i-next" class="info" style="display:none;">Next</span>
+      <span id="i-top" class="info" style="display:none;">Back to top</span>
+      <span id="i-share" class="info" style="display:none;">Share post</span>
+    </span>
+    <br>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.facebook.com/sharer.php?u=https://www.cayzlh.com/2018/08/19/99ebe472.html"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://twitter.com/share?url=https://www.cayzlh.com/2018/08/19/99ebe472.html&text=JVM (垃圾收集)"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.linkedin.com/shareArticle?url=https://www.cayzlh.com/2018/08/19/99ebe472.html&title=JVM (垃圾收集)"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://pinterest.com/pin/create/bookmarklet/?url=https://www.cayzlh.com/2018/08/19/99ebe472.html&is_video=false&description=JVM (垃圾收集)"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=JVM (垃圾收集)&body=Check out this article: https://www.cayzlh.com/2018/08/19/99ebe472.html"><i class="fas fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://getpocket.com/save?url=https://www.cayzlh.com/2018/08/19/99ebe472.html&title=JVM (垃圾收集)"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://reddit.com/submit?url=https://www.cayzlh.com/2018/08/19/99ebe472.html&title=JVM (垃圾收集)"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.stumbleupon.com/submit?url=https://www.cayzlh.com/2018/08/19/99ebe472.html&title=JVM (垃圾收集)"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://digg.com/submit?url=https://www.cayzlh.com/2018/08/19/99ebe472.html&title=JVM (垃圾收集)"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.tumblr.com/share/link?url=https://www.cayzlh.com/2018/08/19/99ebe472.html&name=JVM (垃圾收集)&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://news.ycombinator.com/submitlink?u=https://www.cayzlh.com/2018/08/19/99ebe472.html&t=JVM (垃圾收集)"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    <div id="toc">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86%E7%AE%97%E6%B3%95"><span class="toc-number">1.</span> <span class="toc-text">垃圾收集算法</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%A0%87%E8%AE%B0%E2%80%93%E6%B8%85%E9%99%A4%E7%AE%97%E6%B3%95-Mark-Sweep"><span class="toc-number">1.1.</span> <span class="toc-text">标记–清除算法(Mark-Sweep)</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E4%BC%98%E7%BC%BA%E7%82%B9%EF%BC%9A"><span class="toc-number">1.1.1.</span> <span class="toc-text">优缺点：</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%A4%8D%E5%88%B6%E7%AE%97%E6%B3%95-Copying"><span class="toc-number">1.2.</span> <span class="toc-text">复制算法(Copying)</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E4%BC%98%E7%BC%BA%E7%82%B9%EF%BC%9A-1"><span class="toc-number">1.2.1.</span> <span class="toc-text">优缺点：</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%A0%87%E8%AE%B0%E6%95%B4%E7%90%86%E7%AE%97%E6%B3%95-Mark-Compact"><span class="toc-number">1.3.</span> <span class="toc-text">标记整理算法(Mark-Compact)</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E4%BC%98%E7%BC%BA%E7%82%B9%EF%BC%9A-2"><span class="toc-number">1.3.1.</span> <span class="toc-text">优缺点：</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86%E5%99%A8"><span class="toc-number">2.</span> <span class="toc-text">垃圾收集器</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%83%E7%A7%8D%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86%E5%99%A8"><span class="toc-number">2.1.</span> <span class="toc-text">七种垃圾收集器</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%B0%83%E4%BC%98%E6%96%B9%E6%B3%95"><span class="toc-number">2.2.</span> <span class="toc-text">调优方法</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%96%B0%E5%AF%B9%E8%B1%A1%E9%A2%84%E7%95%99%E6%96%B0%E7%94%9F%E4%BB%A3"><span class="toc-number">2.2.1.</span> <span class="toc-text">新对象预留新生代</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%A4%A7%E5%AF%B9%E8%B1%A1%E8%BF%9B%E5%85%A5%E8%80%81%E5%B9%B4%E4%BB%A3"><span class="toc-number">2.2.2.</span> <span class="toc-text">大对象进入老年代</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E7%A8%B3%E5%AE%9A%E4%B8%8E%E9%9C%87%E8%8D%A1%E7%9A%84%E5%A0%86%E5%A4%A7%E5%B0%8F"><span class="toc-number">2.2.3.</span> <span class="toc-text">稳定与震荡的堆大小</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%90%9E%E5%90%90%E9%87%8F%E4%BC%98%E5%85%88"><span class="toc-number">2.2.4.</span> <span class="toc-text">吞吐量优先</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E9%99%8D%E4%BD%8E%E5%81%9C%E9%A1%BF"><span class="toc-number">2.2.5.</span> <span class="toc-text">降低停顿</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%8E%B7%E5%8F%96gc%E4%BF%A1%E6%81%AF%E7%9A%84%E6%96%B9%E6%B3%95"><span class="toc-number">2.3.</span> <span class="toc-text">获取gc信息的方法</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#jvm%E8%B0%83%E4%BC%98%E5%AE%9E%E6%88%98-tomcat%E5%90%AF%E5%8A%A8%E5%8A%A0%E9%80%9F"><span class="toc-number">2.4.</span> <span class="toc-text">jvm调优实战-tomcat启动加速</span></a></li></ol></li></ol>
+    </div>
+  </span>
+</div>
+
+    
+    <div class="content index py4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        JVM (垃圾收集)
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">🐳Ant丶</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2018-08-19T09:16:34.000Z" itemprop="datePublished">2018-08-19</time>
+        
+      
+    </div>
+
+
+      
+    <div class="article-category">
+        <i class="fas fa-archive"></i>
+        <a class="category-link" href="/blog/categories/Java/">Java</a> › <a class="category-link" href="/blog/categories/Java/JVM/">JVM</a>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fas fa-tag"></i>
+        <a class="tag-link-link" href="/blog/tags/JVM/" rel="tag">JVM</a>, <a class="tag-link-link" href="/blog/tags/Java/" rel="tag">Java</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <h2 id="垃圾收集算法"><a href="#垃圾收集算法" class="headerlink" title="垃圾收集算法"></a>垃圾收集算法</h2><p>经典的垃圾回收算法以下几种：</p>
+<h3 id="标记–清除算法-Mark-Sweep"><a href="#标记–清除算法-Mark-Sweep" class="headerlink" title="标记–清除算法(Mark-Sweep)"></a>标记–清除算法(Mark-Sweep)</h3><p>回收前状态：</p>
+<p><img src="https://github.com/cayzlh/git-img-repository/raw/master/blog/before.png" alt="回收前"></p>
+<p>回收后状态：</p>
+<p><img src="https://github.com/cayzlh/git-img-repository/raw/master/blog/before.png" alt="回收后"></p>
+<h4 id="优缺点："><a href="#优缺点：" class="headerlink" title="优缺点："></a>优缺点：</h4><p>优点：算法执行分为两个阶段标记与清除，所有的回收算法，基本都基于标记回收算法做了深度优化</p>
+<p>缺点：效率问题，内存空间碎片（不连续的空间）</p>
+<h3 id="复制算法-Copying"><a href="#复制算法-Copying" class="headerlink" title="复制算法(Copying)"></a>复制算法(Copying)</h3><p>回收前状态：</p>
+<p>Eden内存空间 8</p>
+<p><img src="https://github.com/cayzlh/git-img-repository/raw/master/blog/Eden8.png" alt="Eden内存空间 8"></p>
+<p>Survivor1空间（From空间）1</p>
+<p><img src="https://github.com/cayzlh/git-img-repository/raw/master/blog/Survivor1.png" alt="Survivor1空间（From空间）1"></p>
+<p>Survivor2空间(To空间) 1</p>
+<p><img src="https://github.com/cayzlh/git-img-repository/raw/master/blog/Survivor2.png" alt="Survivor2空间(To空间) 1"></p>
+<p>Eden内存空间与Survivor空间 8:1</p>
+<p><img src="https://github.com/cayzlh/git-img-repository/raw/master/blog/Eden_Survivor_8-1.png" alt="Eden内存空间与Survivor空间 8:1"></p>
+<p>回收后状态：</p>
+<p><img src="https://github.com/cayzlh/git-img-repository/raw/master/blog/aftergc.png" alt="回收后状态"></p>
+<p>Survivor1空间（From空间）1</p>
+<p><img src="https://github.com/cayzlh/git-img-repository/raw/master/blog/Survivor11.png" alt="Survivor1空间（From空间）1"></p>
+<p>Eden内存空间与Survivor空间 8:1</p>
+<p><img src="https://github.com/cayzlh/git-img-repository/raw/master/blog/EdenSurvivor8-1.png" alt="Eden内存空间与Survivor空间 8:1"></p>
+<h4 id="优缺点：-1"><a href="#优缺点：-1" class="headerlink" title="优缺点："></a>优缺点：</h4><p>优点比较标记清除算法，避免了回收造成的内存碎片问题</p>
+<p>缺点：以局部的内存空间牺牲为代价，不过空间的浪费比较小，默认8:1的比例1是浪费的。复制也有一定的效率与空间成本</p>
+<h3 id="标记整理算法-Mark-Compact"><a href="#标记整理算法-Mark-Compact" class="headerlink" title="标记整理算法(Mark-Compact)"></a>标记整理算法(Mark-Compact)</h3><p>回收前状态：</p>
+<p><img src="https://github.com/cayzlh/git-img-repository/raw/master/blog/201808190401.png" alt="回收前状态"></p>
+<p>回收后状态：</p>
+<p><img src="https://github.com/cayzlh/git-img-repository/raw/master/blog/201808190402.png" alt="回收前状态"></p>
+<h4 id="优缺点：-2"><a href="#优缺点：-2" class="headerlink" title="优缺点："></a>优缺点：</h4><p>优点：避免了，空间的浪费，与内存碎片问题。</p>
+<p>缺点：整理时复制有效率成本。<br>​     </p>
+<h2 id="垃圾收集器"><a href="#垃圾收集器" class="headerlink" title="垃圾收集器"></a>垃圾收集器</h2><h3 id="七种垃圾收集器"><a href="#七种垃圾收集器" class="headerlink" title="七种垃圾收集器"></a>七种垃圾收集器</h3><ul>
+<li>1、 Serial（串行GC）-XX:+UseSerialGC</li>
+<li>2、 ParNew（并行GC）-XX:+UseParNewGC</li>
+<li>3、 Parallel Scavenge（并行回收GC）</li>
+<li>4、 Serial Old（MSC）（串行GC）-XX:+UseSerialGC</li>
+<li>5、 CMS（并发GC）-XX:+UseConcMarkSweepGC</li>
+<li>6、 Parallel Old（并行GC）-XX:+UseParallelOldGC</li>
+<li>7、 G1（JDK1.7update14才可以正式商用）</li>
+</ul>
+<p><img src="https://github.com/cayzlh/git-img-repository/raw/master/blog/201808190403.png" alt="七种垃圾收集器"></p>
+<h3 id="调优方法"><a href="#调优方法" class="headerlink" title="调优方法"></a>调优方法</h3><h4 id="新对象预留新生代"><a href="#新对象预留新生代" class="headerlink" title="新对象预留新生代"></a>新对象预留新生代</h4><p>由于fullGC(老年代)的成本远比minorGC（新生代和老年代）的成本大，所以给应用分配一个合理的新生代空间，尽量将对象分配到新生代减小fullGC的频率</p>
+<h4 id="大对象进入老年代"><a href="#大对象进入老年代" class="headerlink" title="大对象进入老年代"></a>大对象进入老年代</h4><p>将大对象直接分配到老年代，保持新生代对象的结构的完整性，以提高GC效率， 以通过-XX:PretenureSizeThreshold设置进入老年代的阀值</p>
+<h4 id="稳定与震荡的堆大小"><a href="#稳定与震荡的堆大小" class="headerlink" title="稳定与震荡的堆大小"></a>稳定与震荡的堆大小</h4><p>稳定的对大小是对垃圾回收有利的，方法将-Xms和-Xmx的大小一致</p>
+<h4 id="吞吐量优先"><a href="#吞吐量优先" class="headerlink" title="吞吐量优先"></a>吞吐量优先</h4><p>尽可能减少系统执行垃圾回收的总时间，故采用并行垃圾回收器</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">-XX:+UseParallelGC或使用-XX:+UseParallelOldGC</span><br></pre></td></tr></table></figure>
+<h4 id="降低停顿"><a href="#降低停顿" class="headerlink" title="降低停顿"></a>降低停顿</h4><p>使用CMS回收器,同时减少fullGC的次数</p>
+<h3 id="获取gc信息的方法"><a href="#获取gc信息的方法" class="headerlink" title="获取gc信息的方法"></a>获取gc信息的方法</h3><ul>
+<li> <code>-verbose:gc或者-XX:+PrintGC</code>　　获取gc信息</li>
+<li> <code>-XX:+PrintGCDetails</code>　　获取更加详细的gc信息</li>
+<li> <code>-XX:+PrintGCTimeStamps</code>　　获取GC的频率和间隔</li>
+<li> <code>-XX:+PrintHeapAtGC</code>　　获取堆的使用情况</li>
+<li> <code>-Xloggc:D:\gc.log</code>　　指定日志情况的保存路径</li>
+</ul>
+<h3 id="jvm调优实战-tomcat启动加速"><a href="#jvm调优实战-tomcat启动加速" class="headerlink" title="jvm调优实战-tomcat启动加速"></a>jvm调优实战-tomcat启动加速</h3><p>在tomcat的bin/catalina.bat文件的开头添加相关的配置</p>
+
+  </div>
+
+  
+    <div style="text-align:center;width:100%">
+      <img src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/640-2.gif">
+    </div>
+  
+
+  
+    <div>
+      <h4>版权声明</h4>
+      <pre>
+        
+        <strong>本文来源： </strong><a href="https://www.cayzlh.com/blog" title="🐳Ant丶" rel="noopener external nofollow noreferrer" target="_blank">https://www.cayzlh.com/blog</a>
+
+        <strong>本文链接：</strong><a href="https://www.cayzlh.com/2018/08/19/99ebe472.html" title="/blog/JVM%20(%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86)">https://www.cayzlh.com/2018/08/19/99ebe472.html</a>
+
+        <strong>版权声明： </strong>
+        
+          文章内容仅用作学习和分享，转载请注明出处
+        
+      </pre>
+    </div>
+  
+
+</article>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/blog/">Home</a></li>
+        
+          <li><a href="/blog/archives/">Articles</a></li>
+        
+          <li><a href="/blog/about/">About</a></li>
+        
+          <li><a href="/blog/search/">Search</a></li>
+        
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86%E7%AE%97%E6%B3%95"><span class="toc-number">1.</span> <span class="toc-text">垃圾收集算法</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%A0%87%E8%AE%B0%E2%80%93%E6%B8%85%E9%99%A4%E7%AE%97%E6%B3%95-Mark-Sweep"><span class="toc-number">1.1.</span> <span class="toc-text">标记–清除算法(Mark-Sweep)</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E4%BC%98%E7%BC%BA%E7%82%B9%EF%BC%9A"><span class="toc-number">1.1.1.</span> <span class="toc-text">优缺点：</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%A4%8D%E5%88%B6%E7%AE%97%E6%B3%95-Copying"><span class="toc-number">1.2.</span> <span class="toc-text">复制算法(Copying)</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E4%BC%98%E7%BC%BA%E7%82%B9%EF%BC%9A-1"><span class="toc-number">1.2.1.</span> <span class="toc-text">优缺点：</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%A0%87%E8%AE%B0%E6%95%B4%E7%90%86%E7%AE%97%E6%B3%95-Mark-Compact"><span class="toc-number">1.3.</span> <span class="toc-text">标记整理算法(Mark-Compact)</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E4%BC%98%E7%BC%BA%E7%82%B9%EF%BC%9A-2"><span class="toc-number">1.3.1.</span> <span class="toc-text">优缺点：</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86%E5%99%A8"><span class="toc-number">2.</span> <span class="toc-text">垃圾收集器</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%83%E7%A7%8D%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86%E5%99%A8"><span class="toc-number">2.1.</span> <span class="toc-text">七种垃圾收集器</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%B0%83%E4%BC%98%E6%96%B9%E6%B3%95"><span class="toc-number">2.2.</span> <span class="toc-text">调优方法</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%96%B0%E5%AF%B9%E8%B1%A1%E9%A2%84%E7%95%99%E6%96%B0%E7%94%9F%E4%BB%A3"><span class="toc-number">2.2.1.</span> <span class="toc-text">新对象预留新生代</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%A4%A7%E5%AF%B9%E8%B1%A1%E8%BF%9B%E5%85%A5%E8%80%81%E5%B9%B4%E4%BB%A3"><span class="toc-number">2.2.2.</span> <span class="toc-text">大对象进入老年代</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E7%A8%B3%E5%AE%9A%E4%B8%8E%E9%9C%87%E8%8D%A1%E7%9A%84%E5%A0%86%E5%A4%A7%E5%B0%8F"><span class="toc-number">2.2.3.</span> <span class="toc-text">稳定与震荡的堆大小</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%90%9E%E5%90%90%E9%87%8F%E4%BC%98%E5%85%88"><span class="toc-number">2.2.4.</span> <span class="toc-text">吞吐量优先</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E9%99%8D%E4%BD%8E%E5%81%9C%E9%A1%BF"><span class="toc-number">2.2.5.</span> <span class="toc-text">降低停顿</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%8E%B7%E5%8F%96gc%E4%BF%A1%E6%81%AF%E7%9A%84%E6%96%B9%E6%B3%95"><span class="toc-number">2.3.</span> <span class="toc-text">获取gc信息的方法</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#jvm%E8%B0%83%E4%BC%98%E5%AE%9E%E6%88%98-tomcat%E5%90%AF%E5%8A%A8%E5%8A%A0%E9%80%9F"><span class="toc-number">2.4.</span> <span class="toc-text">jvm调优实战-tomcat启动加速</span></a></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.facebook.com/sharer.php?u=https://www.cayzlh.com/2018/08/19/99ebe472.html"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://twitter.com/share?url=https://www.cayzlh.com/2018/08/19/99ebe472.html&text=JVM (垃圾收集)"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.linkedin.com/shareArticle?url=https://www.cayzlh.com/2018/08/19/99ebe472.html&title=JVM (垃圾收集)"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://pinterest.com/pin/create/bookmarklet/?url=https://www.cayzlh.com/2018/08/19/99ebe472.html&is_video=false&description=JVM (垃圾收集)"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=JVM (垃圾收集)&body=Check out this article: https://www.cayzlh.com/2018/08/19/99ebe472.html"><i class="fas fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://getpocket.com/save?url=https://www.cayzlh.com/2018/08/19/99ebe472.html&title=JVM (垃圾收集)"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://reddit.com/submit?url=https://www.cayzlh.com/2018/08/19/99ebe472.html&title=JVM (垃圾收集)"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.stumbleupon.com/submit?url=https://www.cayzlh.com/2018/08/19/99ebe472.html&title=JVM (垃圾收集)"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://digg.com/submit?url=https://www.cayzlh.com/2018/08/19/99ebe472.html&title=JVM (垃圾收集)"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.tumblr.com/share/link?url=https://www.cayzlh.com/2018/08/19/99ebe472.html&name=JVM (垃圾收集)&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://news.ycombinator.com/submitlink?u=https://www.cayzlh.com/2018/08/19/99ebe472.html&t=JVM (垃圾收集)"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fas fa-bars fa-lg" aria-hidden="true"></i> Menu</a>
+        <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fas fa-list fa-lg" aria-hidden="true"></i> TOC</a>
+<!--        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fas fa-share-alt fa-lg" aria-hidden="true"></i> Share</a>-->
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    CAYZLH &copy;
+    
+    
+    2019-2021
+    粤ICP备20058712号-1
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        
+          <li><a href="/blog/tools/">tools</a></li>
+        
+          <li><a href="/blog/links/">links</a></li>
+        
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+<link rel="stylesheet" href="/blog/lib/font-awesome/css/all.min.css">
+
+
+<link rel="stylesheet" href="/blog/lib/justified-gallery/css/justifiedGallery.min.css">
+
+
+    <!-- jquery -->
+
+<script src="/blog/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/blog/lib/justified-gallery/js/jquery.justifiedGallery.min.js"></script>
+
+<!-- clipboard -->
+
+  
+<script src="/blog/lib/clipboard/clipboard.min.js"></script>
+
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"Copy to clipboard!\">";
+    btn += '<i class="far fa-clone"></i>';
+    btn += '</span>'; 
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "Copied!");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/blog/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Google Analytics -->
+
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-129095667-1"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'UA-129095667-1');
+    </script>
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Umami Analytics -->
+
+<!-- Disqus Comments -->
+
+
+</body>
+</html>
