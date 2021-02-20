@@ -1,167 +1,273 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
+
 <head>
-    <!-- so meta -->
     <meta charset="utf-8">
+    <meta name="keywords" content="SpringBoot, Redis分布式锁, SpringBoot实现Redis分布式锁, Java分布式锁, 【Redis】SpringBoot集成Redis分布式锁以及Redis缓存, spring boot redis分布式锁, Spring-data-redis + redis 分布式锁, Redis 分布式锁的正确实现方式（ Java 版）">
+    <meta name="description" content="Ant丶的网络日志, CAYZLH网络日志, CAYZLH, CAYZLH主页, Ant丶空间">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="HandheldFriendly" content="True">
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-    <meta name="description" content="基于Redis的分布式事务锁">
-<meta property="og:type" content="article">
-<meta property="og:title" content="SpringBoot实现Redis分布式锁">
-<meta property="og:url" content="https://www.cayzlh.com/blog">
-<meta property="og:site_name" content="CAYZLH">
-<meta property="og:description" content="基于Redis的分布式事务锁">
-<meta property="og:locale" content="en_US">
-<meta property="article:published_time" content="2018-05-30T14:14:43.000Z">
-<meta property="article:modified_time" content="2020-06-22T01:29:05.800Z">
-<meta property="article:author" content="🐳Ant丶">
-<meta property="article:tag" content="Java">
-<meta property="article:tag" content="Redis">
-<meta property="article:tag" content="SpringBoot">
-<meta name="twitter:card" content="summary">
-    
-    
-      
-        
-          <link rel="shortcut icon" href="/blog/images/favicon.ico">
-        
-      
-      
-        
-          <link rel="icon" type="image/png" href="/blog/images/favicon-192x192.png" sizes="192x192">
-        
-      
-      
-        
-          <link rel="apple-touch-icon" sizes="180x180" href="/blog/images/apple-touch-icon.png">
-        
-      
-    
-    <!-- title -->
-    <title>SpringBoot实现Redis分布式锁</title>
-    <!-- styles -->
-    
-<link rel="stylesheet" href="/blog/css/style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="renderer" content="webkit|ie-stand|ie-comp">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <!-- Global site tag (gtag.js) - Google Analytics -->
 
-    <!-- persian styles -->
-    
-      
-<link rel="stylesheet" href="/blog/css/rtl.css">
+    <meta name="google-site-verification" content="VrcbMTVpFGlHkIERHBt753dAtXKF4qirjnDweuXSRJw">
+
+
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-129095667-1"></script>
+<script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() {
+        dataLayer.push(arguments);
+    }
+
+    gtag('js', new Date());
+    gtag('config', 'UA-129095667-1');
+</script>
+
+
+    <title>SpringBoot实现Redis分布式锁 | CAYZLH</title>
 
     
-    <!-- rss -->
+    <!-- Third-Party CSS -->
     
-    
-      <link rel="alternate" href="/blog/true" title="CAYZLH" type="application/atom+xml">
-    
-<meta name="generator" content="Hexo 5.3.0"></head>
+        <link rel="icon" type="image/svg+xml" href="/blog/favicon.svg">
+        <link rel="stylesheet" href="/blog/css/thirdparty/bootstrap.min.css">
+        <link rel="stylesheet" href="/blog/css/thirdparty/octicons.css">
+        <link rel="stylesheet" href="/blog/css/thirdparty/hover-min.css">
+        <link rel="stylesheet" href="/blog/css/thirdparty/user-content.min.css">
+        <link rel="stylesheet" href="/blog/css/thirdparty/syntax.css">
+        <link rel="stylesheet" href="/blog/css/thirdparty/gitalk.css">
 
-<body class="max-width mx-auto px3 ltr">
-    
-      <div id="header-post">
-  <a id="menu-icon" href="#"><i class="fas fa-bars fa-lg"></i></a>
-  <a id="menu-icon-tablet" href="#"><i class="fas fa-bars fa-lg"></i></a>
-  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fas fa-chevron-up fa-lg"></i></a>
-  <span id="menu">
-    <span id="nav">
-      <ul>
-        
-          <li><a href="/blog/">Home</a></li>
-        
-          <li><a href="/blog/archives/">Articles</a></li>
-        
-          <li><a href="/blog/about/">About</a></li>
-        
-          <li><a href="/blog/search/">Search</a></li>
-        
-      </ul>
-    </span>
-    <br>
-    <span id="actions">
-      <ul>
-        
-        <li><a class="icon" href="/blog/2018/06/02/5d83f396.html"><i class="fas fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
-        
-        
-        <li><a class="icon" href="/blog/2018/05/28/dd9b08f1.html"><i class="fas fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
-        
-        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
-<!--        <li><a class="icon" href="#"><i class="fas fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>-->
-      </ul>
-      <span id="i-prev" class="info" style="display:none;">Previous</span>
-      <span id="i-next" class="info" style="display:none;">Next</span>
-      <span id="i-top" class="info" style="display:none;">Back to top</span>
-      <span id="i-share" class="info" style="display:none;">Share post</span>
-    </span>
-    <br>
-    <div id="share" style="display: none">
-      <ul>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.facebook.com/sharer.php?u=https://www.cayzlh.com/2018/05/30/61b3f288.html"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://twitter.com/share?url=https://www.cayzlh.com/2018/05/30/61b3f288.html&text=SpringBoot实现Redis分布式锁"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.linkedin.com/shareArticle?url=https://www.cayzlh.com/2018/05/30/61b3f288.html&title=SpringBoot实现Redis分布式锁"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://pinterest.com/pin/create/bookmarklet/?url=https://www.cayzlh.com/2018/05/30/61b3f288.html&is_video=false&description=SpringBoot实现Redis分布式锁"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="mailto:?subject=SpringBoot实现Redis分布式锁&body=Check out this article: https://www.cayzlh.com/2018/05/30/61b3f288.html"><i class="fas fa-envelope " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://getpocket.com/save?url=https://www.cayzlh.com/2018/05/30/61b3f288.html&title=SpringBoot实现Redis分布式锁"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://reddit.com/submit?url=https://www.cayzlh.com/2018/05/30/61b3f288.html&title=SpringBoot实现Redis分布式锁"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.stumbleupon.com/submit?url=https://www.cayzlh.com/2018/05/30/61b3f288.html&title=SpringBoot实现Redis分布式锁"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://digg.com/submit?url=https://www.cayzlh.com/2018/05/30/61b3f288.html&title=SpringBoot实现Redis分布式锁"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.tumblr.com/share/link?url=https://www.cayzlh.com/2018/05/30/61b3f288.html&name=SpringBoot实现Redis分布式锁&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://news.ycombinator.com/submitlink?u=https://www.cayzlh.com/2018/05/30/61b3f288.html&t=SpringBoot实现Redis分布式锁"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
-</ul>
+        <!-- My CSS -->
+        <link rel="stylesheet" href="/blog/css/common.css">
 
-    </div>
-    <div id="toc">
-      <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%89%8D%E8%A8%80"><span class="toc-number">1.</span> <span class="toc-text">前言</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E9%9C%80%E8%A6%81%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81"><span class="toc-number">2.</span> <span class="toc-text">为什么需要分布式锁</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%8F%AF%E9%9D%A0%E6%80%A7-From"><span class="toc-number">3.</span> <span class="toc-text">可靠性(From)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%8E%9F%E7%90%86"><span class="toc-number">4.</span> <span class="toc-text">原理</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%AE%9E%E7%8E%B0"><span class="toc-number">5.</span> <span class="toc-text">实现</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%88%9B%E5%BB%BA%E4%B8%80%E4%B8%AASpringBoot%E5%B7%A5%E7%A8%8B"><span class="toc-number">5.1.</span> <span class="toc-text">创建一个SpringBoot工程</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%AE%9A%E4%B9%89%E4%B8%80%E4%B8%AA%E6%B3%A8%E8%A7%A3%E7%B1%BB"><span class="toc-number">5.2.</span> <span class="toc-text">定义一个注解类</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%AE%9A%E4%B9%89%E6%8E%A5%E5%8F%A3"><span class="toc-number">5.3.</span> <span class="toc-text">定义接口</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%AE%9A%E4%B9%89%E6%8A%BD%E8%B1%A1%E7%B1%BB"><span class="toc-number">5.4.</span> <span class="toc-text">定义抽象类</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%AE%9A%E4%B9%89Redis%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81%E5%AE%9E%E7%8E%B0%E7%B1%BB"><span class="toc-number">5.5.</span> <span class="toc-text">定义Redis分布式锁实现类</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E8%A3%85%E9%85%8DDistributeLock"><span class="toc-number">5.6.</span> <span class="toc-text">装配DistributeLock</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%AE%9A%E4%B9%89%E5%88%87%E9%9D%A2"><span class="toc-number">5.7.</span> <span class="toc-text">定义切面</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6"><span class="toc-number">5.8.</span> <span class="toc-text">配置文件</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E9%85%8D%E7%BD%AElog4j%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6"><span class="toc-number">5.9.</span> <span class="toc-text">配置log4j配置文件</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%AE%8C"><span class="toc-number">6.</span> <span class="toc-text">完</span></a></li></ol>
-    </div>
-  </span>
+        <link rel="stylesheet" href="/blog/css/sidebar-post-nav.css">
+
+        <link rel="stylesheet" href="/blog/css/blog-page.css">
+        <!-- CSS set in page -->
+
+        
+        <link rel="stylesheet" href="/blog/css/sidebar-popular-repo.css">
+    
+
+    <!-- CSS set in layout -->
+    <link rel="stylesheet" type="text/css" href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css">
+
+    
+        <script type="text/javascript" src="/blog/js/thirdparty/jquery.min.js"></script>
+        <script type="text/javascript" src="/blog/js/thirdparty/bootstrap.min.js"></script>
+        <script type="text/javascript" src="/blog/js/lock.js"></script>
+    
+
+    
+        <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.css">
+        <script src="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js"></script>
+
+        <link rel="stylesheet" href="//imsun.github.io/gitment/style/default.css">
+        <script src="//imsun.github.io/gitment/dist/gitment.browser.js"></script>
+
+        <script src="//unpkg.com/valine/dist/Valine.min.js"></script>
+
+    
+
+    <link rel="stylesheet" href="//cdn.bootcss.com/highlight.js/9.2.0/styles/github.min.css">
+    <script src="//cdn.bootcss.com/highlight.js/9.2.0/highlight.min.js"></script>
+<meta name="generator" content="Hexo 4.2.1"><link rel="alternate" href="/blog/atom.xml" title="CAYZLH" type="application/atom+xml">
+</head>
+
+<body>
+<header class="site-header">
+    <div class="site-header-topbar">
+        <div class="container">
+            <div class="topbar-menu">
+
+    
+        <div class="item">
+            <a href="/blog/categories/" title="分类">
+                分类
+            </a>
+        </div>
+    
+        <div class="item">
+            <a href="/blog/tags/" title="标签">
+                标签
+            </a>
+        </div>
+    
+        <div class="item">
+            <a href="https://meiriyiwen.com/random" target="_blank" title="每日一文" rel="external nofollow noopener noreferrer">
+                每日一文
+            </a>
+        </div>
+    
+        <div class="item">
+            <a href="/blog/links/" title="链接">
+                链接
+            </a>
+        </div>
+    
+        <div class="item">
+            <a href="/blog/about" title="关于">
+                关于
+            </a>
+        </div>
+    
+
 </div>
+        </div>
+    </div>
+    <div class="container">
+        <a id="site-header-brand" href="/blog/" title="CAYZLH">
+            <span class="octicon octicon-mark-github"></span>
+            CAYZLH
+        </a>
 
+        <nav class="site-header-nav" role="navigation">
     
-    <div class="content index py4">
-        
-        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
-  <header>
+        <div class=" site-header-nav-item hvr-underline-from-center">
+            <a href="/blog/" title="Home">
+                Home
+            </a>
+            
+        </div>
     
-    <h1 class="posttitle" itemprop="name headline">
-        SpringBoot实现Redis分布式锁
-    </h1>
+        <div class=" site-header-nav-item hvr-underline-from-center">
+            <a href="/blog/archives" title="Archives">
+                Archives
+            </a>
+            
+        </div>
+    
+        <div class=" site-header-nav-item hvr-underline-from-center">
+            <a href="/blog/" title="Learning">
+                Learning
+            </a>
+            
+                <ul class="submenu">
+                    
 
+                        <li>
+                            <a href="/blog/categories/%E4%B9%A6%E7%B1%8D/%E3%80%8A%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3Java%E8%99%9A%E6%8B%9F%E6%9C%BA%E3%80%8B/">
+                                <span>深入理解Java虚拟机</span>
+                            </a>
+                        </li>
 
+                    
 
-    <div class="meta">
-      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
-        <span itemprop="name">🐳Ant丶</span>
-      </span>
-      
-    <div class="postdate">
-      
-        <time datetime="2018-05-30T14:14:43.000Z" itemprop="datePublished">2018-05-30</time>
-        
-      
+                        <li>
+                            <a href="/blog/categories/%E4%B9%A6%E7%B1%8D/%E3%80%8AMyBatis%E6%8A%80%E6%9C%AF%E5%86%85%E5%B9%95%E3%80%8B/">
+                                <span>MyBatis技术内幕</span>
+                            </a>
+                        </li>
+
+                    
+
+                        <li>
+                            <a href="/blog/categories/Java/Java%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/">
+                                <span>Java设计模式</span>
+                            </a>
+                        </li>
+
+                    
+                </ul>
+            
+        </div>
+    
+        <div class=" site-header-nav-item hvr-underline-from-center">
+            <a href="/blog/" title="Tools">
+                Tools
+            </a>
+            
+                <ul class="submenu">
+                    
+
+                        <li>
+                            <a href="https://www.cayzlh.com/tools/online-JSONFormat/" target="_blank">
+                                <span>Json在线工具</span>
+                            </a>
+                        </li>
+
+                    
+
+                        <li>
+                            <a href="https://www.cayzlh.com/tools/online-markdown/" target="_blank">
+                                <span>Markdown在线转换工具</span>
+                            </a>
+                        </li>
+
+                    
+
+                        <li>
+                            <a href="https://www.cayzlh.com/tools/online-hash/" target="_blank">
+                                <span>在线HASH</span>
+                            </a>
+                        </li>
+
+                    
+                </ul>
+            
+        </div>
+    
+</nav>
     </div>
+</header>
+<main class="content">
+    <!-- 标题部分 -->
+<section class="jumbotron geopattern" data-pattern-id="SpringBoot实现Redis分布式锁">
+    <div class="container">
+        <div id="jumbotron-meta-info">
+            <h1>SpringBoot实现Redis分布式锁</h1>
+            <span class="meta-info">
+                <a><span class="octicon octicon-calendar"></span> 2018-05-30</a>
+                
+                    <a><span class="octicon octicon-book"></span></a>
+                    
+                        <a href="/blog/categories/Spring/">Spring</a>
+                    
+                        <a href="/blog/categories/Spring/SpringBoot/">SpringBoot</a>
+                    
+                
+                
+                    
+                
+            </span>
+        </div>
 
-
-      
-    <div class="article-category">
-        <i class="fas fa-archive"></i>
-        <a class="category-link" href="/blog/categories/Spring/">Spring</a> › <a class="category-link" href="/blog/categories/Spring/SpringBoot/">SpringBoot</a>
     </div>
+</section>
+<script>
+    $(document).ready(function(){
 
+        $('.geopattern').each(function(){
+            $(this).geopattern($(this).data('pattern-id'));
+        });
 
-      
-    <div class="article-tag">
-        <i class="fas fa-tag"></i>
-        <a class="tag-link-link" href="/blog/tags/Java/" rel="tag">Java</a>, <a class="tag-link-link" href="/blog/tags/Redis/" rel="tag">Redis</a>, <a class="tag-link-link" href="/blog/tags/SpringBoot/" rel="tag">SpringBoot</a>
-    </div>
-
-
-    </div>
-  </header>
-  
-
-  <div class="content" itemprop="articleBody">
-    <blockquote>
+    });
+</script>
+<!-- 文章内容部分 -->
+<article class="post container " itemscope itemtype="http://schema.org/BlogPosting" id="openwrite-container">
+    <div class="row">
+        <div class="col-md-9 markdown-body">
+            <!-- 文章开始部分 -->
+            <!--<div style="text-align:center">-->
+<!--    <img style="display:inline-block" width="130" height="27"-->
+<!--         src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/640-3.gif"-->
+<!--         data-loaded="true">-->
+<!--    <img style="display:inline-block" width="41" height="35"-->
+<!--         src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/640-4.gif"-->
+<!--         data-loaded="true">-->
+<!--    <img style="display:inline-block"-->
+<!--         width="130" height="27"-->
+<!--         src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/640-5.gif"-->
+<!--         data-loaded="true">-->
+<!--</div>-->
+            <blockquote>
 <p>最近项目中有用到redis实现的分布式锁, 但是胆码写起来比较繁琐, 就想着整一套注解的方式实现的分布式锁</p>
 </blockquote>
 <h3 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h3><p>分布式锁一般有三种实现方式：1. 数据库乐观锁；2. 基于Redis的分布式锁；3. 基于ZooKeeper的分布式锁。本文介绍基于Redis实现分布式锁。</p>
@@ -175,7 +281,7 @@
 <li>避免死锁：这把锁在一段有限的时间之后，一定会被释放（正常释放或异常释放）</li>
 <li>高可用：获取或释放锁的机制必须高可用且性能佳</li>
 </ul>
-<h3 id="可靠性-From"><a href="#可靠性-From" class="headerlink" title="可靠性(From)"></a>可靠性(<a target="_blank" rel="external nofollow noopener noreferrer" href="http://www.importnew.com/27477.html">From</a>)</h3><p>首先，为了确保分布式锁可用，我们至少要确保锁的实现同时满足以下四个条件：</p>
+<h3 id="可靠性-From"><a href="#可靠性-From" class="headerlink" title="可靠性(From)"></a>可靠性(<a href="http://www.importnew.com/27477.html" target="_blank" rel="external nofollow noopener noreferrer">From</a>)</h3><p>首先，为了确保分布式锁可用，我们至少要确保锁的实现同时满足以下四个条件：</p>
 <ol>
 <li>互斥性。在任意时刻，只有一个客户端能持有锁。</li>
 <li>不会发生死锁。即使有一个客户端在持有锁的期间崩溃而没有主动解锁，也能保证后续其他客户端能加锁。</li>
@@ -183,188 +289,690 @@
 <li>解铃还须系铃人。加锁和解锁必须是同一个客户端，客户端自己不能把别人加的锁给解了</li>
 </ol>
 <h3 id="原理"><a href="#原理" class="headerlink" title="原理"></a>原理</h3><p>基于<code>Redis</code>实现的锁机制，主要是依赖<code>Redis</code>自身的原子操作，例如：</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">SET user_key user_value NX PX 100</span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-shell"><code class="language-shell">SET user_key user_value NX PX 100<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
 <p>redis从2.6.12版本开始，SET命令才支持这些参数：<br><strong>NX</strong>：只在在键不存在时，才对键进行设置操作，SET key value NX 效果等同于 SETNX key value<br><strong>PX millisecond</strong>：设置键的过期时间为millisecond毫秒，当超过这个时间后，设置的键会自动失效</p>
 <p>上述代码示例是指，<br>当<code>redis</code>中不存在<code>user_key</code>这个键的时候，才会去设置一个<code>user_key</code>键，并且给这个键的值设置为 <code>user_value</code>，且这个键的存活时间为<code>100ms</code></p>
 <p><strong>为什么这个命令可以帮我们实现锁机制呢？</strong><br>因为这个命令是只有在某个key不存在的时候，才会执行成功。那么当多个进程同时并发的去设置同一个key的时候，就永远只会有一个进程成功。<br>当某个进程设置成功之后，就可以去执行业务逻辑了，等业务逻辑执行完毕之后，再去进行解锁。</p>
 <p>解锁很简单，只需要删除这个<code>key</code>就可以了，不过删除之前需要判断，这个<code>key</code>对应的<code>value</code>是当初自己设置的那个。</p>
 <p>另外，针对redis集群模式的分布式锁，可以采用redis的<code>Redlock</code>机制。</p>
 <h3 id="实现"><a href="#实现" class="headerlink" title="实现"></a>实现</h3><h4 id="创建一个SpringBoot工程"><a href="#创建一个SpringBoot工程" class="headerlink" title="创建一个SpringBoot工程"></a>创建一个SpringBoot工程</h4><p>修改<code>pom.xml</code>文件, 添加如下依赖包:</p>
-<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">dependencies</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework.boot<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-boot-starter<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">exclusions</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">exclusion</span>&gt;</span></span><br><span class="line">                <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework.boot<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">                <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-boot-starter-logging<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;/<span class="name">exclusion</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">exclusions</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line"></span><br><span class="line">    <span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework.boot<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-boot-starter-web<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line"></span><br><span class="line">    <span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework.boot<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-boot-starter-log4j<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">version</span>&gt;</span>1.3.8.RELEASE<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line"></span><br><span class="line">    <span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework.boot<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-boot-starter-cache<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line"></span><br><span class="line">    <span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework.boot<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-boot-starter-redis<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">version</span>&gt;</span>1.4.7.RELEASE<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line"></span><br><span class="line">    <span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework.boot<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-boot-starter-aop<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line"></span><br><span class="line">    <span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework.boot<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-boot-starter-test<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">scope</span>&gt;</span>test<span class="tag">&lt;/<span class="name">scope</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependencies</span>&gt;</span></span><br></pre></td></tr></table></figure>
-<h4 id="定义一个注解类"><a href="#定义一个注解类" class="headerlink" title="定义一个注解类"></a>定义一个注解类</h4><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Target(&#123;ElementType.METHOD&#125;)</span></span><br><span class="line"><span class="meta">@Retention(RetentionPolicy.RUNTIME)</span></span><br><span class="line"><span class="meta">@Inherited</span></span><br><span class="line"><span class="keyword">public</span> <span class="meta">@interface</span> DistributeLock &#123;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 锁的资源，key。</span></span><br><span class="line"><span class="comment">     *  支持spring El表达式</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="meta">@AliasFor(&quot;name&quot;)</span></span><br><span class="line">    <span class="function">String <span class="title">name</span><span class="params">()</span> <span class="keyword">default</span> &quot;&#x27;<span class="keyword">default</span>&#x27;&quot;</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 锁的资源，value。</span></span><br><span class="line"><span class="comment">     *  支持spring El表达式</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="meta">@AliasFor(&quot;value&quot;)</span></span><br><span class="line">    <span class="function">String <span class="title">value</span><span class="params">()</span> <span class="keyword">default</span> &quot;&#x27;<span class="keyword">default</span>&#x27;&quot;</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 持锁时间,单位毫秒</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">long</span> <span class="title">keepMills</span><span class="params">()</span> <span class="keyword">default</span> 5000</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 当获取失败时候动作</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function">LockFailAction <span class="title">action</span><span class="params">()</span> <span class="keyword">default</span> LockFailAction.CONTINUE</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="class"><span class="keyword">enum</span> <span class="title">LockFailAction</span></span>&#123;</span><br><span class="line">        <span class="comment">/** 放弃 */</span></span><br><span class="line">        GIVEUP,</span><br><span class="line">        <span class="comment">/** 继续 */</span></span><br><span class="line">        CONTINUE;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 重试的间隔时间,设置GIVEUP忽略此项</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">long</span> <span class="title">sleepMills</span><span class="params">()</span> <span class="keyword">default</span> 200</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 重试次数</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">int</span> <span class="title">retryTimes</span><span class="params">()</span> <span class="keyword">default</span> 5</span>;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h4 id="定义接口"><a href="#定义接口" class="headerlink" title="定义接口"></a>定义接口</h4><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">IDistributedLock</span> </span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">long</span> TIMEOUT_MILLIS = <span class="number">5000</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">int</span> RETRY_TIMES = Integer.MAX_VALUE;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">long</span> SLEEP_MILLIS = <span class="number">500</span>;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">lock</span><span class="params">(String key)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">lock</span><span class="params">(String key, <span class="keyword">int</span> retryTimes)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">lock</span><span class="params">(String key, <span class="keyword">int</span> retryTimes, <span class="keyword">long</span> sleepMillis)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">lock</span><span class="params">(String key, <span class="keyword">long</span> expire)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">lock</span><span class="params">(String key, <span class="keyword">long</span> expire, <span class="keyword">int</span> retryTimes)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">lock</span><span class="params">(String key, <span class="keyword">long</span> expire, <span class="keyword">int</span> retryTimes, <span class="keyword">long</span> sleepMillis)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">releaseLock</span><span class="params">(String key)</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h4 id="定义抽象类"><a href="#定义抽象类" class="headerlink" title="定义抽象类"></a>定义抽象类</h4><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="class"><span class="keyword">class</span> <span class="title">AbstractDistributedLockImpl</span> <span class="keyword">implements</span> <span class="title">IDistributedLock</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">lock</span><span class="params">(String key)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> lock(key, TIMEOUT_MILLIS, RETRY_TIMES, SLEEP_MILLIS);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">lock</span><span class="params">(String key, <span class="keyword">int</span> retryTimes)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> lock(key, TIMEOUT_MILLIS, retryTimes, SLEEP_MILLIS);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">lock</span><span class="params">(String key, <span class="keyword">int</span> retryTimes, <span class="keyword">long</span> sleepMillis)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> lock(key, TIMEOUT_MILLIS, retryTimes, sleepMillis);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">lock</span><span class="params">(String key, <span class="keyword">long</span> expire)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> lock(key, expire, RETRY_TIMES, SLEEP_MILLIS);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">lock</span><span class="params">(String key, <span class="keyword">long</span> expire, <span class="keyword">int</span> retryTimes)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> lock(key, expire, retryTimes, SLEEP_MILLIS);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h4 id="定义Redis分布式锁实现类"><a href="#定义Redis分布式锁实现类" class="headerlink" title="定义Redis分布式锁实现类"></a>定义Redis分布式锁实现类</h4><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">RedisDistributedLock</span> <span class="keyword">extends</span> <span class="title">AbstractDistributedLockImpl</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> Logger logger = getLogger(RedisDistributedLock.class);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> RedisTemplate&lt;Object, Object&gt; redisTemplate;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> ThreadLocal&lt;String&gt; lockFlag = <span class="keyword">new</span> ThreadLocal&lt;&gt;();</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> String UNLOCK_LUA;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> String SET_IF_NOT_EXIST = <span class="string">&quot;NX&quot;</span>;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> String SET_WITH_EXPIRE_TIME = <span class="string">&quot;PX&quot;</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">static</span> &#123;</span><br><span class="line">        UNLOCK_LUA = <span class="string">&quot;if redis.call(&#x27;get&#x27;, KEYS[1]) == ARGV[1] then return redis.call(&#x27;del&#x27;, KEYS[1]) else return 0 end&quot;</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">RedisDistributedLock</span><span class="params">(RedisTemplate&lt;Object, Object&gt; redisTemplate)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">super</span>();</span><br><span class="line">        <span class="keyword">this</span>.redisTemplate = redisTemplate;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">lock</span><span class="params">(String key, <span class="keyword">long</span> expire, <span class="keyword">int</span> retryTimes, <span class="keyword">long</span> sleepMillis)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">boolean</span> result = setRedis(key, expire);</span><br><span class="line">        <span class="comment">// 如果获取锁失败，按照传入的重试次数进行重试</span></span><br><span class="line">        <span class="keyword">while</span>((!result) &amp;&amp; retryTimes-- &gt; <span class="number">0</span>)&#123;</span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">                logger.debug(<span class="string">&quot;lock failed, retrying...&quot;</span> + retryTimes);</span><br><span class="line">                Thread.sleep(sleepMillis);</span><br><span class="line">            &#125; <span class="keyword">catch</span> (InterruptedException e) &#123;</span><br><span class="line">                <span class="keyword">return</span> <span class="keyword">false</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            result = setRedis(key, expire);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> result;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">releaseLock</span><span class="params">(String key)</span> </span>&#123;</span><br><span class="line">        <span class="comment">// 释放锁的时候，有可能因为持锁之后方法执行时间大于锁的有效期，此时有可能已经被另外一个线程持有锁，所以不能直接删除</span></span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            List&lt;String&gt; keys = <span class="keyword">new</span> ArrayList&lt;&gt;();</span><br><span class="line">            keys.add(key);</span><br><span class="line">            List&lt;String&gt; args = <span class="keyword">new</span> ArrayList&lt;&gt;();</span><br><span class="line">            args.add(lockFlag.get());</span><br><span class="line"></span><br><span class="line">            <span class="comment">// 使用lua脚本删除redis中匹配value的key，可以避免由于方法执行时间过长而redis锁自动过期失效的时候误删其他线程的锁</span></span><br><span class="line">            <span class="comment">// spring自带的执行脚本方法中，集群模式直接抛出不支持执行脚本的异常，所以只能拿到原redis的connection来执行脚本</span></span><br><span class="line"></span><br><span class="line">            Long result = redisTemplate.execute((RedisCallback&lt;Long&gt;) redisConnection -&gt; &#123;</span><br><span class="line">                Object nativeConnection = redisConnection.getNativeConnection();</span><br><span class="line">                <span class="comment">// 集群模式和单机模式虽然执行脚本的方法一样，但是没有共同的接口，所以只能分开执行</span></span><br><span class="line">                <span class="comment">// 集群模式</span></span><br><span class="line">                <span class="keyword">if</span> (nativeConnection <span class="keyword">instanceof</span> JedisCluster) &#123;</span><br><span class="line">                    <span class="keyword">return</span> (Long) ((JedisCluster) nativeConnection).eval(UNLOCK_LUA, keys, args);</span><br><span class="line">                &#125;</span><br><span class="line"></span><br><span class="line">                <span class="comment">// 单机模式</span></span><br><span class="line">                <span class="keyword">else</span> <span class="keyword">if</span> (nativeConnection <span class="keyword">instanceof</span> Jedis) &#123;</span><br><span class="line">                    <span class="keyword">return</span> (Long) ((Jedis) nativeConnection).eval(UNLOCK_LUA, keys, args);</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="keyword">return</span> <span class="number">0L</span>;</span><br><span class="line">            &#125;);</span><br><span class="line"></span><br><span class="line">            <span class="keyword">return</span> result != <span class="keyword">null</span> &amp;&amp; result &gt; <span class="number">0</span>;</span><br><span class="line">        &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">            logger.error(<span class="string">&quot;release lock occured an exception&quot;</span>, e);</span><br><span class="line">        &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">            <span class="comment">// 清除掉ThreadLocal中的数据，避免内存溢出</span></span><br><span class="line">            lockFlag.remove();</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">false</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">private</span> <span class="keyword">boolean</span> <span class="title">setRedis</span><span class="params">(String key, <span class="keyword">long</span> expire)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            String result = redisTemplate.execute((RedisCallback&lt;String&gt;) redisConnection -&gt; &#123;</span><br><span class="line">                JedisCommands commands = (JedisCommands) redisConnection.getNativeConnection();</span><br><span class="line">                String uuid = UUID.randomUUID().toString();</span><br><span class="line">                lockFlag.set(uuid);</span><br><span class="line">                <span class="keyword">return</span> commands.set(key, uuid, SET_IF_NOT_EXIST, SET_WITH_EXPIRE_TIME, expire);</span><br><span class="line">            &#125;);</span><br><span class="line">            <span class="keyword">return</span> !StringUtils.isEmpty(result);</span><br><span class="line">        &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">            logger.error(<span class="string">&quot;set redis occured an exception&quot;</span>, e);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">false</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h4 id="装配DistributeLock"><a href="#装配DistributeLock" class="headerlink" title="装配DistributeLock"></a>装配DistributeLock</h4><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Configuration</span></span><br><span class="line"><span class="meta">@AutoConfigureAfter(RedisAutoConfiguration.class)</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">DistributedLockAutoConfiguration</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Bean</span></span><br><span class="line">    <span class="meta">@ConditionalOnBean(RedisTemplate.class)</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> IDistributedLock <span class="title">redisDistributedLock</span><span class="params">(RedisTemplate&lt;Object, Object&gt; redisTemplate)</span></span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> RedisDistributedLock(redisTemplate);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h4 id="定义切面"><a href="#定义切面" class="headerlink" title="定义切面"></a>定义切面</h4><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Aspect</span></span><br><span class="line"><span class="meta">@Configuration</span></span><br><span class="line"><span class="meta">@ConditionalOnClass(IDistributedLock.class)</span></span><br><span class="line"><span class="meta">@AutoConfigureAfter(DistributedLockAutoConfiguration.class)</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">DistributedLockAspectConfiguration</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> Logger logger = getLogger(DistributedLockAspectConfiguration.class);</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Autowired</span></span><br><span class="line">    <span class="keyword">private</span> IDistributedLock distributedLock;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> ExpressionParser parser = <span class="keyword">new</span> SpelExpressionParser();</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> LocalVariableTableParameterNameDiscoverer discoverer = <span class="keyword">new</span> LocalVariableTableParameterNameDiscoverer();</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 定义切入点</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="meta">@Pointcut(&quot;@annotation(com.cayzlh.distributedlock.annotations.DistributeLock)&quot;)</span></span><br><span class="line">    <span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">lockPoint</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 环绕通知</span></span><br><span class="line"><span class="comment">     *</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> pjp pjp</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@return</span>  方法返回结果</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@throws</span> Throwable throwable</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="meta">@Around(&quot;lockPoint()&quot;)</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> Object <span class="title">around</span><span class="params">(ProceedingJoinPoint pjp)</span> <span class="keyword">throws</span> Throwable </span>&#123;</span><br><span class="line">        Method method = ((MethodSignature) pjp.getSignature()).getMethod();</span><br><span class="line">        DistributeLock lockAction = method.getAnnotation(DistributeLock.class);</span><br><span class="line">        String logKey = getLogKey(lockAction, pjp, method);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">int</span> retryTimes = lockAction.action().equals(DistributeLock.LockFailAction.CONTINUE) ? lockAction.retryTimes() : <span class="number">0</span>;</span><br><span class="line">        <span class="keyword">boolean</span> lock = distributedLock.lock(logKey, lockAction.keepMills(), retryTimes, lockAction.sleepMills());</span><br><span class="line">        <span class="keyword">if</span> (!lock) &#123;</span><br><span class="line">            logger.debug(<span class="string">&quot;get lock failed : &quot;</span> + logKey);</span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">//得到锁,执行方法，释放锁</span></span><br><span class="line">        logger.debug(<span class="string">&quot;get lock success : &quot;</span> + logKey);</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="keyword">return</span> pjp.proceed();</span><br><span class="line">        &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">            logger.error(<span class="string">&quot;execute locked method occured an exception&quot;</span>, e);</span><br><span class="line">        &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">            <span class="keyword">boolean</span> releaseResult = distributedLock.releaseLock(logKey);</span><br><span class="line">            logger.debug(<span class="string">&quot;release lock : &quot;</span> + logKey + (releaseResult ? <span class="string">&quot; success&quot;</span> : <span class="string">&quot; failed&quot;</span>));</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 获得分布式缓存的key</span></span><br><span class="line"><span class="comment">     *</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> lockAction 注解对象</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> pjp        pjp</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> method     method</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@return</span> String</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">private</span> String <span class="title">getLogKey</span><span class="params">(DistributeLock lockAction, ProceedingJoinPoint pjp, Method method)</span> </span>&#123;</span><br><span class="line">        String name = lockAction.name();</span><br><span class="line">        String value = lockAction.value();</span><br><span class="line">        Object[] args = pjp.getArgs();</span><br><span class="line">        <span class="keyword">return</span> parse(name, method, args) + <span class="string">&quot;_&quot;</span> + parse(value, method, args);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 解析spring EL表达式</span></span><br><span class="line"><span class="comment">     *</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> key    key</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> method method</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> args   args</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@return</span> parse result</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">private</span> String <span class="title">parse</span><span class="params">(String key, Method method, Object[] args)</span> </span>&#123;</span><br><span class="line">        String[] params = discoverer.getParameterNames(method);</span><br><span class="line">        <span class="keyword">if</span> (<span class="keyword">null</span> == params || params.length == <span class="number">0</span> || !key.contains(<span class="string">&quot;#&quot;</span>)) &#123;</span><br><span class="line">            <span class="keyword">return</span> key;</span><br><span class="line">        &#125;</span><br><span class="line">        EvaluationContext context = <span class="keyword">new</span> StandardEvaluationContext();</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; params.length; i++) &#123;</span><br><span class="line">            context.setVariable(params[i], args[i]);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> parser.parseExpression(key).getValue(context, String.class);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h4 id="配置文件"><a href="#配置文件" class="headerlink" title="配置文件"></a>配置文件</h4><figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">server.port</span>=<span class="string">8080</span></span><br><span class="line"></span><br><span class="line"><span class="meta">spring.redis.host</span>=<span class="string">127.0.0.1</span></span><br><span class="line"><span class="meta">spring.redis.port</span>=<span class="string">6379</span></span><br><span class="line"><span class="meta">spring.redis.jedis.pool.max-idle</span>=<span class="string">8</span></span><br><span class="line"><span class="meta">spring.redis.jedis.pool.min-idle</span>=<span class="string">0</span></span><br><span class="line"><span class="meta">spring.redis.jedis.pool.max-active</span>=<span class="string">8</span></span><br><span class="line"><span class="meta">spring.redis.jedis.pool.max-wait</span>=<span class="string">-1ms</span></span><br><span class="line"><span class="meta">spring.redis.timeout</span>=<span class="string">20ms</span></span><br><span class="line"><span class="meta">spring.redis.password</span>=<span class="string"></span></span><br></pre></td></tr></table></figure>
-<h4 id="配置log4j配置文件"><a href="#配置log4j配置文件" class="headerlink" title="配置log4j配置文件"></a>配置log4j配置文件</h4><figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># server默认为空</span></span><br><span class="line"><span class="attr">server</span>=<span class="string"></span></span><br><span class="line"><span class="comment"># 日志输出目录</span></span><br><span class="line"><span class="attr">logFilePath</span>=<span class="string">logs</span></span><br><span class="line"><span class="meta">log4j.rootCategory</span>=<span class="string">DEBUG,stdout,debugLog,infoLog,errorLog</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 控制台日志输出</span></span><br><span class="line"><span class="meta">log4j.logger.consoleLogger</span>=<span class="string">stdout</span></span><br><span class="line"></span><br><span class="line"><span class="meta">log4j.appender.stdout</span>=<span class="string">org.apache.log4j.ConsoleAppender</span></span><br><span class="line"><span class="meta">log4j.appender.stdout.Threshold</span>=<span class="string">DEBUG</span></span><br><span class="line"><span class="meta">log4j.appender.stdout.layout</span>=<span class="string">org.apache.log4j.PatternLayout</span></span><br><span class="line"><span class="meta">log4j.appender.stdout.layout.ConversionPattern</span>=<span class="string">[%p] %d %c - %m%n</span></span><br><span class="line"><span class="meta">log4j.appender.stdout.ImmediateFlush</span>=<span class="string">true</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># debug日志输出</span></span><br><span class="line"><span class="meta">log4j.logger.debugLog</span>=<span class="string">DEBUG, debugLog</span></span><br><span class="line"></span><br><span class="line"><span class="meta">log4j.appender.debugLog</span>=<span class="string">org.apache.log4j.DailyRollingFileAppender</span></span><br><span class="line"><span class="meta">log4j.appender.debugLog.File</span>=<span class="string">$&#123;logFilePath&#125;/debug.log</span></span><br><span class="line"><span class="meta">log4j.appender.debugLog.layout</span>=<span class="string">org.apache.log4j.PatternLayout</span></span><br><span class="line"><span class="meta">log4j.appender.debugLog.layout.ConversionPattern</span>=<span class="string">%d&#123;yyyy-MM-dd HH:mm:ss,SSS&#125; %5p %c&#123;1&#125;:%L - %m%n</span></span><br><span class="line"><span class="meta">log4j.appender.debugLog.DatePattern</span>=<span class="string">&#x27;.&#x27;yyyy-MM-dd</span></span><br><span class="line"><span class="meta">log4j.appender.debugLog.ImmediateFlush</span>=<span class="string">true</span></span><br><span class="line"><span class="meta">log4j.appender.debugLog.Threshold</span>=<span class="string">DEBUG</span></span><br><span class="line"><span class="meta">log4j.appender.debugLog.encoding</span>=<span class="string">UTF-8</span></span><br><span class="line"><span class="meta">log4j.appender.debugLog.filter.debugFilter</span>=<span class="string">org.apache.log4j.varia.LevelRangeFilter</span></span><br><span class="line"><span class="meta">log4j.appender.debugLog.filter.debugFilter.LevelMin</span>=<span class="string">DEBUG</span></span><br><span class="line"><span class="meta">log4j.appender.debugLog.filter.debugFilter.LevelMax</span>=<span class="string">DEBUG</span></span><br></pre></td></tr></table></figure>
-<h3 id="完"><a href="#完" class="headerlink" title="完"></a>完</h3><p>源码<a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/cayzlh/springboot-distributedlock-demo">在这</a>.</p>
+<pre class="line-numbers language-xml"><code class="language-xml"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>dependencies</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>dependency</span><span class="token punctuation">></span></span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>groupId</span><span class="token punctuation">></span></span>org.springframework.boot<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>groupId</span><span class="token punctuation">></span></span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>artifactId</span><span class="token punctuation">></span></span>spring-boot-starter<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>artifactId</span><span class="token punctuation">></span></span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>exclusions</span><span class="token punctuation">></span></span>
+            <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>exclusion</span><span class="token punctuation">></span></span>
+                <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>groupId</span><span class="token punctuation">></span></span>org.springframework.boot<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>groupId</span><span class="token punctuation">></span></span>
+                <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>artifactId</span><span class="token punctuation">></span></span>spring-boot-starter-logging<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>artifactId</span><span class="token punctuation">></span></span>
+            <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>exclusion</span><span class="token punctuation">></span></span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>exclusions</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>dependency</span><span class="token punctuation">></span></span>
 
-  </div>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>dependency</span><span class="token punctuation">></span></span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>groupId</span><span class="token punctuation">></span></span>org.springframework.boot<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>groupId</span><span class="token punctuation">></span></span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>artifactId</span><span class="token punctuation">></span></span>spring-boot-starter-web<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>artifactId</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>dependency</span><span class="token punctuation">></span></span>
 
-  
-    <div style="text-align:center;width:100%">
-      <img src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/640-2.gif">
-    </div>
-  
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>dependency</span><span class="token punctuation">></span></span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>groupId</span><span class="token punctuation">></span></span>org.springframework.boot<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>groupId</span><span class="token punctuation">></span></span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>artifactId</span><span class="token punctuation">></span></span>spring-boot-starter-log4j<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>artifactId</span><span class="token punctuation">></span></span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>version</span><span class="token punctuation">></span></span>1.3.8.RELEASE<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>version</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>dependency</span><span class="token punctuation">></span></span>
 
-  
-    <div>
-      <h4>版权声明</h4>
-      <pre>
-        
-        <strong>本文来源： </strong><a href="https://www.cayzlh.com/blog" title="🐳Ant丶" rel="noopener external nofollow noreferrer" target="_blank">https://www.cayzlh.com/blog</a>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>dependency</span><span class="token punctuation">></span></span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>groupId</span><span class="token punctuation">></span></span>org.springframework.boot<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>groupId</span><span class="token punctuation">></span></span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>artifactId</span><span class="token punctuation">></span></span>spring-boot-starter-cache<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>artifactId</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>dependency</span><span class="token punctuation">></span></span>
 
-        <strong>本文链接：</strong><a href="https://www.cayzlh.com/2018/05/30/61b3f288.html" title="/blog/SpringBoot%E5%AE%9E%E7%8E%B0Redis%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81">https://www.cayzlh.com/2018/05/30/61b3f288.html</a>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>dependency</span><span class="token punctuation">></span></span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>groupId</span><span class="token punctuation">></span></span>org.springframework.boot<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>groupId</span><span class="token punctuation">></span></span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>artifactId</span><span class="token punctuation">></span></span>spring-boot-starter-redis<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>artifactId</span><span class="token punctuation">></span></span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>version</span><span class="token punctuation">></span></span>1.4.7.RELEASE<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>version</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>dependency</span><span class="token punctuation">></span></span>
 
-        <strong>版权声明： </strong>
-        
-          文章内容仅用作学习和分享，转载请注明出处
-        
-      </pre>
-    </div>
-  
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>dependency</span><span class="token punctuation">></span></span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>groupId</span><span class="token punctuation">></span></span>org.springframework.boot<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>groupId</span><span class="token punctuation">></span></span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>artifactId</span><span class="token punctuation">></span></span>spring-boot-starter-aop<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>artifactId</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>dependency</span><span class="token punctuation">></span></span>
 
-</article>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>dependency</span><span class="token punctuation">></span></span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>groupId</span><span class="token punctuation">></span></span>org.springframework.boot<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>groupId</span><span class="token punctuation">></span></span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>artifactId</span><span class="token punctuation">></span></span>spring-boot-starter-test<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>artifactId</span><span class="token punctuation">></span></span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>scope</span><span class="token punctuation">></span></span>test<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>scope</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>dependency</span><span class="token punctuation">></span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>dependencies</span><span class="token punctuation">></span></span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h4 id="定义一个注解类"><a href="#定义一个注解类" class="headerlink" title="定义一个注解类"></a>定义一个注解类</h4><pre class="line-numbers language-java"><code class="language-java"><span class="token annotation punctuation">@Target</span><span class="token punctuation">(</span><span class="token punctuation">{</span>ElementType<span class="token punctuation">.</span>METHOD<span class="token punctuation">}</span><span class="token punctuation">)</span>
+<span class="token annotation punctuation">@Retention</span><span class="token punctuation">(</span>RetentionPolicy<span class="token punctuation">.</span>RUNTIME<span class="token punctuation">)</span>
+<span class="token annotation punctuation">@Inherited</span>
+<span class="token keyword">public</span> @<span class="token keyword">interface</span> <span class="token class-name">DistributeLock</span> <span class="token punctuation">{</span>
 
+    <span class="token comment" spellcheck="true">/**
+     * 锁的资源，key。
+     *  支持spring El表达式
+     */</span>
+    <span class="token annotation punctuation">@AliasFor</span><span class="token punctuation">(</span><span class="token string">"name"</span><span class="token punctuation">)</span>
+    String <span class="token function">name</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">default</span> <span class="token string">"'default'"</span><span class="token punctuation">;</span>
 
+    <span class="token comment" spellcheck="true">/**
+     * 锁的资源，value。
+     *  支持spring El表达式
+     */</span>
+    <span class="token annotation punctuation">@AliasFor</span><span class="token punctuation">(</span><span class="token string">"value"</span><span class="token punctuation">)</span>
+    String <span class="token function">value</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">default</span> <span class="token string">"'default'"</span><span class="token punctuation">;</span>
 
-        
-          <div id="footer-post-container">
-  <div id="footer-post">
+    <span class="token comment" spellcheck="true">/**
+     * 持锁时间,单位毫秒
+     */</span>
+    <span class="token keyword">long</span> <span class="token function">keepMills</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">default</span> <span class="token number">5000</span><span class="token punctuation">;</span>
 
-    <div id="nav-footer" style="display: none">
-      <ul>
-        
-          <li><a href="/blog/">Home</a></li>
-        
-          <li><a href="/blog/archives/">Articles</a></li>
-        
-          <li><a href="/blog/about/">About</a></li>
-        
-          <li><a href="/blog/search/">Search</a></li>
-        
-      </ul>
-    </div>
+    <span class="token comment" spellcheck="true">/**
+     * 当获取失败时候动作
+     */</span>
+    LockFailAction <span class="token function">action</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">default</span> LockFailAction<span class="token punctuation">.</span>CONTINUE<span class="token punctuation">;</span>
 
-    <div id="toc-footer" style="display: none">
-      <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%89%8D%E8%A8%80"><span class="toc-number">1.</span> <span class="toc-text">前言</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E9%9C%80%E8%A6%81%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81"><span class="toc-number">2.</span> <span class="toc-text">为什么需要分布式锁</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%8F%AF%E9%9D%A0%E6%80%A7-From"><span class="toc-number">3.</span> <span class="toc-text">可靠性(From)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%8E%9F%E7%90%86"><span class="toc-number">4.</span> <span class="toc-text">原理</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%AE%9E%E7%8E%B0"><span class="toc-number">5.</span> <span class="toc-text">实现</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%88%9B%E5%BB%BA%E4%B8%80%E4%B8%AASpringBoot%E5%B7%A5%E7%A8%8B"><span class="toc-number">5.1.</span> <span class="toc-text">创建一个SpringBoot工程</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%AE%9A%E4%B9%89%E4%B8%80%E4%B8%AA%E6%B3%A8%E8%A7%A3%E7%B1%BB"><span class="toc-number">5.2.</span> <span class="toc-text">定义一个注解类</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%AE%9A%E4%B9%89%E6%8E%A5%E5%8F%A3"><span class="toc-number">5.3.</span> <span class="toc-text">定义接口</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%AE%9A%E4%B9%89%E6%8A%BD%E8%B1%A1%E7%B1%BB"><span class="toc-number">5.4.</span> <span class="toc-text">定义抽象类</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%AE%9A%E4%B9%89Redis%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81%E5%AE%9E%E7%8E%B0%E7%B1%BB"><span class="toc-number">5.5.</span> <span class="toc-text">定义Redis分布式锁实现类</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E8%A3%85%E9%85%8DDistributeLock"><span class="toc-number">5.6.</span> <span class="toc-text">装配DistributeLock</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%AE%9A%E4%B9%89%E5%88%87%E9%9D%A2"><span class="toc-number">5.7.</span> <span class="toc-text">定义切面</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6"><span class="toc-number">5.8.</span> <span class="toc-text">配置文件</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E9%85%8D%E7%BD%AElog4j%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6"><span class="toc-number">5.9.</span> <span class="toc-text">配置log4j配置文件</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%AE%8C"><span class="toc-number">6.</span> <span class="toc-text">完</span></a></li></ol>
-    </div>
+    <span class="token keyword">public</span> <span class="token keyword">enum</span> LockFailAction<span class="token punctuation">{</span>
+        <span class="token comment" spellcheck="true">/** 放弃 */</span>
+        GIVEUP<span class="token punctuation">,</span>
+        <span class="token comment" spellcheck="true">/** 继续 */</span>
+        CONTINUE<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
 
-    <div id="share-footer" style="display: none">
-      <ul>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.facebook.com/sharer.php?u=https://www.cayzlh.com/2018/05/30/61b3f288.html"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://twitter.com/share?url=https://www.cayzlh.com/2018/05/30/61b3f288.html&text=SpringBoot实现Redis分布式锁"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.linkedin.com/shareArticle?url=https://www.cayzlh.com/2018/05/30/61b3f288.html&title=SpringBoot实现Redis分布式锁"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://pinterest.com/pin/create/bookmarklet/?url=https://www.cayzlh.com/2018/05/30/61b3f288.html&is_video=false&description=SpringBoot实现Redis分布式锁"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="mailto:?subject=SpringBoot实现Redis分布式锁&body=Check out this article: https://www.cayzlh.com/2018/05/30/61b3f288.html"><i class="fas fa-envelope fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://getpocket.com/save?url=https://www.cayzlh.com/2018/05/30/61b3f288.html&title=SpringBoot实现Redis分布式锁"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://reddit.com/submit?url=https://www.cayzlh.com/2018/05/30/61b3f288.html&title=SpringBoot实现Redis分布式锁"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.stumbleupon.com/submit?url=https://www.cayzlh.com/2018/05/30/61b3f288.html&title=SpringBoot实现Redis分布式锁"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://digg.com/submit?url=https://www.cayzlh.com/2018/05/30/61b3f288.html&title=SpringBoot实现Redis分布式锁"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.tumblr.com/share/link?url=https://www.cayzlh.com/2018/05/30/61b3f288.html&name=SpringBoot实现Redis分布式锁&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://news.ycombinator.com/submitlink?u=https://www.cayzlh.com/2018/05/30/61b3f288.html&t=SpringBoot实现Redis分布式锁"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
-</ul>
+    <span class="token comment" spellcheck="true">/**
+     * 重试的间隔时间,设置GIVEUP忽略此项
+     */</span>
+    <span class="token keyword">long</span> <span class="token function">sleepMills</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">default</span> <span class="token number">200</span><span class="token punctuation">;</span>
 
-    </div>
+    <span class="token comment" spellcheck="true">/**
+     * 重试次数
+     */</span>
+    <span class="token keyword">int</span> <span class="token function">retryTimes</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">default</span> <span class="token number">5</span><span class="token punctuation">;</span>
 
-    <div id="actions-footer">
-        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fas fa-bars fa-lg" aria-hidden="true"></i> Menu</a>
-        <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fas fa-list fa-lg" aria-hidden="true"></i> TOC</a>
-<!--        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fas fa-share-alt fa-lg" aria-hidden="true"></i> Share</a>-->
-        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a>
-    </div>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h4 id="定义接口"><a href="#定义接口" class="headerlink" title="定义接口"></a>定义接口</h4><pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">interface</span> <span class="token class-name">IDistributedLock</span> <span class="token punctuation">{</span>
+    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">final</span> <span class="token keyword">long</span> TIMEOUT_MILLIS <span class="token operator">=</span> <span class="token number">5000</span><span class="token punctuation">;</span>
 
-  </div>
+    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">final</span> <span class="token keyword">int</span> RETRY_TIMES <span class="token operator">=</span> Integer<span class="token punctuation">.</span>MAX_VALUE<span class="token punctuation">;</span>
+
+    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">final</span> <span class="token keyword">long</span> SLEEP_MILLIS <span class="token operator">=</span> <span class="token number">500</span><span class="token punctuation">;</span>
+
+    <span class="token keyword">public</span> <span class="token keyword">boolean</span> <span class="token function">lock</span><span class="token punctuation">(</span>String key<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token keyword">public</span> <span class="token keyword">boolean</span> <span class="token function">lock</span><span class="token punctuation">(</span>String key<span class="token punctuation">,</span> <span class="token keyword">int</span> retryTimes<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token keyword">public</span> <span class="token keyword">boolean</span> <span class="token function">lock</span><span class="token punctuation">(</span>String key<span class="token punctuation">,</span> <span class="token keyword">int</span> retryTimes<span class="token punctuation">,</span> <span class="token keyword">long</span> sleepMillis<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token keyword">public</span> <span class="token keyword">boolean</span> <span class="token function">lock</span><span class="token punctuation">(</span>String key<span class="token punctuation">,</span> <span class="token keyword">long</span> expire<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token keyword">public</span> <span class="token keyword">boolean</span> <span class="token function">lock</span><span class="token punctuation">(</span>String key<span class="token punctuation">,</span> <span class="token keyword">long</span> expire<span class="token punctuation">,</span> <span class="token keyword">int</span> retryTimes<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token keyword">public</span> <span class="token keyword">boolean</span> <span class="token function">lock</span><span class="token punctuation">(</span>String key<span class="token punctuation">,</span> <span class="token keyword">long</span> expire<span class="token punctuation">,</span> <span class="token keyword">int</span> retryTimes<span class="token punctuation">,</span> <span class="token keyword">long</span> sleepMillis<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token keyword">public</span> <span class="token keyword">boolean</span> <span class="token function">releaseLock</span><span class="token punctuation">(</span>String key<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h4 id="定义抽象类"><a href="#定义抽象类" class="headerlink" title="定义抽象类"></a>定义抽象类</h4><pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">abstract</span> <span class="token keyword">class</span> <span class="token class-name">AbstractDistributedLockImpl</span> <span class="token keyword">implements</span> <span class="token class-name">IDistributedLock</span> <span class="token punctuation">{</span>
+
+    <span class="token annotation punctuation">@Override</span>
+    <span class="token keyword">public</span> <span class="token keyword">boolean</span> <span class="token function">lock</span><span class="token punctuation">(</span>String key<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">return</span> <span class="token function">lock</span><span class="token punctuation">(</span>key<span class="token punctuation">,</span> TIMEOUT_MILLIS<span class="token punctuation">,</span> RETRY_TIMES<span class="token punctuation">,</span> SLEEP_MILLIS<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token annotation punctuation">@Override</span>
+    <span class="token keyword">public</span> <span class="token keyword">boolean</span> <span class="token function">lock</span><span class="token punctuation">(</span>String key<span class="token punctuation">,</span> <span class="token keyword">int</span> retryTimes<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">return</span> <span class="token function">lock</span><span class="token punctuation">(</span>key<span class="token punctuation">,</span> TIMEOUT_MILLIS<span class="token punctuation">,</span> retryTimes<span class="token punctuation">,</span> SLEEP_MILLIS<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token annotation punctuation">@Override</span>
+    <span class="token keyword">public</span> <span class="token keyword">boolean</span> <span class="token function">lock</span><span class="token punctuation">(</span>String key<span class="token punctuation">,</span> <span class="token keyword">int</span> retryTimes<span class="token punctuation">,</span> <span class="token keyword">long</span> sleepMillis<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">return</span> <span class="token function">lock</span><span class="token punctuation">(</span>key<span class="token punctuation">,</span> TIMEOUT_MILLIS<span class="token punctuation">,</span> retryTimes<span class="token punctuation">,</span> sleepMillis<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token annotation punctuation">@Override</span>
+    <span class="token keyword">public</span> <span class="token keyword">boolean</span> <span class="token function">lock</span><span class="token punctuation">(</span>String key<span class="token punctuation">,</span> <span class="token keyword">long</span> expire<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">return</span> <span class="token function">lock</span><span class="token punctuation">(</span>key<span class="token punctuation">,</span> expire<span class="token punctuation">,</span> RETRY_TIMES<span class="token punctuation">,</span> SLEEP_MILLIS<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token annotation punctuation">@Override</span>
+    <span class="token keyword">public</span> <span class="token keyword">boolean</span> <span class="token function">lock</span><span class="token punctuation">(</span>String key<span class="token punctuation">,</span> <span class="token keyword">long</span> expire<span class="token punctuation">,</span> <span class="token keyword">int</span> retryTimes<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">return</span> <span class="token function">lock</span><span class="token punctuation">(</span>key<span class="token punctuation">,</span> expire<span class="token punctuation">,</span> retryTimes<span class="token punctuation">,</span> SLEEP_MILLIS<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h4 id="定义Redis分布式锁实现类"><a href="#定义Redis分布式锁实现类" class="headerlink" title="定义Redis分布式锁实现类"></a>定义Redis分布式锁实现类</h4><pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">RedisDistributedLock</span> <span class="token keyword">extends</span> <span class="token class-name">AbstractDistributedLockImpl</span> <span class="token punctuation">{</span>
+
+    <span class="token keyword">private</span> <span class="token keyword">static</span> <span class="token keyword">final</span> Logger logger <span class="token operator">=</span> <span class="token function">getLogger</span><span class="token punctuation">(</span>RedisDistributedLock<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token keyword">private</span> RedisTemplate<span class="token operator">&lt;</span>Object<span class="token punctuation">,</span> Object<span class="token operator">></span> redisTemplate<span class="token punctuation">;</span>
+
+    <span class="token keyword">private</span> ThreadLocal<span class="token operator">&lt;</span>String<span class="token operator">></span> lockFlag <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">ThreadLocal</span><span class="token operator">&lt;</span><span class="token operator">></span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token keyword">private</span> <span class="token keyword">static</span> <span class="token keyword">final</span> String UNLOCK_LUA<span class="token punctuation">;</span>
+
+    <span class="token keyword">private</span> <span class="token keyword">static</span> <span class="token keyword">final</span> String SET_IF_NOT_EXIST <span class="token operator">=</span> <span class="token string">"NX"</span><span class="token punctuation">;</span>
+    <span class="token keyword">private</span> <span class="token keyword">static</span> <span class="token keyword">final</span> String SET_WITH_EXPIRE_TIME <span class="token operator">=</span> <span class="token string">"PX"</span><span class="token punctuation">;</span>
+
+    <span class="token keyword">static</span> <span class="token punctuation">{</span>
+        UNLOCK_LUA <span class="token operator">=</span> <span class="token string">"if redis.call('get', KEYS[1]) == ARGV[1] then return redis.call('del', KEYS[1]) else return 0 end"</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token keyword">public</span> <span class="token function">RedisDistributedLock</span><span class="token punctuation">(</span>RedisTemplate<span class="token operator">&lt;</span>Object<span class="token punctuation">,</span> Object<span class="token operator">></span> redisTemplate<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">super</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">this</span><span class="token punctuation">.</span>redisTemplate <span class="token operator">=</span> redisTemplate<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token annotation punctuation">@Override</span>
+    <span class="token keyword">public</span> <span class="token keyword">boolean</span> <span class="token function">lock</span><span class="token punctuation">(</span>String key<span class="token punctuation">,</span> <span class="token keyword">long</span> expire<span class="token punctuation">,</span> <span class="token keyword">int</span> retryTimes<span class="token punctuation">,</span> <span class="token keyword">long</span> sleepMillis<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">boolean</span> result <span class="token operator">=</span> <span class="token function">setRedis</span><span class="token punctuation">(</span>key<span class="token punctuation">,</span> expire<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token comment" spellcheck="true">// 如果获取锁失败，按照传入的重试次数进行重试</span>
+        <span class="token keyword">while</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token operator">!</span>result<span class="token punctuation">)</span> <span class="token operator">&amp;&amp;</span> retryTimes<span class="token operator">--</span> <span class="token operator">></span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">{</span>
+            <span class="token keyword">try</span> <span class="token punctuation">{</span>
+                logger<span class="token punctuation">.</span><span class="token function">debug</span><span class="token punctuation">(</span><span class="token string">"lock failed, retrying..."</span> <span class="token operator">+</span> retryTimes<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                Thread<span class="token punctuation">.</span><span class="token function">sleep</span><span class="token punctuation">(</span>sleepMillis<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token punctuation">}</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">InterruptedException</span> e<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                <span class="token keyword">return</span> <span class="token boolean">false</span><span class="token punctuation">;</span>
+            <span class="token punctuation">}</span>
+            result <span class="token operator">=</span> <span class="token function">setRedis</span><span class="token punctuation">(</span>key<span class="token punctuation">,</span> expire<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+        <span class="token keyword">return</span> result<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token annotation punctuation">@Override</span>
+    <span class="token keyword">public</span> <span class="token keyword">boolean</span> <span class="token function">releaseLock</span><span class="token punctuation">(</span>String key<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token comment" spellcheck="true">// 释放锁的时候，有可能因为持锁之后方法执行时间大于锁的有效期，此时有可能已经被另外一个线程持有锁，所以不能直接删除</span>
+        <span class="token keyword">try</span> <span class="token punctuation">{</span>
+            List<span class="token operator">&lt;</span>String<span class="token operator">></span> keys <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">ArrayList</span><span class="token operator">&lt;</span><span class="token operator">></span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            keys<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span>key<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            List<span class="token operator">&lt;</span>String<span class="token operator">></span> args <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">ArrayList</span><span class="token operator">&lt;</span><span class="token operator">></span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            args<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span>lockFlag<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+            <span class="token comment" spellcheck="true">// 使用lua脚本删除redis中匹配value的key，可以避免由于方法执行时间过长而redis锁自动过期失效的时候误删其他线程的锁</span>
+            <span class="token comment" spellcheck="true">// spring自带的执行脚本方法中，集群模式直接抛出不支持执行脚本的异常，所以只能拿到原redis的connection来执行脚本</span>
+
+            Long result <span class="token operator">=</span> redisTemplate<span class="token punctuation">.</span><span class="token function">execute</span><span class="token punctuation">(</span><span class="token punctuation">(</span>RedisCallback<span class="token operator">&lt;</span>Long<span class="token operator">></span><span class="token punctuation">)</span> redisConnection <span class="token operator">-</span><span class="token operator">></span> <span class="token punctuation">{</span>
+                Object nativeConnection <span class="token operator">=</span> redisConnection<span class="token punctuation">.</span><span class="token function">getNativeConnection</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token comment" spellcheck="true">// 集群模式和单机模式虽然执行脚本的方法一样，但是没有共同的接口，所以只能分开执行</span>
+                <span class="token comment" spellcheck="true">// 集群模式</span>
+                <span class="token keyword">if</span> <span class="token punctuation">(</span>nativeConnection <span class="token keyword">instanceof</span> <span class="token class-name">JedisCluster</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                    <span class="token keyword">return</span> <span class="token punctuation">(</span>Long<span class="token punctuation">)</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>JedisCluster<span class="token punctuation">)</span> nativeConnection<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">eval</span><span class="token punctuation">(</span>UNLOCK_LUA<span class="token punctuation">,</span> keys<span class="token punctuation">,</span> args<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token punctuation">}</span>
+
+                <span class="token comment" spellcheck="true">// 单机模式</span>
+                <span class="token keyword">else</span> <span class="token keyword">if</span> <span class="token punctuation">(</span>nativeConnection <span class="token keyword">instanceof</span> <span class="token class-name">Jedis</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                    <span class="token keyword">return</span> <span class="token punctuation">(</span>Long<span class="token punctuation">)</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>Jedis<span class="token punctuation">)</span> nativeConnection<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">eval</span><span class="token punctuation">(</span>UNLOCK_LUA<span class="token punctuation">,</span> keys<span class="token punctuation">,</span> args<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token punctuation">}</span>
+                <span class="token keyword">return</span> 0L<span class="token punctuation">;</span>
+            <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+            <span class="token keyword">return</span> result <span class="token operator">!=</span> null <span class="token operator">&amp;&amp;</span> result <span class="token operator">></span> <span class="token number">0</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">Exception</span> e<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            logger<span class="token punctuation">.</span><span class="token function">error</span><span class="token punctuation">(</span><span class="token string">"release lock occured an exception"</span><span class="token punctuation">,</span> e<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span> <span class="token keyword">finally</span> <span class="token punctuation">{</span>
+            <span class="token comment" spellcheck="true">// 清除掉ThreadLocal中的数据，避免内存溢出</span>
+            lockFlag<span class="token punctuation">.</span><span class="token function">remove</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+        <span class="token keyword">return</span> <span class="token boolean">false</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token keyword">private</span> <span class="token keyword">boolean</span> <span class="token function">setRedis</span><span class="token punctuation">(</span>String key<span class="token punctuation">,</span> <span class="token keyword">long</span> expire<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">try</span> <span class="token punctuation">{</span>
+            String result <span class="token operator">=</span> redisTemplate<span class="token punctuation">.</span><span class="token function">execute</span><span class="token punctuation">(</span><span class="token punctuation">(</span>RedisCallback<span class="token operator">&lt;</span>String<span class="token operator">></span><span class="token punctuation">)</span> redisConnection <span class="token operator">-</span><span class="token operator">></span> <span class="token punctuation">{</span>
+                JedisCommands commands <span class="token operator">=</span> <span class="token punctuation">(</span>JedisCommands<span class="token punctuation">)</span> redisConnection<span class="token punctuation">.</span><span class="token function">getNativeConnection</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                String uuid <span class="token operator">=</span> UUID<span class="token punctuation">.</span><span class="token function">randomUUID</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">toString</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                lockFlag<span class="token punctuation">.</span><span class="token function">set</span><span class="token punctuation">(</span>uuid<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token keyword">return</span> commands<span class="token punctuation">.</span><span class="token function">set</span><span class="token punctuation">(</span>key<span class="token punctuation">,</span> uuid<span class="token punctuation">,</span> SET_IF_NOT_EXIST<span class="token punctuation">,</span> SET_WITH_EXPIRE_TIME<span class="token punctuation">,</span> expire<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token keyword">return</span> <span class="token operator">!</span>StringUtils<span class="token punctuation">.</span><span class="token function">isEmpty</span><span class="token punctuation">(</span>result<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">Exception</span> e<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            logger<span class="token punctuation">.</span><span class="token function">error</span><span class="token punctuation">(</span><span class="token string">"set redis occured an exception"</span><span class="token punctuation">,</span> e<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+        <span class="token keyword">return</span> <span class="token boolean">false</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h4 id="装配DistributeLock"><a href="#装配DistributeLock" class="headerlink" title="装配DistributeLock"></a>装配DistributeLock</h4><pre class="line-numbers language-java"><code class="language-java"><span class="token annotation punctuation">@Configuration</span>
+<span class="token annotation punctuation">@AutoConfigureAfter</span><span class="token punctuation">(</span>RedisAutoConfiguration<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">)</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">DistributedLockAutoConfiguration</span> <span class="token punctuation">{</span>
+
+    <span class="token annotation punctuation">@Bean</span>
+    <span class="token annotation punctuation">@ConditionalOnBean</span><span class="token punctuation">(</span>RedisTemplate<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">)</span>
+    <span class="token keyword">public</span> IDistributedLock <span class="token function">redisDistributedLock</span><span class="token punctuation">(</span>RedisTemplate<span class="token operator">&lt;</span>Object<span class="token punctuation">,</span> Object<span class="token operator">></span> redisTemplate<span class="token punctuation">)</span><span class="token punctuation">{</span>
+        <span class="token keyword">return</span> <span class="token keyword">new</span> <span class="token class-name">RedisDistributedLock</span><span class="token punctuation">(</span>redisTemplate<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h4 id="定义切面"><a href="#定义切面" class="headerlink" title="定义切面"></a>定义切面</h4><pre class="line-numbers language-java"><code class="language-java"><span class="token annotation punctuation">@Aspect</span>
+<span class="token annotation punctuation">@Configuration</span>
+<span class="token annotation punctuation">@ConditionalOnClass</span><span class="token punctuation">(</span>IDistributedLock<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">)</span>
+<span class="token annotation punctuation">@AutoConfigureAfter</span><span class="token punctuation">(</span>DistributedLockAutoConfiguration<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">)</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">DistributedLockAspectConfiguration</span> <span class="token punctuation">{</span>
+
+    <span class="token keyword">private</span> <span class="token keyword">static</span> <span class="token keyword">final</span> Logger logger <span class="token operator">=</span> <span class="token function">getLogger</span><span class="token punctuation">(</span>DistributedLockAspectConfiguration<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token annotation punctuation">@Autowired</span>
+    <span class="token keyword">private</span> IDistributedLock distributedLock<span class="token punctuation">;</span>
+
+    <span class="token keyword">private</span> ExpressionParser parser <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">SpelExpressionParser</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token keyword">private</span> LocalVariableTableParameterNameDiscoverer discoverer <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">LocalVariableTableParameterNameDiscoverer</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment" spellcheck="true">/**
+     * 定义切入点
+     */</span>
+    <span class="token annotation punctuation">@Pointcut</span><span class="token punctuation">(</span><span class="token string">"@annotation(com.cayzlh.distributedlock.annotations.DistributeLock)"</span><span class="token punctuation">)</span>
+    <span class="token keyword">private</span> <span class="token keyword">void</span> <span class="token function">lockPoint</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token comment" spellcheck="true">/**
+     * 环绕通知
+     *
+     * @param pjp pjp
+     * @return  方法返回结果
+     * @throws Throwable throwable
+     */</span>
+    <span class="token annotation punctuation">@Around</span><span class="token punctuation">(</span><span class="token string">"lockPoint()"</span><span class="token punctuation">)</span>
+    <span class="token keyword">public</span> Object <span class="token function">around</span><span class="token punctuation">(</span>ProceedingJoinPoint pjp<span class="token punctuation">)</span> <span class="token keyword">throws</span> Throwable <span class="token punctuation">{</span>
+        Method method <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>MethodSignature<span class="token punctuation">)</span> pjp<span class="token punctuation">.</span><span class="token function">getSignature</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getMethod</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        DistributeLock lockAction <span class="token operator">=</span> method<span class="token punctuation">.</span><span class="token function">getAnnotation</span><span class="token punctuation">(</span>DistributeLock<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        String logKey <span class="token operator">=</span> <span class="token function">getLogKey</span><span class="token punctuation">(</span>lockAction<span class="token punctuation">,</span> pjp<span class="token punctuation">,</span> method<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        <span class="token keyword">int</span> retryTimes <span class="token operator">=</span> lockAction<span class="token punctuation">.</span><span class="token function">action</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">equals</span><span class="token punctuation">(</span>DistributeLock<span class="token punctuation">.</span>LockFailAction<span class="token punctuation">.</span>CONTINUE<span class="token punctuation">)</span> <span class="token operator">?</span> lockAction<span class="token punctuation">.</span><span class="token function">retryTimes</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">:</span> <span class="token number">0</span><span class="token punctuation">;</span>
+        <span class="token keyword">boolean</span> lock <span class="token operator">=</span> distributedLock<span class="token punctuation">.</span><span class="token function">lock</span><span class="token punctuation">(</span>logKey<span class="token punctuation">,</span> lockAction<span class="token punctuation">.</span><span class="token function">keepMills</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> retryTimes<span class="token punctuation">,</span> lockAction<span class="token punctuation">.</span><span class="token function">sleepMills</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>lock<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            logger<span class="token punctuation">.</span><span class="token function">debug</span><span class="token punctuation">(</span><span class="token string">"get lock failed : "</span> <span class="token operator">+</span> logKey<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token keyword">return</span> null<span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+
+        <span class="token comment" spellcheck="true">//得到锁,执行方法，释放锁</span>
+        logger<span class="token punctuation">.</span><span class="token function">debug</span><span class="token punctuation">(</span><span class="token string">"get lock success : "</span> <span class="token operator">+</span> logKey<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">try</span> <span class="token punctuation">{</span>
+            <span class="token keyword">return</span> pjp<span class="token punctuation">.</span><span class="token function">proceed</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">Exception</span> e<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            logger<span class="token punctuation">.</span><span class="token function">error</span><span class="token punctuation">(</span><span class="token string">"execute locked method occured an exception"</span><span class="token punctuation">,</span> e<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span> <span class="token keyword">finally</span> <span class="token punctuation">{</span>
+            <span class="token keyword">boolean</span> releaseResult <span class="token operator">=</span> distributedLock<span class="token punctuation">.</span><span class="token function">releaseLock</span><span class="token punctuation">(</span>logKey<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            logger<span class="token punctuation">.</span><span class="token function">debug</span><span class="token punctuation">(</span><span class="token string">"release lock : "</span> <span class="token operator">+</span> logKey <span class="token operator">+</span> <span class="token punctuation">(</span>releaseResult <span class="token operator">?</span> <span class="token string">" success"</span> <span class="token operator">:</span> <span class="token string">" failed"</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+        <span class="token keyword">return</span> null<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token comment" spellcheck="true">/**
+     * 获得分布式缓存的key
+     *
+     * @param lockAction 注解对象
+     * @param pjp        pjp
+     * @param method     method
+     * @return String
+     */</span>
+    <span class="token keyword">private</span> String <span class="token function">getLogKey</span><span class="token punctuation">(</span>DistributeLock lockAction<span class="token punctuation">,</span> ProceedingJoinPoint pjp<span class="token punctuation">,</span> Method method<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        String name <span class="token operator">=</span> lockAction<span class="token punctuation">.</span><span class="token function">name</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        String value <span class="token operator">=</span> lockAction<span class="token punctuation">.</span><span class="token function">value</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        Object<span class="token punctuation">[</span><span class="token punctuation">]</span> args <span class="token operator">=</span> pjp<span class="token punctuation">.</span><span class="token function">getArgs</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">return</span> <span class="token function">parse</span><span class="token punctuation">(</span>name<span class="token punctuation">,</span> method<span class="token punctuation">,</span> args<span class="token punctuation">)</span> <span class="token operator">+</span> <span class="token string">"_"</span> <span class="token operator">+</span> <span class="token function">parse</span><span class="token punctuation">(</span>value<span class="token punctuation">,</span> method<span class="token punctuation">,</span> args<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token comment" spellcheck="true">/**
+     * 解析spring EL表达式
+     *
+     * @param key    key
+     * @param method method
+     * @param args   args
+     * @return parse result
+     */</span>
+    <span class="token keyword">private</span> String <span class="token function">parse</span><span class="token punctuation">(</span>String key<span class="token punctuation">,</span> Method method<span class="token punctuation">,</span> Object<span class="token punctuation">[</span><span class="token punctuation">]</span> args<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        String<span class="token punctuation">[</span><span class="token punctuation">]</span> params <span class="token operator">=</span> discoverer<span class="token punctuation">.</span><span class="token function">getParameterNames</span><span class="token punctuation">(</span>method<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>null <span class="token operator">==</span> params <span class="token operator">||</span> params<span class="token punctuation">.</span>length <span class="token operator">==</span> <span class="token number">0</span> <span class="token operator">||</span> <span class="token operator">!</span>key<span class="token punctuation">.</span><span class="token function">contains</span><span class="token punctuation">(</span><span class="token string">"#"</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token keyword">return</span> key<span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+        EvaluationContext context <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">StandardEvaluationContext</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> params<span class="token punctuation">.</span>length<span class="token punctuation">;</span> i<span class="token operator">++</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            context<span class="token punctuation">.</span><span class="token function">setVariable</span><span class="token punctuation">(</span>params<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">,</span> args<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+        <span class="token keyword">return</span> parser<span class="token punctuation">.</span><span class="token function">parseExpression</span><span class="token punctuation">(</span>key<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getValue</span><span class="token punctuation">(</span>context<span class="token punctuation">,</span> String<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h4 id="配置文件"><a href="#配置文件" class="headerlink" title="配置文件"></a>配置文件</h4><pre class="line-numbers language-properties"><code class="language-properties"><span class="token attr-name">server.port</span><span class="token punctuation">=</span><span class="token attr-value">8080</span>
+
+<span class="token attr-name">spring.redis.host</span><span class="token punctuation">=</span><span class="token attr-value">127.0.0.1</span>
+<span class="token attr-name">spring.redis.port</span><span class="token punctuation">=</span><span class="token attr-value">6379</span>
+<span class="token attr-name">spring.redis.jedis.pool.max-idle</span><span class="token punctuation">=</span><span class="token attr-value">8</span>
+<span class="token attr-name">spring.redis.jedis.pool.min-idle</span><span class="token punctuation">=</span><span class="token attr-value">0</span>
+<span class="token attr-name">spring.redis.jedis.pool.max-active</span><span class="token punctuation">=</span><span class="token attr-value">8</span>
+<span class="token attr-name">spring.redis.jedis.pool.max-wait</span><span class="token punctuation">=</span><span class="token attr-value">-1ms</span>
+<span class="token attr-name">spring.redis.timeout</span><span class="token punctuation">=</span><span class="token attr-value">20ms</span>
+<span class="token attr-name">spring.redis.password</span><span class="token punctuation">=</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h4 id="配置log4j配置文件"><a href="#配置log4j配置文件" class="headerlink" title="配置log4j配置文件"></a>配置log4j配置文件</h4><pre class="line-numbers language-properties"><code class="language-properties"><span class="token comment" spellcheck="true"># server默认为空</span>
+<span class="token attr-name">server</span><span class="token punctuation">=</span>
+<span class="token comment" spellcheck="true"># 日志输出目录</span>
+<span class="token attr-name">logFilePath</span><span class="token punctuation">=</span><span class="token attr-value">logs</span>
+<span class="token attr-name">log4j.rootCategory</span><span class="token punctuation">=</span><span class="token attr-value">DEBUG,stdout,debugLog,infoLog,errorLog</span>
+
+<span class="token comment" spellcheck="true"># 控制台日志输出</span>
+<span class="token attr-name">log4j.logger.consoleLogger</span><span class="token punctuation">=</span><span class="token attr-value">stdout</span>
+
+<span class="token attr-name">log4j.appender.stdout</span><span class="token punctuation">=</span><span class="token attr-value">org.apache.log4j.ConsoleAppender</span>
+<span class="token attr-name">log4j.appender.stdout.Threshold</span><span class="token punctuation">=</span><span class="token attr-value">DEBUG</span>
+<span class="token attr-name">log4j.appender.stdout.layout</span><span class="token punctuation">=</span><span class="token attr-value">org.apache.log4j.PatternLayout</span>
+<span class="token attr-name">log4j.appender.stdout.layout.ConversionPattern</span><span class="token punctuation">=</span><span class="token attr-value">[%p] %d %c - %m%n</span>
+<span class="token attr-name">log4j.appender.stdout.ImmediateFlush</span><span class="token punctuation">=</span><span class="token attr-value">true</span>
+
+<span class="token comment" spellcheck="true"># debug日志输出</span>
+<span class="token attr-name">log4j.logger.debugLog</span><span class="token punctuation">=</span><span class="token attr-value">DEBUG, debugLog</span>
+
+<span class="token attr-name">log4j.appender.debugLog</span><span class="token punctuation">=</span><span class="token attr-value">org.apache.log4j.DailyRollingFileAppender</span>
+<span class="token attr-name">log4j.appender.debugLog.File</span><span class="token punctuation">=</span><span class="token attr-value">${logFilePath}/debug.log</span>
+<span class="token attr-name">log4j.appender.debugLog.layout</span><span class="token punctuation">=</span><span class="token attr-value">org.apache.log4j.PatternLayout</span>
+<span class="token attr-name">log4j.appender.debugLog.layout.ConversionPattern</span><span class="token punctuation">=</span><span class="token attr-value">%d{yyyy-MM-dd HH:mm:ss,SSS} %5p %c{1}:%L - %m%n</span>
+<span class="token attr-name">log4j.appender.debugLog.DatePattern</span><span class="token punctuation">=</span><span class="token attr-value">'.'yyyy-MM-dd</span>
+<span class="token attr-name">log4j.appender.debugLog.ImmediateFlush</span><span class="token punctuation">=</span><span class="token attr-value">true</span>
+<span class="token attr-name">log4j.appender.debugLog.Threshold</span><span class="token punctuation">=</span><span class="token attr-value">DEBUG</span>
+<span class="token attr-name">log4j.appender.debugLog.encoding</span><span class="token punctuation">=</span><span class="token attr-value">UTF-8</span>
+<span class="token attr-name">log4j.appender.debugLog.filter.debugFilter</span><span class="token punctuation">=</span><span class="token attr-value">org.apache.log4j.varia.LevelRangeFilter</span>
+<span class="token attr-name">log4j.appender.debugLog.filter.debugFilter.LevelMin</span><span class="token punctuation">=</span><span class="token attr-value">DEBUG</span>
+<span class="token attr-name">log4j.appender.debugLog.filter.debugFilter.LevelMax</span><span class="token punctuation">=</span><span class="token attr-value">DEBUG</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="完"><a href="#完" class="headerlink" title="完"></a>完</h3><p>源码<a href="https://github.com/cayzlh/springboot-distributedlock-demo" target="_blank" rel="external nofollow noopener noreferrer">在这</a>.</p>
+
+            <!-- 文章结尾部分 -->
+            
+                
+<div style="text-align:center;width:100%">
+    <span class="octicon octicon-tag-add"></span>
+    
+        <a style="color: #24292e;" href="/blog/tags/Java/">Java</a>
+    
+        <a style="color: #24292e;" href="/blog/tags/Redis/">Redis</a>
+    
+        <a style="color: #24292e;" href="/blog/tags/SpringBoot/">SpringBoot</a>
+    
 </div>
 
-        
-        <footer id="footer">
-  <div class="footer-left">
-    CAYZLH &copy;
-    
-    
-    2019-2021
-    粤ICP备20058712号-1
-  </div>
-  <div class="footer-right">
-    <nav>
-      <ul>
-        
-          <li><a href="/blog/tools/">tools</a></li>
-        
-          <li><a href="/blog/links/">links</a></li>
-        
-      </ul>
-    </nav>
-  </div>
-</footer>
 
+
+    <div style="text-align:center;width:100%">
+        <img src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/640-2.gif">
     </div>
-    <!-- styles -->
-
-<link rel="stylesheet" href="/blog/lib/font-awesome/css/all.min.css">
 
 
-<link rel="stylesheet" href="/blog/lib/justified-gallery/css/justifiedGallery.min.css">
 
 
-    <!-- jquery -->
-
-<script src="/blog/lib/jquery/jquery.min.js"></script>
-
-
-<script src="/blog/lib/justified-gallery/js/jquery.justifiedGallery.min.js"></script>
-
-<!-- clipboard -->
-
-  
-<script src="/blog/lib/clipboard/clipboard.min.js"></script>
-
-  <script type="text/javascript">
-  $(function() {
-    // copy-btn HTML
-    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"Copy to clipboard!\">";
-    btn += '<i class="far fa-clone"></i>';
-    btn += '</span>'; 
-    // mount it!
-    $(".highlight table").before(btn);
-    var clip = new ClipboardJS('.btn-copy', {
-      text: function(trigger) {
-        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
-      }
-    });
-    clip.on('success', function(e) {
-      e.trigger.setAttribute('aria-label', "Copied!");
-      e.clearSelection();
-    })
-  })
-  </script>
-
-
-<script src="/blog/js/main.js"></script>
-
-<!-- search -->
-
-<!-- Google Analytics -->
-
-    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-129095667-1"></script>
-    <script>
-        window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
-        gtag('js', new Date());
-        gtag('config', 'UA-129095667-1');
-    </script>
-
-<!-- Baidu Analytics -->
-
-<!-- Cloudflare Analytics -->
-
-<!-- Umami Analytics -->
-
-<!-- Disqus Comments -->
+<div>
+    <h4>相关推荐</h4>
+    <ul class="post-copyright">
+        
+        <li class="post-copyright-author">
+            <a href="/blog/2018/09/13/d11f1e94.html">Redis配置认证密码</a>
+        </li>
+        
+        <li class="post-copyright-author">
+            <a href="/blog/2018/09/04/cd7b78e0.html">Redis基础知识总结</a>
+        </li>
+        
+        <li class="post-copyright-author">
+            <a href="/blog/2018/06/02/5d83f396.html">SpringBoot实现Jwt单点登录</a>
+        </li>
+        
+        <li class="post-copyright-author">
+            <a href="/blog/2018/05/28/dd9b08f1.html">SpringBoot封装JedisUtils工具类</a>
+        </li>
+        
+        <li class="post-copyright-author">
+            <a href="/blog/2019/09/25/2a4c017c.html">使用Docker部署SpringBoot项目</a>
+        </li>
+        
+        <li class="post-copyright-author">
+            <a href="/blog/2018/05/27/28cbd204.html">记录Linux安装Redis全过程</a>
+        </li>
+        
+    </ul>
+    <br><br>
+</div>
 
 
+
+<div>
+    <h4>版权声明</h4>
+    <blockquote>
+        <ul class="post-copyright">
+            <li class="post-copyright-author">
+                <strong>本文来源： </strong>
+                
+                <a href="https://www.cayzlh.com/blog" title="🐳Ant丶" rel="noopener external nofollow noreferrer" target="_blank">🐳Ant丶</a></li>
+            <li class="post-copyright-link">
+                <strong>本文链接：</strong>
+                <a href="https://www.cayzlh.com/2018/05/30/61b3f288.html" title="/blog/SpringBoot%E5%AE%9E%E7%8E%B0Redis%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81">https://www.cayzlh.com/2018/05/30/61b3f288.html</a>
+            </li>
+            <li class="post-copyright-license">
+                <strong>版权声明： </strong>
+                
+                    文章内容仅用作学习和分享，如有雷同，纯属拷贝。
+                
+            </li>
+        </ul>
+    </blockquote>
+</div>
+
+
+            
+            
+                <div class="comment">
+    <br><br><br>
+    
+        
+
+        
+
+        
+            <h4>留言区</h4>
+            <div id="valine-container"></div>
+            <script>
+                var GUEST_INFO = ['nick', 'mail', 'link'];
+                var guest_info = 'nick,link,mail'.split(',').filter(function (item) {
+                    return GUEST_INFO.indexOf(item) > -1;
+                });
+                new Valine({
+                    el: '#valine-container',
+                    appId: 'rEPr8FnwPatAARVnsKDFdvtI-gzGzoHsz',
+                    appKey: '7rsPiBWwuRFgagw214Esafmw',
+                    notify: 'false' === 'true',
+                    verify: 'false' === 'true',
+                    visitor: 'true' === 'true',
+                    avatar: 'identicon',
+                    pageSize: '10',
+                    lang: 'zh-cn',
+                    placeholder: '穿山甲到底说了啥～',
+                    guest_info: guest_info.length == 0 ? GUEST_INFO : guest_info
+                });
+            </script>
+        
+
+    
+</div>
+            
+        </div>
+        
+            <div class="col-md-3">
+                <h4>文章目录</h4>
+                <div id="toc" style="display: none;">
+                    <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#前言"><span class="toc-text">前言</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#为什么需要分布式锁"><span class="toc-text">为什么需要分布式锁</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#可靠性-From"><span class="toc-text">可靠性(From)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#原理"><span class="toc-text">原理</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#实现"><span class="toc-text">实现</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#完"><span class="toc-text">完</span></a></li></ol>
+                </div>
+                <div id="post-directory-module">
+                    <section class="post-directory">
+                        <!-- Links that trigger the jumping -->
+                        <!-- Added by javascript below -->
+                        <dl></dl>
+                    </section>
+                </div>
+
+                <script type="text/javascript">
+                    var getChild = function ($parent) {
+                        var child = {};
+                        child.path = $parent.find("a").attr("href");
+                        child.title = $parent.find("a").find("span").html();
+
+                        var $children = $($parent.children("ol").children());
+                        if ($children) {
+                            var children = [];
+                            $children.each(function () {
+                                children.push(getChild($(this)));
+                            });
+                            child.children = children;
+                        }
+                        return child;
+                    }
+                    $(document).ready(function () {
+                        var toc = [];
+                        $("#toc").children().children().each(function () {
+                            toc.push(getChild($(this)));
+                        });
+                        if (toc.length > 0) {
+                            $("#toc").remove();
+                            toc.forEach(function (t) {
+                                $(".post-directory dl").append("<dt><a class=\"jumper\" href="
+                                    + t.path
+                                    + ">"
+                                    + t.title
+                                    + "</a></dt>");
+                                var tc = t.children;
+                                if (tc.length > 0) {
+                                    tc.forEach(function (c) {
+                                        $(".post-directory dl").append(
+                                            "<dd><a class=\"jumper\" href="
+                                            + c.path
+                                            + ">"
+                                            + "&nbsp;&nbsp;- " + c.title
+                                            + "</a></dd>"
+                                        );
+                                    });
+                                }
+                            });
+
+                        }
+                        var fixmeTop = $('#post-directory-module').offset().top - 100;       // get initial position of the element
+
+                        $(window).scroll(function () {                  // assign scroll event listener
+
+                            var currentScroll = $(window).scrollTop(); // get current position
+
+                            if (currentScroll >= fixmeTop) {           // apply position: fixed if you
+                                $('#post-directory-module').css({      // scroll to that element or below it
+                                    top: '100px',
+                                    position: 'fixed',
+                                    width: 'inherit'
+                                });
+                            } else {                                   // apply position: static
+                                $('#post-directory-module').css({      // if you scroll above it
+                                    position: 'inherit',
+                                    width: 'inherit'
+                                });
+                            }
+
+                        });
+
+                        $("a.jumper").on("click", function (e) {
+
+                            e.preventDefault();
+
+                            $("body, html").animate({
+                                scrollTop: ($($(this).attr('href')).offset().top - 100)
+                            }, 600);
+
+                        });
+                    });
+
+                </script>
+            </div>
+        
+    </div>
+    
+</article>
+
+<script>
+    hljs.initHighlightingOnLoad();
+</script>
+</main>
+<footer class="container">
+    <div class="site-footer">
+        
+    <div class="card text-center">
+        <ul class="list-inline" style="margin-left: 0;">
+            
+                <li>
+                    <a target="_blank" href="https://github.com/cayzlh" rel="external nofollow noopener noreferrer">
+                          <span class="fa-stack fa-lg">
+                            <i class="fa fa-circle fa-stack-2x"></i>
+                            <i class="fa fa-github fa-stack-1x fa-inverse">
+                                
+                            </i>
+                          </span>
+                    </a>
+                </li>
+            
+                <li>
+                    <a target="_blank" href="https://www.zhihu.com/people/chenanyu" rel="external nofollow noopener noreferrer">
+                          <span class="fa-stack fa-lg">
+                            <i class="fa fa-circle fa-stack-2x"></i>
+                            <i class="fa  fa-stack-1x fa-inverse">
+                                知
+                            </i>
+                          </span>
+                    </a>
+                </li>
+            
+                <li>
+                    <a target="_blank" href="mailto:Q2F5emxo@cayzlh.com">
+                          <span class="fa-stack fa-lg">
+                            <i class="fa fa-circle fa-stack-2x"></i>
+                            <i class="fa fa-envelope fa-stack-1x fa-inverse">
+                                
+                            </i>
+                          </span>
+                    </a>
+                </li>
+            
+        </ul>
+    </div>
+
+
+        <div class="site-footer-links mobile-hidden">
+            
+                
+                
+            
+        </div>
+
+        <div class="site-footer-links mobile-hidden">
+        
+            <span class="meta-info-index hvr-grow">
+                
+                    <a href="https://www.cayzlh.com">
+                        🐳Ant丶 &copy; 2020
+                    </a>
+                
+            </span>
+        
+        
+            <span class="meta-info-index hvr-grow">
+                <a href="http://beian.miit.gov.cn" target="_blank" rel="external nofollow noopener noreferrer">粤ICP备20058712号-1</a>
+            </span>
+        
+        </div>
+
+        
+
+        
+    </div>
+    
+
+    
+        <!-- Third-Party JS -->
+        <script type="text/javascript" src="/blog/js/thirdparty/geopattern.min.js"></script>
+        <!-- My JS -->
+        <script type="text/javascript" src="/blog/js/script.js"></script>
+    
+
+    
+        <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js">
+        </script>
+    
+</footer>
 </body>
 </html>

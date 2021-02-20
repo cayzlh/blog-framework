@@ -1,172 +1,275 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
+
 <head>
-    <!-- so meta -->
     <meta charset="utf-8">
+    <meta name="keywords" content="Spring, IOC, BeanWrapper">
+    <meta name="description" content="Ant丶的网络日志, CAYZLH网络日志, CAYZLH, CAYZLH主页, Ant丶空间">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="HandheldFriendly" content="True">
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-    <meta name="description" content="分析Spring的BeanWrapper">
-<meta property="og:type" content="article">
-<meta property="og:title" content="IOC之分析BeanWrapper">
-<meta property="og:url" content="http://cmsblogs.com/?p=4020">
-<meta property="og:site_name" content="CAYZLH">
-<meta property="og:description" content="分析Spring的BeanWrapper">
-<meta property="og:locale" content="en_US">
-<meta property="og:image" content="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2020/05/27/15393305208552_Zt9ZVl_ocP6l0.jpg">
-<meta property="og:image" content="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2020/05/27/15393328767959-20200527205704408_oBMSK2.jpg">
-<meta property="og:image" content="https://gitee.com/cayzlh/img-repo/raw/master/2020/05/27/2018101210001-20200527205754152_znKAqi.png">
-<meta property="article:published_time" content="2020-01-24T09:45:53.000Z">
-<meta property="article:modified_time" content="2020-06-01T13:52:52.413Z">
-<meta property="article:author" content="🐳Ant丶">
-<meta property="article:tag" content="Spring">
-<meta property="article:tag" content="转载">
-<meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2020/05/27/15393305208552_Zt9ZVl_ocP6l0.jpg">
-    
-    
-      
-        
-          <link rel="shortcut icon" href="/blog/images/favicon.ico">
-        
-      
-      
-        
-          <link rel="icon" type="image/png" href="/blog/images/favicon-192x192.png" sizes="192x192">
-        
-      
-      
-        
-          <link rel="apple-touch-icon" sizes="180x180" href="/blog/images/apple-touch-icon.png">
-        
-      
-    
-    <!-- title -->
-    <title>IOC之分析BeanWrapper</title>
-    <!-- styles -->
-    
-<link rel="stylesheet" href="/blog/css/style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="renderer" content="webkit|ie-stand|ie-comp">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <!-- Global site tag (gtag.js) - Google Analytics -->
 
-    <!-- persian styles -->
-    
-      
-<link rel="stylesheet" href="/blog/css/rtl.css">
+    <meta name="google-site-verification" content="VrcbMTVpFGlHkIERHBt753dAtXKF4qirjnDweuXSRJw">
+
+
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-129095667-1"></script>
+<script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() {
+        dataLayer.push(arguments);
+    }
+
+    gtag('js', new Date());
+    gtag('config', 'UA-129095667-1');
+</script>
+
+
+    <title>IOC之分析BeanWrapper | CAYZLH</title>
 
     
-    <!-- rss -->
+    <!-- Third-Party CSS -->
     
-    
-      <link rel="alternate" href="/blog/true" title="CAYZLH" type="application/atom+xml">
-    
-<meta name="generator" content="Hexo 5.3.0"></head>
+        <link rel="icon" type="image/svg+xml" href="/blog/favicon.svg">
+        <link rel="stylesheet" href="/blog/css/thirdparty/bootstrap.min.css">
+        <link rel="stylesheet" href="/blog/css/thirdparty/octicons.css">
+        <link rel="stylesheet" href="/blog/css/thirdparty/hover-min.css">
+        <link rel="stylesheet" href="/blog/css/thirdparty/user-content.min.css">
+        <link rel="stylesheet" href="/blog/css/thirdparty/syntax.css">
+        <link rel="stylesheet" href="/blog/css/thirdparty/gitalk.css">
 
-<body class="max-width mx-auto px3 ltr">
-    
-      <div id="header-post">
-  <a id="menu-icon" href="#"><i class="fas fa-bars fa-lg"></i></a>
-  <a id="menu-icon-tablet" href="#"><i class="fas fa-bars fa-lg"></i></a>
-  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fas fa-chevron-up fa-lg"></i></a>
-  <span id="menu">
-    <span id="nav">
-      <ul>
-        
-          <li><a href="/blog/">Home</a></li>
-        
-          <li><a href="/blog/archives/">Articles</a></li>
-        
-          <li><a href="/blog/about/">About</a></li>
-        
-          <li><a href="/blog/search/">Search</a></li>
-        
-      </ul>
-    </span>
-    <br>
-    <span id="actions">
-      <ul>
-        
-        <li><a class="icon" href="/blog/2020/01/24/25302edf.html"><i class="fas fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
-        
-        
-        <li><a class="icon" href="/blog/2020/01/24/10825e64.html"><i class="fas fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
-        
-        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
-<!--        <li><a class="icon" href="#"><i class="fas fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>-->
-      </ul>
-      <span id="i-prev" class="info" style="display:none;">Previous</span>
-      <span id="i-next" class="info" style="display:none;">Next</span>
-      <span id="i-top" class="info" style="display:none;">Back to top</span>
-      <span id="i-share" class="info" style="display:none;">Share post</span>
-    </span>
-    <br>
-    <div id="share" style="display: none">
-      <ul>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.facebook.com/sharer.php?u=https://www.cayzlh.com/2020/01/24/fcc18cc7.html"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://twitter.com/share?url=https://www.cayzlh.com/2020/01/24/fcc18cc7.html&text=IOC之分析BeanWrapper"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.linkedin.com/shareArticle?url=https://www.cayzlh.com/2020/01/24/fcc18cc7.html&title=IOC之分析BeanWrapper"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://pinterest.com/pin/create/bookmarklet/?url=https://www.cayzlh.com/2020/01/24/fcc18cc7.html&is_video=false&description=IOC之分析BeanWrapper"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="mailto:?subject=IOC之分析BeanWrapper&body=Check out this article: https://www.cayzlh.com/2020/01/24/fcc18cc7.html"><i class="fas fa-envelope " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://getpocket.com/save?url=https://www.cayzlh.com/2020/01/24/fcc18cc7.html&title=IOC之分析BeanWrapper"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://reddit.com/submit?url=https://www.cayzlh.com/2020/01/24/fcc18cc7.html&title=IOC之分析BeanWrapper"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.stumbleupon.com/submit?url=https://www.cayzlh.com/2020/01/24/fcc18cc7.html&title=IOC之分析BeanWrapper"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://digg.com/submit?url=https://www.cayzlh.com/2020/01/24/fcc18cc7.html&title=IOC之分析BeanWrapper"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.tumblr.com/share/link?url=https://www.cayzlh.com/2020/01/24/fcc18cc7.html&name=IOC之分析BeanWrapper&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://news.ycombinator.com/submitlink?u=https://www.cayzlh.com/2020/01/24/fcc18cc7.html&t=IOC之分析BeanWrapper"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
-</ul>
+        <!-- My CSS -->
+        <link rel="stylesheet" href="/blog/css/common.css">
 
-    </div>
-    <div id="toc">
-      
-    </div>
-  </span>
+        <link rel="stylesheet" href="/blog/css/sidebar-post-nav.css">
+
+        <link rel="stylesheet" href="/blog/css/blog-page.css">
+        <!-- CSS set in page -->
+
+        
+        <link rel="stylesheet" href="/blog/css/sidebar-popular-repo.css">
+    
+
+    <!-- CSS set in layout -->
+    <link rel="stylesheet" type="text/css" href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css">
+
+    
+        <script type="text/javascript" src="/blog/js/thirdparty/jquery.min.js"></script>
+        <script type="text/javascript" src="/blog/js/thirdparty/bootstrap.min.js"></script>
+        <script type="text/javascript" src="/blog/js/lock.js"></script>
+    
+
+    
+        <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.css">
+        <script src="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js"></script>
+
+        <link rel="stylesheet" href="//imsun.github.io/gitment/style/default.css">
+        <script src="//imsun.github.io/gitment/dist/gitment.browser.js"></script>
+
+        <script src="//unpkg.com/valine/dist/Valine.min.js"></script>
+
+    
+
+    <link rel="stylesheet" href="//cdn.bootcss.com/highlight.js/9.2.0/styles/github.min.css">
+    <script src="//cdn.bootcss.com/highlight.js/9.2.0/highlight.min.js"></script>
+<meta name="generator" content="Hexo 4.2.1"><link rel="alternate" href="/blog/atom.xml" title="CAYZLH" type="application/atom+xml">
+</head>
+
+<body>
+<header class="site-header">
+    <div class="site-header-topbar">
+        <div class="container">
+            <div class="topbar-menu">
+
+    
+        <div class="item">
+            <a href="/blog/categories/" title="分类">
+                分类
+            </a>
+        </div>
+    
+        <div class="item">
+            <a href="/blog/tags/" title="标签">
+                标签
+            </a>
+        </div>
+    
+        <div class="item">
+            <a href="https://meiriyiwen.com/random" target="_blank" title="每日一文" rel="external nofollow noopener noreferrer">
+                每日一文
+            </a>
+        </div>
+    
+        <div class="item">
+            <a href="/blog/links/" title="链接">
+                链接
+            </a>
+        </div>
+    
+        <div class="item">
+            <a href="/blog/about" title="关于">
+                关于
+            </a>
+        </div>
+    
+
 </div>
+        </div>
+    </div>
+    <div class="container">
+        <a id="site-header-brand" href="/blog/" title="CAYZLH">
+            <span class="octicon octicon-mark-github"></span>
+            CAYZLH
+        </a>
 
+        <nav class="site-header-nav" role="navigation">
     
-    <div class="content index py4">
-        
-        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
-  <header>
+        <div class=" site-header-nav-item hvr-underline-from-center">
+            <a href="/blog/" title="Home">
+                Home
+            </a>
+            
+        </div>
     
-    <h1 class="posttitle" itemprop="name headline">
-        IOC之分析BeanWrapper
-    </h1>
+        <div class=" site-header-nav-item hvr-underline-from-center">
+            <a href="/blog/archives" title="Archives">
+                Archives
+            </a>
+            
+        </div>
+    
+        <div class=" site-header-nav-item hvr-underline-from-center">
+            <a href="/blog/" title="Learning">
+                Learning
+            </a>
+            
+                <ul class="submenu">
+                    
 
+                        <li>
+                            <a href="/blog/categories/%E4%B9%A6%E7%B1%8D/%E3%80%8A%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3Java%E8%99%9A%E6%8B%9F%E6%9C%BA%E3%80%8B/">
+                                <span>深入理解Java虚拟机</span>
+                            </a>
+                        </li>
 
+                    
 
-    <div class="meta">
-      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
-        <span itemprop="name">Java技术驿站 | chenssy |【死磕 Spring】| IOC之分析BeanWrapper</span>
-      </span>
-      
-    <div class="postdate">
-      
-        <time datetime="2020-01-24T09:45:53.000Z" itemprop="datePublished">2020-01-24</time>
-        
-      
+                        <li>
+                            <a href="/blog/categories/%E4%B9%A6%E7%B1%8D/%E3%80%8AMyBatis%E6%8A%80%E6%9C%AF%E5%86%85%E5%B9%95%E3%80%8B/">
+                                <span>MyBatis技术内幕</span>
+                            </a>
+                        </li>
+
+                    
+
+                        <li>
+                            <a href="/blog/categories/Java/Java%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/">
+                                <span>Java设计模式</span>
+                            </a>
+                        </li>
+
+                    
+                </ul>
+            
+        </div>
+    
+        <div class=" site-header-nav-item hvr-underline-from-center">
+            <a href="/blog/" title="Tools">
+                Tools
+            </a>
+            
+                <ul class="submenu">
+                    
+
+                        <li>
+                            <a href="https://www.cayzlh.com/tools/online-JSONFormat/" target="_blank">
+                                <span>Json在线工具</span>
+                            </a>
+                        </li>
+
+                    
+
+                        <li>
+                            <a href="https://www.cayzlh.com/tools/online-markdown/" target="_blank">
+                                <span>Markdown在线转换工具</span>
+                            </a>
+                        </li>
+
+                    
+
+                        <li>
+                            <a href="https://www.cayzlh.com/tools/online-hash/" target="_blank">
+                                <span>在线HASH</span>
+                            </a>
+                        </li>
+
+                    
+                </ul>
+            
+        </div>
+    
+</nav>
     </div>
+</header>
+<main class="content">
+    <!-- 标题部分 -->
+<section class="jumbotron geopattern" data-pattern-id="IOC之分析BeanWrapper">
+    <div class="container">
+        <div id="jumbotron-meta-info">
+            <h1>IOC之分析BeanWrapper</h1>
+            <span class="meta-info">
+                <a><span class="octicon octicon-calendar"></span> 2020-01-24</a>
+                
+                    <a><span class="octicon octicon-book"></span></a>
+                    
+                        <a href="/blog/categories/Spring/">Spring</a>
+                    
+                        <a href="/blog/categories/Spring/%E3%80%8ASpring%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E3%80%8B/">《Spring源码分析》</a>
+                    
+                
+                
+                    
+                
+            </span>
+        </div>
 
-
-      
-    <div class="article-category">
-        <i class="fas fa-archive"></i>
-        <a class="category-link" href="/blog/categories/Spring/">Spring</a> › <a class="category-link" href="/blog/categories/Spring/%E3%80%8ASpring%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E3%80%8B/">《Spring源码分析》</a>
     </div>
+</section>
+<script>
+    $(document).ready(function(){
 
+        $('.geopattern').each(function(){
+            $(this).geopattern($(this).data('pattern-id'));
+        });
 
-      
-    <div class="article-tag">
-        <i class="fas fa-tag"></i>
-        <a class="tag-link-link" href="/blog/tags/Spring/" rel="tag">Spring</a>, <a class="tag-link-link" href="/blog/tags/%E8%BD%AC%E8%BD%BD/" rel="tag">转载</a>
-    </div>
-
-
-    </div>
-  </header>
-  
-
-  <div class="content" itemprop="articleBody">
-    <blockquote>
+    });
+</script>
+<!-- 文章内容部分 -->
+<article class="post container " itemscope itemtype="http://schema.org/BlogPosting" id="openwrite-container">
+    <div class="row">
+        <div class="col-md-9 markdown-body">
+            <!-- 文章开始部分 -->
+            <!--<div style="text-align:center">-->
+<!--    <img style="display:inline-block" width="130" height="27"-->
+<!--         src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/640-3.gif"-->
+<!--         data-loaded="true">-->
+<!--    <img style="display:inline-block" width="41" height="35"-->
+<!--         src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/640-4.gif"-->
+<!--         data-loaded="true">-->
+<!--    <img style="display:inline-block"-->
+<!--         width="130" height="27"-->
+<!--         src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/640-5.gif"-->
+<!--         data-loaded="true">-->
+<!--</div>-->
+            <blockquote>
 <p>本文作者：chenssy</p>
-<p>出处：<a target="_blank" rel="external nofollow noopener noreferrer" href="http://cmsblogs.com/?p=4020">http://cmsblogs.com/?p=4020</a></p>
+<p>出处：<a href="http://cmsblogs.com/?p=4020" target="_blank" rel="external nofollow noopener noreferrer">http://cmsblogs.com/?p=4020</a></p>
 <p>在学习<code>Spring源码</code>的过程中发现的好站+好贴，原创不易感谢作者。</p>
 <p>Spring版本：<strong>Spring 5.0.6.RELEASE</strong></p>
 </blockquote>
@@ -177,7 +280,14 @@
 <p>在 bean 实例被 InstantiatioonStrategy 创建出来后，Spring 容器会将 Bean 实例通过 BeanWrapper 包裹起来，是通过 <code>BeanWrapper.setWrappedInstance()</code> 完成的，如下：</p>
 <p><img src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2020/05/27/15393328767959-20200527205704408_oBMSK2.jpg" alt="img"></p>
 <p>beanInstance 就是我们实例出来的 bean 实例，通过构造一个 BeanWrapper 实例对象进行包裹，如下：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="title">BeanWrapperImpl</span><span class="params">(Object object)</span> </span>&#123;</span><br><span class="line"> <span class="keyword">super</span>(object);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">protected</span> <span class="title">AbstractNestablePropertyAccessor</span><span class="params">(Object object)</span> </span>&#123;</span><br><span class="line"> registerDefaultEditors();</span><br><span class="line"> setWrappedInstance(object);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-java"><code class="language-java"> <span class="token keyword">public</span> <span class="token function">BeanWrapperImpl</span><span class="token punctuation">(</span>Object object<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+  <span class="token keyword">super</span><span class="token punctuation">(</span>object<span class="token punctuation">)</span><span class="token punctuation">;</span>
+ <span class="token punctuation">}</span>
+
+ <span class="token keyword">protected</span> <span class="token function">AbstractNestablePropertyAccessor</span><span class="token punctuation">(</span>Object object<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+  <span class="token function">registerDefaultEditors</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token function">setWrappedInstance</span><span class="token punctuation">(</span>object<span class="token punctuation">)</span><span class="token punctuation">;</span>
+ <span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>下面小编就 BeanWrapper 来进行分析说明，先看整体的结构：</p>
 <p><img src="https://gitee.com/cayzlh/img-repo/raw/master/2020/05/27/2018101210001-20200527205754152_znKAqi.png" alt="2018101210001"></p>
 <p>从上图可以看出 BeanWrapper 主要继承三个核心接口：PropertyAccessor、PropertyEditorRegistry、TypeConverter。</p>
@@ -185,7 +295,41 @@
 <blockquote>
 <p>可以访问属性的通用型接口（例如对象的 bean 属性或者对象中的字段），作为 BeanWrapper 的基础接口。</p>
 </blockquote>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">PropertyAccessor</span> </span>&#123;</span><br><span class="line"> String NESTED_PROPERTY_SEPARATOR = <span class="string">&quot;.&quot;</span>;</span><br><span class="line"> <span class="keyword">char</span> NESTED_PROPERTY_SEPARATOR_CHAR = <span class="string">&#x27;.&#x27;</span>;</span><br><span class="line"></span><br><span class="line"> String PROPERTY_KEY_PREFIX = <span class="string">&quot;[&quot;</span>;</span><br><span class="line"> <span class="keyword">char</span> PROPERTY_KEY_PREFIX_CHAR = <span class="string">&#x27;[&#x27;</span>;</span><br><span class="line"></span><br><span class="line"> String PROPERTY_KEY_SUFFIX = <span class="string">&quot;]&quot;</span>;</span><br><span class="line"> <span class="keyword">char</span> PROPERTY_KEY_SUFFIX_CHAR = <span class="string">&#x27;]&#x27;</span>;</span><br><span class="line"></span><br><span class="line"> <span class="function"><span class="keyword">boolean</span> <span class="title">isReadableProperty</span><span class="params">(String propertyName)</span></span>;</span><br><span class="line"></span><br><span class="line"> <span class="function"><span class="keyword">boolean</span> <span class="title">isWritableProperty</span><span class="params">(String propertyName)</span></span>;</span><br><span class="line"></span><br><span class="line"> Class&lt;?&gt; getPropertyType(String propertyName) <span class="keyword">throws</span> BeansException;</span><br><span class="line"></span><br><span class="line"> <span class="function">TypeDescriptor <span class="title">getPropertyTypeDescriptor</span><span class="params">(String propertyName)</span> <span class="keyword">throws</span> BeansException</span>;</span><br><span class="line"></span><br><span class="line"> <span class="function">Object <span class="title">getPropertyValue</span><span class="params">(String propertyName)</span> <span class="keyword">throws</span> BeansException</span>;</span><br><span class="line"></span><br><span class="line"> <span class="function"><span class="keyword">void</span> <span class="title">setPropertyValue</span><span class="params">(String propertyName, <span class="meta">@Nullable</span> Object value)</span> <span class="keyword">throws</span> BeansException</span>;</span><br><span class="line"></span><br><span class="line"> <span class="function"><span class="keyword">void</span> <span class="title">setPropertyValue</span><span class="params">(PropertyValue pv)</span> <span class="keyword">throws</span> BeansException</span>;</span><br><span class="line"></span><br><span class="line"> <span class="function"><span class="keyword">void</span> <span class="title">setPropertyValues</span><span class="params">(Map&lt;?, ?&gt; map)</span> <span class="keyword">throws</span> BeansException</span>;</span><br><span class="line"></span><br><span class="line"> <span class="function"><span class="keyword">void</span> <span class="title">setPropertyValues</span><span class="params">(PropertyValues pvs)</span> <span class="keyword">throws</span> BeansException</span>;</span><br><span class="line"></span><br><span class="line"> <span class="function"><span class="keyword">void</span> <span class="title">setPropertyValues</span><span class="params">(PropertyValues pvs, <span class="keyword">boolean</span> ignoreUnknown)</span></span></span><br><span class="line"><span class="function">   <span class="keyword">throws</span> BeansException</span>;</span><br><span class="line"></span><br><span class="line"> <span class="function"><span class="keyword">void</span> <span class="title">setPropertyValues</span><span class="params">(PropertyValues pvs, <span class="keyword">boolean</span> ignoreUnknown, <span class="keyword">boolean</span> ignoreInvalid)</span></span></span><br><span class="line"><span class="function">   <span class="keyword">throws</span> BeansException</span>;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">interface</span> <span class="token class-name">PropertyAccessor</span> <span class="token punctuation">{</span>
+ String NESTED_PROPERTY_SEPARATOR <span class="token operator">=</span> <span class="token string">"."</span><span class="token punctuation">;</span>
+ <span class="token keyword">char</span> NESTED_PROPERTY_SEPARATOR_CHAR <span class="token operator">=</span> <span class="token string">'.'</span><span class="token punctuation">;</span>
+
+ String PROPERTY_KEY_PREFIX <span class="token operator">=</span> <span class="token string">"["</span><span class="token punctuation">;</span>
+ <span class="token keyword">char</span> PROPERTY_KEY_PREFIX_CHAR <span class="token operator">=</span> <span class="token string">'['</span><span class="token punctuation">;</span>
+
+ String PROPERTY_KEY_SUFFIX <span class="token operator">=</span> <span class="token string">"]"</span><span class="token punctuation">;</span>
+ <span class="token keyword">char</span> PROPERTY_KEY_SUFFIX_CHAR <span class="token operator">=</span> <span class="token string">']'</span><span class="token punctuation">;</span>
+
+ <span class="token keyword">boolean</span> <span class="token function">isReadableProperty</span><span class="token punctuation">(</span>String propertyName<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+ <span class="token keyword">boolean</span> <span class="token function">isWritableProperty</span><span class="token punctuation">(</span>String propertyName<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+ Class<span class="token operator">&lt;</span><span class="token operator">?</span><span class="token operator">></span> <span class="token function">getPropertyType</span><span class="token punctuation">(</span>String propertyName<span class="token punctuation">)</span> <span class="token keyword">throws</span> BeansException<span class="token punctuation">;</span>
+
+ TypeDescriptor <span class="token function">getPropertyTypeDescriptor</span><span class="token punctuation">(</span>String propertyName<span class="token punctuation">)</span> <span class="token keyword">throws</span> BeansException<span class="token punctuation">;</span>
+
+ Object <span class="token function">getPropertyValue</span><span class="token punctuation">(</span>String propertyName<span class="token punctuation">)</span> <span class="token keyword">throws</span> BeansException<span class="token punctuation">;</span>
+
+ <span class="token keyword">void</span> <span class="token function">setPropertyValue</span><span class="token punctuation">(</span>String propertyName<span class="token punctuation">,</span> <span class="token annotation punctuation">@Nullable</span> Object value<span class="token punctuation">)</span> <span class="token keyword">throws</span> BeansException<span class="token punctuation">;</span>
+
+ <span class="token keyword">void</span> <span class="token function">setPropertyValue</span><span class="token punctuation">(</span>PropertyValue pv<span class="token punctuation">)</span> <span class="token keyword">throws</span> BeansException<span class="token punctuation">;</span>
+
+ <span class="token keyword">void</span> <span class="token function">setPropertyValues</span><span class="token punctuation">(</span>Map<span class="token operator">&lt;</span><span class="token operator">?</span><span class="token punctuation">,</span> <span class="token operator">?</span><span class="token operator">></span> map<span class="token punctuation">)</span> <span class="token keyword">throws</span> BeansException<span class="token punctuation">;</span>
+
+ <span class="token keyword">void</span> <span class="token function">setPropertyValues</span><span class="token punctuation">(</span>PropertyValues pvs<span class="token punctuation">)</span> <span class="token keyword">throws</span> BeansException<span class="token punctuation">;</span>
+
+ <span class="token keyword">void</span> <span class="token function">setPropertyValues</span><span class="token punctuation">(</span>PropertyValues pvs<span class="token punctuation">,</span> <span class="token keyword">boolean</span> ignoreUnknown<span class="token punctuation">)</span>
+   <span class="token keyword">throws</span> BeansException<span class="token punctuation">;</span>
+
+ <span class="token keyword">void</span> <span class="token function">setPropertyValues</span><span class="token punctuation">(</span>PropertyValues pvs<span class="token punctuation">,</span> <span class="token keyword">boolean</span> ignoreUnknown<span class="token punctuation">,</span> <span class="token keyword">boolean</span> ignoreInvalid<span class="token punctuation">)</span>
+   <span class="token keyword">throws</span> BeansException<span class="token punctuation">;</span>
+
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>就上面的源码我们可以分解为四类方法：</p>
 <ul>
 <li><code>isReadableProperty()</code>：判断指定 property 是否可读，是否包含 getter 方法</li>
@@ -197,13 +341,31 @@
 <blockquote>
 <p>用于注册 JavaBean 的 PropertyEditors，对 PropertyEditorRegistrar 起核心作用的中心接口。由 BeanWrapper 扩展，BeanWrapperImpl 和 DataBinder 实现。</p>
 </blockquote>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">PropertyEditorRegistry</span> </span>&#123;</span><br><span class="line"></span><br><span class="line"> <span class="function"><span class="keyword">void</span> <span class="title">registerCustomEditor</span><span class="params">(Class&lt;?&gt; requiredType, PropertyEditor propertyEditor)</span></span>;</span><br><span class="line"></span><br><span class="line"> <span class="function"><span class="keyword">void</span> <span class="title">registerCustomEditor</span><span class="params">(<span class="meta">@Nullable</span> Class&lt;?&gt; requiredType, <span class="meta">@Nullable</span> String propertyPath, PropertyEditor propertyEditor)</span></span>;</span><br><span class="line"></span><br><span class="line"> <span class="meta">@Nullable</span></span><br><span class="line"> <span class="function">PropertyEditor <span class="title">findCustomEditor</span><span class="params">(<span class="meta">@Nullable</span> Class&lt;?&gt; requiredType, <span class="meta">@Nullable</span> String propertyPath)</span></span>;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">interface</span> <span class="token class-name">PropertyEditorRegistry</span> <span class="token punctuation">{</span>
+
+ <span class="token keyword">void</span> <span class="token function">registerCustomEditor</span><span class="token punctuation">(</span>Class<span class="token operator">&lt;</span><span class="token operator">?</span><span class="token operator">></span> requiredType<span class="token punctuation">,</span> PropertyEditor propertyEditor<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+ <span class="token keyword">void</span> <span class="token function">registerCustomEditor</span><span class="token punctuation">(</span><span class="token annotation punctuation">@Nullable</span> Class<span class="token operator">&lt;</span><span class="token operator">?</span><span class="token operator">></span> requiredType<span class="token punctuation">,</span> <span class="token annotation punctuation">@Nullable</span> String propertyPath<span class="token punctuation">,</span> PropertyEditor propertyEditor<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+ <span class="token annotation punctuation">@Nullable</span>
+ PropertyEditor <span class="token function">findCustomEditor</span><span class="token punctuation">(</span><span class="token annotation punctuation">@Nullable</span> Class<span class="token operator">&lt;</span><span class="token operator">?</span><span class="token operator">></span> requiredType<span class="token punctuation">,</span> <span class="token annotation punctuation">@Nullable</span> String propertyPath<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>根据接口提供的方法，PropertyEditorRegistry 就是用于 PropertyEditor 的注册和发现，而 PropertyEditor 是 Java 内省里面的接口，用于改变指定 property 属性的类型。</p>
 <p><strong>TypeConverter</strong></p>
 <blockquote>
 <p>定义类型转换的接口，通常与 PropertyEditorRegistry 接口一起实现（但不是必须），但由于 TypeConverter 是基于线程不安全的 PropertyEditors ，因此 TypeConverters 本身也不被视为线程安全。 这里小编解释下，在 Spring 3 后，不在采用 PropertyEditors 类作为 Spring 默认的类型转换接口，而是采用 ConversionService 体系，但 ConversionService 是线程安全的，所以在 Spring 3 后，如果你所选择的类型转换器是 ConversionService 而不是 PropertyEditors 那么 TypeConverters 则是线程安全的。</p>
 </blockquote>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">TypeConverter</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    &lt;T&gt; <span class="function">T <span class="title">convertIfNecessary</span><span class="params">(Object value, Class&lt;T&gt; requiredType)</span> <span class="keyword">throws</span> TypeMismatchException</span>;</span><br><span class="line"></span><br><span class="line">    &lt;T&gt; <span class="function">T <span class="title">convertIfNecessary</span><span class="params">(Object value, Class&lt;T&gt; requiredType, MethodParameter methodParam)</span></span></span><br><span class="line"><span class="function">            <span class="keyword">throws</span> TypeMismatchException</span>;</span><br><span class="line"></span><br><span class="line">    &lt;T&gt; <span class="function">T <span class="title">convertIfNecessary</span><span class="params">(Object value, Class&lt;T&gt; requiredType, Field field)</span></span></span><br><span class="line"><span class="function">            <span class="keyword">throws</span> TypeMismatchException</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">interface</span> <span class="token class-name">TypeConverter</span> <span class="token punctuation">{</span>
+
+    <span class="token operator">&lt;</span>T<span class="token operator">></span> T <span class="token function">convertIfNecessary</span><span class="token punctuation">(</span>Object value<span class="token punctuation">,</span> Class<span class="token operator">&lt;</span>T<span class="token operator">></span> requiredType<span class="token punctuation">)</span> <span class="token keyword">throws</span> TypeMismatchException<span class="token punctuation">;</span>
+
+    <span class="token operator">&lt;</span>T<span class="token operator">></span> T <span class="token function">convertIfNecessary</span><span class="token punctuation">(</span>Object value<span class="token punctuation">,</span> Class<span class="token operator">&lt;</span>T<span class="token operator">></span> requiredType<span class="token punctuation">,</span> MethodParameter methodParam<span class="token punctuation">)</span>
+            <span class="token keyword">throws</span> TypeMismatchException<span class="token punctuation">;</span>
+
+    <span class="token operator">&lt;</span>T<span class="token operator">></span> T <span class="token function">convertIfNecessary</span><span class="token punctuation">(</span>Object value<span class="token punctuation">,</span> Class<span class="token operator">&lt;</span>T<span class="token operator">></span> requiredType<span class="token punctuation">,</span> Field field<span class="token punctuation">)</span>
+            <span class="token keyword">throws</span> TypeMismatchException<span class="token punctuation">;</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>BeanWrapper 继承上述三个接口，那么它就具有三重身份：</p>
 <ul>
 <li>属性编辑器</li>
@@ -211,13 +373,41 @@
 <li>类型转换器</li>
 </ul>
 <p>BeanWrapper 继承 ConfigurablePropertyAccessor 接口，该接口除了继承上面介绍的三个接口外还集成了 Spring 的 ConversionService 类型转换体系。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">ConfigurablePropertyAccessor</span> <span class="keyword">extends</span> <span class="title">PropertyAccessor</span>, <span class="title">PropertyEditorRegistry</span>, <span class="title">TypeConverter</span> </span>&#123;</span><br><span class="line"></span><br><span class="line"> <span class="function"><span class="keyword">void</span> <span class="title">setConversionService</span><span class="params">(<span class="meta">@Nullable</span> ConversionService conversionService)</span></span>;</span><br><span class="line"></span><br><span class="line"> <span class="meta">@Nullable</span></span><br><span class="line"> <span class="function">ConversionService <span class="title">getConversionService</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line"> <span class="function"><span class="keyword">void</span> <span class="title">setExtractOldValueForEditor</span><span class="params">(<span class="keyword">boolean</span> extractOldValueForEditor)</span></span>;</span><br><span class="line"></span><br><span class="line"> <span class="function"><span class="keyword">boolean</span> <span class="title">isExtractOldValueForEditor</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line"> <span class="function"><span class="keyword">void</span> <span class="title">setAutoGrowNestedPaths</span><span class="params">(<span class="keyword">boolean</span> autoGrowNestedPaths)</span></span>;</span><br><span class="line"></span><br><span class="line"> <span class="function"><span class="keyword">boolean</span> <span class="title">isAutoGrowNestedPaths</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">interface</span> <span class="token class-name">ConfigurablePropertyAccessor</span> <span class="token keyword">extends</span> <span class="token class-name">PropertyAccessor</span><span class="token punctuation">,</span> PropertyEditorRegistry<span class="token punctuation">,</span> TypeConverter <span class="token punctuation">{</span>
+
+ <span class="token keyword">void</span> <span class="token function">setConversionService</span><span class="token punctuation">(</span><span class="token annotation punctuation">@Nullable</span> ConversionService conversionService<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+ <span class="token annotation punctuation">@Nullable</span>
+ ConversionService <span class="token function">getConversionService</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+ <span class="token keyword">void</span> <span class="token function">setExtractOldValueForEditor</span><span class="token punctuation">(</span><span class="token keyword">boolean</span> extractOldValueForEditor<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+ <span class="token keyword">boolean</span> <span class="token function">isExtractOldValueForEditor</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+ <span class="token keyword">void</span> <span class="token function">setAutoGrowNestedPaths</span><span class="token punctuation">(</span><span class="token keyword">boolean</span> autoGrowNestedPaths<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+ <span class="token keyword">boolean</span> <span class="token function">isAutoGrowNestedPaths</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p><code>setConversionService()</code> 和 <code>getConversionService()</code> 则是用于集成 Spring 的 ConversionService 类型转换体系。</p>
 <p><strong>BeanWrapper</strong></p>
 <blockquote>
 <p>Spring 的 低级 JavaBean 基础结构的接口，一般不会直接使用，而是通过 BeanFactory 或者 DataBinder 隐式使用。它提供分析和操作标准 JavaBeans 的操作：获取和设置属性值、获取属性描述符以及查询属性的可读性/可写性的能力。</p>
 </blockquote>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">BeanWrapper</span> <span class="keyword">extends</span> <span class="title">ConfigurablePropertyAccessor</span> </span>&#123;</span><br><span class="line"></span><br><span class="line"> <span class="function"><span class="keyword">void</span> <span class="title">setAutoGrowCollectionLimit</span><span class="params">(<span class="keyword">int</span> autoGrowCollectionLimit)</span></span>;</span><br><span class="line"></span><br><span class="line"> <span class="function"><span class="keyword">int</span> <span class="title">getAutoGrowCollectionLimit</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line"> <span class="function">Object <span class="title">getWrappedInstance</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line"> Class&lt;?&gt; getWrappedClass();</span><br><span class="line"></span><br><span class="line"> PropertyDescriptor[] getPropertyDescriptors();</span><br><span class="line"></span><br><span class="line"> <span class="function">PropertyDescriptor <span class="title">getPropertyDescriptor</span><span class="params">(String propertyName)</span> <span class="keyword">throws</span> InvalidPropertyException</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">interface</span> <span class="token class-name">BeanWrapper</span> <span class="token keyword">extends</span> <span class="token class-name">ConfigurablePropertyAccessor</span> <span class="token punctuation">{</span>
+
+ <span class="token keyword">void</span> <span class="token function">setAutoGrowCollectionLimit</span><span class="token punctuation">(</span><span class="token keyword">int</span> autoGrowCollectionLimit<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+ <span class="token keyword">int</span> <span class="token function">getAutoGrowCollectionLimit</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+ Object <span class="token function">getWrappedInstance</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+ Class<span class="token operator">&lt;</span><span class="token operator">?</span><span class="token operator">></span> <span class="token function">getWrappedClass</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+ PropertyDescriptor<span class="token punctuation">[</span><span class="token punctuation">]</span> <span class="token function">getPropertyDescriptors</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+ PropertyDescriptor <span class="token function">getPropertyDescriptor</span><span class="token punctuation">(</span>String propertyName<span class="token punctuation">)</span> <span class="token keyword">throws</span> InvalidPropertyException<span class="token punctuation">;</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>下面几个方法比较重要：</p>
 <p>个对象有4个方法比较重要:</p>
 <ul>
@@ -232,170 +422,185 @@
 </blockquote>
 <p>BeanWrapper 体系相比于 Spring 中其他体系是比较简单的，它作为 BeanDefinition 向 Bean 转换过程中的中间产物，承载了 bean 实例的包装、类型转换、属性的设置以及访问等重要作用。</p>
 
-  </div>
-
-  
-    <div style="text-align:center;width:100%">
-      <img src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/640-2.gif">
-    </div>
-  
-
-  
-    <div>
-      <h4>版权声明</h4>
-      <pre>
-        
-        <strong>本文来源： </strong><a href="http://cmsblogs.com/?p=4020" title="Java技术驿站 | chenssy |【死磕 Spring】| IOC之分析BeanWrapper" rel="external nofollow noopener noreferrer" target="_blank">http://cmsblogs.com/?p=4020</a>
-
-        <strong>本文链接：</strong><a href="https://www.cayzlh.com/2020/01/24/fcc18cc7.html" title="/blog/IOC%E4%B9%8B%E5%88%86%E6%9E%90BeanWrapper">https://www.cayzlh.com/2020/01/24/fcc18cc7.html</a>
-
-        <strong>版权声明： </strong>
-        
-          文章内容仅用作学习和分享，转载请注明出处
-        
-      </pre>
-    </div>
-  
-
-</article>
-
-
-
-        
-          <div id="footer-post-container">
-  <div id="footer-post">
-
-    <div id="nav-footer" style="display: none">
-      <ul>
-        
-          <li><a href="/blog/">Home</a></li>
-        
-          <li><a href="/blog/archives/">Articles</a></li>
-        
-          <li><a href="/blog/about/">About</a></li>
-        
-          <li><a href="/blog/search/">Search</a></li>
-        
-      </ul>
-    </div>
-
-    <div id="toc-footer" style="display: none">
-      
-    </div>
-
-    <div id="share-footer" style="display: none">
-      <ul>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.facebook.com/sharer.php?u=https://www.cayzlh.com/2020/01/24/fcc18cc7.html"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://twitter.com/share?url=https://www.cayzlh.com/2020/01/24/fcc18cc7.html&text=IOC之分析BeanWrapper"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.linkedin.com/shareArticle?url=https://www.cayzlh.com/2020/01/24/fcc18cc7.html&title=IOC之分析BeanWrapper"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://pinterest.com/pin/create/bookmarklet/?url=https://www.cayzlh.com/2020/01/24/fcc18cc7.html&is_video=false&description=IOC之分析BeanWrapper"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="mailto:?subject=IOC之分析BeanWrapper&body=Check out this article: https://www.cayzlh.com/2020/01/24/fcc18cc7.html"><i class="fas fa-envelope fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://getpocket.com/save?url=https://www.cayzlh.com/2020/01/24/fcc18cc7.html&title=IOC之分析BeanWrapper"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://reddit.com/submit?url=https://www.cayzlh.com/2020/01/24/fcc18cc7.html&title=IOC之分析BeanWrapper"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.stumbleupon.com/submit?url=https://www.cayzlh.com/2020/01/24/fcc18cc7.html&title=IOC之分析BeanWrapper"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://digg.com/submit?url=https://www.cayzlh.com/2020/01/24/fcc18cc7.html&title=IOC之分析BeanWrapper"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.tumblr.com/share/link?url=https://www.cayzlh.com/2020/01/24/fcc18cc7.html&name=IOC之分析BeanWrapper&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://news.ycombinator.com/submitlink?u=https://www.cayzlh.com/2020/01/24/fcc18cc7.html&t=IOC之分析BeanWrapper"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
-</ul>
-
-    </div>
-
-    <div id="actions-footer">
-        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fas fa-bars fa-lg" aria-hidden="true"></i> Menu</a>
-        <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fas fa-list fa-lg" aria-hidden="true"></i> TOC</a>
-<!--        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fas fa-share-alt fa-lg" aria-hidden="true"></i> Share</a>-->
-        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a>
-    </div>
-
-  </div>
+            <!-- 文章结尾部分 -->
+            
+                
+<div style="text-align:center;width:100%">
+    <span class="octicon octicon-tag-add"></span>
+    
+        <a style="color: #24292e;" href="/blog/tags/Spring/">Spring</a>
+    
+        <a style="color: #24292e;" href="/blog/tags/%E8%BD%AC%E8%BD%BD/">转载</a>
+    
 </div>
 
-        
-        <footer id="footer">
-  <div class="footer-left">
-    CAYZLH &copy;
-    
-    
-    2019-2021
-    粤ICP备20058712号-1
-  </div>
-  <div class="footer-right">
-    <nav>
-      <ul>
-        
-          <li><a href="/blog/tools/">tools</a></li>
-        
-          <li><a href="/blog/links/">links</a></li>
-        
-      </ul>
-    </nav>
-  </div>
-</footer>
 
+
+    <div style="text-align:center;width:100%">
+        <img src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/640-2.gif">
     </div>
-    <!-- styles -->
-
-<link rel="stylesheet" href="/blog/lib/font-awesome/css/all.min.css">
 
 
-<link rel="stylesheet" href="/blog/lib/justified-gallery/css/justifiedGallery.min.css">
 
 
-    <!-- jquery -->
-
-<script src="/blog/lib/jquery/jquery.min.js"></script>
-
-
-<script src="/blog/lib/justified-gallery/js/jquery.justifiedGallery.min.js"></script>
-
-<!-- clipboard -->
-
-  
-<script src="/blog/lib/clipboard/clipboard.min.js"></script>
-
-  <script type="text/javascript">
-  $(function() {
-    // copy-btn HTML
-    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"Copy to clipboard!\">";
-    btn += '<i class="far fa-clone"></i>';
-    btn += '</span>'; 
-    // mount it!
-    $(".highlight table").before(btn);
-    var clip = new ClipboardJS('.btn-copy', {
-      text: function(trigger) {
-        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
-      }
-    });
-    clip.on('success', function(e) {
-      e.trigger.setAttribute('aria-label', "Copied!");
-      e.clearSelection();
-    })
-  })
-  </script>
-
-
-<script src="/blog/js/main.js"></script>
-
-<!-- search -->
-
-<!-- Google Analytics -->
-
-    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-129095667-1"></script>
-    <script>
-        window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
-        gtag('js', new Date());
-        gtag('config', 'UA-129095667-1');
-    </script>
-
-<!-- Baidu Analytics -->
-
-<!-- Cloudflare Analytics -->
-
-<!-- Umami Analytics -->
-
-<!-- Disqus Comments -->
+<div>
+    <h4>相关推荐</h4>
+    <ul class="post-copyright">
+        
+        <li class="post-copyright-author">
+            <a href="/blog/2020/01/23/cd2eaad8.html">IOC之PropertyPlaceholderConfigurer的应用</a>
+        </li>
+        
+        <li class="post-copyright-author">
+            <a href="/blog/2020/01/21/e8e94997.html">IOC之Bean的初始化</a>
+        </li>
+        
+        <li class="post-copyright-author">
+            <a href="/blog/2020/01/19/6271d9d2.html">IOC之Factory实例化bean</a>
+        </li>
+        
+        <li class="post-copyright-author">
+            <a href="/blog/2020/01/24/25302edf.html">IOC之bean的实例化策略：InstantiationStrategy</a>
+        </li>
+        
+        <li class="post-copyright-author">
+            <a href="/blog/2020/01/20/1293fb33.html">IOC之属性填充</a>
+        </li>
+        
+        <li class="post-copyright-author">
+            <a href="/blog/2020/01/19/1ad7c22b.html">IOC之开启Bean的实例化进程</a>
+        </li>
+        
+    </ul>
+    <br><br>
+</div>
 
 
+
+<div>
+    <h4>版权声明</h4>
+    <blockquote>
+        <ul class="post-copyright">
+            <li class="post-copyright-author">
+                <strong>本文来源： </strong>
+                
+                <a href="http://cmsblogs.com/?p=4020" title="Java技术驿站 | chenssy |【死磕 Spring】| IOC之分析BeanWrapper" rel="external nofollow noopener noreferrer" target="_blank">Java技术驿站 | chenssy |【死磕 Spring】| IOC之分析BeanWrapper</a></li>
+            <li class="post-copyright-link">
+                <strong>本文链接：</strong>
+                <a href="https://www.cayzlh.com/2020/01/24/fcc18cc7.html" title="/blog/IOC%E4%B9%8B%E5%88%86%E6%9E%90BeanWrapper">https://www.cayzlh.com/2020/01/24/fcc18cc7.html</a>
+            </li>
+            <li class="post-copyright-license">
+                <strong>版权声明： </strong>
+                
+                    文章内容仅用作学习和分享，如有雷同，纯属拷贝。
+                
+            </li>
+        </ul>
+    </blockquote>
+</div>
+
+
+            
+            
+                <div class="comment">
+    <br><br><br>
+    
+</div>
+            
+        </div>
+        
+    </div>
+    
+</article>
+
+<script>
+    hljs.initHighlightingOnLoad();
+</script>
+</main>
+<footer class="container">
+    <div class="site-footer">
+        
+    <div class="card text-center">
+        <ul class="list-inline" style="margin-left: 0;">
+            
+                <li>
+                    <a target="_blank" href="https://github.com/cayzlh" rel="external nofollow noopener noreferrer">
+                          <span class="fa-stack fa-lg">
+                            <i class="fa fa-circle fa-stack-2x"></i>
+                            <i class="fa fa-github fa-stack-1x fa-inverse">
+                                
+                            </i>
+                          </span>
+                    </a>
+                </li>
+            
+                <li>
+                    <a target="_blank" href="https://www.zhihu.com/people/chenanyu" rel="external nofollow noopener noreferrer">
+                          <span class="fa-stack fa-lg">
+                            <i class="fa fa-circle fa-stack-2x"></i>
+                            <i class="fa  fa-stack-1x fa-inverse">
+                                知
+                            </i>
+                          </span>
+                    </a>
+                </li>
+            
+                <li>
+                    <a target="_blank" href="mailto:Q2F5emxo@cayzlh.com">
+                          <span class="fa-stack fa-lg">
+                            <i class="fa fa-circle fa-stack-2x"></i>
+                            <i class="fa fa-envelope fa-stack-1x fa-inverse">
+                                
+                            </i>
+                          </span>
+                    </a>
+                </li>
+            
+        </ul>
+    </div>
+
+
+        <div class="site-footer-links mobile-hidden">
+            
+                
+                
+            
+        </div>
+
+        <div class="site-footer-links mobile-hidden">
+        
+            <span class="meta-info-index hvr-grow">
+                
+                    <a href="https://www.cayzlh.com">
+                        🐳Ant丶 &copy; 2020
+                    </a>
+                
+            </span>
+        
+        
+            <span class="meta-info-index hvr-grow">
+                <a href="http://beian.miit.gov.cn" target="_blank" rel="external nofollow noopener noreferrer">粤ICP备20058712号-1</a>
+            </span>
+        
+        </div>
+
+        
+
+        
+    </div>
+    
+
+    
+        <!-- Third-Party JS -->
+        <script type="text/javascript" src="/blog/js/thirdparty/geopattern.min.js"></script>
+        <!-- My JS -->
+        <script type="text/javascript" src="/blog/js/script.js"></script>
+    
+
+    
+        <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js">
+        </script>
+    
+</footer>
 </body>
 </html>

@@ -1,190 +1,336 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
+
 <head>
-    <!-- so meta -->
     <meta charset="utf-8">
+    <meta name="keywords" content="Spring, IOC, Bean的类型转换体系">
+    <meta name="description" content="Ant丶的网络日志, CAYZLH网络日志, CAYZLH, CAYZLH主页, Ant丶空间">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="HandheldFriendly" content="True">
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-    <meta name="description" content="分析Spring Bean的类型转换体系">
-<meta property="og:type" content="article">
-<meta property="og:title" content="IOC之深入分析Bean的类型转换体系">
-<meta property="og:url" content="http://cmsblogs.com/?p=3983">
-<meta property="og:site_name" content="CAYZLH">
-<meta property="og:description" content="分析Spring Bean的类型转换体系">
-<meta property="og:locale" content="en_US">
-<meta property="og:image" content="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2020/05/27/15388823317115-20200527094430730_S7jNAq.jpg">
-<meta property="og:image" content="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2020/05/27/15388832533588_Cmgmcb_smrQ4E.jpg">
-<meta property="og:image" content="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2020/05/27/15388984648307_DEQ9BT_olp6Km.jpg">
-<meta property="og:image" content="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2020/05/27/15389004851676-20200527094627489_1lakfm.jpg">
-<meta property="og:image" content="https://gitee.com/chenssy/blog-home/raw/master/image/201811/15389064279138.jpg">
-<meta property="og:image" content="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2020/05/27/15389071818355_KBtf0I_MmL1Mp.jpg">
-<meta property="article:published_time" content="2020-01-24T01:38:37.000Z">
-<meta property="article:modified_time" content="2020-05-27T01:48:07.291Z">
-<meta property="article:author" content="🐳Ant丶">
-<meta property="article:tag" content="Spring">
-<meta property="article:tag" content="转载">
-<meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2020/05/27/15388823317115-20200527094430730_S7jNAq.jpg">
-    
-    
-      
-        
-          <link rel="shortcut icon" href="/blog/images/favicon.ico">
-        
-      
-      
-        
-          <link rel="icon" type="image/png" href="/blog/images/favicon-192x192.png" sizes="192x192">
-        
-      
-      
-        
-          <link rel="apple-touch-icon" sizes="180x180" href="/blog/images/apple-touch-icon.png">
-        
-      
-    
-    <!-- title -->
-    <title>IOC之深入分析Bean的类型转换体系</title>
-    <!-- styles -->
-    
-<link rel="stylesheet" href="/blog/css/style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="renderer" content="webkit|ie-stand|ie-comp">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <!-- Global site tag (gtag.js) - Google Analytics -->
 
-    <!-- persian styles -->
-    
-      
-<link rel="stylesheet" href="/blog/css/rtl.css">
+    <meta name="google-site-verification" content="VrcbMTVpFGlHkIERHBt753dAtXKF4qirjnDweuXSRJw">
+
+
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-129095667-1"></script>
+<script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() {
+        dataLayer.push(arguments);
+    }
+
+    gtag('js', new Date());
+    gtag('config', 'UA-129095667-1');
+</script>
+
+
+    <title>IOC之深入分析Bean的类型转换体系 | CAYZLH</title>
 
     
-    <!-- rss -->
+    <!-- Third-Party CSS -->
     
-    
-      <link rel="alternate" href="/blog/true" title="CAYZLH" type="application/atom+xml">
-    
-<meta name="generator" content="Hexo 5.3.0"></head>
+        <link rel="icon" type="image/svg+xml" href="/blog/favicon.svg">
+        <link rel="stylesheet" href="/blog/css/thirdparty/bootstrap.min.css">
+        <link rel="stylesheet" href="/blog/css/thirdparty/octicons.css">
+        <link rel="stylesheet" href="/blog/css/thirdparty/hover-min.css">
+        <link rel="stylesheet" href="/blog/css/thirdparty/user-content.min.css">
+        <link rel="stylesheet" href="/blog/css/thirdparty/syntax.css">
+        <link rel="stylesheet" href="/blog/css/thirdparty/gitalk.css">
 
-<body class="max-width mx-auto px3 ltr">
-    
-      <div id="header-post">
-  <a id="menu-icon" href="#"><i class="fas fa-bars fa-lg"></i></a>
-  <a id="menu-icon-tablet" href="#"><i class="fas fa-bars fa-lg"></i></a>
-  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fas fa-chevron-up fa-lg"></i></a>
-  <span id="menu">
-    <span id="nav">
-      <ul>
-        
-          <li><a href="/blog/">Home</a></li>
-        
-          <li><a href="/blog/archives/">Articles</a></li>
-        
-          <li><a href="/blog/about/">About</a></li>
-        
-          <li><a href="/blog/search/">Search</a></li>
-        
-      </ul>
-    </span>
-    <br>
-    <span id="actions">
-      <ul>
-        
-        <li><a class="icon" href="/blog/2020/01/24/10825e64.html"><i class="fas fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
-        
-        
-        <li><a class="icon" href="/blog/2020/01/24/e5d90f02.html"><i class="fas fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
-        
-        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
-<!--        <li><a class="icon" href="#"><i class="fas fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>-->
-      </ul>
-      <span id="i-prev" class="info" style="display:none;">Previous</span>
-      <span id="i-next" class="info" style="display:none;">Next</span>
-      <span id="i-top" class="info" style="display:none;">Back to top</span>
-      <span id="i-share" class="info" style="display:none;">Share post</span>
-    </span>
-    <br>
-    <div id="share" style="display: none">
-      <ul>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.facebook.com/sharer.php?u=https://www.cayzlh.com/2020/01/24/683bb448.html"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://twitter.com/share?url=https://www.cayzlh.com/2020/01/24/683bb448.html&text=IOC之深入分析Bean的类型转换体系"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.linkedin.com/shareArticle?url=https://www.cayzlh.com/2020/01/24/683bb448.html&title=IOC之深入分析Bean的类型转换体系"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://pinterest.com/pin/create/bookmarklet/?url=https://www.cayzlh.com/2020/01/24/683bb448.html&is_video=false&description=IOC之深入分析Bean的类型转换体系"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="mailto:?subject=IOC之深入分析Bean的类型转换体系&body=Check out this article: https://www.cayzlh.com/2020/01/24/683bb448.html"><i class="fas fa-envelope " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://getpocket.com/save?url=https://www.cayzlh.com/2020/01/24/683bb448.html&title=IOC之深入分析Bean的类型转换体系"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://reddit.com/submit?url=https://www.cayzlh.com/2020/01/24/683bb448.html&title=IOC之深入分析Bean的类型转换体系"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.stumbleupon.com/submit?url=https://www.cayzlh.com/2020/01/24/683bb448.html&title=IOC之深入分析Bean的类型转换体系"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://digg.com/submit?url=https://www.cayzlh.com/2020/01/24/683bb448.html&title=IOC之深入分析Bean的类型转换体系"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.tumblr.com/share/link?url=https://www.cayzlh.com/2020/01/24/683bb448.html&name=IOC之深入分析Bean的类型转换体系&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://news.ycombinator.com/submitlink?u=https://www.cayzlh.com/2020/01/24/683bb448.html&t=IOC之深入分析Bean的类型转换体系"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
-</ul>
+        <!-- My CSS -->
+        <link rel="stylesheet" href="/blog/css/common.css">
 
-    </div>
-    <div id="toc">
-      
-    </div>
-  </span>
+        <link rel="stylesheet" href="/blog/css/sidebar-post-nav.css">
+
+        <link rel="stylesheet" href="/blog/css/blog-page.css">
+        <!-- CSS set in page -->
+
+        
+        <link rel="stylesheet" href="/blog/css/sidebar-popular-repo.css">
+    
+
+    <!-- CSS set in layout -->
+    <link rel="stylesheet" type="text/css" href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css">
+
+    
+        <script type="text/javascript" src="/blog/js/thirdparty/jquery.min.js"></script>
+        <script type="text/javascript" src="/blog/js/thirdparty/bootstrap.min.js"></script>
+        <script type="text/javascript" src="/blog/js/lock.js"></script>
+    
+
+    
+        <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.css">
+        <script src="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js"></script>
+
+        <link rel="stylesheet" href="//imsun.github.io/gitment/style/default.css">
+        <script src="//imsun.github.io/gitment/dist/gitment.browser.js"></script>
+
+        <script src="//unpkg.com/valine/dist/Valine.min.js"></script>
+
+    
+
+    <link rel="stylesheet" href="//cdn.bootcss.com/highlight.js/9.2.0/styles/github.min.css">
+    <script src="//cdn.bootcss.com/highlight.js/9.2.0/highlight.min.js"></script>
+<meta name="generator" content="Hexo 4.2.1"><link rel="alternate" href="/blog/atom.xml" title="CAYZLH" type="application/atom+xml">
+</head>
+
+<body>
+<header class="site-header">
+    <div class="site-header-topbar">
+        <div class="container">
+            <div class="topbar-menu">
+
+    
+        <div class="item">
+            <a href="/blog/categories/" title="分类">
+                分类
+            </a>
+        </div>
+    
+        <div class="item">
+            <a href="/blog/tags/" title="标签">
+                标签
+            </a>
+        </div>
+    
+        <div class="item">
+            <a href="https://meiriyiwen.com/random" target="_blank" title="每日一文" rel="external nofollow noopener noreferrer">
+                每日一文
+            </a>
+        </div>
+    
+        <div class="item">
+            <a href="/blog/links/" title="链接">
+                链接
+            </a>
+        </div>
+    
+        <div class="item">
+            <a href="/blog/about" title="关于">
+                关于
+            </a>
+        </div>
+    
+
 </div>
+        </div>
+    </div>
+    <div class="container">
+        <a id="site-header-brand" href="/blog/" title="CAYZLH">
+            <span class="octicon octicon-mark-github"></span>
+            CAYZLH
+        </a>
 
+        <nav class="site-header-nav" role="navigation">
     
-    <div class="content index py4">
-        
-        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
-  <header>
+        <div class=" site-header-nav-item hvr-underline-from-center">
+            <a href="/blog/" title="Home">
+                Home
+            </a>
+            
+        </div>
     
-    <h1 class="posttitle" itemprop="name headline">
-        IOC之深入分析Bean的类型转换体系
-    </h1>
+        <div class=" site-header-nav-item hvr-underline-from-center">
+            <a href="/blog/archives" title="Archives">
+                Archives
+            </a>
+            
+        </div>
+    
+        <div class=" site-header-nav-item hvr-underline-from-center">
+            <a href="/blog/" title="Learning">
+                Learning
+            </a>
+            
+                <ul class="submenu">
+                    
 
+                        <li>
+                            <a href="/blog/categories/%E4%B9%A6%E7%B1%8D/%E3%80%8A%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3Java%E8%99%9A%E6%8B%9F%E6%9C%BA%E3%80%8B/">
+                                <span>深入理解Java虚拟机</span>
+                            </a>
+                        </li>
 
+                    
 
-    <div class="meta">
-      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
-        <span itemprop="name">Java技术驿站 | chenssy |【死磕 Spring】| IOC之深入分析Bean的类型转换体系</span>
-      </span>
-      
-    <div class="postdate">
-      
-        <time datetime="2020-01-24T01:38:37.000Z" itemprop="datePublished">2020-01-24</time>
-        
-      
+                        <li>
+                            <a href="/blog/categories/%E4%B9%A6%E7%B1%8D/%E3%80%8AMyBatis%E6%8A%80%E6%9C%AF%E5%86%85%E5%B9%95%E3%80%8B/">
+                                <span>MyBatis技术内幕</span>
+                            </a>
+                        </li>
+
+                    
+
+                        <li>
+                            <a href="/blog/categories/Java/Java%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/">
+                                <span>Java设计模式</span>
+                            </a>
+                        </li>
+
+                    
+                </ul>
+            
+        </div>
+    
+        <div class=" site-header-nav-item hvr-underline-from-center">
+            <a href="/blog/" title="Tools">
+                Tools
+            </a>
+            
+                <ul class="submenu">
+                    
+
+                        <li>
+                            <a href="https://www.cayzlh.com/tools/online-JSONFormat/" target="_blank">
+                                <span>Json在线工具</span>
+                            </a>
+                        </li>
+
+                    
+
+                        <li>
+                            <a href="https://www.cayzlh.com/tools/online-markdown/" target="_blank">
+                                <span>Markdown在线转换工具</span>
+                            </a>
+                        </li>
+
+                    
+
+                        <li>
+                            <a href="https://www.cayzlh.com/tools/online-hash/" target="_blank">
+                                <span>在线HASH</span>
+                            </a>
+                        </li>
+
+                    
+                </ul>
+            
+        </div>
+    
+</nav>
     </div>
+</header>
+<main class="content">
+    <!-- 标题部分 -->
+<section class="jumbotron geopattern" data-pattern-id="IOC之深入分析Bean的类型转换体系">
+    <div class="container">
+        <div id="jumbotron-meta-info">
+            <h1>IOC之深入分析Bean的类型转换体系</h1>
+            <span class="meta-info">
+                <a><span class="octicon octicon-calendar"></span> 2020-01-24</a>
+                
+                    <a><span class="octicon octicon-book"></span></a>
+                    
+                        <a href="/blog/categories/Spring/">Spring</a>
+                    
+                        <a href="/blog/categories/Spring/%E3%80%8ASpring%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E3%80%8B/">《Spring源码分析》</a>
+                    
+                
+                
+                    
+                
+            </span>
+        </div>
 
-
-      
-    <div class="article-category">
-        <i class="fas fa-archive"></i>
-        <a class="category-link" href="/blog/categories/Spring/">Spring</a> › <a class="category-link" href="/blog/categories/Spring/%E3%80%8ASpring%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E3%80%8B/">《Spring源码分析》</a>
     </div>
+</section>
+<script>
+    $(document).ready(function(){
 
+        $('.geopattern').each(function(){
+            $(this).geopattern($(this).data('pattern-id'));
+        });
 
-      
-    <div class="article-tag">
-        <i class="fas fa-tag"></i>
-        <a class="tag-link-link" href="/blog/tags/Spring/" rel="tag">Spring</a>, <a class="tag-link-link" href="/blog/tags/%E8%BD%AC%E8%BD%BD/" rel="tag">转载</a>
-    </div>
-
-
-    </div>
-  </header>
-  
-
-  <div class="content" itemprop="articleBody">
-    <blockquote>
+    });
+</script>
+<!-- 文章内容部分 -->
+<article class="post container " itemscope itemtype="http://schema.org/BlogPosting" id="openwrite-container">
+    <div class="row">
+        <div class="col-md-9 markdown-body">
+            <!-- 文章开始部分 -->
+            <!--<div style="text-align:center">-->
+<!--    <img style="display:inline-block" width="130" height="27"-->
+<!--         src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/640-3.gif"-->
+<!--         data-loaded="true">-->
+<!--    <img style="display:inline-block" width="41" height="35"-->
+<!--         src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/640-4.gif"-->
+<!--         data-loaded="true">-->
+<!--    <img style="display:inline-block"-->
+<!--         width="130" height="27"-->
+<!--         src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/640-5.gif"-->
+<!--         data-loaded="true">-->
+<!--</div>-->
+            <blockquote>
 <p>本文作者：chenssy</p>
-<p>出处：<a target="_blank" rel="external nofollow noopener noreferrer" href="http://cmsblogs.com/?p=3983">http://cmsblogs.com/?p=3983</a></p>
+<p>出处：<a href="http://cmsblogs.com/?p=3983" target="_blank" rel="external nofollow noopener noreferrer">http://cmsblogs.com/?p=3983</a></p>
 <p>在学习<code>Spring源码</code>的过程中发现的好站+好贴，原创不易感谢作者。</p>
 <p>Spring版本：<strong>Spring 5.0.6.RELEASE</strong></p>
 </blockquote>
 <p>我们知道不管 bean 对象里面的属性时什么类型，他们都是通过 XML 、Properties 或者其他方式来配置这些属性对象类型的。在 Spring 容器加载过程中，这些属性都是以 String 类型加载进容器的，但是最终都需要将这些 String 类型的属性转换 Bean 对象属性所对应真正的类型，要想完成这种由字符串到具体对象的转换，就需要这种转换规则相关的信息，而这些信息以及转换过程由 Spring 类型转换体系来完成。</p>
 <p>我们依然以 xml 为例，在 Spring 容器加载阶段，容器将 xml 文件中定义的 <code>&lt;bean&gt;</code> 解析为 BeanDefinition，BeanDefinition 中存储着我们定义一个 bean 需要的所有信息，包括属性，这些属性是以 String 类型的存储的。</p>
 <p>当用户触发 Bean 实例化阶段时，Spring 容器会将这些属性转换为这些属性真正对应的类型。我们知道在 bean 实例化阶段，属性的注入是在实例化 bean 阶段的属性注入阶段，即 <code>populateBean()</code> 方法。在 <code>populateBean()</code> 中会将 BeanDefinition 中定义的属性值翻译为 PropertyValue 然后调用 <code>applyPropertyValues()</code> 进行属性应用。其中 PropertyValue 用于保存单个 bean 属性的信息和值的对象。在 <code>applyPropertyValues()</code> 中会调用 <code>convertForProperty()</code> 进行属性转换，如下：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> Object <span class="title">convertForProperty</span><span class="params">(</span></span></span><br><span class="line"><span class="function"><span class="params">  <span class="meta">@Nullable</span> Object value, String propertyName, BeanWrapper bw, TypeConverter converter)</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> (converter <span class="keyword">instanceof</span> BeanWrapperImpl) &#123;</span><br><span class="line">    <span class="keyword">return</span> ((BeanWrapperImpl) converter).convertForProperty(value, propertyName);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">else</span> &#123;</span><br><span class="line">    PropertyDescriptor pd = bw.getPropertyDescriptor(propertyName);</span><br><span class="line">    MethodParameter methodParam = BeanUtils.getWriteMethodParameter(pd);</span><br><span class="line">    <span class="keyword">return</span> converter.convertIfNecessary(value, pd.getPropertyType(), methodParam);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">private</span> Object <span class="token function">convertForProperty</span><span class="token punctuation">(</span>
+  <span class="token annotation punctuation">@Nullable</span> Object value<span class="token punctuation">,</span> String propertyName<span class="token punctuation">,</span> BeanWrapper bw<span class="token punctuation">,</span> TypeConverter converter<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+
+  <span class="token keyword">if</span> <span class="token punctuation">(</span>converter <span class="token keyword">instanceof</span> <span class="token class-name">BeanWrapperImpl</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">return</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>BeanWrapperImpl<span class="token punctuation">)</span> converter<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">convertForProperty</span><span class="token punctuation">(</span>value<span class="token punctuation">,</span> propertyName<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+  <span class="token keyword">else</span> <span class="token punctuation">{</span>
+    PropertyDescriptor pd <span class="token operator">=</span> bw<span class="token punctuation">.</span><span class="token function">getPropertyDescriptor</span><span class="token punctuation">(</span>propertyName<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    MethodParameter methodParam <span class="token operator">=</span> BeanUtils<span class="token punctuation">.</span><span class="token function">getWriteMethodParameter</span><span class="token punctuation">(</span>pd<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">return</span> converter<span class="token punctuation">.</span><span class="token function">convertIfNecessary</span><span class="token punctuation">(</span>value<span class="token punctuation">,</span> pd<span class="token punctuation">.</span><span class="token function">getPropertyType</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> methodParam<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>若 TypeConverter 为 BeanWrapperImpl 类型，则使用 BeanWrapperImpl 来进行类型转换，这里主要是因为 BeanWrapperImpl 实现了 PropertyEditorRegistry 接口。否则则调用 TypeConverter 的 <code>convertIfNecessary()</code> 进行类型转换。TypeConverter 是定义类型转换方法的接口，通常情况下与 PropertyEditorRegistry 配合使用实现类型转换。</p>
 <p><code>convertIfNecessary()</code> 的实现者有两个：<code>DataBinder</code> 和 <code>TypeConverterSupport</code> ，其中 <code>DataBinder</code> 主要用于参数绑定（熟悉 Spring MVC 的都应该知道这个类），<code>TypeConverterSupport</code> 则是 <code>TypeConverter</code> 的基本实现，使用的是 <code>package-private</code> 策略。</p>
 <p> 所以这里我们只需要关注 TypeConverterSupport 的 <code>convertIfNecessary()</code>，如下：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> &lt;T&gt; <span class="function">T <span class="title">convertIfNecessary</span><span class="params">(<span class="meta">@Nullable</span> Object value, <span class="meta">@Nullable</span> Class&lt;T&gt; requiredType, <span class="meta">@Nullable</span> MethodParameter methodParam)</span></span></span><br><span class="line"><span class="function">  <span class="keyword">throws</span> TypeMismatchException </span>&#123;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> doConvert(value, requiredType, methodParam, <span class="keyword">null</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span> &lt;T&gt; <span class="function">T <span class="title">doConvert</span><span class="params">(<span class="meta">@Nullable</span> Object value,<span class="meta">@Nullable</span> Class&lt;T&gt; requiredType,</span></span></span><br><span class="line"><span class="function"><span class="params">                        <span class="meta">@Nullable</span> MethodParameter methodParam, <span class="meta">@Nullable</span> Field field)</span> <span class="keyword">throws</span> TypeMismatchException </span>&#123;</span><br><span class="line"></span><br><span class="line">  Assert.state(<span class="keyword">this</span>.typeConverterDelegate != <span class="keyword">null</span>, <span class="string">&quot;No TypeConverterDelegate&quot;</span>);</span><br><span class="line">  <span class="keyword">try</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (field != <span class="keyword">null</span>) &#123;</span><br><span class="line">      <span class="keyword">return</span> <span class="keyword">this</span>.typeConverterDelegate.convertIfNecessary(value, requiredType, field);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span> &#123;</span><br><span class="line">      <span class="keyword">return</span> <span class="keyword">this</span>.typeConverterDelegate.convertIfNecessary(value, requiredType, methodParam);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">catch</span> (ConverterNotFoundException | IllegalStateException ex) &#123;</span><br><span class="line">    <span class="keyword">throw</span> <span class="keyword">new</span> ConversionNotSupportedException(value, requiredType, ex);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">catch</span> (ConversionException | IllegalArgumentException ex) &#123;</span><br><span class="line">    <span class="keyword">throw</span> <span class="keyword">new</span> TypeMismatchException(value, requiredType, ex);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token operator">&lt;</span>T<span class="token operator">></span> T <span class="token function">convertIfNecessary</span><span class="token punctuation">(</span><span class="token annotation punctuation">@Nullable</span> Object value<span class="token punctuation">,</span> <span class="token annotation punctuation">@Nullable</span> Class<span class="token operator">&lt;</span>T<span class="token operator">></span> requiredType<span class="token punctuation">,</span> <span class="token annotation punctuation">@Nullable</span> MethodParameter methodParam<span class="token punctuation">)</span>
+  <span class="token keyword">throws</span> TypeMismatchException <span class="token punctuation">{</span>
+
+  <span class="token keyword">return</span> <span class="token function">doConvert</span><span class="token punctuation">(</span>value<span class="token punctuation">,</span> requiredType<span class="token punctuation">,</span> methodParam<span class="token punctuation">,</span> null<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+
+<span class="token keyword">private</span> <span class="token operator">&lt;</span>T<span class="token operator">></span> T <span class="token function">doConvert</span><span class="token punctuation">(</span><span class="token annotation punctuation">@Nullable</span> Object value<span class="token punctuation">,</span><span class="token annotation punctuation">@Nullable</span> Class<span class="token operator">&lt;</span>T<span class="token operator">></span> requiredType<span class="token punctuation">,</span>
+                        <span class="token annotation punctuation">@Nullable</span> MethodParameter methodParam<span class="token punctuation">,</span> <span class="token annotation punctuation">@Nullable</span> Field field<span class="token punctuation">)</span> <span class="token keyword">throws</span> TypeMismatchException <span class="token punctuation">{</span>
+
+  Assert<span class="token punctuation">.</span><span class="token function">state</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>typeConverterDelegate <span class="token operator">!=</span> null<span class="token punctuation">,</span> <span class="token string">"No TypeConverterDelegate"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">try</span> <span class="token punctuation">{</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>field <span class="token operator">!=</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+      <span class="token keyword">return</span> <span class="token keyword">this</span><span class="token punctuation">.</span>typeConverterDelegate<span class="token punctuation">.</span><span class="token function">convertIfNecessary</span><span class="token punctuation">(</span>value<span class="token punctuation">,</span> requiredType<span class="token punctuation">,</span> field<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    <span class="token keyword">else</span> <span class="token punctuation">{</span>
+      <span class="token keyword">return</span> <span class="token keyword">this</span><span class="token punctuation">.</span>typeConverterDelegate<span class="token punctuation">.</span><span class="token function">convertIfNecessary</span><span class="token punctuation">(</span>value<span class="token punctuation">,</span> requiredType<span class="token punctuation">,</span> methodParam<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+  <span class="token punctuation">}</span>
+  <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">ConverterNotFoundException</span> <span class="token operator">|</span> IllegalStateException ex<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">throw</span> <span class="token keyword">new</span> <span class="token class-name">ConversionNotSupportedException</span><span class="token punctuation">(</span>value<span class="token punctuation">,</span> requiredType<span class="token punctuation">,</span> ex<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+  <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">ConversionException</span> <span class="token operator">|</span> IllegalArgumentException ex<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">throw</span> <span class="token keyword">new</span> <span class="token class-name">TypeMismatchException</span><span class="token punctuation">(</span>value<span class="token punctuation">,</span> requiredType<span class="token punctuation">,</span> ex<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>我们一直往下跟会跟踪到 TypeConverterDelegate 的 <code>convertIfNecessary()</code> ，会发现如下代码段：</p>
 <p><img src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2020/05/27/15388823317115-20200527094430730_S7jNAq.jpg" alt="img"></p>
 <p>如果没有自定义的编辑器则使用 ConversionService 。ConversionService 是 Spring 自 3 后推出来用来替代 PropertyEditor 转换模式的转换体系，接口定义如下：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">ConversionService</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">boolean</span> <span class="title">canConvert</span><span class="params">(<span class="meta">@Nullable</span> Class&lt;?&gt; sourceType, Class&lt;?&gt; targetType)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">boolean</span> <span class="title">canConvert</span><span class="params">(<span class="meta">@Nullable</span> TypeDescriptor sourceType, TypeDescriptor targetType)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Nullable</span></span><br><span class="line">    &lt;T&gt; <span class="function">T <span class="title">convert</span><span class="params">(<span class="meta">@Nullable</span> Object source, Class&lt;T&gt; targetType)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Nullable</span></span><br><span class="line">    <span class="function">Object <span class="title">convert</span><span class="params">(<span class="meta">@Nullable</span> Object source, <span class="meta">@Nullable</span> TypeDescriptor sourceType, TypeDescriptor targetType)</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">interface</span> <span class="token class-name">ConversionService</span> <span class="token punctuation">{</span>
+
+    <span class="token keyword">boolean</span> <span class="token function">canConvert</span><span class="token punctuation">(</span><span class="token annotation punctuation">@Nullable</span> Class<span class="token operator">&lt;</span><span class="token operator">?</span><span class="token operator">></span> sourceType<span class="token punctuation">,</span> Class<span class="token operator">&lt;</span><span class="token operator">?</span><span class="token operator">></span> targetType<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token keyword">boolean</span> <span class="token function">canConvert</span><span class="token punctuation">(</span><span class="token annotation punctuation">@Nullable</span> TypeDescriptor sourceType<span class="token punctuation">,</span> TypeDescriptor targetType<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token annotation punctuation">@Nullable</span>
+    <span class="token operator">&lt;</span>T<span class="token operator">></span> T <span class="token function">convert</span><span class="token punctuation">(</span><span class="token annotation punctuation">@Nullable</span> Object source<span class="token punctuation">,</span> Class<span class="token operator">&lt;</span>T<span class="token operator">></span> targetType<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token annotation punctuation">@Nullable</span>
+    Object <span class="token function">convert</span><span class="token punctuation">(</span><span class="token annotation punctuation">@Nullable</span> Object source<span class="token punctuation">,</span> <span class="token annotation punctuation">@Nullable</span> TypeDescriptor sourceType<span class="token punctuation">,</span> TypeDescriptor targetType<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>其 UML 类图如下：</p>
 <p><img src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2020/05/27/15388832533588_Cmgmcb_smrQ4E.jpg" alt="img"></p>
 <ul>
@@ -193,7 +339,7 @@
 <li><strong>DefaultConversionService</strong>：ConversionService 接口的默认实现，适用于大部分条件下的转换工作。</li>
 </ul>
 <p>回归到 <code>convertIfNecessary()</code>，在该方法中如果没有自定义的属性编辑器则调用 ConversionService 接口的 <code>convert()</code>，方法定义如下：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">Object <span class="title">convert</span><span class="params">(<span class="meta">@Nullable</span> Object source, <span class="meta">@Nullable</span> TypeDescriptor sourceType, TypeDescriptor targetType)</span></span>;</span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-java"><code class="language-java">Object <span class="token function">convert</span><span class="token punctuation">(</span><span class="token annotation punctuation">@Nullable</span> Object source<span class="token punctuation">,</span> <span class="token annotation punctuation">@Nullable</span> TypeDescriptor sourceType<span class="token punctuation">,</span> TypeDescriptor targetType<span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
 <ul>
 <li>source：要转换的源对象，可以为 null</li>
 <li>sourceType：source 的类型的上下文，如果 source 为 null，则可以为 null</li>
@@ -201,40 +347,132 @@
 </ul>
 <p><code>convert()</code> 将给定的源对象 source 转换为指定的 targetType。</p>
 <p>TypeDescriptors 提供有关发生转换的源位置和目标位置的附加上下文，通常是对象字段或属性位置。方法由子类 GenericConversionService 实现：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> Object <span class="title">convert</span><span class="params">(<span class="meta">@Nullable</span> Object source, <span class="meta">@Nullable</span> TypeDescriptor sourceType, TypeDescriptor targetType)</span> </span>&#123;</span><br><span class="line">  <span class="comment">// 删掉 if ，其实就是上面的 null 判断</span></span><br><span class="line">  GenericConverter converter = getConverter(sourceType, targetType);</span><br><span class="line">  <span class="keyword">if</span> (converter != <span class="keyword">null</span>) &#123;</span><br><span class="line">    Object result = ConversionUtils.invokeConverter(converter, source, sourceType, targetType);</span><br><span class="line">    <span class="keyword">return</span> handleResult(sourceType, targetType, result);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> handleConverterNotFound(source, sourceType, targetType);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> Object <span class="token function">convert</span><span class="token punctuation">(</span><span class="token annotation punctuation">@Nullable</span> Object source<span class="token punctuation">,</span> <span class="token annotation punctuation">@Nullable</span> TypeDescriptor sourceType<span class="token punctuation">,</span> TypeDescriptor targetType<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+  <span class="token comment" spellcheck="true">// 删掉 if ，其实就是上面的 null 判断</span>
+  GenericConverter converter <span class="token operator">=</span> <span class="token function">getConverter</span><span class="token punctuation">(</span>sourceType<span class="token punctuation">,</span> targetType<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span>converter <span class="token operator">!=</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    Object result <span class="token operator">=</span> ConversionUtils<span class="token punctuation">.</span><span class="token function">invokeConverter</span><span class="token punctuation">(</span>converter<span class="token punctuation">,</span> source<span class="token punctuation">,</span> sourceType<span class="token punctuation">,</span> targetType<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">return</span> <span class="token function">handleResult</span><span class="token punctuation">(</span>sourceType<span class="token punctuation">,</span> targetType<span class="token punctuation">,</span> result<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+  <span class="token keyword">return</span> <span class="token function">handleConverterNotFound</span><span class="token punctuation">(</span>source<span class="token punctuation">,</span> sourceType<span class="token punctuation">,</span> targetType<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>首先根据 sourceType 和 targetType 调用 <code>getConverter()</code> 获取 GenericConverter 对象 converter ，如果 converter 为 null，则调用 <code>handleConverterNotFound()</code>，否则调用 <code>handleResult()</code> 方法。<code>getConverter()</code> 如下：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> GenericConverter <span class="title">getConverter</span><span class="params">(TypeDescriptor sourceType, TypeDescriptor targetType)</span> </span>&#123;</span><br><span class="line">  ConverterCacheKey key = <span class="keyword">new</span> ConverterCacheKey(sourceType, targetType);</span><br><span class="line">  GenericConverter converter = <span class="keyword">this</span>.converterCache.get(key);</span><br><span class="line">  <span class="keyword">if</span> (converter != <span class="keyword">null</span>) &#123;</span><br><span class="line">    <span class="keyword">return</span> (converter != NO_MATCH ? converter : <span class="keyword">null</span>);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  converter = <span class="keyword">this</span>.converters.find(sourceType, targetType);</span><br><span class="line">  <span class="keyword">if</span> (converter == <span class="keyword">null</span>) &#123;</span><br><span class="line">    converter = getDefaultConverter(sourceType, targetType);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> (converter != <span class="keyword">null</span>) &#123;</span><br><span class="line">    <span class="keyword">this</span>.converterCache.put(key, converter);</span><br><span class="line">    <span class="keyword">return</span> converter;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">this</span>.converterCache.put(key, NO_MATCH);</span><br><span class="line">  <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">protected</span> GenericConverter <span class="token function">getConverter</span><span class="token punctuation">(</span>TypeDescriptor sourceType<span class="token punctuation">,</span> TypeDescriptor targetType<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+  ConverterCacheKey key <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">ConverterCacheKey</span><span class="token punctuation">(</span>sourceType<span class="token punctuation">,</span> targetType<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  GenericConverter converter <span class="token operator">=</span> <span class="token keyword">this</span><span class="token punctuation">.</span>converterCache<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span>key<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span>converter <span class="token operator">!=</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">return</span> <span class="token punctuation">(</span>converter <span class="token operator">!=</span> NO_MATCH <span class="token operator">?</span> converter <span class="token operator">:</span> null<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+
+  converter <span class="token operator">=</span> <span class="token keyword">this</span><span class="token punctuation">.</span>converters<span class="token punctuation">.</span><span class="token function">find</span><span class="token punctuation">(</span>sourceType<span class="token punctuation">,</span> targetType<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span>converter <span class="token operator">==</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    converter <span class="token operator">=</span> <span class="token function">getDefaultConverter</span><span class="token punctuation">(</span>sourceType<span class="token punctuation">,</span> targetType<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+
+  <span class="token keyword">if</span> <span class="token punctuation">(</span>converter <span class="token operator">!=</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">this</span><span class="token punctuation">.</span>converterCache<span class="token punctuation">.</span><span class="token function">put</span><span class="token punctuation">(</span>key<span class="token punctuation">,</span> converter<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">return</span> converter<span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+
+  <span class="token keyword">this</span><span class="token punctuation">.</span>converterCache<span class="token punctuation">.</span><span class="token function">put</span><span class="token punctuation">(</span>key<span class="token punctuation">,</span> NO_MATCH<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">return</span> null<span class="token punctuation">;</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>这段代码意图非常明确，从 converterCache 缓存中获取，如果存在返回，否则从 converters 中获取，然后加入到 converterCache 缓存中。converterCache 和 converters 是 GenericConversionService 维护的两个很重要的对象，其中 converterCache 用于存储 GenericConverter ，converters 对象为 GenericConversionService 的内部类。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> Converters converters = <span class="keyword">new</span> Converters();</span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> Map&lt;ConverterCacheKey, GenericConverter&gt; converterCache = <span class="keyword">new</span> ConcurrentReferenceHashMap&lt;&gt;(<span class="number">64</span>);</span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">private</span> <span class="token keyword">final</span> Converters converters <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Converters</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token keyword">private</span> <span class="token keyword">final</span> Map<span class="token operator">&lt;</span>ConverterCacheKey<span class="token punctuation">,</span> GenericConverter<span class="token operator">></span> converterCache <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">ConcurrentReferenceHashMap</span><span class="token operator">&lt;</span><span class="token operator">></span><span class="token punctuation">(</span><span class="token number">64</span><span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
 <p>Converters 用于管理所有注册的转换器，其内部维护一个 Set 和 Map 的数据结构用于管理转换器，如下：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> Set&lt;GenericConverter&gt; globalConverters = <span class="keyword">new</span> LinkedHashSet&lt;&gt;();</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> Map&lt;ConvertiblePair, ConvertersForPair&gt; converters = <span class="keyword">new</span> LinkedHashMap&lt;&gt;(<span class="number">36</span>);</span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">private</span> <span class="token keyword">final</span> Set<span class="token operator">&lt;</span>GenericConverter<span class="token operator">></span> globalConverters <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">LinkedHashSet</span><span class="token operator">&lt;</span><span class="token operator">></span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token keyword">private</span> <span class="token keyword">final</span> Map<span class="token operator">&lt;</span>ConvertiblePair<span class="token punctuation">,</span> ConvertersForPair<span class="token operator">></span> converters <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">LinkedHashMap</span><span class="token operator">&lt;</span><span class="token operator">></span><span class="token punctuation">(</span><span class="token number">36</span><span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
 <p>同时提供了相应的方法（如 add、remove）操作这两个集合。在 <code>getConverter()</code> 中如果缓存 converterCache 中 不存在，则调用 Converters 对象的 <code>find()</code> 方法获取相应的 GenericConverter，如下：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> GenericConverter <span class="title">find</span><span class="params">(TypeDescriptor sourceType, TypeDescriptor targetType)</span> </span>&#123;</span><br><span class="line">    <span class="comment">// Search the full type hierarchy</span></span><br><span class="line">    List&lt;Class&lt;?&gt;&gt; sourceCandidates = getClassHierarchy(sourceType.getType());</span><br><span class="line">    List&lt;Class&lt;?&gt;&gt; targetCandidates = getClassHierarchy(targetType.getType());</span><br><span class="line">    <span class="keyword">for</span> (Class&lt;?&gt; sourceCandidate : sourceCandidates) &#123;</span><br><span class="line">        <span class="keyword">for</span> (Class&lt;?&gt; targetCandidate : targetCandidates) &#123;</span><br><span class="line">            ConvertiblePair convertiblePair = <span class="keyword">new</span> ConvertiblePair(sourceCandidate, targetCandidate);</span><br><span class="line">            GenericConverter converter = getRegisteredConverter(sourceType, targetType, convertiblePair);</span><br><span class="line">            <span class="keyword">if</span> (converter != <span class="keyword">null</span>) &#123;</span><br><span class="line">                <span class="keyword">return</span> converter;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">private</span> GenericConverter <span class="title">getRegisteredConverter</span><span class="params">(TypeDescriptor sourceType,</span></span></span><br><span class="line"><span class="function"><span class="params">                TypeDescriptor targetType, ConvertiblePair convertiblePair)</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Check specifically registered converters</span></span><br><span class="line">    ConvertersForPair convertersForPair = <span class="keyword">this</span>.converters.get(convertiblePair);</span><br><span class="line">    <span class="keyword">if</span> (convertersForPair != <span class="keyword">null</span>) &#123;</span><br><span class="line">        GenericConverter converter = convertersForPair.getConverter(sourceType, targetType);</span><br><span class="line">        <span class="keyword">if</span> (converter != <span class="keyword">null</span>) &#123;</span><br><span class="line">            <span class="keyword">return</span> converter;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// Check ConditionalConverters for a dynamic match</span></span><br><span class="line">    <span class="keyword">for</span> (GenericConverter globalConverter : <span class="keyword">this</span>.globalConverters) &#123;</span><br><span class="line">        <span class="keyword">if</span> (((ConditionalConverter) globalConverter).matches(sourceType, targetType)) &#123;</span><br><span class="line">            <span class="keyword">return</span> globalConverter;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> GenericConverter <span class="token function">find</span><span class="token punctuation">(</span>TypeDescriptor sourceType<span class="token punctuation">,</span> TypeDescriptor targetType<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token comment" spellcheck="true">// Search the full type hierarchy</span>
+    List<span class="token operator">&lt;</span>Class<span class="token operator">&lt;</span><span class="token operator">?</span><span class="token operator">>></span> sourceCandidates <span class="token operator">=</span> <span class="token function">getClassHierarchy</span><span class="token punctuation">(</span>sourceType<span class="token punctuation">.</span><span class="token function">getType</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    List<span class="token operator">&lt;</span>Class<span class="token operator">&lt;</span><span class="token operator">?</span><span class="token operator">>></span> targetCandidates <span class="token operator">=</span> <span class="token function">getClassHierarchy</span><span class="token punctuation">(</span>targetType<span class="token punctuation">.</span><span class="token function">getType</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">for</span> <span class="token punctuation">(</span>Class<span class="token operator">&lt;</span><span class="token operator">?</span><span class="token operator">></span> sourceCandidate <span class="token operator">:</span> sourceCandidates<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">for</span> <span class="token punctuation">(</span>Class<span class="token operator">&lt;</span><span class="token operator">?</span><span class="token operator">></span> targetCandidate <span class="token operator">:</span> targetCandidates<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            ConvertiblePair convertiblePair <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">ConvertiblePair</span><span class="token punctuation">(</span>sourceCandidate<span class="token punctuation">,</span> targetCandidate<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            GenericConverter converter <span class="token operator">=</span> <span class="token function">getRegisteredConverter</span><span class="token punctuation">(</span>sourceType<span class="token punctuation">,</span> targetType<span class="token punctuation">,</span> convertiblePair<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token keyword">if</span> <span class="token punctuation">(</span>converter <span class="token operator">!=</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                <span class="token keyword">return</span> converter<span class="token punctuation">;</span>
+            <span class="token punctuation">}</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+    <span class="token keyword">return</span> null<span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+
+<span class="token keyword">private</span> GenericConverter <span class="token function">getRegisteredConverter</span><span class="token punctuation">(</span>TypeDescriptor sourceType<span class="token punctuation">,</span>
+                TypeDescriptor targetType<span class="token punctuation">,</span> ConvertiblePair convertiblePair<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+
+    <span class="token comment" spellcheck="true">// Check specifically registered converters</span>
+    ConvertersForPair convertersForPair <span class="token operator">=</span> <span class="token keyword">this</span><span class="token punctuation">.</span>converters<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span>convertiblePair<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>convertersForPair <span class="token operator">!=</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        GenericConverter converter <span class="token operator">=</span> convertersForPair<span class="token punctuation">.</span><span class="token function">getConverter</span><span class="token punctuation">(</span>sourceType<span class="token punctuation">,</span> targetType<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>converter <span class="token operator">!=</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token keyword">return</span> converter<span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+    <span class="token comment" spellcheck="true">// Check ConditionalConverters for a dynamic match</span>
+    <span class="token keyword">for</span> <span class="token punctuation">(</span>GenericConverter globalConverter <span class="token operator">:</span> <span class="token keyword">this</span><span class="token punctuation">.</span>globalConverters<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token punctuation">(</span>ConditionalConverter<span class="token punctuation">)</span> globalConverter<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">matches</span><span class="token punctuation">(</span>sourceType<span class="token punctuation">,</span> targetType<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token keyword">return</span> globalConverter<span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+    <span class="token keyword">return</span> null<span class="token punctuation">;</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>在 <code>find()</code> 中会根据 sourceType 和 targetType 去查询 Converters 中维护的 Map 中是否包括支持的注册类型，如果存在返回 GenericConverter ，如果没有存在返回 null。</p>
 <p>当得到 GenericConverter 后，则调用其 <code>convert()</code> 进行类型转换。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">Object <span class="title">convert</span><span class="params">(<span class="meta">@Nullable</span> Object source, TypeDescriptor sourceType, TypeDescriptor targetType)</span></span>;</span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-java"><code class="language-java">Object <span class="token function">convert</span><span class="token punctuation">(</span><span class="token annotation punctuation">@Nullable</span> Object source<span class="token punctuation">,</span> TypeDescriptor sourceType<span class="token punctuation">,</span> TypeDescriptor targetType<span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
 <p>到这里我们就可以得到 bean 属性定义的真正类型了。</p>
 <p><strong>GenericConverter 接口</strong></p>
 <p>GenericConverter 是一个转换接口，一个用于在两种或更多种类型之间转换的通用型转换器接口。它是 Converter SPI 体系中最灵活的，也是最复杂的接口，灵活性在于 GenericConverter 可以支持在多个源/目标类型对之间进行转换，同时也可以在类型转换过程中访问源/目标字段上下文。由于该接口足够复杂，所有当更简单的 Converter 或 ConverterFactory 接口足够使用时，通常不应使用此接口。其定义如下：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">GenericConverter</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Nullable</span></span><br><span class="line">    <span class="function">Set&lt;ConvertiblePair&gt; <span class="title">getConvertibleTypes</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Nullable</span></span><br><span class="line">    <span class="function">Object <span class="title">convert</span><span class="params">(<span class="meta">@Nullable</span> Object source, TypeDescriptor sourceType, TypeDescriptor targetType)</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">interface</span> <span class="token class-name">GenericConverter</span> <span class="token punctuation">{</span>
+
+    <span class="token annotation punctuation">@Nullable</span>
+    Set<span class="token operator">&lt;</span>ConvertiblePair<span class="token operator">></span> <span class="token function">getConvertibleTypes</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token annotation punctuation">@Nullable</span>
+    Object <span class="token function">convert</span><span class="token punctuation">(</span><span class="token annotation punctuation">@Nullable</span> Object source<span class="token punctuation">,</span> TypeDescriptor sourceType<span class="token punctuation">,</span> TypeDescriptor targetType<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>GenericConverter 的子类有这么多（看类名就知道是干嘛的了）：</p>
 <p><img src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2020/05/27/15388984648307_DEQ9BT_olp6Km.jpg" alt="img"></p>
 <p>我们看一个子类的实现 StringToArrayConverter，该子类将逗号分隔的 String 转换为 Array。如下：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> Object <span class="title">convert</span><span class="params">(<span class="meta">@Nullable</span> Object source, TypeDescriptor sourceType, TypeDescriptor targetType)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (source == <span class="keyword">null</span>) &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">  &#125;</span><br><span class="line">  String string = (String) source;</span><br><span class="line">  String[] fields = StringUtils.commaDelimitedListToStringArray(string);</span><br><span class="line">  TypeDescriptor targetElementType = targetType.getElementTypeDescriptor();</span><br><span class="line">  Assert.state(targetElementType != <span class="keyword">null</span>, <span class="string">&quot;No target element type&quot;</span>);</span><br><span class="line">  Object target = Array.newInstance(targetElementType.getType(), fields.length);</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; fields.length; i++) &#123;</span><br><span class="line">    String sourceElement = fields[i];</span><br><span class="line">    Object targetElement = <span class="keyword">this</span>.conversionService.convert(sourceElement.trim(), sourceType, targetElementType);</span><br><span class="line">    Array.set(target, i, targetElement);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> target;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> Object <span class="token function">convert</span><span class="token punctuation">(</span><span class="token annotation punctuation">@Nullable</span> Object source<span class="token punctuation">,</span> TypeDescriptor sourceType<span class="token punctuation">,</span> TypeDescriptor targetType<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span>source <span class="token operator">==</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">return</span> null<span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+  String string <span class="token operator">=</span> <span class="token punctuation">(</span>String<span class="token punctuation">)</span> source<span class="token punctuation">;</span>
+  String<span class="token punctuation">[</span><span class="token punctuation">]</span> fields <span class="token operator">=</span> StringUtils<span class="token punctuation">.</span><span class="token function">commaDelimitedListToStringArray</span><span class="token punctuation">(</span>string<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  TypeDescriptor targetElementType <span class="token operator">=</span> targetType<span class="token punctuation">.</span><span class="token function">getElementTypeDescriptor</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  Assert<span class="token punctuation">.</span><span class="token function">state</span><span class="token punctuation">(</span>targetElementType <span class="token operator">!=</span> null<span class="token punctuation">,</span> <span class="token string">"No target element type"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  Object target <span class="token operator">=</span> Array<span class="token punctuation">.</span><span class="token function">newInstance</span><span class="token punctuation">(</span>targetElementType<span class="token punctuation">.</span><span class="token function">getType</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> fields<span class="token punctuation">.</span>length<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> fields<span class="token punctuation">.</span>length<span class="token punctuation">;</span> i<span class="token operator">++</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    String sourceElement <span class="token operator">=</span> fields<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">;</span>
+    Object targetElement <span class="token operator">=</span> <span class="token keyword">this</span><span class="token punctuation">.</span>conversionService<span class="token punctuation">.</span><span class="token function">convert</span><span class="token punctuation">(</span>sourceElement<span class="token punctuation">.</span><span class="token function">trim</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> sourceType<span class="token punctuation">,</span> targetElementType<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    Array<span class="token punctuation">.</span><span class="token function">set</span><span class="token punctuation">(</span>target<span class="token punctuation">,</span> i<span class="token punctuation">,</span> targetElement<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+  <span class="token keyword">return</span> target<span class="token punctuation">;</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>在类型转换体系中，Spring 提供了非常多的类型转换器，除了上面的 GenericConverter，还有 Converter、ConditionalConverter、ConverterFactory。</p>
 <p><strong>Converter</strong></p>
 <p>Converter 是一个将 S 类型的源对象转换为 T 类型的目标对象的转换器。该接口是线程安全的，所以可以共享。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">Converter</span>&lt;<span class="title">S</span>, <span class="title">T</span>&gt; </span>&#123;</span><br><span class="line">    <span class="meta">@Nullable</span></span><br><span class="line">    <span class="function">T <span class="title">convert</span><span class="params">(S source)</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">interface</span> <span class="token class-name">Converter</span><span class="token operator">&lt;</span>S<span class="token punctuation">,</span> T<span class="token operator">></span> <span class="token punctuation">{</span>
+    <span class="token annotation punctuation">@Nullable</span>
+    T <span class="token function">convert</span><span class="token punctuation">(</span>S source<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
 <p>子类如下：</p>
 <p><img src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2020/05/27/15389004851676-20200527094627489_1lakfm.jpg" alt="img"></p>
 <p><strong>ConditionalConverter</strong></p>
 <p>ConditionalConverter 接口用于表示有条件的类型转换，通过转入的sourceType 与 targetType 判断转换能否匹配，只有可匹配的转换才会调用convert 方法进行转换，如下：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">public interface ConditionalConverter &#123;</span><br><span class="line">    boolean matches(TypeDescriptor sourceType, TypeDescriptor targetType);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>ConditionalConverter 的子类如下：</p>
-<p><a target="_blank" rel="external nofollow noopener noreferrer" href="https://gitee.com/chenssy/blog-home/raw/master/image/201811/15389064279138.jpg"><img src="https://gitee.com/chenssy/blog-home/raw/master/image/201811/15389064279138.jpg" alt="img"></a></p>
+<pre><code>public interface ConditionalConverter {
+    boolean matches(TypeDescriptor sourceType, TypeDescriptor targetType);
+}</code></pre><p>ConditionalConverter 的子类如下：</p>
+<p><a href="https://gitee.com/chenssy/blog-home/raw/master/image/201811/15389064279138.jpg" target="_blank" rel="external nofollow noopener noreferrer"><img src="https://gitee.com/chenssy/blog-home/raw/master/image/201811/15389064279138.jpg" alt="img"></a></p>
 <p><strong>ConverterFactory</strong></p>
 <p>一个用于“远程”转换的转换工厂，可以将对象从 S 转换为 R 的子类型。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">ConverterFactory</span>&lt;<span class="title">S</span>, <span class="title">R</span>&gt; </span>&#123;</span><br><span class="line">    &lt;T extends R&gt; <span class="function">Converter&lt;S, T&gt; <span class="title">getConverter</span><span class="params">(Class&lt;T&gt; targetType)</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">interface</span> <span class="token class-name">ConverterFactory</span><span class="token operator">&lt;</span>S<span class="token punctuation">,</span> R<span class="token operator">></span> <span class="token punctuation">{</span>
+    <span class="token operator">&lt;</span>T <span class="token keyword">extends</span> <span class="token class-name">R</span><span class="token operator">></span> Converter<span class="token operator">&lt;</span>S<span class="token punctuation">,</span> T<span class="token operator">></span> <span class="token function">getConverter</span><span class="token punctuation">(</span>Class<span class="token operator">&lt;</span>T<span class="token operator">></span> targetType<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
 <p>子类如下：</p>
 <p><img src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2020/05/27/15389071818355_KBtf0I_MmL1Mp.jpg" alt="img"></p>
 <p>四种不同的转换器承载着不同的转换过程：</p>
@@ -246,187 +484,270 @@
 </ul>
 <p><strong>GenericConversionService</strong></p>
 <p>转换器介绍完了，我们再次回归到 ConversionService 接口中去，该接口定义了两类方法 <code>canConvert()</code> 和 <code>convert()</code>，其中 <code>canConvert()</code> 用于判 sourceType 能否转成 targetType ,而 <code>convert()</code> 用于将 source 转成转入的 TargetType 类型实例。这两类方法都是在 GenericConversionService 中实现。类 GenericConversionService 实现 ConfigurableConversionService 接口，而 ConfigurableConversionService 接口继承 ConversionService 和 ConverterRegistry。ConverterRegistry 提供了类型转换器的管理功能，他提供了四个 add 和 一个 remove 方法，支持注册/删除相应的类型转换器。GenericConversionService 作为一个基础实现类，它即支持了不同类型之间的转换，也对各类型转换器进行管理，主要是通过一个 Map 类型的 converterCache 和一个内部类 Converters。在上面已经分析了 GenericConversionService 执行类型转换的过程 <code>cover()</code>，下面我们就一个 <code>addConverter()</code> 来看看它是如何完成转换器的注入工作的。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">addConverter</span><span class="params">(Converter&lt;?, ?&gt; converter)</span> </span>&#123;</span><br><span class="line">  ResolvableType[] typeInfo = getRequiredTypeInfo(converter.getClass(), Converter.class);</span><br><span class="line">  <span class="keyword">if</span> (typeInfo == <span class="keyword">null</span> &amp;&amp; converter <span class="keyword">instanceof</span> DecoratingProxy) &#123;</span><br><span class="line">    typeInfo = getRequiredTypeInfo(((DecoratingProxy) converter).getDecoratedClass(), Converter.class);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">if</span> (typeInfo == <span class="keyword">null</span>) &#123;</span><br><span class="line">    <span class="keyword">throw</span> <span class="keyword">new</span> IllegalArgumentException(<span class="string">&quot;Unable to determine source type &lt;S&gt; and target type &lt;T&gt; for your &quot;</span> +</span><br><span class="line">                                       <span class="string">&quot;Converter [&quot;</span> + converter.getClass().getName() + <span class="string">&quot;]; does the class parameterize those types?&quot;</span>);</span><br><span class="line">  &#125;</span><br><span class="line">  addConverter(<span class="keyword">new</span> ConverterAdapter(converter, typeInfo[<span class="number">0</span>], typeInfo[<span class="number">1</span>]));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">addConverter</span><span class="token punctuation">(</span>Converter<span class="token operator">&lt;</span><span class="token operator">?</span><span class="token punctuation">,</span> <span class="token operator">?</span><span class="token operator">></span> converter<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+  ResolvableType<span class="token punctuation">[</span><span class="token punctuation">]</span> typeInfo <span class="token operator">=</span> <span class="token function">getRequiredTypeInfo</span><span class="token punctuation">(</span>converter<span class="token punctuation">.</span><span class="token function">getClass</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> Converter<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span>typeInfo <span class="token operator">==</span> null <span class="token operator">&amp;&amp;</span> converter <span class="token keyword">instanceof</span> <span class="token class-name">DecoratingProxy</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    typeInfo <span class="token operator">=</span> <span class="token function">getRequiredTypeInfo</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token punctuation">(</span>DecoratingProxy<span class="token punctuation">)</span> converter<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getDecoratedClass</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> Converter<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span>typeInfo <span class="token operator">==</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">throw</span> <span class="token keyword">new</span> <span class="token class-name">IllegalArgumentException</span><span class="token punctuation">(</span><span class="token string">"Unable to determine source type &lt;S> and target type &lt;T> for your "</span> <span class="token operator">+</span>
+                                       <span class="token string">"Converter ["</span> <span class="token operator">+</span> converter<span class="token punctuation">.</span><span class="token function">getClass</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getName</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">+</span> <span class="token string">"]; does the class parameterize those types?"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+  <span class="token function">addConverter</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">ConverterAdapter</span><span class="token punctuation">(</span>converter<span class="token punctuation">,</span> typeInfo<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">,</span> typeInfo<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>首先根据 converter 获取 ResolvableType，然后将其与 converter 封装成一个 ConverterAdapter 实例，最后调用 <code>addConverter()</code>。ResolvableType 用于封装 Java 的类型。ConverterAdapter 则是 Converter 的一个适配器， 它实现了 GenericConverter 和 ConditionalConverter 两个类型转换器。</p>
 <p><code>addConverter()</code> 如下：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">addConverter</span><span class="params">(GenericConverter converter)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">this</span>.converters.add(converter);</span><br><span class="line">    invalidateCache();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">addConverter</span><span class="token punctuation">(</span>GenericConverter converter<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">this</span><span class="token punctuation">.</span>converters<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span>converter<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">invalidateCache</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
 <p>直接调用内部类 Converters 的 <code>add()</code> 方法，如下：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">add</span><span class="params">(GenericConverter converter)</span> </span>&#123;</span><br><span class="line">  Set&lt;ConvertiblePair&gt; convertibleTypes = converter.getConvertibleTypes();</span><br><span class="line">  <span class="keyword">if</span> (convertibleTypes == <span class="keyword">null</span>) &#123;</span><br><span class="line">    Assert.state(converter <span class="keyword">instanceof</span> ConditionalConverter,</span><br><span class="line">                 <span class="string">&quot;Only conditional converters may return null convertible types&quot;</span>);</span><br><span class="line">    <span class="keyword">this</span>.globalConverters.add(converter);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="keyword">for</span> (ConvertiblePair convertiblePair : convertibleTypes) &#123;</span><br><span class="line">      ConvertersForPair convertersForPair = getMatchableConverters(convertiblePair);</span><br><span class="line">      convertersForPair.add(converter);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">add</span><span class="token punctuation">(</span>GenericConverter converter<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+  Set<span class="token operator">&lt;</span>ConvertiblePair<span class="token operator">></span> convertibleTypes <span class="token operator">=</span> converter<span class="token punctuation">.</span><span class="token function">getConvertibleTypes</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span>convertibleTypes <span class="token operator">==</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    Assert<span class="token punctuation">.</span><span class="token function">state</span><span class="token punctuation">(</span>converter <span class="token keyword">instanceof</span> <span class="token class-name">ConditionalConverter</span><span class="token punctuation">,</span>
+                 <span class="token string">"Only conditional converters may return null convertible types"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">this</span><span class="token punctuation">.</span>globalConverters<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span>converter<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+  <span class="token keyword">else</span> <span class="token punctuation">{</span>
+    <span class="token keyword">for</span> <span class="token punctuation">(</span>ConvertiblePair convertiblePair <span class="token operator">:</span> convertibleTypes<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+      ConvertersForPair convertersForPair <span class="token operator">=</span> <span class="token function">getMatchableConverters</span><span class="token punctuation">(</span>convertiblePair<span class="token punctuation">)</span><span class="token punctuation">;</span>
+      convertersForPair<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span>converter<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>首先调用 <code>getConvertibleTypes()</code> 获取 ConvertiblePair 集合，如果为空，则加入到 globalConverters 集合中，否则通过迭代的方式依次添加。ConvertiblePair 为 source-to-targer 的持有者，它持有 source 和 target 的 class 类型，如下：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">final</span> <span class="class"><span class="keyword">class</span> <span class="title">ConvertiblePair</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> Class&lt;?&gt; sourceType;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> Class&lt;?&gt; targetType;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 其他代码   </span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">final</span> <span class="token keyword">class</span> <span class="token class-name">ConvertiblePair</span> <span class="token punctuation">{</span>
+    <span class="token keyword">private</span> <span class="token keyword">final</span> Class<span class="token operator">&lt;</span><span class="token operator">?</span><span class="token operator">></span> sourceType<span class="token punctuation">;</span>
+    <span class="token keyword">private</span> <span class="token keyword">final</span> Class<span class="token operator">&lt;</span><span class="token operator">?</span><span class="token operator">></span> targetType<span class="token punctuation">;</span>
+
+    <span class="token comment" spellcheck="true">// 其他代码   </span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>在迭代过程中会根据 ConvertiblePair 获取相应的 ConvertersForPair ，然后 converter 转换器加入其中，ConvertiblePair 用于管理使用特定GenericConverter.ConvertiblePair 注册的转换器。如下：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">ConvertersForPair</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">final</span> LinkedList&lt;GenericConverter&gt; converters = <span class="keyword">new</span> LinkedList&lt;&gt;();</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">add</span><span class="params">(GenericConverter converter)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">this</span>.converters.addFirst(converter);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="meta">@Nullable</span></span><br><span class="line">  <span class="function"><span class="keyword">public</span> GenericConverter <span class="title">getConverter</span><span class="params">(TypeDescriptor sourceType, TypeDescriptor targetType)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">for</span> (GenericConverter converter : <span class="keyword">this</span>.converters) &#123;</span><br><span class="line">      <span class="keyword">if</span> (!(converter <span class="keyword">instanceof</span> ConditionalGenericConverter) ||</span><br><span class="line">          ((ConditionalGenericConverter) converter).matches(sourceType, targetType)) &#123;</span><br><span class="line">        <span class="keyword">return</span> converter;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">private</span> <span class="token keyword">static</span> <span class="token keyword">class</span> <span class="token class-name">ConvertersForPair</span> <span class="token punctuation">{</span>
+
+  <span class="token keyword">private</span> <span class="token keyword">final</span> LinkedList<span class="token operator">&lt;</span>GenericConverter<span class="token operator">></span> converters <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">LinkedList</span><span class="token operator">&lt;</span><span class="token operator">></span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+  <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">add</span><span class="token punctuation">(</span>GenericConverter converter<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">this</span><span class="token punctuation">.</span>converters<span class="token punctuation">.</span><span class="token function">addFirst</span><span class="token punctuation">(</span>converter<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+
+  <span class="token annotation punctuation">@Nullable</span>
+  <span class="token keyword">public</span> GenericConverter <span class="token function">getConverter</span><span class="token punctuation">(</span>TypeDescriptor sourceType<span class="token punctuation">,</span> TypeDescriptor targetType<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">for</span> <span class="token punctuation">(</span>GenericConverter converter <span class="token operator">:</span> <span class="token keyword">this</span><span class="token punctuation">.</span>converters<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+      <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span><span class="token punctuation">(</span>converter <span class="token keyword">instanceof</span> <span class="token class-name">ConditionalGenericConverter</span><span class="token punctuation">)</span> <span class="token operator">||</span>
+          <span class="token punctuation">(</span><span class="token punctuation">(</span>ConditionalGenericConverter<span class="token punctuation">)</span> converter<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">matches</span><span class="token punctuation">(</span>sourceType<span class="token punctuation">,</span> targetType<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">return</span> converter<span class="token punctuation">;</span>
+      <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+    <span class="token keyword">return</span> null<span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>其实内部就是维护一个 LinkedList 集合。他内部有两个方法：<code>add()</code> 和 <code>getConverter()</code>，实现较为简单，这里就不多介绍了。</p>
 <p><strong>DefaultConversionService</strong></p>
 <p>DefaultConversionService 是 ConversionService 的默认实现，它继承 GenericConversionService，GenericConversionService 主要用于转换器的注册和调用，DefaultConversionService 则是为 ConversionService 体系提供一些默认的转换器。在 DefaultConversionService 构造方法中就会添加默认的 Converter ，如下：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="title">DefaultConversionService</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  addDefaultConverters(<span class="keyword">this</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">addDefaultConverters</span><span class="params">(ConverterRegistry converterRegistry)</span> </span>&#123;</span><br><span class="line">  addScalarConverters(converterRegistry);</span><br><span class="line">  addCollectionConverters(converterRegistry);</span><br><span class="line"></span><br><span class="line">  converterRegistry.addConverter(<span class="keyword">new</span> ByteBufferConverter((ConversionService) converterRegistry));</span><br><span class="line">  <span class="keyword">if</span> (jsr310Available) &#123;</span><br><span class="line">    Jsr310ConverterRegistrar.registerJsr310Converters(converterRegistry);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  converterRegistry.addConverter(<span class="keyword">new</span> ObjectToObjectConverter());</span><br><span class="line">  converterRegistry.addConverter(<span class="keyword">new</span> IdToEntityConverter((ConversionService) converterRegistry));</span><br><span class="line">  converterRegistry.addConverter(<span class="keyword">new</span> FallbackObjectToStringConverter());</span><br><span class="line">  <span class="keyword">if</span> (javaUtilOptionalClassAvailable) &#123;</span><br><span class="line">    converterRegistry.addConverter(<span class="keyword">new</span> ObjectToOptionalConverter((ConversionService) converterRegistry));</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token function">DefaultConversionService</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+  <span class="token function">addDefaultConverters</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+
+<span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">addDefaultConverters</span><span class="token punctuation">(</span>ConverterRegistry converterRegistry<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+  <span class="token function">addScalarConverters</span><span class="token punctuation">(</span>converterRegistry<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token function">addCollectionConverters</span><span class="token punctuation">(</span>converterRegistry<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+  converterRegistry<span class="token punctuation">.</span><span class="token function">addConverter</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">ByteBufferConverter</span><span class="token punctuation">(</span><span class="token punctuation">(</span>ConversionService<span class="token punctuation">)</span> converterRegistry<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span>jsr310Available<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    Jsr310ConverterRegistrar<span class="token punctuation">.</span><span class="token function">registerJsr310Converters</span><span class="token punctuation">(</span>converterRegistry<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+
+  converterRegistry<span class="token punctuation">.</span><span class="token function">addConverter</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">ObjectToObjectConverter</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  converterRegistry<span class="token punctuation">.</span><span class="token function">addConverter</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">IdToEntityConverter</span><span class="token punctuation">(</span><span class="token punctuation">(</span>ConversionService<span class="token punctuation">)</span> converterRegistry<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  converterRegistry<span class="token punctuation">.</span><span class="token function">addConverter</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">FallbackObjectToStringConverter</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span>javaUtilOptionalClassAvailable<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    converterRegistry<span class="token punctuation">.</span><span class="token function">addConverter</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">ObjectToOptionalConverter</span><span class="token punctuation">(</span><span class="token punctuation">(</span>ConversionService<span class="token punctuation">)</span> converterRegistry<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>当然它还提供了一些其他的方法如 <code>addCollectionConverters()</code>、<code>addScalarConverters()</code> 用于注册其他类型的转换器。</p>
 <p>至此，从 bean 属性的转换，到 Spring ConversionService 体系的转换器 Converter 以及转换器的管理都介绍完毕了。</p>
 
-  </div>
-
-  
-    <div style="text-align:center;width:100%">
-      <img src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/640-2.gif">
-    </div>
-  
-
-  
-    <div>
-      <h4>版权声明</h4>
-      <pre>
-        
-        <strong>本文来源： </strong><a href="http://cmsblogs.com/?p=3983" title="Java技术驿站 | chenssy |【死磕 Spring】| IOC之深入分析Bean的类型转换体系" rel="external nofollow noopener noreferrer" target="_blank">http://cmsblogs.com/?p=3983</a>
-
-        <strong>本文链接：</strong><a href="https://www.cayzlh.com/2020/01/24/683bb448.html" title="/blog/IOC%E4%B9%8B%E6%B7%B1%E5%85%A5%E5%88%86%E6%9E%90Bean%E7%9A%84%E7%B1%BB%E5%9E%8B%E8%BD%AC%E6%8D%A2%E4%BD%93%E7%B3%BB">https://www.cayzlh.com/2020/01/24/683bb448.html</a>
-
-        <strong>版权声明： </strong>
-        
-          文章内容仅用作学习和分享，转载请注明出处
-        
-      </pre>
-    </div>
-  
-
-</article>
-
-
-
-        
-          <div id="footer-post-container">
-  <div id="footer-post">
-
-    <div id="nav-footer" style="display: none">
-      <ul>
-        
-          <li><a href="/blog/">Home</a></li>
-        
-          <li><a href="/blog/archives/">Articles</a></li>
-        
-          <li><a href="/blog/about/">About</a></li>
-        
-          <li><a href="/blog/search/">Search</a></li>
-        
-      </ul>
-    </div>
-
-    <div id="toc-footer" style="display: none">
-      
-    </div>
-
-    <div id="share-footer" style="display: none">
-      <ul>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.facebook.com/sharer.php?u=https://www.cayzlh.com/2020/01/24/683bb448.html"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://twitter.com/share?url=https://www.cayzlh.com/2020/01/24/683bb448.html&text=IOC之深入分析Bean的类型转换体系"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.linkedin.com/shareArticle?url=https://www.cayzlh.com/2020/01/24/683bb448.html&title=IOC之深入分析Bean的类型转换体系"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://pinterest.com/pin/create/bookmarklet/?url=https://www.cayzlh.com/2020/01/24/683bb448.html&is_video=false&description=IOC之深入分析Bean的类型转换体系"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="mailto:?subject=IOC之深入分析Bean的类型转换体系&body=Check out this article: https://www.cayzlh.com/2020/01/24/683bb448.html"><i class="fas fa-envelope fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://getpocket.com/save?url=https://www.cayzlh.com/2020/01/24/683bb448.html&title=IOC之深入分析Bean的类型转换体系"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://reddit.com/submit?url=https://www.cayzlh.com/2020/01/24/683bb448.html&title=IOC之深入分析Bean的类型转换体系"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.stumbleupon.com/submit?url=https://www.cayzlh.com/2020/01/24/683bb448.html&title=IOC之深入分析Bean的类型转换体系"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://digg.com/submit?url=https://www.cayzlh.com/2020/01/24/683bb448.html&title=IOC之深入分析Bean的类型转换体系"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.tumblr.com/share/link?url=https://www.cayzlh.com/2020/01/24/683bb448.html&name=IOC之深入分析Bean的类型转换体系&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://news.ycombinator.com/submitlink?u=https://www.cayzlh.com/2020/01/24/683bb448.html&t=IOC之深入分析Bean的类型转换体系"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
-</ul>
-
-    </div>
-
-    <div id="actions-footer">
-        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fas fa-bars fa-lg" aria-hidden="true"></i> Menu</a>
-        <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fas fa-list fa-lg" aria-hidden="true"></i> TOC</a>
-<!--        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fas fa-share-alt fa-lg" aria-hidden="true"></i> Share</a>-->
-        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a>
-    </div>
-
-  </div>
+            <!-- 文章结尾部分 -->
+            
+                
+<div style="text-align:center;width:100%">
+    <span class="octicon octicon-tag-add"></span>
+    
+        <a style="color: #24292e;" href="/blog/tags/Spring/">Spring</a>
+    
+        <a style="color: #24292e;" href="/blog/tags/%E8%BD%AC%E8%BD%BD/">转载</a>
+    
 </div>
 
-        
-        <footer id="footer">
-  <div class="footer-left">
-    CAYZLH &copy;
-    
-    
-    2019-2021
-    粤ICP备20058712号-1
-  </div>
-  <div class="footer-right">
-    <nav>
-      <ul>
-        
-          <li><a href="/blog/tools/">tools</a></li>
-        
-          <li><a href="/blog/links/">links</a></li>
-        
-      </ul>
-    </nav>
-  </div>
-</footer>
 
+
+    <div style="text-align:center;width:100%">
+        <img src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/640-2.gif">
     </div>
-    <!-- styles -->
-
-<link rel="stylesheet" href="/blog/lib/font-awesome/css/all.min.css">
 
 
-<link rel="stylesheet" href="/blog/lib/justified-gallery/css/justifiedGallery.min.css">
 
 
-    <!-- jquery -->
-
-<script src="/blog/lib/jquery/jquery.min.js"></script>
-
-
-<script src="/blog/lib/justified-gallery/js/jquery.justifiedGallery.min.js"></script>
-
-<!-- clipboard -->
-
-  
-<script src="/blog/lib/clipboard/clipboard.min.js"></script>
-
-  <script type="text/javascript">
-  $(function() {
-    // copy-btn HTML
-    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"Copy to clipboard!\">";
-    btn += '<i class="far fa-clone"></i>';
-    btn += '</span>'; 
-    // mount it!
-    $(".highlight table").before(btn);
-    var clip = new ClipboardJS('.btn-copy', {
-      text: function(trigger) {
-        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
-      }
-    });
-    clip.on('success', function(e) {
-      e.trigger.setAttribute('aria-label', "Copied!");
-      e.clearSelection();
-    })
-  })
-  </script>
-
-
-<script src="/blog/js/main.js"></script>
-
-<!-- search -->
-
-<!-- Google Analytics -->
-
-    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-129095667-1"></script>
-    <script>
-        window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
-        gtag('js', new Date());
-        gtag('config', 'UA-129095667-1');
-    </script>
-
-<!-- Baidu Analytics -->
-
-<!-- Cloudflare Analytics -->
-
-<!-- Umami Analytics -->
-
-<!-- Disqus Comments -->
+<div>
+    <h4>相关推荐</h4>
+    <ul class="post-copyright">
+        
+        <li class="post-copyright-author">
+            <a href="/blog/2020/01/23/cd2eaad8.html">IOC之PropertyPlaceholderConfigurer的应用</a>
+        </li>
+        
+        <li class="post-copyright-author">
+            <a href="/blog/2020/01/21/e8e94997.html">IOC之Bean的初始化</a>
+        </li>
+        
+        <li class="post-copyright-author">
+            <a href="/blog/2020/01/19/6271d9d2.html">IOC之Factory实例化bean</a>
+        </li>
+        
+        <li class="post-copyright-author">
+            <a href="/blog/2020/01/24/fcc18cc7.html">IOC之分析BeanWrapper</a>
+        </li>
+        
+        <li class="post-copyright-author">
+            <a href="/blog/2020/01/24/25302edf.html">IOC之bean的实例化策略：InstantiationStrategy</a>
+        </li>
+        
+        <li class="post-copyright-author">
+            <a href="/blog/2020/01/20/1293fb33.html">IOC之属性填充</a>
+        </li>
+        
+    </ul>
+    <br><br>
+</div>
 
 
+
+<div>
+    <h4>版权声明</h4>
+    <blockquote>
+        <ul class="post-copyright">
+            <li class="post-copyright-author">
+                <strong>本文来源： </strong>
+                
+                <a href="http://cmsblogs.com/?p=3983" title="Java技术驿站 | chenssy |【死磕 Spring】| IOC之深入分析Bean的类型转换体系" rel="external nofollow noopener noreferrer" target="_blank">Java技术驿站 | chenssy |【死磕 Spring】| IOC之深入分析Bean的类型转换体系</a></li>
+            <li class="post-copyright-link">
+                <strong>本文链接：</strong>
+                <a href="https://www.cayzlh.com/2020/01/24/683bb448.html" title="/blog/IOC%E4%B9%8B%E6%B7%B1%E5%85%A5%E5%88%86%E6%9E%90Bean%E7%9A%84%E7%B1%BB%E5%9E%8B%E8%BD%AC%E6%8D%A2%E4%BD%93%E7%B3%BB">https://www.cayzlh.com/2020/01/24/683bb448.html</a>
+            </li>
+            <li class="post-copyright-license">
+                <strong>版权声明： </strong>
+                
+                    文章内容仅用作学习和分享，如有雷同，纯属拷贝。
+                
+            </li>
+        </ul>
+    </blockquote>
+</div>
+
+
+            
+            
+                <div class="comment">
+    <br><br><br>
+    
+</div>
+            
+        </div>
+        
+    </div>
+    
+</article>
+
+<script>
+    hljs.initHighlightingOnLoad();
+</script>
+</main>
+<footer class="container">
+    <div class="site-footer">
+        
+    <div class="card text-center">
+        <ul class="list-inline" style="margin-left: 0;">
+            
+                <li>
+                    <a target="_blank" href="https://github.com/cayzlh" rel="external nofollow noopener noreferrer">
+                          <span class="fa-stack fa-lg">
+                            <i class="fa fa-circle fa-stack-2x"></i>
+                            <i class="fa fa-github fa-stack-1x fa-inverse">
+                                
+                            </i>
+                          </span>
+                    </a>
+                </li>
+            
+                <li>
+                    <a target="_blank" href="https://www.zhihu.com/people/chenanyu" rel="external nofollow noopener noreferrer">
+                          <span class="fa-stack fa-lg">
+                            <i class="fa fa-circle fa-stack-2x"></i>
+                            <i class="fa  fa-stack-1x fa-inverse">
+                                知
+                            </i>
+                          </span>
+                    </a>
+                </li>
+            
+                <li>
+                    <a target="_blank" href="mailto:Q2F5emxo@cayzlh.com">
+                          <span class="fa-stack fa-lg">
+                            <i class="fa fa-circle fa-stack-2x"></i>
+                            <i class="fa fa-envelope fa-stack-1x fa-inverse">
+                                
+                            </i>
+                          </span>
+                    </a>
+                </li>
+            
+        </ul>
+    </div>
+
+
+        <div class="site-footer-links mobile-hidden">
+            
+                
+                
+            
+        </div>
+
+        <div class="site-footer-links mobile-hidden">
+        
+            <span class="meta-info-index hvr-grow">
+                
+                    <a href="https://www.cayzlh.com">
+                        🐳Ant丶 &copy; 2020
+                    </a>
+                
+            </span>
+        
+        
+            <span class="meta-info-index hvr-grow">
+                <a href="http://beian.miit.gov.cn" target="_blank" rel="external nofollow noopener noreferrer">粤ICP备20058712号-1</a>
+            </span>
+        
+        </div>
+
+        
+
+        
+    </div>
+    
+
+    
+        <!-- Third-Party JS -->
+        <script type="text/javascript" src="/blog/js/thirdparty/geopattern.min.js"></script>
+        <!-- My JS -->
+        <script type="text/javascript" src="/blog/js/script.js"></script>
+    
+
+    
+        <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js">
+        </script>
+    
+</footer>
 </body>
 </html>

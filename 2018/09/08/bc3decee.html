@@ -1,171 +1,273 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
+
 <head>
-    <!-- so meta -->
     <meta charset="utf-8">
+    <meta name="keywords" content="深入理解Java虚拟机, Java虚拟机">
+    <meta name="description" content="Ant丶的网络日志, CAYZLH网络日志, CAYZLH, CAYZLH主页, Ant丶空间">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="HandheldFriendly" content="True">
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-    <meta name="description" content="《深入理解Java虚拟机》第2章内容小结。">
-<meta property="og:type" content="article">
-<meta property="og:title" content="Java内存区域内存溢出异常">
-<meta property="og:url" content="https://www.cayzlh.com/blog">
-<meta property="og:site_name" content="CAYZLH">
-<meta property="og:description" content="《深入理解Java虚拟机》第2章内容小结。">
-<meta property="og:locale" content="en_US">
-<meta property="og:image" content="https://gitee.com/cayzlh/img-repo/raw/master/uPic/1.png">
-<meta property="og:image" content="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/2.png">
-<meta property="og:image" content="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/3.png">
-<meta property="article:published_time" content="2018-09-08T14:19:36.000Z">
-<meta property="article:modified_time" content="2020-06-22T01:29:05.970Z">
-<meta property="article:author" content="🐳Ant丶">
-<meta property="article:tag" content="Java">
-<meta property="article:tag" content="JVM">
-<meta property="article:tag" content="《深入理解Java虚拟机》">
-<meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://gitee.com/cayzlh/img-repo/raw/master/uPic/1.png">
-    
-    
-      
-        
-          <link rel="shortcut icon" href="/blog/images/favicon.ico">
-        
-      
-      
-        
-          <link rel="icon" type="image/png" href="/blog/images/favicon-192x192.png" sizes="192x192">
-        
-      
-      
-        
-          <link rel="apple-touch-icon" sizes="180x180" href="/blog/images/apple-touch-icon.png">
-        
-      
-    
-    <!-- title -->
-    <title>Java内存区域内存溢出异常</title>
-    <!-- styles -->
-    
-<link rel="stylesheet" href="/blog/css/style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="renderer" content="webkit|ie-stand|ie-comp">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <!-- Global site tag (gtag.js) - Google Analytics -->
 
-    <!-- persian styles -->
-    
-      
-<link rel="stylesheet" href="/blog/css/rtl.css">
+    <meta name="google-site-verification" content="VrcbMTVpFGlHkIERHBt753dAtXKF4qirjnDweuXSRJw">
+
+
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-129095667-1"></script>
+<script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() {
+        dataLayer.push(arguments);
+    }
+
+    gtag('js', new Date());
+    gtag('config', 'UA-129095667-1');
+</script>
+
+
+    <title>Java内存区域内存溢出异常 | CAYZLH</title>
 
     
-    <!-- rss -->
+    <!-- Third-Party CSS -->
     
-    
-      <link rel="alternate" href="/blog/true" title="CAYZLH" type="application/atom+xml">
-    
-<meta name="generator" content="Hexo 5.3.0"></head>
+        <link rel="icon" type="image/svg+xml" href="/blog/favicon.svg">
+        <link rel="stylesheet" href="/blog/css/thirdparty/bootstrap.min.css">
+        <link rel="stylesheet" href="/blog/css/thirdparty/octicons.css">
+        <link rel="stylesheet" href="/blog/css/thirdparty/hover-min.css">
+        <link rel="stylesheet" href="/blog/css/thirdparty/user-content.min.css">
+        <link rel="stylesheet" href="/blog/css/thirdparty/syntax.css">
+        <link rel="stylesheet" href="/blog/css/thirdparty/gitalk.css">
 
-<body class="max-width mx-auto px3 ltr">
-    
-      <div id="header-post">
-  <a id="menu-icon" href="#"><i class="fas fa-bars fa-lg"></i></a>
-  <a id="menu-icon-tablet" href="#"><i class="fas fa-bars fa-lg"></i></a>
-  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fas fa-chevron-up fa-lg"></i></a>
-  <span id="menu">
-    <span id="nav">
-      <ul>
-        
-          <li><a href="/blog/">Home</a></li>
-        
-          <li><a href="/blog/archives/">Articles</a></li>
-        
-          <li><a href="/blog/about/">About</a></li>
-        
-          <li><a href="/blog/search/">Search</a></li>
-        
-      </ul>
-    </span>
-    <br>
-    <span id="actions">
-      <ul>
-        
-        <li><a class="icon" href="/blog/2018/09/11/ddb92a08.html"><i class="fas fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
-        
-        
-        <li><a class="icon" href="/blog/2018/09/05/9753a2e.html"><i class="fas fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
-        
-        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
-<!--        <li><a class="icon" href="#"><i class="fas fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>-->
-      </ul>
-      <span id="i-prev" class="info" style="display:none;">Previous</span>
-      <span id="i-next" class="info" style="display:none;">Next</span>
-      <span id="i-top" class="info" style="display:none;">Back to top</span>
-      <span id="i-share" class="info" style="display:none;">Share post</span>
-    </span>
-    <br>
-    <div id="share" style="display: none">
-      <ul>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.facebook.com/sharer.php?u=https://www.cayzlh.com/2018/09/08/bc3decee.html"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://twitter.com/share?url=https://www.cayzlh.com/2018/09/08/bc3decee.html&text=Java内存区域内存溢出异常"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.linkedin.com/shareArticle?url=https://www.cayzlh.com/2018/09/08/bc3decee.html&title=Java内存区域内存溢出异常"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://pinterest.com/pin/create/bookmarklet/?url=https://www.cayzlh.com/2018/09/08/bc3decee.html&is_video=false&description=Java内存区域内存溢出异常"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="mailto:?subject=Java内存区域内存溢出异常&body=Check out this article: https://www.cayzlh.com/2018/09/08/bc3decee.html"><i class="fas fa-envelope " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://getpocket.com/save?url=https://www.cayzlh.com/2018/09/08/bc3decee.html&title=Java内存区域内存溢出异常"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://reddit.com/submit?url=https://www.cayzlh.com/2018/09/08/bc3decee.html&title=Java内存区域内存溢出异常"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.stumbleupon.com/submit?url=https://www.cayzlh.com/2018/09/08/bc3decee.html&title=Java内存区域内存溢出异常"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://digg.com/submit?url=https://www.cayzlh.com/2018/09/08/bc3decee.html&title=Java内存区域内存溢出异常"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.tumblr.com/share/link?url=https://www.cayzlh.com/2018/09/08/bc3decee.html&name=Java内存区域内存溢出异常&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://news.ycombinator.com/submitlink?u=https://www.cayzlh.com/2018/09/08/bc3decee.html&t=Java内存区域内存溢出异常"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
-</ul>
+        <!-- My CSS -->
+        <link rel="stylesheet" href="/blog/css/common.css">
 
-    </div>
-    <div id="toc">
-      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%A6%82%E8%BF%B0"><span class="toc-number">1.</span> <span class="toc-text">概述</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%BF%90%E8%A1%8C%E6%97%B6%E6%95%B0%E6%8D%AE%E5%8C%BA%E5%9F%9F"><span class="toc-number">2.</span> <span class="toc-text">运行时数据区域</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%A8%8B%E5%BA%8F%E8%AE%A1%E6%95%B0%E5%99%A8"><span class="toc-number">2.1.</span> <span class="toc-text">程序计数器</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Java%E8%99%9A%E6%8B%9F%E6%9C%BA%E6%A0%88"><span class="toc-number">2.2.</span> <span class="toc-text">Java虚拟机栈</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E8%BF%99%E4%B8%AA%E5%8C%BA%E5%9F%9F%E8%A7%84%E5%AE%9A%E4%BA%86%E4%B8%A4%E7%A7%8D%E5%BC%82%E5%B8%B8%E7%8A%B6%E5%86%B5%EF%BC%9A"><span class="toc-number">2.2.1.</span> <span class="toc-text">这个区域规定了两种异常状况：</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%9C%AC%E5%9C%B0%E6%96%B9%E6%B3%95%E6%A0%88"><span class="toc-number">2.3.</span> <span class="toc-text">本地方法栈</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%8C%BA%E5%88%AB"><span class="toc-number">2.3.1.</span> <span class="toc-text">区别</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Java%E5%A0%86"><span class="toc-number">2.4.</span> <span class="toc-text">Java堆</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%96%B9%E6%B3%95%E5%8C%BA"><span class="toc-number">2.5.</span> <span class="toc-text">方法区</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%BF%90%E8%A1%8C%E6%97%B6%E5%B8%B8%E9%87%8F%E6%B1%A0"><span class="toc-number">2.6.</span> <span class="toc-text">运行时常量池</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%9B%B4%E6%8E%A5%E5%86%85%E5%AD%98"><span class="toc-number">2.7.</span> <span class="toc-text">直接内存</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AF%B9%E8%B1%A1%E8%AE%BF%E9%97%AE"><span class="toc-number">3.</span> <span class="toc-text">对象访问</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%87%8D%E7%8E%B0OOM%E5%BC%82%E5%B8%B8"><span class="toc-number">4.</span> <span class="toc-text">重现OOM异常</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Java%E5%A0%86%E6%BA%A2%E5%87%BA"><span class="toc-number">4.1.</span> <span class="toc-text">Java堆溢出</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%99%9A%E6%8B%9F%E6%9C%BA%E6%A0%88%E5%92%8C%E6%9C%AC%E5%9C%B0%E6%96%B9%E6%B3%95%E6%A0%88%E6%BA%A2%E5%87%BA"><span class="toc-number">4.2.</span> <span class="toc-text">虚拟机栈和本地方法栈溢出</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%BF%90%E8%A1%8C%E6%97%B6%E5%B8%B8%E9%87%8F%E6%B1%A0%E6%BA%A2%E5%87%BA"><span class="toc-number">4.3.</span> <span class="toc-text">运行时常量池溢出</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%96%B9%E6%B3%95%E5%8C%BA%E6%BA%A2%E5%87%BA"><span class="toc-number">4.4.</span> <span class="toc-text">方法区溢出</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%9C%AC%E6%9C%BA%E7%9B%B4%E6%8E%A5%E5%86%85%E5%AD%98%E6%BA%A2%E5%87%BA"><span class="toc-number">4.5.</span> <span class="toc-text">本机直接内存溢出</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%B0%8F%E7%BB%93"><span class="toc-number">5.</span> <span class="toc-text">小结</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8F%82%E8%80%83"><span class="toc-number">6.</span> <span class="toc-text">参考</span></a></li></ol>
-    </div>
-  </span>
+        <link rel="stylesheet" href="/blog/css/sidebar-post-nav.css">
+
+        <link rel="stylesheet" href="/blog/css/blog-page.css">
+        <!-- CSS set in page -->
+
+        
+        <link rel="stylesheet" href="/blog/css/sidebar-popular-repo.css">
+    
+
+    <!-- CSS set in layout -->
+    <link rel="stylesheet" type="text/css" href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css">
+
+    
+        <script type="text/javascript" src="/blog/js/thirdparty/jquery.min.js"></script>
+        <script type="text/javascript" src="/blog/js/thirdparty/bootstrap.min.js"></script>
+        <script type="text/javascript" src="/blog/js/lock.js"></script>
+    
+
+    
+        <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.css">
+        <script src="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js"></script>
+
+        <link rel="stylesheet" href="//imsun.github.io/gitment/style/default.css">
+        <script src="//imsun.github.io/gitment/dist/gitment.browser.js"></script>
+
+        <script src="//unpkg.com/valine/dist/Valine.min.js"></script>
+
+    
+
+    <link rel="stylesheet" href="//cdn.bootcss.com/highlight.js/9.2.0/styles/github.min.css">
+    <script src="//cdn.bootcss.com/highlight.js/9.2.0/highlight.min.js"></script>
+<meta name="generator" content="Hexo 4.2.1"><link rel="alternate" href="/blog/atom.xml" title="CAYZLH" type="application/atom+xml">
+</head>
+
+<body>
+<header class="site-header">
+    <div class="site-header-topbar">
+        <div class="container">
+            <div class="topbar-menu">
+
+    
+        <div class="item">
+            <a href="/blog/categories/" title="分类">
+                分类
+            </a>
+        </div>
+    
+        <div class="item">
+            <a href="/blog/tags/" title="标签">
+                标签
+            </a>
+        </div>
+    
+        <div class="item">
+            <a href="https://meiriyiwen.com/random" target="_blank" title="每日一文" rel="external nofollow noopener noreferrer">
+                每日一文
+            </a>
+        </div>
+    
+        <div class="item">
+            <a href="/blog/links/" title="链接">
+                链接
+            </a>
+        </div>
+    
+        <div class="item">
+            <a href="/blog/about" title="关于">
+                关于
+            </a>
+        </div>
+    
+
 </div>
+        </div>
+    </div>
+    <div class="container">
+        <a id="site-header-brand" href="/blog/" title="CAYZLH">
+            <span class="octicon octicon-mark-github"></span>
+            CAYZLH
+        </a>
 
+        <nav class="site-header-nav" role="navigation">
     
-    <div class="content index py4">
-        
-        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
-  <header>
+        <div class=" site-header-nav-item hvr-underline-from-center">
+            <a href="/blog/" title="Home">
+                Home
+            </a>
+            
+        </div>
     
-    <h1 class="posttitle" itemprop="name headline">
-        Java内存区域内存溢出异常
-    </h1>
+        <div class=" site-header-nav-item hvr-underline-from-center">
+            <a href="/blog/archives" title="Archives">
+                Archives
+            </a>
+            
+        </div>
+    
+        <div class=" site-header-nav-item hvr-underline-from-center">
+            <a href="/blog/" title="Learning">
+                Learning
+            </a>
+            
+                <ul class="submenu">
+                    
 
+                        <li>
+                            <a href="/blog/categories/%E4%B9%A6%E7%B1%8D/%E3%80%8A%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3Java%E8%99%9A%E6%8B%9F%E6%9C%BA%E3%80%8B/">
+                                <span>深入理解Java虚拟机</span>
+                            </a>
+                        </li>
 
+                    
 
-    <div class="meta">
-      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
-        <span itemprop="name">🐳Ant丶</span>
-      </span>
-      
-    <div class="postdate">
-      
-        <time datetime="2018-09-08T14:19:36.000Z" itemprop="datePublished">2018-09-08</time>
-        
-      
+                        <li>
+                            <a href="/blog/categories/%E4%B9%A6%E7%B1%8D/%E3%80%8AMyBatis%E6%8A%80%E6%9C%AF%E5%86%85%E5%B9%95%E3%80%8B/">
+                                <span>MyBatis技术内幕</span>
+                            </a>
+                        </li>
+
+                    
+
+                        <li>
+                            <a href="/blog/categories/Java/Java%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/">
+                                <span>Java设计模式</span>
+                            </a>
+                        </li>
+
+                    
+                </ul>
+            
+        </div>
+    
+        <div class=" site-header-nav-item hvr-underline-from-center">
+            <a href="/blog/" title="Tools">
+                Tools
+            </a>
+            
+                <ul class="submenu">
+                    
+
+                        <li>
+                            <a href="https://www.cayzlh.com/tools/online-JSONFormat/" target="_blank">
+                                <span>Json在线工具</span>
+                            </a>
+                        </li>
+
+                    
+
+                        <li>
+                            <a href="https://www.cayzlh.com/tools/online-markdown/" target="_blank">
+                                <span>Markdown在线转换工具</span>
+                            </a>
+                        </li>
+
+                    
+
+                        <li>
+                            <a href="https://www.cayzlh.com/tools/online-hash/" target="_blank">
+                                <span>在线HASH</span>
+                            </a>
+                        </li>
+
+                    
+                </ul>
+            
+        </div>
+    
+</nav>
     </div>
+</header>
+<main class="content">
+    <!-- 标题部分 -->
+<section class="jumbotron geopattern" data-pattern-id="Java内存区域内存溢出异常">
+    <div class="container">
+        <div id="jumbotron-meta-info">
+            <h1>Java内存区域内存溢出异常</h1>
+            <span class="meta-info">
+                <a><span class="octicon octicon-calendar"></span> 2018-09-08</a>
+                
+                    <a><span class="octicon octicon-book"></span></a>
+                    
+                        <a href="/blog/categories/%E4%B9%A6%E7%B1%8D/">书籍</a>
+                    
+                        <a href="/blog/categories/%E4%B9%A6%E7%B1%8D/%E3%80%8A%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3Java%E8%99%9A%E6%8B%9F%E6%9C%BA%E3%80%8B/">《深入理解Java虚拟机》</a>
+                    
+                
+                
+                    
+                
+            </span>
+        </div>
 
-
-      
-    <div class="article-category">
-        <i class="fas fa-archive"></i>
-        <a class="category-link" href="/blog/categories/%E4%B9%A6%E7%B1%8D/">书籍</a> › <a class="category-link" href="/blog/categories/%E4%B9%A6%E7%B1%8D/%E3%80%8A%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3Java%E8%99%9A%E6%8B%9F%E6%9C%BA%E3%80%8B/">《深入理解Java虚拟机》</a>
     </div>
+</section>
+<script>
+    $(document).ready(function(){
 
+        $('.geopattern').each(function(){
+            $(this).geopattern($(this).data('pattern-id'));
+        });
 
-      
-    <div class="article-tag">
-        <i class="fas fa-tag"></i>
-        <a class="tag-link-link" href="/blog/tags/JVM/" rel="tag">JVM</a>, <a class="tag-link-link" href="/blog/tags/Java/" rel="tag">Java</a>, <a class="tag-link-link" href="/blog/tags/%E3%80%8A%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3Java%E8%99%9A%E6%8B%9F%E6%9C%BA%E3%80%8B/" rel="tag">《深入理解Java虚拟机》</a>
-    </div>
-
-
-    </div>
-  </header>
-  
-
-  <div class="content" itemprop="articleBody">
-    <blockquote>
+    });
+</script>
+<!-- 文章内容部分 -->
+<article class="post container " itemscope itemtype="http://schema.org/BlogPosting" id="openwrite-container">
+    <div class="row">
+        <div class="col-md-9 markdown-body">
+            <!-- 文章开始部分 -->
+            <!--<div style="text-align:center">-->
+<!--    <img style="display:inline-block" width="130" height="27"-->
+<!--         src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/640-3.gif"-->
+<!--         data-loaded="true">-->
+<!--    <img style="display:inline-block" width="41" height="35"-->
+<!--         src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/640-4.gif"-->
+<!--         data-loaded="true">-->
+<!--    <img style="display:inline-block"-->
+<!--         width="130" height="27"-->
+<!--         src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/640-5.gif"-->
+<!--         data-loaded="true">-->
+<!--</div>-->
+            <blockquote>
 <p>Java与C++之间有一堵由内存动态分配和垃圾收集围城的高墙，墙外面的人想进来，墙里面的人却想出去.</p>
 </blockquote>
 <h2 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h2><p>对于从事<code>C</code>和<code>C++</code>程序开发的开发人员来说，在内存管理领域，他们既是拥有最高权力的皇帝，又是从事最基础工作的劳动人民——既拥有每一个对象的“所有权”，又担负着每一个对象的生命开始到中积极而的维护责任。</p>
@@ -224,7 +326,7 @@
 <p><strong>根据Java虚拟机规范的规定，当方法区无法满足内存分配需求时，将会抛出OutOfMemoryError异常。</strong></p>
 <h3 id="运行时常量池"><a href="#运行时常量池" class="headerlink" title="运行时常量池"></a>运行时常量池</h3><p><strong>运行时常量池（Runtime Constant Pool）是方法区的一部分。</strong>Class文件中除了有类的版本、字段、方法、接口等描述信息外，还有一项信息时常量池（Constant Pool Table），<strong>用于存放编译期生成的各种字面亮和符号饮用</strong>，这部分内容将在类加载后存放到方法区运行时常量池中。</p>
 <p>Java虚拟机对Class的每一部分的格式都有严格的规定，每一个字节用于存储哪种数据都必须符合规范上的要求，这样才会被虚拟机认可、装载和执行。但是对于常量池，Java虚拟机规范没有做任何细节的要求。一般来说，除了保存Class文件中描述的<strong>符号引用</strong>外，还会把翻译出来的直接饮用也存储在运行时常量池中。</p>
-<p>运行时常量池对于Class文件常量池的另外一个重要特征是具有动态性，Java语言并不要求常量一定只能在编译期产生，也就是并非预置入Class文件中常量池的内容才能进入方法区运行时的常量池，<strong>运行期间也可能将新的常量放入池中，</strong>这种特性被开发人员利用的比较多的便是**String类的intern()**方法。</p>
+<p>运行时常量池对于Class文件常量池的另外一个重要特征是具有动态性，Java语言并不要求常量一定只能在编译期产生，也就是并非预置入Class文件中常量池的内容才能进入方法区运行时的常量池，<strong>运行期间也可能将新的常量放入池中，</strong>这种特性被开发人员利用的比较多的便是<strong>String类的intern()</strong>方法。</p>
 <blockquote>
 <p>public String <strong>intern</strong>();</p>
 <p>返回字符串对象的规范化表示形式。</p>
@@ -239,7 +341,7 @@
 <h3 id="直接内存"><a href="#直接内存" class="headerlink" title="直接内存"></a>直接内存</h3><p>直接内存（Direct Memory）<strong>并不是</strong>虚拟机运行时数据区的一部分，也不是Java虚拟机规范中定义的内存区域，但是这部分内存也被频繁地使用，而且也可能导致<code>OutOfMemoryError</code>异常出现。</p>
 <p>本机内存的分配不会收到Java堆大小的限制，但是，既然是内存，则肯定还是会收到本机总内存（RAM及SWAP区或者分页文件）的大小及处理器寻址空间的限制。分配虚拟机参数时，容易忽略掉直接内存，使得各个内存区域的总和大于物理内存限制，从而导致动态扩展时出现OutOfMemoryError异常。</p>
 <h2 id="对象访问"><a href="#对象访问" class="headerlink" title="对象访问"></a>对象访问</h2><p>对象的访问在<code>Java</code>语言中无处不在，时最普通的程序行为，但即使时最简单的访问，也会去涉及Java栈、Java堆、方法区这三个最重要的内存区域之间的关联关系，如：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Object obj = <span class="keyword">new</span> Object();</span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-java"><code class="language-java">Object obj <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Object</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
 <p>假设这句代码出现在方法体中：</p>
 <ul>
 <li><strong>“Object obj”</strong>这部分的语义将会反映到<strong>Java栈的本地变量表</strong>中，作为一个<code>reference</code>类型数据出现。</li>
@@ -250,9 +352,9 @@
 <ul>
 <li><p>使用句柄</p>
 <p>Java堆中会划分出一块内存作为句柄池，reference中存储的就是<strong>对象的句柄地址</strong>，而句柄中包含了对象实例数据和类型数据各自的<strong>具体地址信息</strong>。</p>
-<p><img src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/2.png" alt="2">/2.png)</p>
+<p><img src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/2.png" alt="2">)/2.png)</p>
 <blockquote>
-<p>句柄访问方式最大的好处就是**<code>reference</code>中存储的事稳定的句柄地址，在对象被移动<strong>（垃圾收集时移动对象时非常普遍的行为）</strong>只会改变句柄中的实例数据指针，而<code>reference</code>本身不需要被修改。**</p>
+<p>句柄访问方式最大的好处就是<strong><code>reference</code>中存储的事稳定的句柄地址，在对象被移动</strong>（垃圾收集时移动对象时非常普遍的行为）<strong>只会改变句柄中的实例数据指针，而<code>reference</code>本身不需要被修改。</strong></p>
 </blockquote>
 </li>
 <li><p>直接指针</p>
@@ -269,13 +371,25 @@
 <p>在IDE（如IDEA）里设置JVM参数：</p>
 <p>-Xms20m -Xmx20m -XX:+HeapDumpOnOutOfMemoryError</p>
 </blockquote>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">HeapOOM</span> </span>&#123;</span><br><span class="line">    <span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">OOMObject</span> </span>&#123;</span><br><span class="line">        </span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(Stringp[] args)</span> </span>&#123;</span><br><span class="line">        List&lt;OOMObject&gt; list = <span class="keyword">new</span> ArrayList&lt;OOMObject&gt;;</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">while</span>(<span class="keyword">true</span>) &#123;</span><br><span class="line">            list.add(<span class="keyword">new</span> OOMObject());</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">HeapOOM</span> <span class="token punctuation">{</span>
+    <span class="token keyword">static</span> <span class="token keyword">class</span> <span class="token class-name">OOMObject</span> <span class="token punctuation">{</span>
+
+    <span class="token punctuation">}</span>
+
+    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">main</span><span class="token punctuation">(</span>Stringp<span class="token punctuation">[</span><span class="token punctuation">]</span> args<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        List<span class="token operator">&lt;</span>OOMObject<span class="token operator">></span> list <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">ArrayList</span><span class="token operator">&lt;</span>OOMObject<span class="token operator">></span><span class="token punctuation">;</span>
+
+        <span class="token keyword">while</span><span class="token punctuation">(</span><span class="token boolean">true</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            list<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">OOMObject</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>运行代码将会抛出：<strong>java.lang.OutOfMemoryError: Java heap space</strong>.</p>
 <p>要解决这些问题，重点是确认内存中的对象是否时必要的，也就是要先分清楚到底时出现了内存泄漏还是内存溢出。</p>
 <p>如果时内存泄漏，可进一步通过工具查看泄漏对象到GC Roots的引用链。于是就能找到泄漏对象是通过怎样的路径与GC Roots相关联并导致垃圾收集器无法自动回收它们的。</p>
 <p>如果不存在内存泄漏，那就应该检查<strong>虚拟机堆参数（-Xmx 和 -Xms）</strong>与机器无力内存对比是否还可以调大，从代码上检查是否存在<strong>某些对象的生命周期过长、持有状态时间过长的情况。</strong>尝试减少程序运行期的内存消耗。</p>
 <h3 id="虚拟机栈和本地方法栈溢出"><a href="#虚拟机栈和本地方法栈溢出" class="headerlink" title="虚拟机栈和本地方法栈溢出"></a>虚拟机栈和本地方法栈溢出</h3><blockquote>
-<p>对于HotSpot来说，**-Xoss参数（设置本地方法栈大小）虽然存在，但实际上是无效的**，栈容量只由-Xss参数设定。</p>
+<p>对于HotSpot来说，<strong>-Xoss参数（设置本地方法栈大小）虽然存在，但实际上是无效的</strong>，栈容量只由-Xss参数设定。</p>
 </blockquote>
 <ul>
 <li>如果线程请求的栈深度大于虚拟机所允许的最大深度，将抛出StackOverflowError异常。</li>
@@ -285,17 +399,58 @@
 <p>在IDE（如IDEA）里设置JVM参数：</p>
 <p>-Xss128k</p>
 </blockquote>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">JavaVMStackSOF</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">int</span> stackLength = <span class="number">1</span>;</span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">stackLeak</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        stackLength++;</span><br><span class="line">        stackLeak();</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> Throwable </span>&#123;</span><br><span class="line">        JavaVMStackSOF oom = <span class="keyword">new</span> JavaVMStackSOF();</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            oom.stackLeak();</span><br><span class="line">        &#125; <span class="keyword">catch</span> (Throwable e) &#123;</span><br><span class="line">            System.out.println(<span class="string">&quot;stack length:&quot;</span> + ooo.stackLength);</span><br><span class="line">            <span class="keyword">throw</span> e;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">JavaVMStackSOF</span> <span class="token punctuation">{</span>
+    <span class="token keyword">private</span> <span class="token keyword">int</span> stackLength <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">;</span>
+
+    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">stackLeak</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        stackLength<span class="token operator">++</span><span class="token punctuation">;</span>
+        <span class="token function">stackLeak</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">main</span><span class="token punctuation">(</span>String<span class="token punctuation">[</span><span class="token punctuation">]</span> args<span class="token punctuation">)</span> <span class="token keyword">throws</span> Throwable <span class="token punctuation">{</span>
+        JavaVMStackSOF oom <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">JavaVMStackSOF</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">try</span> <span class="token punctuation">{</span>
+            oom<span class="token punctuation">.</span><span class="token function">stackLeak</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">Throwable</span> e<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"stack length:"</span> <span class="token operator">+</span> ooo<span class="token punctuation">.</span>stackLength<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token keyword">throw</span> e<span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p><strong>运行结果：</strong></p>
 <p>Stack length:2402</p>
 <p>Exception in thread “main” java.lang.StackOverflowError</p>
-<p> ··········后续异常栈信息省略。</p>
+<p> ··········后续异常栈信息省略。</p>
 <p><strong>结果证明：</strong>在单个线程下，无论是由于栈帧太大，还是虚拟机栈容量太小，当内存无法分配的时候， 虚拟机抛出的都是StackOverflowError异常。</p>
 <blockquote>
 <p>在IDE（如IDEA）里设置JVM参数：</p>
 <p>-Xss2M</p>
 </blockquote>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">JavaVMStackOOM</span> </span>&#123;</span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">dontStop</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">while</span> (<span class="keyword">true</span>) &#123;</span><br><span class="line">            </span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">stackLeakThread</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">while</span> (<span class="keyword">true</span>) &#123;</span><br><span class="line">            Thread thread = <span class="keyword">new</span> Thread(<span class="keyword">new</span> Runnable() &#123;</span><br><span class="line">                <span class="meta">@Override</span></span><br><span class="line">                <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">run</span> <span class="params">()</span> </span>&#123;</span><br><span class="line">                    dontStop();</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;);</span><br><span class="line">            thread.start();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> Throwable </span>&#123;</span><br><span class="line">        JavaVMStackOOM oom = <span class="keyword">new</span> JavaVMStackOOM();</span><br><span class="line">        oom.stackLeakThread();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">JavaVMStackOOM</span> <span class="token punctuation">{</span>
+
+    <span class="token keyword">private</span> <span class="token keyword">void</span> <span class="token function">dontStop</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">while</span> <span class="token punctuation">(</span><span class="token boolean">true</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">stackLeakThread</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">while</span> <span class="token punctuation">(</span><span class="token boolean">true</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            Thread thread <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Thread</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">Runnable</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                <span class="token annotation punctuation">@Override</span>
+                <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">run</span> <span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                    <span class="token function">dontStop</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token punctuation">}</span>
+            <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            thread<span class="token punctuation">.</span><span class="token function">start</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">main</span><span class="token punctuation">(</span>String<span class="token punctuation">[</span><span class="token punctuation">]</span> args<span class="token punctuation">)</span> <span class="token keyword">throws</span> Throwable <span class="token punctuation">{</span>
+        JavaVMStackOOM oom <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">JavaVMStackOOM</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        oom<span class="token punctuation">.</span><span class="token function">stackLeakThread</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p><strong>注：如果要运行这顿啊代码，记得要先保存当前的工作，由于在Windows平台的虚拟机中，Java的线程是映射到操作系统的内核线程上的，所以上述代码执行时有较大的风险，可能会导致操作系统假死。</strong></p>
 <p><strong>运行结果：</strong></p>
 <p>Exception in thread “main” java.lang.OutOfMemoryError: unable to create new native thread</p>
@@ -309,7 +464,17 @@
 <p>在IDE（如IDEA）里设置JVM参数：</p>
 <p>-XXPermSize=10M -XX:MaxPermSize=10M</p>
 </blockquote>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">RuntimeConstantPoolOOM</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">        <span class="comment">// 使用List保存着常量池引用，避免Full GC回收常量池行为</span></span><br><span class="line">        List&lt;String&gt; list = <span class="keyword">new</span> ArrayList&lt;String&gt;();</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">int</span> i = <span class="number">0</span>;</span><br><span class="line">        <span class="keyword">while</span> (<span class="keyword">true</span>) &#123;</span><br><span class="line">            list.add(String.valueOf(i++).intern());</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">RuntimeConstantPoolOOM</span> <span class="token punctuation">{</span>
+    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">main</span><span class="token punctuation">(</span>String<span class="token punctuation">[</span><span class="token punctuation">]</span> args<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token comment" spellcheck="true">// 使用List保存着常量池引用，避免Full GC回收常量池行为</span>
+        List<span class="token operator">&lt;</span>String<span class="token operator">></span> list <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">ArrayList</span><span class="token operator">&lt;</span>String<span class="token operator">></span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        <span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+        <span class="token keyword">while</span> <span class="token punctuation">(</span><span class="token boolean">true</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            list<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span>String<span class="token punctuation">.</span><span class="token function">valueOf</span><span class="token punctuation">(</span>i<span class="token operator">++</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">intern</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p><strong>运行结果：</strong></p>
 <p>Exception in thread “main” java.lang.OutOfMemoryError: <strong>PermGen space</strong></p>
 <p><strong>实验结果：</strong></p>
@@ -319,7 +484,24 @@
 <p>在IDE（如IDEA）里设置JVM参数：</p>
 <p>-XX:PermSize=10M -XX:MaxPermSize=10M</p>
 </blockquote>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">JavaMethodAreaOOM</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">while</span> (<span class="keyword">true</span>) &#123;</span><br><span class="line">            Enhancer enhancer = <span class="keyword">new</span> Enhancer();</span><br><span class="line">            enhancer.setSuperclass(OOMObject.class);</span><br><span class="line">            enhancer.setUseCache(<span class="keyword">false</span>);</span><br><span class="line">            enhancer.setCallback(<span class="keyword">new</span> MethodInterceptor() &#123;</span><br><span class="line">                <span class="function"><span class="keyword">public</span> Object <span class="title">intercept</span><span class="params">(Object object, Method method, </span></span></span><br><span class="line"><span class="function"><span class="params">                                        Object[] args, MethodProxy mhodProxy)</span> <span class="keyword">throws</span> Throwable </span>&#123;</span><br><span class="line">                    <span class="keyword">return</span> proxy.invokeSuper(obj, args);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;);</span><br><span class="line">            enhancer.create();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="keyword">static</span> class <span class="title">OOMObject</span><span class="params">()</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">JavaMethodAreaOOM</span> <span class="token punctuation">{</span>
+    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">main</span><span class="token punctuation">(</span>String<span class="token punctuation">[</span><span class="token punctuation">]</span> args<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">while</span> <span class="token punctuation">(</span><span class="token boolean">true</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            Enhancer enhancer <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Enhancer</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            enhancer<span class="token punctuation">.</span><span class="token function">setSuperclass</span><span class="token punctuation">(</span>OOMObject<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            enhancer<span class="token punctuation">.</span><span class="token function">setUseCache</span><span class="token punctuation">(</span><span class="token boolean">false</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            enhancer<span class="token punctuation">.</span><span class="token function">setCallback</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">MethodInterceptor</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                <span class="token keyword">public</span> Object <span class="token function">intercept</span><span class="token punctuation">(</span>Object object<span class="token punctuation">,</span> Method method<span class="token punctuation">,</span> 
+                                        Object<span class="token punctuation">[</span><span class="token punctuation">]</span> args<span class="token punctuation">,</span> MethodProxy mhodProxy<span class="token punctuation">)</span> <span class="token keyword">throws</span> Throwable <span class="token punctuation">{</span>
+                    <span class="token keyword">return</span> proxy<span class="token punctuation">.</span><span class="token function">invokeSuper</span><span class="token punctuation">(</span>obj<span class="token punctuation">,</span> args<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token punctuation">}</span>
+            <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            enhancer<span class="token punctuation">.</span><span class="token function">create</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token keyword">static</span> <span class="token keyword">class</span> <span class="token class-name">OOMObject</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p><strong>运行结果：</strong></p>
 <p>Caused by:  java.lang.OutOfMemoryError: <strong>PermGen space</strong></p>
 <p><strong>实验结果：</strong></p>
@@ -329,7 +511,19 @@
 <p>在IDE（如IDEA）里设置JVM参数：</p>
 <p>-Xmx20M -XX:MaxDirectMemorySize=10M</p>
 </blockquote>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">DirectMemoryOOM</span> </span>&#123;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">int</span> _1MB = <span class="number">1024</span> * <span class="number">1024</span>;</span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">        Field unsafeField = Unsafe.class.getDeclaredFields()[<span class="number">0</span>];</span><br><span class="line">        unsafeField.setAccessible(<span class="keyword">true</span>);</span><br><span class="line">        Unsafe unsafe = (Unsafe) unsafeField.get(<span class="keyword">null</span>);</span><br><span class="line">        <span class="keyword">while</span> (<span class="keyword">true</span>) &#123;</span><br><span class="line">            unsafe.allocateMemory(_1MB);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">DirectMemoryOOM</span> <span class="token punctuation">{</span>
+
+    <span class="token keyword">private</span> <span class="token keyword">static</span> <span class="token keyword">final</span> <span class="token keyword">int</span> _1MB <span class="token operator">=</span> <span class="token number">1024</span> <span class="token operator">*</span> <span class="token number">1024</span><span class="token punctuation">;</span>
+
+    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">main</span><span class="token punctuation">(</span>String<span class="token punctuation">[</span><span class="token punctuation">]</span> args<span class="token punctuation">)</span> <span class="token keyword">throws</span> Exception <span class="token punctuation">{</span>
+        Field unsafeField <span class="token operator">=</span> Unsafe<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">.</span><span class="token function">getDeclaredFields</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
+        unsafeField<span class="token punctuation">.</span><span class="token function">setAccessible</span><span class="token punctuation">(</span><span class="token boolean">true</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        Unsafe unsafe <span class="token operator">=</span> <span class="token punctuation">(</span>Unsafe<span class="token punctuation">)</span> unsafeField<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span>null<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">while</span> <span class="token punctuation">(</span><span class="token boolean">true</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            unsafe<span class="token punctuation">.</span><span class="token function">allocateMemory</span><span class="token punctuation">(</span>_1MB<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p><strong>运行结果：</strong></p>
 <p>Exception in thread “main” java.lang.OutOfMemoryError</p>
 <h2 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h2><ul>
@@ -341,170 +535,308 @@
 <li>周志明，深入理解Java虚拟机：JVM高级特性与最佳实践，机械工业出版社 </li>
 </ul>
 
-  </div>
-
-  
-    <div style="text-align:center;width:100%">
-      <img src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/640-2.gif">
-    </div>
-  
-
-  
-    <div>
-      <h4>版权声明</h4>
-      <pre>
-        
-        <strong>本文来源： </strong><a href="https://www.cayzlh.com/blog" title="🐳Ant丶" rel="noopener external nofollow noreferrer" target="_blank">https://www.cayzlh.com/blog</a>
-
-        <strong>本文链接：</strong><a href="https://www.cayzlh.com/2018/09/08/bc3decee.html" title="/blog/Java%E5%86%85%E5%AD%98%E5%8C%BA%E5%9F%9F%E5%86%85%E5%AD%98%E6%BA%A2%E5%87%BA%E5%BC%82%E5%B8%B8">https://www.cayzlh.com/2018/09/08/bc3decee.html</a>
-
-        <strong>版权声明： </strong>
-        
-          文章内容仅用作学习和分享，转载请注明出处
-        
-      </pre>
-    </div>
-  
-
-</article>
-
-
-
-        
-          <div id="footer-post-container">
-  <div id="footer-post">
-
-    <div id="nav-footer" style="display: none">
-      <ul>
-        
-          <li><a href="/blog/">Home</a></li>
-        
-          <li><a href="/blog/archives/">Articles</a></li>
-        
-          <li><a href="/blog/about/">About</a></li>
-        
-          <li><a href="/blog/search/">Search</a></li>
-        
-      </ul>
-    </div>
-
-    <div id="toc-footer" style="display: none">
-      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%A6%82%E8%BF%B0"><span class="toc-number">1.</span> <span class="toc-text">概述</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%BF%90%E8%A1%8C%E6%97%B6%E6%95%B0%E6%8D%AE%E5%8C%BA%E5%9F%9F"><span class="toc-number">2.</span> <span class="toc-text">运行时数据区域</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%A8%8B%E5%BA%8F%E8%AE%A1%E6%95%B0%E5%99%A8"><span class="toc-number">2.1.</span> <span class="toc-text">程序计数器</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Java%E8%99%9A%E6%8B%9F%E6%9C%BA%E6%A0%88"><span class="toc-number">2.2.</span> <span class="toc-text">Java虚拟机栈</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E8%BF%99%E4%B8%AA%E5%8C%BA%E5%9F%9F%E8%A7%84%E5%AE%9A%E4%BA%86%E4%B8%A4%E7%A7%8D%E5%BC%82%E5%B8%B8%E7%8A%B6%E5%86%B5%EF%BC%9A"><span class="toc-number">2.2.1.</span> <span class="toc-text">这个区域规定了两种异常状况：</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%9C%AC%E5%9C%B0%E6%96%B9%E6%B3%95%E6%A0%88"><span class="toc-number">2.3.</span> <span class="toc-text">本地方法栈</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%8C%BA%E5%88%AB"><span class="toc-number">2.3.1.</span> <span class="toc-text">区别</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Java%E5%A0%86"><span class="toc-number">2.4.</span> <span class="toc-text">Java堆</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%96%B9%E6%B3%95%E5%8C%BA"><span class="toc-number">2.5.</span> <span class="toc-text">方法区</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%BF%90%E8%A1%8C%E6%97%B6%E5%B8%B8%E9%87%8F%E6%B1%A0"><span class="toc-number">2.6.</span> <span class="toc-text">运行时常量池</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%9B%B4%E6%8E%A5%E5%86%85%E5%AD%98"><span class="toc-number">2.7.</span> <span class="toc-text">直接内存</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AF%B9%E8%B1%A1%E8%AE%BF%E9%97%AE"><span class="toc-number">3.</span> <span class="toc-text">对象访问</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%87%8D%E7%8E%B0OOM%E5%BC%82%E5%B8%B8"><span class="toc-number">4.</span> <span class="toc-text">重现OOM异常</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Java%E5%A0%86%E6%BA%A2%E5%87%BA"><span class="toc-number">4.1.</span> <span class="toc-text">Java堆溢出</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%99%9A%E6%8B%9F%E6%9C%BA%E6%A0%88%E5%92%8C%E6%9C%AC%E5%9C%B0%E6%96%B9%E6%B3%95%E6%A0%88%E6%BA%A2%E5%87%BA"><span class="toc-number">4.2.</span> <span class="toc-text">虚拟机栈和本地方法栈溢出</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%BF%90%E8%A1%8C%E6%97%B6%E5%B8%B8%E9%87%8F%E6%B1%A0%E6%BA%A2%E5%87%BA"><span class="toc-number">4.3.</span> <span class="toc-text">运行时常量池溢出</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%96%B9%E6%B3%95%E5%8C%BA%E6%BA%A2%E5%87%BA"><span class="toc-number">4.4.</span> <span class="toc-text">方法区溢出</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%9C%AC%E6%9C%BA%E7%9B%B4%E6%8E%A5%E5%86%85%E5%AD%98%E6%BA%A2%E5%87%BA"><span class="toc-number">4.5.</span> <span class="toc-text">本机直接内存溢出</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%B0%8F%E7%BB%93"><span class="toc-number">5.</span> <span class="toc-text">小结</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8F%82%E8%80%83"><span class="toc-number">6.</span> <span class="toc-text">参考</span></a></li></ol>
-    </div>
-
-    <div id="share-footer" style="display: none">
-      <ul>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.facebook.com/sharer.php?u=https://www.cayzlh.com/2018/09/08/bc3decee.html"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://twitter.com/share?url=https://www.cayzlh.com/2018/09/08/bc3decee.html&text=Java内存区域内存溢出异常"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.linkedin.com/shareArticle?url=https://www.cayzlh.com/2018/09/08/bc3decee.html&title=Java内存区域内存溢出异常"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://pinterest.com/pin/create/bookmarklet/?url=https://www.cayzlh.com/2018/09/08/bc3decee.html&is_video=false&description=Java内存区域内存溢出异常"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="mailto:?subject=Java内存区域内存溢出异常&body=Check out this article: https://www.cayzlh.com/2018/09/08/bc3decee.html"><i class="fas fa-envelope fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://getpocket.com/save?url=https://www.cayzlh.com/2018/09/08/bc3decee.html&title=Java内存区域内存溢出异常"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://reddit.com/submit?url=https://www.cayzlh.com/2018/09/08/bc3decee.html&title=Java内存区域内存溢出异常"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.stumbleupon.com/submit?url=https://www.cayzlh.com/2018/09/08/bc3decee.html&title=Java内存区域内存溢出异常"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://digg.com/submit?url=https://www.cayzlh.com/2018/09/08/bc3decee.html&title=Java内存区域内存溢出异常"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.tumblr.com/share/link?url=https://www.cayzlh.com/2018/09/08/bc3decee.html&name=Java内存区域内存溢出异常&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://news.ycombinator.com/submitlink?u=https://www.cayzlh.com/2018/09/08/bc3decee.html&t=Java内存区域内存溢出异常"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
-</ul>
-
-    </div>
-
-    <div id="actions-footer">
-        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fas fa-bars fa-lg" aria-hidden="true"></i> Menu</a>
-        <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fas fa-list fa-lg" aria-hidden="true"></i> TOC</a>
-<!--        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fas fa-share-alt fa-lg" aria-hidden="true"></i> Share</a>-->
-        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a>
-    </div>
-
-  </div>
+            <!-- 文章结尾部分 -->
+            
+                
+<div style="text-align:center;width:100%">
+    <span class="octicon octicon-tag-add"></span>
+    
+        <a style="color: #24292e;" href="/blog/tags/Java/">Java</a>
+    
+        <a style="color: #24292e;" href="/blog/tags/JVM/">JVM</a>
+    
+        <a style="color: #24292e;" href="/blog/tags/%E3%80%8A%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3Java%E8%99%9A%E6%8B%9F%E6%9C%BA%E3%80%8B/">《深入理解Java虚拟机》</a>
+    
 </div>
 
-        
-        <footer id="footer">
-  <div class="footer-left">
-    CAYZLH &copy;
-    
-    
-    2019-2021
-    粤ICP备20058712号-1
-  </div>
-  <div class="footer-right">
-    <nav>
-      <ul>
-        
-          <li><a href="/blog/tools/">tools</a></li>
-        
-          <li><a href="/blog/links/">links</a></li>
-        
-      </ul>
-    </nav>
-  </div>
-</footer>
 
+
+    <div style="text-align:center;width:100%">
+        <img src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/640-2.gif">
     </div>
-    <!-- styles -->
-
-<link rel="stylesheet" href="/blog/lib/font-awesome/css/all.min.css">
 
 
-<link rel="stylesheet" href="/blog/lib/justified-gallery/css/justifiedGallery.min.css">
 
 
-    <!-- jquery -->
-
-<script src="/blog/lib/jquery/jquery.min.js"></script>
-
-
-<script src="/blog/lib/justified-gallery/js/jquery.justifiedGallery.min.js"></script>
-
-<!-- clipboard -->
-
-  
-<script src="/blog/lib/clipboard/clipboard.min.js"></script>
-
-  <script type="text/javascript">
-  $(function() {
-    // copy-btn HTML
-    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"Copy to clipboard!\">";
-    btn += '<i class="far fa-clone"></i>';
-    btn += '</span>'; 
-    // mount it!
-    $(".highlight table").before(btn);
-    var clip = new ClipboardJS('.btn-copy', {
-      text: function(trigger) {
-        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
-      }
-    });
-    clip.on('success', function(e) {
-      e.trigger.setAttribute('aria-label', "Copied!");
-      e.clearSelection();
-    })
-  })
-  </script>
-
-
-<script src="/blog/js/main.js"></script>
-
-<!-- search -->
-
-<!-- Google Analytics -->
-
-    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-129095667-1"></script>
-    <script>
-        window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
-        gtag('js', new Date());
-        gtag('config', 'UA-129095667-1');
-    </script>
-
-<!-- Baidu Analytics -->
-
-<!-- Cloudflare Analytics -->
-
-<!-- Umami Analytics -->
-
-<!-- Disqus Comments -->
+<div>
+    <h4>相关推荐</h4>
+    <ul class="post-copyright">
+        
+        <li class="post-copyright-author">
+            <a href="/blog/2018/09/18/badf9669.html">Java内存模型与线程</a>
+        </li>
+        
+        <li class="post-copyright-author">
+            <a href="/blog/2018/09/11/ddb92a08.html">垃圾收集器与内存分配策略</a>
+        </li>
+        
+        <li class="post-copyright-author">
+            <a href="/blog/2018/09/13/fea7515.html">虚拟机性能监控与故障处理工具</a>
+        </li>
+        
+        <li class="post-copyright-author">
+            <a href="/blog/2018/09/21/7876bd5d.html">线程安全与锁优化</a>
+        </li>
+        
+        <li class="post-copyright-author">
+            <a href="/blog/2018/09/16/4cd43d51.html">虚拟机字节码执行引擎</a>
+        </li>
+        
+        <li class="post-copyright-author">
+            <a href="/blog/2018/09/14/cdffca23.html">虚拟机类加载机制</a>
+        </li>
+        
+    </ul>
+    <br><br>
+</div>
 
 
+
+<div>
+    <h4>版权声明</h4>
+    <blockquote>
+        <ul class="post-copyright">
+            <li class="post-copyright-author">
+                <strong>本文来源： </strong>
+                
+                <a href="https://www.cayzlh.com/blog" title="🐳Ant丶" rel="noopener external nofollow noreferrer" target="_blank">🐳Ant丶</a></li>
+            <li class="post-copyright-link">
+                <strong>本文链接：</strong>
+                <a href="https://www.cayzlh.com/2018/09/08/bc3decee.html" title="/blog/Java%E5%86%85%E5%AD%98%E5%8C%BA%E5%9F%9F%E5%86%85%E5%AD%98%E6%BA%A2%E5%87%BA%E5%BC%82%E5%B8%B8">https://www.cayzlh.com/2018/09/08/bc3decee.html</a>
+            </li>
+            <li class="post-copyright-license">
+                <strong>版权声明： </strong>
+                
+                    文章内容仅用作学习和分享，如有雷同，纯属拷贝。
+                
+            </li>
+        </ul>
+    </blockquote>
+</div>
+
+
+            
+            
+                <div class="comment">
+    <br><br><br>
+    
+        
+
+        
+
+        
+            <h4>留言区</h4>
+            <div id="valine-container"></div>
+            <script>
+                var GUEST_INFO = ['nick', 'mail', 'link'];
+                var guest_info = 'nick,link,mail'.split(',').filter(function (item) {
+                    return GUEST_INFO.indexOf(item) > -1;
+                });
+                new Valine({
+                    el: '#valine-container',
+                    appId: 'rEPr8FnwPatAARVnsKDFdvtI-gzGzoHsz',
+                    appKey: '7rsPiBWwuRFgagw214Esafmw',
+                    notify: 'false' === 'true',
+                    verify: 'false' === 'true',
+                    visitor: 'true' === 'true',
+                    avatar: 'identicon',
+                    pageSize: '10',
+                    lang: 'zh-cn',
+                    placeholder: '穿山甲到底说了啥～',
+                    guest_info: guest_info.length == 0 ? GUEST_INFO : guest_info
+                });
+            </script>
+        
+
+    
+</div>
+            
+        </div>
+        
+            <div class="col-md-3">
+                <h4>文章目录</h4>
+                <div id="toc" style="display: none;">
+                    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#概述"><span class="toc-text">概述</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#运行时数据区域"><span class="toc-text">运行时数据区域</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#程序计数器"><span class="toc-text">程序计数器</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Java虚拟机栈"><span class="toc-text">Java虚拟机栈</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#本地方法栈"><span class="toc-text">本地方法栈</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Java堆"><span class="toc-text">Java堆</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#方法区"><span class="toc-text">方法区</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#运行时常量池"><span class="toc-text">运行时常量池</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#直接内存"><span class="toc-text">直接内存</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#对象访问"><span class="toc-text">对象访问</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#重现OOM异常"><span class="toc-text">重现OOM异常</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Java堆溢出"><span class="toc-text">Java堆溢出</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#虚拟机栈和本地方法栈溢出"><span class="toc-text">虚拟机栈和本地方法栈溢出</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#运行时常量池溢出"><span class="toc-text">运行时常量池溢出</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#方法区溢出"><span class="toc-text">方法区溢出</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#本机直接内存溢出"><span class="toc-text">本机直接内存溢出</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#小结"><span class="toc-text">小结</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li></ol>
+                </div>
+                <div id="post-directory-module">
+                    <section class="post-directory">
+                        <!-- Links that trigger the jumping -->
+                        <!-- Added by javascript below -->
+                        <dl></dl>
+                    </section>
+                </div>
+
+                <script type="text/javascript">
+                    var getChild = function ($parent) {
+                        var child = {};
+                        child.path = $parent.find("a").attr("href");
+                        child.title = $parent.find("a").find("span").html();
+
+                        var $children = $($parent.children("ol").children());
+                        if ($children) {
+                            var children = [];
+                            $children.each(function () {
+                                children.push(getChild($(this)));
+                            });
+                            child.children = children;
+                        }
+                        return child;
+                    }
+                    $(document).ready(function () {
+                        var toc = [];
+                        $("#toc").children().children().each(function () {
+                            toc.push(getChild($(this)));
+                        });
+                        if (toc.length > 0) {
+                            $("#toc").remove();
+                            toc.forEach(function (t) {
+                                $(".post-directory dl").append("<dt><a class=\"jumper\" href="
+                                    + t.path
+                                    + ">"
+                                    + t.title
+                                    + "</a></dt>");
+                                var tc = t.children;
+                                if (tc.length > 0) {
+                                    tc.forEach(function (c) {
+                                        $(".post-directory dl").append(
+                                            "<dd><a class=\"jumper\" href="
+                                            + c.path
+                                            + ">"
+                                            + "&nbsp;&nbsp;- " + c.title
+                                            + "</a></dd>"
+                                        );
+                                    });
+                                }
+                            });
+
+                        }
+                        var fixmeTop = $('#post-directory-module').offset().top - 100;       // get initial position of the element
+
+                        $(window).scroll(function () {                  // assign scroll event listener
+
+                            var currentScroll = $(window).scrollTop(); // get current position
+
+                            if (currentScroll >= fixmeTop) {           // apply position: fixed if you
+                                $('#post-directory-module').css({      // scroll to that element or below it
+                                    top: '100px',
+                                    position: 'fixed',
+                                    width: 'inherit'
+                                });
+                            } else {                                   // apply position: static
+                                $('#post-directory-module').css({      // if you scroll above it
+                                    position: 'inherit',
+                                    width: 'inherit'
+                                });
+                            }
+
+                        });
+
+                        $("a.jumper").on("click", function (e) {
+
+                            e.preventDefault();
+
+                            $("body, html").animate({
+                                scrollTop: ($($(this).attr('href')).offset().top - 100)
+                            }, 600);
+
+                        });
+                    });
+
+                </script>
+            </div>
+        
+    </div>
+    
+</article>
+
+<script>
+    hljs.initHighlightingOnLoad();
+</script>
+</main>
+<footer class="container">
+    <div class="site-footer">
+        
+    <div class="card text-center">
+        <ul class="list-inline" style="margin-left: 0;">
+            
+                <li>
+                    <a target="_blank" href="https://github.com/cayzlh" rel="external nofollow noopener noreferrer">
+                          <span class="fa-stack fa-lg">
+                            <i class="fa fa-circle fa-stack-2x"></i>
+                            <i class="fa fa-github fa-stack-1x fa-inverse">
+                                
+                            </i>
+                          </span>
+                    </a>
+                </li>
+            
+                <li>
+                    <a target="_blank" href="https://www.zhihu.com/people/chenanyu" rel="external nofollow noopener noreferrer">
+                          <span class="fa-stack fa-lg">
+                            <i class="fa fa-circle fa-stack-2x"></i>
+                            <i class="fa  fa-stack-1x fa-inverse">
+                                知
+                            </i>
+                          </span>
+                    </a>
+                </li>
+            
+                <li>
+                    <a target="_blank" href="mailto:Q2F5emxo@cayzlh.com">
+                          <span class="fa-stack fa-lg">
+                            <i class="fa fa-circle fa-stack-2x"></i>
+                            <i class="fa fa-envelope fa-stack-1x fa-inverse">
+                                
+                            </i>
+                          </span>
+                    </a>
+                </li>
+            
+        </ul>
+    </div>
+
+
+        <div class="site-footer-links mobile-hidden">
+            
+                
+                
+            
+        </div>
+
+        <div class="site-footer-links mobile-hidden">
+        
+            <span class="meta-info-index hvr-grow">
+                
+                    <a href="https://www.cayzlh.com">
+                        🐳Ant丶 &copy; 2020
+                    </a>
+                
+            </span>
+        
+        
+            <span class="meta-info-index hvr-grow">
+                <a href="http://beian.miit.gov.cn" target="_blank" rel="external nofollow noopener noreferrer">粤ICP备20058712号-1</a>
+            </span>
+        
+        </div>
+
+        
+
+        
+    </div>
+    
+
+    
+        <!-- Third-Party JS -->
+        <script type="text/javascript" src="/blog/js/thirdparty/geopattern.min.js"></script>
+        <!-- My JS -->
+        <script type="text/javascript" src="/blog/js/script.js"></script>
+    
+
+    
+        <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js">
+        </script>
+    
+</footer>
 </body>
 </html>

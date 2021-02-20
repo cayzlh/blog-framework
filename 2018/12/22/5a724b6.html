@@ -1,193 +1,318 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
+
 <head>
-    <!-- so meta -->
     <meta charset="utf-8">
+    <meta name="keywords" content="熔断器Hystrix, SpringCloud使用熔断器Hystrix, 熔断器原理, 雪崩效应">
+    <meta name="description" content="Ant丶的网络日志, CAYZLH网络日志, CAYZLH, CAYZLH主页, Ant丶空间">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="HandheldFriendly" content="True">
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-    <meta name="description" content="认识SpringCloud中的熔断器Hystrix，以及使用实例">
-<meta property="og:type" content="article">
-<meta property="og:title" content="SpringCloud（熔断器Hystrix）">
-<meta property="og:url" content="https://www.cayzlh.com/blog">
-<meta property="og:site_name" content="CAYZLH">
-<meta property="og:description" content="认识SpringCloud中的熔断器Hystrix，以及使用实例">
-<meta property="og:locale" content="en_US">
-<meta property="og:image" content="https://gitee.com/cayzlh/img-repo/raw/master/2020/04/17/egbFqA.png">
-<meta property="og:image" content="https://gitee.com/cayzlh/img-repo/raw/master/2020/04/17/C8IGdR.png">
-<meta property="og:image" content="https://gitee.com/cayzlh/img-repo/raw/master/2020/04/17/5fnF7p.png">
-<meta property="og:image" content="https://gitee.com/cayzlh/img-repo/raw/master/2020/04/17/2S9QD5.png">
-<meta property="article:published_time" content="2018-12-22T08:04:16.000Z">
-<meta property="article:modified_time" content="2020-06-22T01:29:05.849Z">
-<meta property="article:author" content="🐳Ant丶">
-<meta property="article:tag" content="Spring">
-<meta property="article:tag" content="SpringCloud">
-<meta property="article:tag" content="微服务">
-<meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://gitee.com/cayzlh/img-repo/raw/master/2020/04/17/egbFqA.png">
-    
-    
-      
-        
-          <link rel="shortcut icon" href="/blog/images/favicon.ico">
-        
-      
-      
-        
-          <link rel="icon" type="image/png" href="/blog/images/favicon-192x192.png" sizes="192x192">
-        
-      
-      
-        
-          <link rel="apple-touch-icon" sizes="180x180" href="/blog/images/apple-touch-icon.png">
-        
-      
-    
-    <!-- title -->
-    <title>SpringCloud（熔断器Hystrix）</title>
-    <!-- styles -->
-    
-<link rel="stylesheet" href="/blog/css/style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="renderer" content="webkit|ie-stand|ie-comp">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <!-- Global site tag (gtag.js) - Google Analytics -->
 
-    <!-- persian styles -->
-    
-      
-<link rel="stylesheet" href="/blog/css/rtl.css">
+    <meta name="google-site-verification" content="VrcbMTVpFGlHkIERHBt753dAtXKF4qirjnDweuXSRJw">
+
+
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-129095667-1"></script>
+<script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() {
+        dataLayer.push(arguments);
+    }
+
+    gtag('js', new Date());
+    gtag('config', 'UA-129095667-1');
+</script>
+
+
+    <title>SpringCloud（熔断器Hystrix） | CAYZLH</title>
 
     
-    <!-- rss -->
+    <!-- Third-Party CSS -->
     
-    
-      <link rel="alternate" href="/blog/true" title="CAYZLH" type="application/atom+xml">
-    
-<meta name="generator" content="Hexo 5.3.0"></head>
+        <link rel="icon" type="image/svg+xml" href="/blog/favicon.svg">
+        <link rel="stylesheet" href="/blog/css/thirdparty/bootstrap.min.css">
+        <link rel="stylesheet" href="/blog/css/thirdparty/octicons.css">
+        <link rel="stylesheet" href="/blog/css/thirdparty/hover-min.css">
+        <link rel="stylesheet" href="/blog/css/thirdparty/user-content.min.css">
+        <link rel="stylesheet" href="/blog/css/thirdparty/syntax.css">
+        <link rel="stylesheet" href="/blog/css/thirdparty/gitalk.css">
 
-<body class="max-width mx-auto px3 ltr">
-    
-      <div id="header-post">
-  <a id="menu-icon" href="#"><i class="fas fa-bars fa-lg"></i></a>
-  <a id="menu-icon-tablet" href="#"><i class="fas fa-bars fa-lg"></i></a>
-  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fas fa-chevron-up fa-lg"></i></a>
-  <span id="menu">
-    <span id="nav">
-      <ul>
-        
-          <li><a href="/blog/">Home</a></li>
-        
-          <li><a href="/blog/archives/">Articles</a></li>
-        
-          <li><a href="/blog/about/">About</a></li>
-        
-          <li><a href="/blog/search/">Search</a></li>
-        
-      </ul>
-    </span>
-    <br>
-    <span id="actions">
-      <ul>
-        
-        <li><a class="icon" href="/blog/2018/12/23/c10f5abe.html"><i class="fas fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
-        
-        
-        <li><a class="icon" href="/blog/2018/12/20/b6f15c0c.html"><i class="fas fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
-        
-        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
-<!--        <li><a class="icon" href="#"><i class="fas fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>-->
-      </ul>
-      <span id="i-prev" class="info" style="display:none;">Previous</span>
-      <span id="i-next" class="info" style="display:none;">Next</span>
-      <span id="i-top" class="info" style="display:none;">Back to top</span>
-      <span id="i-share" class="info" style="display:none;">Share post</span>
-    </span>
-    <br>
-    <div id="share" style="display: none">
-      <ul>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.facebook.com/sharer.php?u=https://www.cayzlh.com/2018/12/22/5a724b6.html"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://twitter.com/share?url=https://www.cayzlh.com/2018/12/22/5a724b6.html&text=SpringCloud（熔断器Hystrix）"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.linkedin.com/shareArticle?url=https://www.cayzlh.com/2018/12/22/5a724b6.html&title=SpringCloud（熔断器Hystrix）"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://pinterest.com/pin/create/bookmarklet/?url=https://www.cayzlh.com/2018/12/22/5a724b6.html&is_video=false&description=SpringCloud（熔断器Hystrix）"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="mailto:?subject=SpringCloud（熔断器Hystrix）&body=Check out this article: https://www.cayzlh.com/2018/12/22/5a724b6.html"><i class="fas fa-envelope " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://getpocket.com/save?url=https://www.cayzlh.com/2018/12/22/5a724b6.html&title=SpringCloud（熔断器Hystrix）"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://reddit.com/submit?url=https://www.cayzlh.com/2018/12/22/5a724b6.html&title=SpringCloud（熔断器Hystrix）"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.stumbleupon.com/submit?url=https://www.cayzlh.com/2018/12/22/5a724b6.html&title=SpringCloud（熔断器Hystrix）"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://digg.com/submit?url=https://www.cayzlh.com/2018/12/22/5a724b6.html&title=SpringCloud（熔断器Hystrix）"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.tumblr.com/share/link?url=https://www.cayzlh.com/2018/12/22/5a724b6.html&name=SpringCloud（熔断器Hystrix）&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://news.ycombinator.com/submitlink?u=https://www.cayzlh.com/2018/12/22/5a724b6.html&t=SpringCloud（熔断器Hystrix）"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
-</ul>
+        <!-- My CSS -->
+        <link rel="stylesheet" href="/blog/css/common.css">
 
-    </div>
-    <div id="toc">
-      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BD%BF%E7%94%A8Feign-Hystrix%E5%81%9A%E7%86%94%E6%96%AD%E5%99%A8"><span class="toc-number">1.</span> <span class="toc-text">使用Feign Hystrix做熔断器</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BF%AE%E6%94%B9%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6"><span class="toc-number">1.1.</span> <span class="toc-text">修改配置文件</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%88%9B%E5%BB%BA%E4%B8%80%E4%B8%AA%E5%9B%9E%E8%B0%83%E6%96%B9%E6%B3%95%E7%B1%BB"><span class="toc-number">1.2.</span> <span class="toc-text">创建一个回调方法类</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%AE%BE%E7%BD%AEfallback%E5%B1%9E%E6%80%A7"><span class="toc-number">1.3.</span> <span class="toc-text">设置fallback属性</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%B5%8B%E8%AF%95"><span class="toc-number">1.4.</span> <span class="toc-text">测试</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%9B%AA%E5%B4%A9%E6%95%88%E5%BA%94"><span class="toc-number">2.</span> <span class="toc-text">雪崩效应</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%86%94%E6%96%AD%E5%99%A8"><span class="toc-number">3.</span> <span class="toc-text">熔断器</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Hystrix%E7%89%B9%E6%80%A7"><span class="toc-number">3.1.</span> <span class="toc-text">Hystrix特性</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%96%AD%E8%B7%AF%E5%99%A8%E6%9C%BA%E5%88%B6"><span class="toc-number">3.1.1.</span> <span class="toc-text">断路器机制</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Fallback"><span class="toc-number">3.1.2.</span> <span class="toc-text">Fallback</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E8%B5%84%E6%BA%90%E9%9A%94%E7%A6%BB"><span class="toc-number">3.1.3.</span> <span class="toc-text">资源隔离</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%80%BB%E7%BB%93"><span class="toc-number">4.</span> <span class="toc-text">总结</span></a></li></ol>
-    </div>
-  </span>
+        <link rel="stylesheet" href="/blog/css/sidebar-post-nav.css">
+
+        <link rel="stylesheet" href="/blog/css/blog-page.css">
+        <!-- CSS set in page -->
+
+        
+        <link rel="stylesheet" href="/blog/css/sidebar-popular-repo.css">
+    
+
+    <!-- CSS set in layout -->
+    <link rel="stylesheet" type="text/css" href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css">
+
+    
+        <script type="text/javascript" src="/blog/js/thirdparty/jquery.min.js"></script>
+        <script type="text/javascript" src="/blog/js/thirdparty/bootstrap.min.js"></script>
+        <script type="text/javascript" src="/blog/js/lock.js"></script>
+    
+
+    
+        <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.css">
+        <script src="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js"></script>
+
+        <link rel="stylesheet" href="//imsun.github.io/gitment/style/default.css">
+        <script src="//imsun.github.io/gitment/dist/gitment.browser.js"></script>
+
+        <script src="//unpkg.com/valine/dist/Valine.min.js"></script>
+
+    
+
+    <link rel="stylesheet" href="//cdn.bootcss.com/highlight.js/9.2.0/styles/github.min.css">
+    <script src="//cdn.bootcss.com/highlight.js/9.2.0/highlight.min.js"></script>
+<meta name="generator" content="Hexo 4.2.1"><link rel="alternate" href="/blog/atom.xml" title="CAYZLH" type="application/atom+xml">
+</head>
+
+<body>
+<header class="site-header">
+    <div class="site-header-topbar">
+        <div class="container">
+            <div class="topbar-menu">
+
+    
+        <div class="item">
+            <a href="/blog/categories/" title="分类">
+                分类
+            </a>
+        </div>
+    
+        <div class="item">
+            <a href="/blog/tags/" title="标签">
+                标签
+            </a>
+        </div>
+    
+        <div class="item">
+            <a href="https://meiriyiwen.com/random" target="_blank" title="每日一文" rel="external nofollow noopener noreferrer">
+                每日一文
+            </a>
+        </div>
+    
+        <div class="item">
+            <a href="/blog/links/" title="链接">
+                链接
+            </a>
+        </div>
+    
+        <div class="item">
+            <a href="/blog/about" title="关于">
+                关于
+            </a>
+        </div>
+    
+
 </div>
+        </div>
+    </div>
+    <div class="container">
+        <a id="site-header-brand" href="/blog/" title="CAYZLH">
+            <span class="octicon octicon-mark-github"></span>
+            CAYZLH
+        </a>
 
+        <nav class="site-header-nav" role="navigation">
     
-    <div class="content index py4">
-        
-        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
-  <header>
+        <div class=" site-header-nav-item hvr-underline-from-center">
+            <a href="/blog/" title="Home">
+                Home
+            </a>
+            
+        </div>
     
-    <h1 class="posttitle" itemprop="name headline">
-        SpringCloud（熔断器Hystrix）
-    </h1>
+        <div class=" site-header-nav-item hvr-underline-from-center">
+            <a href="/blog/archives" title="Archives">
+                Archives
+            </a>
+            
+        </div>
+    
+        <div class=" site-header-nav-item hvr-underline-from-center">
+            <a href="/blog/" title="Learning">
+                Learning
+            </a>
+            
+                <ul class="submenu">
+                    
 
+                        <li>
+                            <a href="/blog/categories/%E4%B9%A6%E7%B1%8D/%E3%80%8A%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3Java%E8%99%9A%E6%8B%9F%E6%9C%BA%E3%80%8B/">
+                                <span>深入理解Java虚拟机</span>
+                            </a>
+                        </li>
 
+                    
 
-    <div class="meta">
-      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
-        <span itemprop="name">🐳Ant丶</span>
-      </span>
-      
-    <div class="postdate">
-      
-        <time datetime="2018-12-22T08:04:16.000Z" itemprop="datePublished">2018-12-22</time>
-        
-      
+                        <li>
+                            <a href="/blog/categories/%E4%B9%A6%E7%B1%8D/%E3%80%8AMyBatis%E6%8A%80%E6%9C%AF%E5%86%85%E5%B9%95%E3%80%8B/">
+                                <span>MyBatis技术内幕</span>
+                            </a>
+                        </li>
+
+                    
+
+                        <li>
+                            <a href="/blog/categories/Java/Java%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/">
+                                <span>Java设计模式</span>
+                            </a>
+                        </li>
+
+                    
+                </ul>
+            
+        </div>
+    
+        <div class=" site-header-nav-item hvr-underline-from-center">
+            <a href="/blog/" title="Tools">
+                Tools
+            </a>
+            
+                <ul class="submenu">
+                    
+
+                        <li>
+                            <a href="https://www.cayzlh.com/tools/online-JSONFormat/" target="_blank">
+                                <span>Json在线工具</span>
+                            </a>
+                        </li>
+
+                    
+
+                        <li>
+                            <a href="https://www.cayzlh.com/tools/online-markdown/" target="_blank">
+                                <span>Markdown在线转换工具</span>
+                            </a>
+                        </li>
+
+                    
+
+                        <li>
+                            <a href="https://www.cayzlh.com/tools/online-hash/" target="_blank">
+                                <span>在线HASH</span>
+                            </a>
+                        </li>
+
+                    
+                </ul>
+            
+        </div>
+    
+</nav>
     </div>
+</header>
+<main class="content">
+    <!-- 标题部分 -->
+<section class="jumbotron geopattern" data-pattern-id="SpringCloud（熔断器Hystrix）">
+    <div class="container">
+        <div id="jumbotron-meta-info">
+            <h1>SpringCloud（熔断器Hystrix）</h1>
+            <span class="meta-info">
+                <a><span class="octicon octicon-calendar"></span> 2018-12-22</a>
+                
+                    <a><span class="octicon octicon-book"></span></a>
+                    
+                        <a href="/blog/categories/Spring/">Spring</a>
+                    
+                        <a href="/blog/categories/Spring/SpringCloud/">SpringCloud</a>
+                    
+                
+                
+                    
+                
+            </span>
+        </div>
 
-
-      
-    <div class="article-category">
-        <i class="fas fa-archive"></i>
-        <a class="category-link" href="/blog/categories/Spring/">Spring</a> › <a class="category-link" href="/blog/categories/Spring/SpringCloud/">SpringCloud</a>
     </div>
+</section>
+<script>
+    $(document).ready(function(){
 
+        $('.geopattern').each(function(){
+            $(this).geopattern($(this).data('pattern-id'));
+        });
 
-      
-    <div class="article-tag">
-        <i class="fas fa-tag"></i>
-        <a class="tag-link-link" href="/blog/tags/Spring/" rel="tag">Spring</a>, <a class="tag-link-link" href="/blog/tags/SpringCloud/" rel="tag">SpringCloud</a>, <a class="tag-link-link" href="/blog/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" rel="tag">微服务</a>
-    </div>
-
-
-    </div>
-  </header>
-  
-
-  <div class="content" itemprop="articleBody">
-    <h2 id="使用Feign-Hystrix做熔断器"><a href="#使用Feign-Hystrix做熔断器" class="headerlink" title="使用Feign Hystrix做熔断器"></a>使用<code>Feign Hystrix</code>做熔断器</h2><p>熔断作用在服务调用的一端，要实现熔断器， 只需在服务消费者（<code>eureka-consumer</code>）上做改动就行。</p>
+    });
+</script>
+<!-- 文章内容部分 -->
+<article class="post container " itemscope itemtype="http://schema.org/BlogPosting" id="openwrite-container">
+    <div class="row">
+        <div class="col-md-9 markdown-body">
+            <!-- 文章开始部分 -->
+            <!--<div style="text-align:center">-->
+<!--    <img style="display:inline-block" width="130" height="27"-->
+<!--         src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/640-3.gif"-->
+<!--         data-loaded="true">-->
+<!--    <img style="display:inline-block" width="41" height="35"-->
+<!--         src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/640-4.gif"-->
+<!--         data-loaded="true">-->
+<!--    <img style="display:inline-block"-->
+<!--         width="130" height="27"-->
+<!--         src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/640-5.gif"-->
+<!--         data-loaded="true">-->
+<!--</div>-->
+            <h2 id="使用Feign-Hystrix做熔断器"><a href="#使用Feign-Hystrix做熔断器" class="headerlink" title="使用Feign Hystrix做熔断器"></a>使用<code>Feign Hystrix</code>做熔断器</h2><p>熔断作用在服务调用的一端，要实现熔断器， 只需在服务消费者（<code>eureka-consumer</code>）上做改动就行。</p>
 <p><em>Feign中已经依赖了Hystrix所以在maven配置上不用做任何改动。</em></p>
-<h3 id="修改配置文件"><a href="#修改配置文件" class="headerlink" title="修改配置文件"></a>修改配置文件</h3><figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">spring:</span></span><br><span class="line">  <span class="attr">application:</span></span><br><span class="line">    <span class="attr">name:</span> <span class="string">eureka-consumer</span></span><br><span class="line"><span class="attr">eureka:</span></span><br><span class="line">  <span class="attr">client:</span></span><br><span class="line">    <span class="attr">service-url:</span></span><br><span class="line">      <span class="attr">defaultZone:</span> <span class="string">http://localhost:28081/eureka/</span></span><br><span class="line"><span class="attr">server:</span></span><br><span class="line">  <span class="attr">port:</span> <span class="number">28085</span></span><br><span class="line"><span class="attr">feign:</span></span><br><span class="line">  <span class="attr">hystrix:</span></span><br><span class="line">    <span class="attr">enabled:</span> <span class="literal">true</span></span><br></pre></td></tr></table></figure>
+<h3 id="修改配置文件"><a href="#修改配置文件" class="headerlink" title="修改配置文件"></a>修改配置文件</h3><pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">spring</span><span class="token punctuation">:</span>
+  <span class="token key atrule">application</span><span class="token punctuation">:</span>
+    <span class="token key atrule">name</span><span class="token punctuation">:</span> eureka<span class="token punctuation">-</span>consumer
+<span class="token key atrule">eureka</span><span class="token punctuation">:</span>
+  <span class="token key atrule">client</span><span class="token punctuation">:</span>
+    <span class="token key atrule">service-url</span><span class="token punctuation">:</span>
+      <span class="token key atrule">defaultZone</span><span class="token punctuation">:</span> http<span class="token punctuation">:</span>//localhost<span class="token punctuation">:</span>28081/eureka/
+<span class="token key atrule">server</span><span class="token punctuation">:</span>
+  <span class="token key atrule">port</span><span class="token punctuation">:</span> <span class="token number">28085</span>
+<span class="token key atrule">feign</span><span class="token punctuation">:</span>
+  <span class="token key atrule">hystrix</span><span class="token punctuation">:</span>
+    <span class="token key atrule">enabled</span><span class="token punctuation">:</span> <span class="token boolean important">true</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <h3 id="创建一个回调方法类"><a href="#创建一个回调方法类" class="headerlink" title="创建一个回调方法类"></a>创建一个回调方法类</h3><p>创建 <code>HelloRemoteHystrix</code> 类实现 <code>HelloRemote</code> 中实现回调的方法</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Component</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">HelloRemoteHystrix</span> <span class="keyword">implements</span> <span class="title">HelloRemote</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> String <span class="title">hello</span><span class="params">(<span class="meta">@RequestParam(value = &quot;name&quot;)</span> String name)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="string">&quot;Hello，&quot;</span>+name+<span class="string">&quot; ，当前服务崩了。&quot;</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token annotation punctuation">@Component</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">HelloRemoteHystrix</span> <span class="token keyword">implements</span> <span class="token class-name">HelloRemote</span> <span class="token punctuation">{</span>
+
+    <span class="token annotation punctuation">@Override</span>
+    <span class="token keyword">public</span> String <span class="token function">hello</span><span class="token punctuation">(</span><span class="token annotation punctuation">@RequestParam</span><span class="token punctuation">(</span>value <span class="token operator">=</span> <span class="token string">"name"</span><span class="token punctuation">)</span> String name<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">return</span> <span class="token string">"Hello，"</span><span class="token operator">+</span>name<span class="token operator">+</span><span class="token string">" ，当前服务崩了。"</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <h3 id="设置fallback属性"><a href="#设置fallback属性" class="headerlink" title="设置fallback属性"></a>设置fallback属性</h3><p>在<code>HelloRemote</code>类添加指定 fallback 类，在服务熔断的时候返回 fallback 类中的内容。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@FeignClient(name = &quot;eureka-producer&quot;, fallback = HelloRemoteHystrix.class)</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">HelloRemote</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@GetMapping(&quot;/hello/&quot;)</span></span><br><span class="line">    <span class="function">String <span class="title">hello</span><span class="params">(<span class="meta">@RequestParam(value = &quot;name&quot;)</span> String name)</span></span>;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token annotation punctuation">@FeignClient</span><span class="token punctuation">(</span>name <span class="token operator">=</span> <span class="token string">"eureka-producer"</span><span class="token punctuation">,</span> fallback <span class="token operator">=</span> HelloRemoteHystrix<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">)</span>
+<span class="token keyword">public</span> <span class="token keyword">interface</span> <span class="token class-name">HelloRemote</span> <span class="token punctuation">{</span>
+
+    <span class="token annotation punctuation">@GetMapping</span><span class="token punctuation">(</span><span class="token string">"/hello/"</span><span class="token punctuation">)</span>
+    String <span class="token function">hello</span><span class="token punctuation">(</span><span class="token annotation punctuation">@RequestParam</span><span class="token punctuation">(</span>value <span class="token operator">=</span> <span class="token string">"name"</span><span class="token punctuation">)</span> String name<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>代码部分，到此为止就ok了。</p>
 <h3 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h3><p>启动三个项目（注册中心、服务提供者、服务消费者）</p>
-<p>访问<a target="_blank" rel="external nofollow noopener noreferrer" href="http://localhost:28085/hello/zhangsan">http://localhost:28085/hello/zhangsan</a>返回结果：</p>
+<p>访问<a href="http://localhost:28085/hello/zhangsan" target="_blank" rel="external nofollow noopener noreferrer">http://localhost:28085/hello/zhangsan</a>返回结果：</p>
 <p><img src="https://gitee.com/cayzlh/img-repo/raw/master/2020/04/17/egbFqA.png" alt="服务正常返回结果"></p>
-<p>可以看到当前是正常返回结果的，这个时候，把服务提供者的服务<code>kill</code>掉，再次访问<a target="_blank" rel="external nofollow noopener noreferrer" href="http://localhost:28085/hello/zhangsan">http://localhost:28085/hello/zhangsan</a>，返回结果：</p>
+<p>可以看到当前是正常返回结果的，这个时候，把服务提供者的服务<code>kill</code>掉，再次访问<a href="http://localhost:28085/hello/zhangsan" target="_blank" rel="external nofollow noopener noreferrer">http://localhost:28085/hello/zhangsan</a>，返回结果：</p>
 <p><img src="https://gitee.com/cayzlh/img-repo/raw/master/2020/04/17/C8IGdR.png" alt="服务熔断后的结果"></p>
 <p>说明熔断成功！</p>
 <h2 id="雪崩效应"><a href="#雪崩效应" class="headerlink" title="雪崩效应"></a>雪崩效应</h2><blockquote>
-<p>这段摘自<a target="_blank" rel="external nofollow noopener noreferrer" href="http://www.ityouknow.com/springcloud/2017/05/16/springcloud-hystrix.html">纯洁的微笑博客</a></p>
+<p>这段摘自<a href="http://www.ityouknow.com/springcloud/2017/05/16/springcloud-hystrix.html" target="_blank" rel="external nofollow noopener noreferrer">纯洁的微笑博客</a></p>
 </blockquote>
 <p>在微服务架构中通常会有多个服务层调用，基础服务的故障可能会导致级联故障，进而造成整个系统不可用的情况，这种现象被称为服务雪崩效应。服务雪崩效应是一种因“服务提供者”的不可用导致“服务消费者”的不可用,并将不可用逐渐放大的过程。</p>
 <p>如果下图所示：A作为服务提供者，B为A的服务消费者，C和D是B的服务消费者。A不可用引起了B的不可用，并将不可用像滚雪球一样放大到C和D时，雪崩效应就形成了。</p>
 <p><img src="https://gitee.com/cayzlh/img-repo/raw/master/2020/04/17/5fnF7p.png" alt="雪崩效应"></p>
 <h2 id="熔断器"><a href="#熔断器" class="headerlink" title="熔断器"></a>熔断器</h2><blockquote>
-<p>这段摘自<a target="_blank" rel="external nofollow noopener noreferrer" href="http://www.ityouknow.com/springcloud/2017/05/16/springcloud-hystrix.html">纯洁的微笑博客</a></p>
+<p>这段摘自<a href="http://www.ityouknow.com/springcloud/2017/05/16/springcloud-hystrix.html" target="_blank" rel="external nofollow noopener noreferrer">纯洁的微笑博客</a></p>
 </blockquote>
 <p>熔断器的原理很简单，如同电力过载保护器。它可以实现快速失败，如果它在一段时间内侦测到许多类似的错误，会强迫其以后的多个调用快速失败，不再访问远程服务器，从而防止应用程序不断地尝试执行可能会失败的操作，使得应用程序继续执行而不用等待修正错误，或者浪费CPU时间去等到长时间的超时产生。熔断器也可以使应用程序能够诊断错误是否已经修正，如果已经修正，应用程序会再次尝试调用操作。</p>
 <p>熔断器模式就像是那些容易导致错误的操作的一种代理。这种代理能够记录最近调用发生错误的次数，然后决定使用允许操作继续，或者立即返回错误。 熔断器开关相互转换的逻辑如下图：</p>
@@ -198,170 +323,308 @@
 <h4 id="资源隔离"><a href="#资源隔离" class="headerlink" title="资源隔离"></a>资源隔离</h4><p>在<code>Hystrix</code>中, 主要通过线程池来实现资源隔离. 通常在使用的时候我们会根据调用的远程服务划分出多个线程池. 例如调用产品服务的<code>Command</code>放入<code>A</code>线程池, 调用账户服务的<code>Command</code>放入B线程池. 这样做的主要优点是运行环境被隔离开了. 这样就算调用服务的代码存在<code>bug</code>或者由于其他原因导致自己所在线程池被耗尽时, 不会对系统的其他服务造成影响. 但是带来的代价就是维护多个线程池会对系统带来额外的性能开销. 如果是对性能有严格要求而且确信自己调用服务的客户端代码不会出问题的话, 可以使用<code>Hystrix</code>的信号模式(<code>Semaphores</code>)来隔离资源.</p>
 <h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>通过使用 <code>Hystrix</code>，我们能方便的防止雪崩效应，同时使系统具有自动降级和自动恢复服务的效果。</p>
 
-  </div>
-
-  
-    <div style="text-align:center;width:100%">
-      <img src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/640-2.gif">
-    </div>
-  
-
-  
-    <div>
-      <h4>版权声明</h4>
-      <pre>
-        
-        <strong>本文来源： </strong><a href="https://www.cayzlh.com/blog" title="🐳Ant丶" rel="noopener external nofollow noreferrer" target="_blank">https://www.cayzlh.com/blog</a>
-
-        <strong>本文链接：</strong><a href="https://www.cayzlh.com/2018/12/22/5a724b6.html" title="/blog/SpringCloud%EF%BC%88%E7%86%94%E6%96%AD%E5%99%A8Hystrix%EF%BC%89">https://www.cayzlh.com/2018/12/22/5a724b6.html</a>
-
-        <strong>版权声明： </strong>
-        
-          文章内容仅用作学习和分享，转载请注明出处
-        
-      </pre>
-    </div>
-  
-
-</article>
-
-
-
-        
-          <div id="footer-post-container">
-  <div id="footer-post">
-
-    <div id="nav-footer" style="display: none">
-      <ul>
-        
-          <li><a href="/blog/">Home</a></li>
-        
-          <li><a href="/blog/archives/">Articles</a></li>
-        
-          <li><a href="/blog/about/">About</a></li>
-        
-          <li><a href="/blog/search/">Search</a></li>
-        
-      </ul>
-    </div>
-
-    <div id="toc-footer" style="display: none">
-      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BD%BF%E7%94%A8Feign-Hystrix%E5%81%9A%E7%86%94%E6%96%AD%E5%99%A8"><span class="toc-number">1.</span> <span class="toc-text">使用Feign Hystrix做熔断器</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BF%AE%E6%94%B9%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6"><span class="toc-number">1.1.</span> <span class="toc-text">修改配置文件</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%88%9B%E5%BB%BA%E4%B8%80%E4%B8%AA%E5%9B%9E%E8%B0%83%E6%96%B9%E6%B3%95%E7%B1%BB"><span class="toc-number">1.2.</span> <span class="toc-text">创建一个回调方法类</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%AE%BE%E7%BD%AEfallback%E5%B1%9E%E6%80%A7"><span class="toc-number">1.3.</span> <span class="toc-text">设置fallback属性</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%B5%8B%E8%AF%95"><span class="toc-number">1.4.</span> <span class="toc-text">测试</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%9B%AA%E5%B4%A9%E6%95%88%E5%BA%94"><span class="toc-number">2.</span> <span class="toc-text">雪崩效应</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%86%94%E6%96%AD%E5%99%A8"><span class="toc-number">3.</span> <span class="toc-text">熔断器</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Hystrix%E7%89%B9%E6%80%A7"><span class="toc-number">3.1.</span> <span class="toc-text">Hystrix特性</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%96%AD%E8%B7%AF%E5%99%A8%E6%9C%BA%E5%88%B6"><span class="toc-number">3.1.1.</span> <span class="toc-text">断路器机制</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Fallback"><span class="toc-number">3.1.2.</span> <span class="toc-text">Fallback</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E8%B5%84%E6%BA%90%E9%9A%94%E7%A6%BB"><span class="toc-number">3.1.3.</span> <span class="toc-text">资源隔离</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%80%BB%E7%BB%93"><span class="toc-number">4.</span> <span class="toc-text">总结</span></a></li></ol>
-    </div>
-
-    <div id="share-footer" style="display: none">
-      <ul>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.facebook.com/sharer.php?u=https://www.cayzlh.com/2018/12/22/5a724b6.html"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://twitter.com/share?url=https://www.cayzlh.com/2018/12/22/5a724b6.html&text=SpringCloud（熔断器Hystrix）"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.linkedin.com/shareArticle?url=https://www.cayzlh.com/2018/12/22/5a724b6.html&title=SpringCloud（熔断器Hystrix）"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://pinterest.com/pin/create/bookmarklet/?url=https://www.cayzlh.com/2018/12/22/5a724b6.html&is_video=false&description=SpringCloud（熔断器Hystrix）"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="mailto:?subject=SpringCloud（熔断器Hystrix）&body=Check out this article: https://www.cayzlh.com/2018/12/22/5a724b6.html"><i class="fas fa-envelope fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://getpocket.com/save?url=https://www.cayzlh.com/2018/12/22/5a724b6.html&title=SpringCloud（熔断器Hystrix）"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://reddit.com/submit?url=https://www.cayzlh.com/2018/12/22/5a724b6.html&title=SpringCloud（熔断器Hystrix）"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.stumbleupon.com/submit?url=https://www.cayzlh.com/2018/12/22/5a724b6.html&title=SpringCloud（熔断器Hystrix）"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://digg.com/submit?url=https://www.cayzlh.com/2018/12/22/5a724b6.html&title=SpringCloud（熔断器Hystrix）"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.tumblr.com/share/link?url=https://www.cayzlh.com/2018/12/22/5a724b6.html&name=SpringCloud（熔断器Hystrix）&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://news.ycombinator.com/submitlink?u=https://www.cayzlh.com/2018/12/22/5a724b6.html&t=SpringCloud（熔断器Hystrix）"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
-</ul>
-
-    </div>
-
-    <div id="actions-footer">
-        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fas fa-bars fa-lg" aria-hidden="true"></i> Menu</a>
-        <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fas fa-list fa-lg" aria-hidden="true"></i> TOC</a>
-<!--        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fas fa-share-alt fa-lg" aria-hidden="true"></i> Share</a>-->
-        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a>
-    </div>
-
-  </div>
+            <!-- 文章结尾部分 -->
+            
+                
+<div style="text-align:center;width:100%">
+    <span class="octicon octicon-tag-add"></span>
+    
+        <a style="color: #24292e;" href="/blog/tags/Spring/">Spring</a>
+    
+        <a style="color: #24292e;" href="/blog/tags/SpringCloud/">SpringCloud</a>
+    
+        <a style="color: #24292e;" href="/blog/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/">微服务</a>
+    
 </div>
 
-        
-        <footer id="footer">
-  <div class="footer-left">
-    CAYZLH &copy;
-    
-    
-    2019-2021
-    粤ICP备20058712号-1
-  </div>
-  <div class="footer-right">
-    <nav>
-      <ul>
-        
-          <li><a href="/blog/tools/">tools</a></li>
-        
-          <li><a href="/blog/links/">links</a></li>
-        
-      </ul>
-    </nav>
-  </div>
-</footer>
 
+
+    <div style="text-align:center;width:100%">
+        <img src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/640-2.gif">
     </div>
-    <!-- styles -->
-
-<link rel="stylesheet" href="/blog/lib/font-awesome/css/all.min.css">
 
 
-<link rel="stylesheet" href="/blog/lib/justified-gallery/css/justifiedGallery.min.css">
 
 
-    <!-- jquery -->
-
-<script src="/blog/lib/jquery/jquery.min.js"></script>
-
-
-<script src="/blog/lib/justified-gallery/js/jquery.justifiedGallery.min.js"></script>
-
-<!-- clipboard -->
-
-  
-<script src="/blog/lib/clipboard/clipboard.min.js"></script>
-
-  <script type="text/javascript">
-  $(function() {
-    // copy-btn HTML
-    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"Copy to clipboard!\">";
-    btn += '<i class="far fa-clone"></i>';
-    btn += '</span>'; 
-    // mount it!
-    $(".highlight table").before(btn);
-    var clip = new ClipboardJS('.btn-copy', {
-      text: function(trigger) {
-        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
-      }
-    });
-    clip.on('success', function(e) {
-      e.trigger.setAttribute('aria-label', "Copied!");
-      e.clearSelection();
-    })
-  })
-  </script>
-
-
-<script src="/blog/js/main.js"></script>
-
-<!-- search -->
-
-<!-- Google Analytics -->
-
-    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-129095667-1"></script>
-    <script>
-        window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
-        gtag('js', new Date());
-        gtag('config', 'UA-129095667-1');
-    </script>
-
-<!-- Baidu Analytics -->
-
-<!-- Cloudflare Analytics -->
-
-<!-- Umami Analytics -->
-
-<!-- Disqus Comments -->
+<div>
+    <h4>相关推荐</h4>
+    <ul class="post-copyright">
+        
+        <li class="post-copyright-author">
+            <a href="/blog/2018/12/02/60e9e95d.html">Spring Cloud中的名词解释</a>
+        </li>
+        
+        <li class="post-copyright-author">
+            <a href="/blog/2018/12/23/c10f5abe.html">SpringCloud（Hystrix熔断监控面板）</a>
+        </li>
+        
+        <li class="post-copyright-author">
+            <a href="/blog/2018/12/29/9090e9d4.html">SpringCloud（Hystrix监控数据聚合Turbine）</a>
+        </li>
+        
+        <li class="post-copyright-author">
+            <a href="/blog/2018/12/30/5e7c1be9.html">SpringCloud（Git版配置中心）</a>
+        </li>
+        
+        <li class="post-copyright-author">
+            <a href="/blog/2018/12/20/b6f15c0c.html">SpringCloud（服务提供与发现Eureka）</a>
+        </li>
+        
+        <li class="post-copyright-author">
+            <a href="/blog/2019/01/04/a773bf3d.html">SpringCloud（分布式链路跟踪）</a>
+        </li>
+        
+    </ul>
+    <br><br>
+</div>
 
 
+
+<div>
+    <h4>版权声明</h4>
+    <blockquote>
+        <ul class="post-copyright">
+            <li class="post-copyright-author">
+                <strong>本文来源： </strong>
+                
+                <a href="https://www.cayzlh.com/blog" title="🐳Ant丶" rel="noopener external nofollow noreferrer" target="_blank">🐳Ant丶</a></li>
+            <li class="post-copyright-link">
+                <strong>本文链接：</strong>
+                <a href="https://www.cayzlh.com/2018/12/22/5a724b6.html" title="/blog/SpringCloud%EF%BC%88%E7%86%94%E6%96%AD%E5%99%A8Hystrix%EF%BC%89">https://www.cayzlh.com/2018/12/22/5a724b6.html</a>
+            </li>
+            <li class="post-copyright-license">
+                <strong>版权声明： </strong>
+                
+                    文章内容仅用作学习和分享，如有雷同，纯属拷贝。
+                
+            </li>
+        </ul>
+    </blockquote>
+</div>
+
+
+            
+            
+                <div class="comment">
+    <br><br><br>
+    
+        
+
+        
+
+        
+            <h4>留言区</h4>
+            <div id="valine-container"></div>
+            <script>
+                var GUEST_INFO = ['nick', 'mail', 'link'];
+                var guest_info = 'nick,link,mail'.split(',').filter(function (item) {
+                    return GUEST_INFO.indexOf(item) > -1;
+                });
+                new Valine({
+                    el: '#valine-container',
+                    appId: 'rEPr8FnwPatAARVnsKDFdvtI-gzGzoHsz',
+                    appKey: '7rsPiBWwuRFgagw214Esafmw',
+                    notify: 'false' === 'true',
+                    verify: 'false' === 'true',
+                    visitor: 'true' === 'true',
+                    avatar: 'identicon',
+                    pageSize: '10',
+                    lang: 'zh-cn',
+                    placeholder: '穿山甲到底说了啥～',
+                    guest_info: guest_info.length == 0 ? GUEST_INFO : guest_info
+                });
+            </script>
+        
+
+    
+</div>
+            
+        </div>
+        
+            <div class="col-md-3">
+                <h4>文章目录</h4>
+                <div id="toc" style="display: none;">
+                    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#使用Feign-Hystrix做熔断器"><span class="toc-text">使用Feign Hystrix做熔断器</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#修改配置文件"><span class="toc-text">修改配置文件</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#创建一个回调方法类"><span class="toc-text">创建一个回调方法类</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#设置fallback属性"><span class="toc-text">设置fallback属性</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#测试"><span class="toc-text">测试</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#雪崩效应"><span class="toc-text">雪崩效应</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#熔断器"><span class="toc-text">熔断器</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Hystrix特性"><span class="toc-text">Hystrix特性</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#总结"><span class="toc-text">总结</span></a></li></ol>
+                </div>
+                <div id="post-directory-module">
+                    <section class="post-directory">
+                        <!-- Links that trigger the jumping -->
+                        <!-- Added by javascript below -->
+                        <dl></dl>
+                    </section>
+                </div>
+
+                <script type="text/javascript">
+                    var getChild = function ($parent) {
+                        var child = {};
+                        child.path = $parent.find("a").attr("href");
+                        child.title = $parent.find("a").find("span").html();
+
+                        var $children = $($parent.children("ol").children());
+                        if ($children) {
+                            var children = [];
+                            $children.each(function () {
+                                children.push(getChild($(this)));
+                            });
+                            child.children = children;
+                        }
+                        return child;
+                    }
+                    $(document).ready(function () {
+                        var toc = [];
+                        $("#toc").children().children().each(function () {
+                            toc.push(getChild($(this)));
+                        });
+                        if (toc.length > 0) {
+                            $("#toc").remove();
+                            toc.forEach(function (t) {
+                                $(".post-directory dl").append("<dt><a class=\"jumper\" href="
+                                    + t.path
+                                    + ">"
+                                    + t.title
+                                    + "</a></dt>");
+                                var tc = t.children;
+                                if (tc.length > 0) {
+                                    tc.forEach(function (c) {
+                                        $(".post-directory dl").append(
+                                            "<dd><a class=\"jumper\" href="
+                                            + c.path
+                                            + ">"
+                                            + "&nbsp;&nbsp;- " + c.title
+                                            + "</a></dd>"
+                                        );
+                                    });
+                                }
+                            });
+
+                        }
+                        var fixmeTop = $('#post-directory-module').offset().top - 100;       // get initial position of the element
+
+                        $(window).scroll(function () {                  // assign scroll event listener
+
+                            var currentScroll = $(window).scrollTop(); // get current position
+
+                            if (currentScroll >= fixmeTop) {           // apply position: fixed if you
+                                $('#post-directory-module').css({      // scroll to that element or below it
+                                    top: '100px',
+                                    position: 'fixed',
+                                    width: 'inherit'
+                                });
+                            } else {                                   // apply position: static
+                                $('#post-directory-module').css({      // if you scroll above it
+                                    position: 'inherit',
+                                    width: 'inherit'
+                                });
+                            }
+
+                        });
+
+                        $("a.jumper").on("click", function (e) {
+
+                            e.preventDefault();
+
+                            $("body, html").animate({
+                                scrollTop: ($($(this).attr('href')).offset().top - 100)
+                            }, 600);
+
+                        });
+                    });
+
+                </script>
+            </div>
+        
+    </div>
+    
+</article>
+
+<script>
+    hljs.initHighlightingOnLoad();
+</script>
+</main>
+<footer class="container">
+    <div class="site-footer">
+        
+    <div class="card text-center">
+        <ul class="list-inline" style="margin-left: 0;">
+            
+                <li>
+                    <a target="_blank" href="https://github.com/cayzlh" rel="external nofollow noopener noreferrer">
+                          <span class="fa-stack fa-lg">
+                            <i class="fa fa-circle fa-stack-2x"></i>
+                            <i class="fa fa-github fa-stack-1x fa-inverse">
+                                
+                            </i>
+                          </span>
+                    </a>
+                </li>
+            
+                <li>
+                    <a target="_blank" href="https://www.zhihu.com/people/chenanyu" rel="external nofollow noopener noreferrer">
+                          <span class="fa-stack fa-lg">
+                            <i class="fa fa-circle fa-stack-2x"></i>
+                            <i class="fa  fa-stack-1x fa-inverse">
+                                知
+                            </i>
+                          </span>
+                    </a>
+                </li>
+            
+                <li>
+                    <a target="_blank" href="mailto:Q2F5emxo@cayzlh.com">
+                          <span class="fa-stack fa-lg">
+                            <i class="fa fa-circle fa-stack-2x"></i>
+                            <i class="fa fa-envelope fa-stack-1x fa-inverse">
+                                
+                            </i>
+                          </span>
+                    </a>
+                </li>
+            
+        </ul>
+    </div>
+
+
+        <div class="site-footer-links mobile-hidden">
+            
+                
+                
+            
+        </div>
+
+        <div class="site-footer-links mobile-hidden">
+        
+            <span class="meta-info-index hvr-grow">
+                
+                    <a href="https://www.cayzlh.com">
+                        🐳Ant丶 &copy; 2020
+                    </a>
+                
+            </span>
+        
+        
+            <span class="meta-info-index hvr-grow">
+                <a href="http://beian.miit.gov.cn" target="_blank" rel="external nofollow noopener noreferrer">粤ICP备20058712号-1</a>
+            </span>
+        
+        </div>
+
+        
+
+        
+    </div>
+    
+
+    
+        <!-- Third-Party JS -->
+        <script type="text/javascript" src="/blog/js/thirdparty/geopattern.min.js"></script>
+        <!-- My JS -->
+        <script type="text/javascript" src="/blog/js/script.js"></script>
+    
+
+    
+        <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js">
+        </script>
+    
+</footer>
 </body>
 </html>

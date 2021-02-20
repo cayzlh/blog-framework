@@ -1,170 +1,275 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
+
 <head>
-    <!-- so meta -->
     <meta charset="utf-8">
+    <meta name="keywords" content="Spring, IOC, Bean的实例化策略">
+    <meta name="description" content="Ant丶的网络日志, CAYZLH网络日志, CAYZLH, CAYZLH主页, Ant丶空间">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="HandheldFriendly" content="True">
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-    <meta name="description" content="Spring Bean的实例化策略：InstantiationStrategy">
-<meta property="og:type" content="article">
-<meta property="og:title" content="IOC之bean的实例化策略：InstantiationStrategy">
-<meta property="og:url" content="http://cmsblogs.com/?p=4022">
-<meta property="og:site_name" content="CAYZLH">
-<meta property="og:description" content="Spring Bean的实例化策略：InstantiationStrategy">
-<meta property="og:locale" content="en_US">
-<meta property="og:image" content="https://gitee.com/cayzlh/img-repo/raw/master/2020/05/27/15395929815414_38Okah_ZrNViV.jpg">
-<meta property="article:published_time" content="2020-01-24T12:59:40.000Z">
-<meta property="article:modified_time" content="2020-06-01T13:52:52.359Z">
-<meta property="article:author" content="🐳Ant丶">
-<meta property="article:tag" content="Spring">
-<meta property="article:tag" content="转载">
-<meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://gitee.com/cayzlh/img-repo/raw/master/2020/05/27/15395929815414_38Okah_ZrNViV.jpg">
-    
-    
-      
-        
-          <link rel="shortcut icon" href="/blog/images/favicon.ico">
-        
-      
-      
-        
-          <link rel="icon" type="image/png" href="/blog/images/favicon-192x192.png" sizes="192x192">
-        
-      
-      
-        
-          <link rel="apple-touch-icon" sizes="180x180" href="/blog/images/apple-touch-icon.png">
-        
-      
-    
-    <!-- title -->
-    <title>IOC之bean的实例化策略：InstantiationStrategy</title>
-    <!-- styles -->
-    
-<link rel="stylesheet" href="/blog/css/style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="renderer" content="webkit|ie-stand|ie-comp">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <!-- Global site tag (gtag.js) - Google Analytics -->
 
-    <!-- persian styles -->
-    
-      
-<link rel="stylesheet" href="/blog/css/rtl.css">
+    <meta name="google-site-verification" content="VrcbMTVpFGlHkIERHBt753dAtXKF4qirjnDweuXSRJw">
+
+
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-129095667-1"></script>
+<script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() {
+        dataLayer.push(arguments);
+    }
+
+    gtag('js', new Date());
+    gtag('config', 'UA-129095667-1');
+</script>
+
+
+    <title>IOC之bean的实例化策略：InstantiationStrategy | CAYZLH</title>
 
     
-    <!-- rss -->
+    <!-- Third-Party CSS -->
     
-    
-      <link rel="alternate" href="/blog/true" title="CAYZLH" type="application/atom+xml">
-    
-<meta name="generator" content="Hexo 5.3.0"></head>
+        <link rel="icon" type="image/svg+xml" href="/blog/favicon.svg">
+        <link rel="stylesheet" href="/blog/css/thirdparty/bootstrap.min.css">
+        <link rel="stylesheet" href="/blog/css/thirdparty/octicons.css">
+        <link rel="stylesheet" href="/blog/css/thirdparty/hover-min.css">
+        <link rel="stylesheet" href="/blog/css/thirdparty/user-content.min.css">
+        <link rel="stylesheet" href="/blog/css/thirdparty/syntax.css">
+        <link rel="stylesheet" href="/blog/css/thirdparty/gitalk.css">
 
-<body class="max-width mx-auto px3 ltr">
-    
-      <div id="header-post">
-  <a id="menu-icon" href="#"><i class="fas fa-bars fa-lg"></i></a>
-  <a id="menu-icon-tablet" href="#"><i class="fas fa-bars fa-lg"></i></a>
-  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fas fa-chevron-up fa-lg"></i></a>
-  <span id="menu">
-    <span id="nav">
-      <ul>
-        
-          <li><a href="/blog/">Home</a></li>
-        
-          <li><a href="/blog/archives/">Articles</a></li>
-        
-          <li><a href="/blog/about/">About</a></li>
-        
-          <li><a href="/blog/search/">Search</a></li>
-        
-      </ul>
-    </span>
-    <br>
-    <span id="actions">
-      <ul>
-        
-        <li><a class="icon" href="/blog/2020/01/25/86c712d3.html"><i class="fas fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
-        
-        
-        <li><a class="icon" href="/blog/2020/01/24/fcc18cc7.html"><i class="fas fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
-        
-        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
-<!--        <li><a class="icon" href="#"><i class="fas fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>-->
-      </ul>
-      <span id="i-prev" class="info" style="display:none;">Previous</span>
-      <span id="i-next" class="info" style="display:none;">Next</span>
-      <span id="i-top" class="info" style="display:none;">Back to top</span>
-      <span id="i-share" class="info" style="display:none;">Share post</span>
-    </span>
-    <br>
-    <div id="share" style="display: none">
-      <ul>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.facebook.com/sharer.php?u=https://www.cayzlh.com/2020/01/24/25302edf.html"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://twitter.com/share?url=https://www.cayzlh.com/2020/01/24/25302edf.html&text=IOC之bean的实例化策略：InstantiationStrategy"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.linkedin.com/shareArticle?url=https://www.cayzlh.com/2020/01/24/25302edf.html&title=IOC之bean的实例化策略：InstantiationStrategy"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://pinterest.com/pin/create/bookmarklet/?url=https://www.cayzlh.com/2020/01/24/25302edf.html&is_video=false&description=IOC之bean的实例化策略：InstantiationStrategy"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="mailto:?subject=IOC之bean的实例化策略：InstantiationStrategy&body=Check out this article: https://www.cayzlh.com/2020/01/24/25302edf.html"><i class="fas fa-envelope " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://getpocket.com/save?url=https://www.cayzlh.com/2020/01/24/25302edf.html&title=IOC之bean的实例化策略：InstantiationStrategy"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://reddit.com/submit?url=https://www.cayzlh.com/2020/01/24/25302edf.html&title=IOC之bean的实例化策略：InstantiationStrategy"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.stumbleupon.com/submit?url=https://www.cayzlh.com/2020/01/24/25302edf.html&title=IOC之bean的实例化策略：InstantiationStrategy"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://digg.com/submit?url=https://www.cayzlh.com/2020/01/24/25302edf.html&title=IOC之bean的实例化策略：InstantiationStrategy"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.tumblr.com/share/link?url=https://www.cayzlh.com/2020/01/24/25302edf.html&name=IOC之bean的实例化策略：InstantiationStrategy&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://news.ycombinator.com/submitlink?u=https://www.cayzlh.com/2020/01/24/25302edf.html&t=IOC之bean的实例化策略：InstantiationStrategy"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
-</ul>
+        <!-- My CSS -->
+        <link rel="stylesheet" href="/blog/css/common.css">
 
-    </div>
-    <div id="toc">
-      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#InstantiationStrategy"><span class="toc-number">1.</span> <span class="toc-text">InstantiationStrategy</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#SimpleInstantiationStrategy"><span class="toc-number">1.1.</span> <span class="toc-text">SimpleInstantiationStrategy</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#MethodOverrides"><span class="toc-number">1.2.</span> <span class="toc-text">MethodOverrides</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#CGLIB-%E5%AE%9E%E4%BE%8B%E5%8C%96%E7%AD%96%E7%95%A5"><span class="toc-number">1.3.</span> <span class="toc-text">CGLIB 实例化策略</span></a></li></ol></li></ol>
-    </div>
-  </span>
+        <link rel="stylesheet" href="/blog/css/sidebar-post-nav.css">
+
+        <link rel="stylesheet" href="/blog/css/blog-page.css">
+        <!-- CSS set in page -->
+
+        
+        <link rel="stylesheet" href="/blog/css/sidebar-popular-repo.css">
+    
+
+    <!-- CSS set in layout -->
+    <link rel="stylesheet" type="text/css" href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css">
+
+    
+        <script type="text/javascript" src="/blog/js/thirdparty/jquery.min.js"></script>
+        <script type="text/javascript" src="/blog/js/thirdparty/bootstrap.min.js"></script>
+        <script type="text/javascript" src="/blog/js/lock.js"></script>
+    
+
+    
+        <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.css">
+        <script src="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js"></script>
+
+        <link rel="stylesheet" href="//imsun.github.io/gitment/style/default.css">
+        <script src="//imsun.github.io/gitment/dist/gitment.browser.js"></script>
+
+        <script src="//unpkg.com/valine/dist/Valine.min.js"></script>
+
+    
+
+    <link rel="stylesheet" href="//cdn.bootcss.com/highlight.js/9.2.0/styles/github.min.css">
+    <script src="//cdn.bootcss.com/highlight.js/9.2.0/highlight.min.js"></script>
+<meta name="generator" content="Hexo 4.2.1"><link rel="alternate" href="/blog/atom.xml" title="CAYZLH" type="application/atom+xml">
+</head>
+
+<body>
+<header class="site-header">
+    <div class="site-header-topbar">
+        <div class="container">
+            <div class="topbar-menu">
+
+    
+        <div class="item">
+            <a href="/blog/categories/" title="分类">
+                分类
+            </a>
+        </div>
+    
+        <div class="item">
+            <a href="/blog/tags/" title="标签">
+                标签
+            </a>
+        </div>
+    
+        <div class="item">
+            <a href="https://meiriyiwen.com/random" target="_blank" title="每日一文" rel="external nofollow noopener noreferrer">
+                每日一文
+            </a>
+        </div>
+    
+        <div class="item">
+            <a href="/blog/links/" title="链接">
+                链接
+            </a>
+        </div>
+    
+        <div class="item">
+            <a href="/blog/about" title="关于">
+                关于
+            </a>
+        </div>
+    
+
 </div>
+        </div>
+    </div>
+    <div class="container">
+        <a id="site-header-brand" href="/blog/" title="CAYZLH">
+            <span class="octicon octicon-mark-github"></span>
+            CAYZLH
+        </a>
 
+        <nav class="site-header-nav" role="navigation">
     
-    <div class="content index py4">
-        
-        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
-  <header>
+        <div class=" site-header-nav-item hvr-underline-from-center">
+            <a href="/blog/" title="Home">
+                Home
+            </a>
+            
+        </div>
     
-    <h1 class="posttitle" itemprop="name headline">
-        IOC之bean的实例化策略：InstantiationStrategy
-    </h1>
+        <div class=" site-header-nav-item hvr-underline-from-center">
+            <a href="/blog/archives" title="Archives">
+                Archives
+            </a>
+            
+        </div>
+    
+        <div class=" site-header-nav-item hvr-underline-from-center">
+            <a href="/blog/" title="Learning">
+                Learning
+            </a>
+            
+                <ul class="submenu">
+                    
 
+                        <li>
+                            <a href="/blog/categories/%E4%B9%A6%E7%B1%8D/%E3%80%8A%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3Java%E8%99%9A%E6%8B%9F%E6%9C%BA%E3%80%8B/">
+                                <span>深入理解Java虚拟机</span>
+                            </a>
+                        </li>
 
+                    
 
-    <div class="meta">
-      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
-        <span itemprop="name">Java技术驿站 | chenssy |【死磕 Spring】| IOC之bean的实例化策略：InstantiationStrategy</span>
-      </span>
-      
-    <div class="postdate">
-      
-        <time datetime="2020-01-24T12:59:40.000Z" itemprop="datePublished">2020-01-24</time>
-        
-      
+                        <li>
+                            <a href="/blog/categories/%E4%B9%A6%E7%B1%8D/%E3%80%8AMyBatis%E6%8A%80%E6%9C%AF%E5%86%85%E5%B9%95%E3%80%8B/">
+                                <span>MyBatis技术内幕</span>
+                            </a>
+                        </li>
+
+                    
+
+                        <li>
+                            <a href="/blog/categories/Java/Java%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/">
+                                <span>Java设计模式</span>
+                            </a>
+                        </li>
+
+                    
+                </ul>
+            
+        </div>
+    
+        <div class=" site-header-nav-item hvr-underline-from-center">
+            <a href="/blog/" title="Tools">
+                Tools
+            </a>
+            
+                <ul class="submenu">
+                    
+
+                        <li>
+                            <a href="https://www.cayzlh.com/tools/online-JSONFormat/" target="_blank">
+                                <span>Json在线工具</span>
+                            </a>
+                        </li>
+
+                    
+
+                        <li>
+                            <a href="https://www.cayzlh.com/tools/online-markdown/" target="_blank">
+                                <span>Markdown在线转换工具</span>
+                            </a>
+                        </li>
+
+                    
+
+                        <li>
+                            <a href="https://www.cayzlh.com/tools/online-hash/" target="_blank">
+                                <span>在线HASH</span>
+                            </a>
+                        </li>
+
+                    
+                </ul>
+            
+        </div>
+    
+</nav>
     </div>
+</header>
+<main class="content">
+    <!-- 标题部分 -->
+<section class="jumbotron geopattern" data-pattern-id="IOC之bean的实例化策略：InstantiationStrategy">
+    <div class="container">
+        <div id="jumbotron-meta-info">
+            <h1>IOC之bean的实例化策略：InstantiationStrategy</h1>
+            <span class="meta-info">
+                <a><span class="octicon octicon-calendar"></span> 2020-01-24</a>
+                
+                    <a><span class="octicon octicon-book"></span></a>
+                    
+                        <a href="/blog/categories/Spring/">Spring</a>
+                    
+                        <a href="/blog/categories/Spring/%E3%80%8ASpring%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E3%80%8B/">《Spring源码分析》</a>
+                    
+                
+                
+                    
+                
+            </span>
+        </div>
 
-
-      
-    <div class="article-category">
-        <i class="fas fa-archive"></i>
-        <a class="category-link" href="/blog/categories/Spring/">Spring</a> › <a class="category-link" href="/blog/categories/Spring/%E3%80%8ASpring%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E3%80%8B/">《Spring源码分析》</a>
     </div>
+</section>
+<script>
+    $(document).ready(function(){
 
+        $('.geopattern').each(function(){
+            $(this).geopattern($(this).data('pattern-id'));
+        });
 
-      
-    <div class="article-tag">
-        <i class="fas fa-tag"></i>
-        <a class="tag-link-link" href="/blog/tags/Spring/" rel="tag">Spring</a>, <a class="tag-link-link" href="/blog/tags/%E8%BD%AC%E8%BD%BD/" rel="tag">转载</a>
-    </div>
-
-
-    </div>
-  </header>
-  
-
-  <div class="content" itemprop="articleBody">
-    <blockquote>
+    });
+</script>
+<!-- 文章内容部分 -->
+<article class="post container " itemscope itemtype="http://schema.org/BlogPosting" id="openwrite-container">
+    <div class="row">
+        <div class="col-md-9 markdown-body">
+            <!-- 文章开始部分 -->
+            <!--<div style="text-align:center">-->
+<!--    <img style="display:inline-block" width="130" height="27"-->
+<!--         src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/640-3.gif"-->
+<!--         data-loaded="true">-->
+<!--    <img style="display:inline-block" width="41" height="35"-->
+<!--         src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/640-4.gif"-->
+<!--         data-loaded="true">-->
+<!--    <img style="display:inline-block"-->
+<!--         width="130" height="27"-->
+<!--         src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/640-5.gif"-->
+<!--         data-loaded="true">-->
+<!--</div>-->
+            <blockquote>
 <p>本文作者：chenssy</p>
-<p>出处：<a target="_blank" rel="external nofollow noopener noreferrer" href="http://cmsblogs.com/?p=4022">http://cmsblogs.com/?p=4022</a></p>
+<p>出处：<a href="http://cmsblogs.com/?p=4022" target="_blank" rel="external nofollow noopener noreferrer">http://cmsblogs.com/?p=4022</a></p>
 <p>在学习<code>Spring源码</code>的过程中发现的好站+好贴，原创不易感谢作者。</p>
 <p>Spring版本：<strong>Spring 5.0.6.RELEASE</strong></p>
 </blockquote>
@@ -174,202 +279,524 @@
 <li>在 <code>createBeanInstance()</code> 中，如果 Supplier 不为空，则调用 <code>obtainFromSupplier()</code> 实例化 bean。如果 factory 不为空，则调用 <code>instantiateUsingFactoryMethod()</code> 实例化 bean ，如果都不是则调用 <code>instantiateBean()</code> 实例化bean 。但是无论是 <code>instantiateUsingFactoryMethod()</code> 还是 <code>instantiateBean()</code> 最后都一定会调用到 InstantiationStrategy 接口的 <code>instantiate()</code>。</li>
 </ol>
 <h2 id="InstantiationStrategy"><a href="#InstantiationStrategy" class="headerlink" title="InstantiationStrategy"></a>InstantiationStrategy</h2><p>InstantiationStrategy 接口定义了 Spring Bean 实例化的策略，根据创建对象情况的不同，提供了三种策略：<strong>无参构造方法</strong>、<strong>有参构造方法</strong>、<strong>工厂方法</strong>。如下：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">InstantiationStrategy</span> </span>&#123;</span><br><span class="line"></span><br><span class="line"> <span class="comment">/**</span></span><br><span class="line"><span class="comment">  * 默认构造方法</span></span><br><span class="line"><span class="comment">  */</span></span><br><span class="line"> <span class="function">Object <span class="title">instantiate</span><span class="params">(RootBeanDefinition bd, <span class="meta">@Nullable</span> String beanName, BeanFactory owner)</span></span></span><br><span class="line"><span class="function">   <span class="keyword">throws</span> BeansException</span>;</span><br><span class="line"></span><br><span class="line"> <span class="comment">/**</span></span><br><span class="line"><span class="comment">  * 指定构造方法</span></span><br><span class="line"><span class="comment">  */</span></span><br><span class="line"> <span class="function">Object <span class="title">instantiate</span><span class="params">(RootBeanDefinition bd, <span class="meta">@Nullable</span> String beanName, BeanFactory owner,</span></span></span><br><span class="line"><span class="function"><span class="params">   Constructor&lt;?&gt; ctor, <span class="meta">@Nullable</span> Object... args)</span> <span class="keyword">throws</span> BeansException</span>;</span><br><span class="line"></span><br><span class="line"> <span class="comment">/**</span></span><br><span class="line"><span class="comment">  * 工厂方法</span></span><br><span class="line"><span class="comment">  */</span></span><br><span class="line"> <span class="function">Object <span class="title">instantiate</span><span class="params">(RootBeanDefinition bd, <span class="meta">@Nullable</span> String beanName, BeanFactory owner,</span></span></span><br><span class="line"><span class="function"><span class="params">   <span class="meta">@Nullable</span> Object factoryBean, Method factoryMethod, <span class="meta">@Nullable</span> Object... args)</span></span></span><br><span class="line"><span class="function">   <span class="keyword">throws</span> BeansException</span>;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">interface</span> <span class="token class-name">InstantiationStrategy</span> <span class="token punctuation">{</span>
+
+ <span class="token comment" spellcheck="true">/**
+  * 默认构造方法
+  */</span>
+ Object <span class="token function">instantiate</span><span class="token punctuation">(</span>RootBeanDefinition bd<span class="token punctuation">,</span> <span class="token annotation punctuation">@Nullable</span> String beanName<span class="token punctuation">,</span> BeanFactory owner<span class="token punctuation">)</span>
+   <span class="token keyword">throws</span> BeansException<span class="token punctuation">;</span>
+
+ <span class="token comment" spellcheck="true">/**
+  * 指定构造方法
+  */</span>
+ Object <span class="token function">instantiate</span><span class="token punctuation">(</span>RootBeanDefinition bd<span class="token punctuation">,</span> <span class="token annotation punctuation">@Nullable</span> String beanName<span class="token punctuation">,</span> BeanFactory owner<span class="token punctuation">,</span>
+   Constructor<span class="token operator">&lt;</span><span class="token operator">?</span><span class="token operator">></span> ctor<span class="token punctuation">,</span> <span class="token annotation punctuation">@Nullable</span> Object<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span> args<span class="token punctuation">)</span> <span class="token keyword">throws</span> BeansException<span class="token punctuation">;</span>
+
+ <span class="token comment" spellcheck="true">/**
+  * 工厂方法
+  */</span>
+ Object <span class="token function">instantiate</span><span class="token punctuation">(</span>RootBeanDefinition bd<span class="token punctuation">,</span> <span class="token annotation punctuation">@Nullable</span> String beanName<span class="token punctuation">,</span> BeanFactory owner<span class="token punctuation">,</span>
+   <span class="token annotation punctuation">@Nullable</span> Object factoryBean<span class="token punctuation">,</span> Method factoryMethod<span class="token punctuation">,</span> <span class="token annotation punctuation">@Nullable</span> Object<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span> args<span class="token punctuation">)</span>
+   <span class="token keyword">throws</span> BeansException<span class="token punctuation">;</span>
+
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <h3 id="SimpleInstantiationStrategy"><a href="#SimpleInstantiationStrategy" class="headerlink" title="SimpleInstantiationStrategy"></a>SimpleInstantiationStrategy</h3><p><code>InstantiationStrategy</code> 接口有两个实现类：<code>SimpleInstantiationStrategy</code> 和 <code>CglibSubclassingInstantiationStrategy</code>。</p>
 <p><code>SimpleInstantiationStrategy</code> 对以上三个方法都做了简单的实现。</p>
 <p>如果是工厂方法实例化，则直接使用反射创建对象，如下：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> Object <span class="title">instantiate</span><span class="params">(RootBeanDefinition bd, <span class="meta">@Nullable</span> String beanName, BeanFactory owner,</span></span></span><br><span class="line"><span class="function"><span class="params">                          <span class="meta">@Nullable</span> Object factoryBean, <span class="keyword">final</span> Method factoryMethod, <span class="meta">@Nullable</span> Object... args)</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">try</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (System.getSecurityManager() != <span class="keyword">null</span>) &#123;</span><br><span class="line">      AccessController.doPrivileged((PrivilegedAction&lt;Object&gt;) () -&gt; &#123;</span><br><span class="line">        ReflectionUtils.makeAccessible(factoryMethod);</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">      &#125;);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span> &#123;</span><br><span class="line">      ReflectionUtils.makeAccessible(factoryMethod);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    Method priorInvokedFactoryMethod = currentlyInvokedFactoryMethod.get();</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">      currentlyInvokedFactoryMethod.set(factoryMethod);</span><br><span class="line">      Object result = factoryMethod.invoke(factoryBean, args);</span><br><span class="line">      <span class="keyword">if</span> (result == <span class="keyword">null</span>) &#123;</span><br><span class="line">        result = <span class="keyword">new</span> NullBean();</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">return</span> result;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">finally</span> &#123;</span><br><span class="line">      <span class="keyword">if</span> (priorInvokedFactoryMethod != <span class="keyword">null</span>) &#123;</span><br><span class="line">        currentlyInvokedFactoryMethod.set(priorInvokedFactoryMethod);</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">else</span> &#123;</span><br><span class="line">        currentlyInvokedFactoryMethod.remove();</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="comment">// 省略 catch</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> Object <span class="token function">instantiate</span><span class="token punctuation">(</span>RootBeanDefinition bd<span class="token punctuation">,</span> <span class="token annotation punctuation">@Nullable</span> String beanName<span class="token punctuation">,</span> BeanFactory owner<span class="token punctuation">,</span>
+                          <span class="token annotation punctuation">@Nullable</span> Object factoryBean<span class="token punctuation">,</span> <span class="token keyword">final</span> Method factoryMethod<span class="token punctuation">,</span> <span class="token annotation punctuation">@Nullable</span> Object<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span> args<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+
+  <span class="token keyword">try</span> <span class="token punctuation">{</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>System<span class="token punctuation">.</span><span class="token function">getSecurityManager</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">!=</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+      AccessController<span class="token punctuation">.</span><span class="token function">doPrivileged</span><span class="token punctuation">(</span><span class="token punctuation">(</span>PrivilegedAction<span class="token operator">&lt;</span>Object<span class="token operator">></span><span class="token punctuation">)</span> <span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">></span> <span class="token punctuation">{</span>
+        ReflectionUtils<span class="token punctuation">.</span><span class="token function">makeAccessible</span><span class="token punctuation">(</span>factoryMethod<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">return</span> null<span class="token punctuation">;</span>
+      <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    <span class="token keyword">else</span> <span class="token punctuation">{</span>
+      ReflectionUtils<span class="token punctuation">.</span><span class="token function">makeAccessible</span><span class="token punctuation">(</span>factoryMethod<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    Method priorInvokedFactoryMethod <span class="token operator">=</span> currentlyInvokedFactoryMethod<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">try</span> <span class="token punctuation">{</span>
+      currentlyInvokedFactoryMethod<span class="token punctuation">.</span><span class="token function">set</span><span class="token punctuation">(</span>factoryMethod<span class="token punctuation">)</span><span class="token punctuation">;</span>
+      Object result <span class="token operator">=</span> factoryMethod<span class="token punctuation">.</span><span class="token function">invoke</span><span class="token punctuation">(</span>factoryBean<span class="token punctuation">,</span> args<span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token keyword">if</span> <span class="token punctuation">(</span>result <span class="token operator">==</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        result <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">NullBean</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token punctuation">}</span>
+      <span class="token keyword">return</span> result<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    <span class="token keyword">finally</span> <span class="token punctuation">{</span>
+      <span class="token keyword">if</span> <span class="token punctuation">(</span>priorInvokedFactoryMethod <span class="token operator">!=</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        currentlyInvokedFactoryMethod<span class="token punctuation">.</span><span class="token function">set</span><span class="token punctuation">(</span>priorInvokedFactoryMethod<span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token punctuation">}</span>
+      <span class="token keyword">else</span> <span class="token punctuation">{</span>
+        currentlyInvokedFactoryMethod<span class="token punctuation">.</span><span class="token function">remove</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+  <span class="token punctuation">}</span>
+  <span class="token comment" spellcheck="true">// 省略 catch</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>如果是构造方法实例化，则是先判断是否有 MethodOverrides，如果没有则是直接使用反射，如果有则就需要 CGLIB 实例化对象。如下：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> Object <span class="title">instantiate</span><span class="params">(RootBeanDefinition bd, <span class="meta">@Nullable</span> String beanName, BeanFactory owner)</span> </span>&#123;</span><br><span class="line">  <span class="comment">// Don&#x27;t override the class with CGLIB if no overrides.</span></span><br><span class="line">  <span class="keyword">if</span> (!bd.hasMethodOverrides()) &#123;</span><br><span class="line">    Constructor&lt;?&gt; constructorToUse;</span><br><span class="line">    <span class="keyword">synchronized</span> (bd.constructorArgumentLock) &#123;</span><br><span class="line">      constructorToUse = (Constructor&lt;?&gt;) bd.resolvedConstructorOrFactoryMethod;</span><br><span class="line">      <span class="keyword">if</span> (constructorToUse == <span class="keyword">null</span>) &#123;</span><br><span class="line">        <span class="keyword">final</span> Class&lt;?&gt; clazz = bd.getBeanClass();</span><br><span class="line">        <span class="keyword">if</span> (clazz.isInterface()) &#123;</span><br><span class="line">          <span class="keyword">throw</span> <span class="keyword">new</span> BeanInstantiationException(clazz, <span class="string">&quot;Specified class is an interface&quot;</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">          <span class="keyword">if</span> (System.getSecurityManager() != <span class="keyword">null</span>) &#123;</span><br><span class="line">            constructorToUse = AccessController.doPrivileged(</span><br><span class="line">              (PrivilegedExceptionAction&lt;Constructor&lt;?&gt;&gt;) clazz::getDeclaredConstructor);</span><br><span class="line">          &#125;</span><br><span class="line">          <span class="keyword">else</span> &#123;</span><br><span class="line">            constructorToUse =   clazz.getDeclaredConstructor();</span><br><span class="line">          &#125;</span><br><span class="line">          bd.resolvedConstructorOrFactoryMethod = constructorToUse;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">catch</span> (Throwable ex) &#123;</span><br><span class="line">          <span class="keyword">throw</span> <span class="keyword">new</span> BeanInstantiationException(clazz, <span class="string">&quot;No default constructor found&quot;</span>, ex);</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> BeanUtils.instantiateClass(constructorToUse);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="comment">// Must generate CGLIB subclass.</span></span><br><span class="line">    <span class="keyword">return</span> instantiateWithMethodInjection(bd, beanName, owner);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">public</span> Object <span class="title">instantiate</span><span class="params">(RootBeanDefinition bd, <span class="meta">@Nullable</span> String beanName, BeanFactory owner,</span></span></span><br><span class="line"><span class="function"><span class="params">                          <span class="keyword">final</span> Constructor&lt;?&gt; ctor, <span class="meta">@Nullable</span> Object... args)</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> (!bd.hasMethodOverrides()) &#123;</span><br><span class="line">    <span class="keyword">if</span> (System.getSecurityManager() != <span class="keyword">null</span>) &#123;</span><br><span class="line">      <span class="comment">// use own privileged to change accessibility (when security is on)</span></span><br><span class="line">      AccessController.doPrivileged((PrivilegedAction&lt;Object&gt;) () -&gt; &#123;</span><br><span class="line">        ReflectionUtils.makeAccessible(ctor);</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">      &#125;);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> (args != <span class="keyword">null</span> ? BeanUtils.instantiateClass(ctor, args) : BeanUtils.instantiateClass(ctor));</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> instantiateWithMethodInjection(bd, beanName, owner, ctor, args);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> Object <span class="token function">instantiate</span><span class="token punctuation">(</span>RootBeanDefinition bd<span class="token punctuation">,</span> <span class="token annotation punctuation">@Nullable</span> String beanName<span class="token punctuation">,</span> BeanFactory owner<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+  <span class="token comment" spellcheck="true">// Don't override the class with CGLIB if no overrides.</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>bd<span class="token punctuation">.</span><span class="token function">hasMethodOverrides</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    Constructor<span class="token operator">&lt;</span><span class="token operator">?</span><span class="token operator">></span> constructorToUse<span class="token punctuation">;</span>
+    <span class="token keyword">synchronized</span> <span class="token punctuation">(</span>bd<span class="token punctuation">.</span>constructorArgumentLock<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+      constructorToUse <span class="token operator">=</span> <span class="token punctuation">(</span>Constructor<span class="token operator">&lt;</span><span class="token operator">?</span><span class="token operator">></span><span class="token punctuation">)</span> bd<span class="token punctuation">.</span>resolvedConstructorOrFactoryMethod<span class="token punctuation">;</span>
+      <span class="token keyword">if</span> <span class="token punctuation">(</span>constructorToUse <span class="token operator">==</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">final</span> Class<span class="token operator">&lt;</span><span class="token operator">?</span><span class="token operator">></span> clazz <span class="token operator">=</span> bd<span class="token punctuation">.</span><span class="token function">getBeanClass</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>clazz<span class="token punctuation">.</span><span class="token function">isInterface</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+          <span class="token keyword">throw</span> <span class="token keyword">new</span> <span class="token class-name">BeanInstantiationException</span><span class="token punctuation">(</span>clazz<span class="token punctuation">,</span> <span class="token string">"Specified class is an interface"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+        <span class="token keyword">try</span> <span class="token punctuation">{</span>
+          <span class="token keyword">if</span> <span class="token punctuation">(</span>System<span class="token punctuation">.</span><span class="token function">getSecurityManager</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">!=</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            constructorToUse <span class="token operator">=</span> AccessController<span class="token punctuation">.</span><span class="token function">doPrivileged</span><span class="token punctuation">(</span>
+              <span class="token punctuation">(</span>PrivilegedExceptionAction<span class="token operator">&lt;</span>Constructor<span class="token operator">&lt;</span><span class="token operator">?</span><span class="token operator">>></span><span class="token punctuation">)</span> clazz<span class="token operator">:</span><span class="token operator">:</span>getDeclaredConstructor<span class="token punctuation">)</span><span class="token punctuation">;</span>
+          <span class="token punctuation">}</span>
+          <span class="token keyword">else</span> <span class="token punctuation">{</span>
+            constructorToUse <span class="token operator">=</span>   clazz<span class="token punctuation">.</span><span class="token function">getDeclaredConstructor</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+          <span class="token punctuation">}</span>
+          bd<span class="token punctuation">.</span>resolvedConstructorOrFactoryMethod <span class="token operator">=</span> constructorToUse<span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+        <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">Throwable</span> ex<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+          <span class="token keyword">throw</span> <span class="token keyword">new</span> <span class="token class-name">BeanInstantiationException</span><span class="token punctuation">(</span>clazz<span class="token punctuation">,</span> <span class="token string">"No default constructor found"</span><span class="token punctuation">,</span> ex<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+      <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+    <span class="token keyword">return</span> BeanUtils<span class="token punctuation">.</span><span class="token function">instantiateClass</span><span class="token punctuation">(</span>constructorToUse<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+  <span class="token keyword">else</span> <span class="token punctuation">{</span>
+    <span class="token comment" spellcheck="true">// Must generate CGLIB subclass.</span>
+    <span class="token keyword">return</span> <span class="token function">instantiateWithMethodInjection</span><span class="token punctuation">(</span>bd<span class="token punctuation">,</span> beanName<span class="token punctuation">,</span> owner<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+
+<span class="token keyword">public</span> Object <span class="token function">instantiate</span><span class="token punctuation">(</span>RootBeanDefinition bd<span class="token punctuation">,</span> <span class="token annotation punctuation">@Nullable</span> String beanName<span class="token punctuation">,</span> BeanFactory owner<span class="token punctuation">,</span>
+                          <span class="token keyword">final</span> Constructor<span class="token operator">&lt;</span><span class="token operator">?</span><span class="token operator">></span> ctor<span class="token punctuation">,</span> <span class="token annotation punctuation">@Nullable</span> Object<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span> args<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+
+  <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>bd<span class="token punctuation">.</span><span class="token function">hasMethodOverrides</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>System<span class="token punctuation">.</span><span class="token function">getSecurityManager</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">!=</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+      <span class="token comment" spellcheck="true">// use own privileged to change accessibility (when security is on)</span>
+      AccessController<span class="token punctuation">.</span><span class="token function">doPrivileged</span><span class="token punctuation">(</span><span class="token punctuation">(</span>PrivilegedAction<span class="token operator">&lt;</span>Object<span class="token operator">></span><span class="token punctuation">)</span> <span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">></span> <span class="token punctuation">{</span>
+        ReflectionUtils<span class="token punctuation">.</span><span class="token function">makeAccessible</span><span class="token punctuation">(</span>ctor<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">return</span> null<span class="token punctuation">;</span>
+      <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    <span class="token keyword">return</span> <span class="token punctuation">(</span>args <span class="token operator">!=</span> null <span class="token operator">?</span> BeanUtils<span class="token punctuation">.</span><span class="token function">instantiateClass</span><span class="token punctuation">(</span>ctor<span class="token punctuation">,</span> args<span class="token punctuation">)</span> <span class="token operator">:</span> BeanUtils<span class="token punctuation">.</span><span class="token function">instantiateClass</span><span class="token punctuation">(</span>ctor<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+  <span class="token keyword">else</span> <span class="token punctuation">{</span>
+    <span class="token keyword">return</span> <span class="token function">instantiateWithMethodInjection</span><span class="token punctuation">(</span>bd<span class="token punctuation">,</span> beanName<span class="token punctuation">,</span> owner<span class="token punctuation">,</span> ctor<span class="token punctuation">,</span> args<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>SimpleInstantiationStrategy 对 <code>instantiateWithMethodInjection()</code> 的实现任务交给了子类 CglibSubclassingInstantiationStrategy。</p>
 <h3 id="MethodOverrides"><a href="#MethodOverrides" class="headerlink" title="MethodOverrides"></a>MethodOverrides</h3><p>对于 MethodOverrides，在 BeanDefinitionParserDelegate 类解析 <code>&lt;bean/&gt;</code> 的时候是否还记得这两个方法：<code>parseLookupOverrideSubElements()</code> 和 <code>parseReplacedMethodSubElements()</code> 这两个方法分别用于解析 lookup-method 和 replaced-method。<code>parseLookupOverrideSubElements()</code> 源码如下：</p>
 <p><img src="https://gitee.com/cayzlh/img-repo/raw/master/2020/05/27/15395929815414_38Okah_ZrNViV.jpg" alt="img"></p>
 <p>更多关于 lookup-method 和 replaced-method 请看：<a href="/2020/01/24/fa973ffe.html">IOC 之解析 bean 标签：meta、lookup-method、replace-method</a></p>
 <h3 id="CGLIB-实例化策略"><a href="#CGLIB-实例化策略" class="headerlink" title="CGLIB 实例化策略"></a>CGLIB 实例化策略</h3><p>类 CglibSubclassingInstantiationStrategy 为 Spring 实例化 bean 的默认实例化策略，其主要功能还是对父类功能进行补充：其父类将 CGLIB 的实例化策略委托其实现。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// SimpleInstantiationStrategy</span></span><br><span class="line"><span class="function"><span class="keyword">protected</span> Object <span class="title">instantiateWithMethodInjection</span><span class="params">(RootBeanDefinition bd, <span class="meta">@Nullable</span> String beanName, BeanFactory owner)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">throw</span> <span class="keyword">new</span> UnsupportedOperationException(<span class="string">&quot;Method Injection not supported in SimpleInstantiationStrategy&quot;</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// CglibSubclassingInstantiationStrategy</span></span><br><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">protected</span> Object <span class="title">instantiateWithMethodInjection</span><span class="params">(RootBeanDefinition bd, <span class="meta">@Nullable</span> String beanName, BeanFactory owner)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> instantiateWithMethodInjection(bd, beanName, owner, <span class="keyword">null</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token comment" spellcheck="true">// SimpleInstantiationStrategy</span>
+<span class="token keyword">protected</span> Object <span class="token function">instantiateWithMethodInjection</span><span class="token punctuation">(</span>RootBeanDefinition bd<span class="token punctuation">,</span> <span class="token annotation punctuation">@Nullable</span> String beanName<span class="token punctuation">,</span> BeanFactory owner<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+  <span class="token keyword">throw</span> <span class="token keyword">new</span> <span class="token class-name">UnsupportedOperationException</span><span class="token punctuation">(</span><span class="token string">"Method Injection not supported in SimpleInstantiationStrategy"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+
+<span class="token comment" spellcheck="true">// CglibSubclassingInstantiationStrategy</span>
+<span class="token annotation punctuation">@Override</span>
+<span class="token keyword">protected</span> Object <span class="token function">instantiateWithMethodInjection</span><span class="token punctuation">(</span>RootBeanDefinition bd<span class="token punctuation">,</span> <span class="token annotation punctuation">@Nullable</span> String beanName<span class="token punctuation">,</span> BeanFactory owner<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+  <span class="token keyword">return</span> <span class="token function">instantiateWithMethodInjection</span><span class="token punctuation">(</span>bd<span class="token punctuation">,</span> beanName<span class="token punctuation">,</span> owner<span class="token punctuation">,</span> null<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>CglibSubclassingInstantiationStrategy 实例化 bean 策略是通过其内部类 CglibSubclassCreator 来实现的。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> Object <span class="title">instantiateWithMethodInjection</span><span class="params">(RootBeanDefinition bd, <span class="meta">@Nullable</span> String beanName, BeanFactory owner,</span></span></span><br><span class="line"><span class="function"><span class="params">                                                <span class="meta">@Nullable</span> Constructor&lt;?&gt; ctor, <span class="meta">@Nullable</span> Object... args)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> <span class="keyword">new</span> CglibSubclassCreator(bd, owner).instantiate(ctor, args);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">protected</span> Object <span class="token function">instantiateWithMethodInjection</span><span class="token punctuation">(</span>RootBeanDefinition bd<span class="token punctuation">,</span> <span class="token annotation punctuation">@Nullable</span> String beanName<span class="token punctuation">,</span> BeanFactory owner<span class="token punctuation">,</span>
+                                                <span class="token annotation punctuation">@Nullable</span> Constructor<span class="token operator">&lt;</span><span class="token operator">?</span><span class="token operator">></span> ctor<span class="token punctuation">,</span> <span class="token annotation punctuation">@Nullable</span> Object<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span> args<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+  <span class="token keyword">return</span> <span class="token keyword">new</span> <span class="token class-name">CglibSubclassCreator</span><span class="token punctuation">(</span>bd<span class="token punctuation">,</span> owner<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">instantiate</span><span class="token punctuation">(</span>ctor<span class="token punctuation">,</span> args<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
 <p>创建 CglibSubclassCreator 实例然后调用其 <code>instantiate()</code>，该方法用于动态创建子类实例，同时实现所需要的 lookups（lookup-method、replace-method）。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> Object <span class="title">instantiate</span><span class="params">(<span class="meta">@Nullable</span> Constructor&lt;?&gt; ctor, <span class="meta">@Nullable</span> Object... args)</span> </span>&#123;</span><br><span class="line">  Class&lt;?&gt; subclass = createEnhancedSubclass(<span class="keyword">this</span>.beanDefinition);</span><br><span class="line">  Object instance;</span><br><span class="line">  <span class="keyword">if</span> (ctor == <span class="keyword">null</span>) &#123;</span><br><span class="line">    instance = BeanUtils.instantiateClass(subclass);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">      Constructor&lt;?&gt; enhancedSubclassConstructor = subclass.getConstructor(ctor.getParameterTypes());</span><br><span class="line">      instance = enhancedSubclassConstructor.newInstance(args);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">catch</span> (Exception ex) &#123;</span><br><span class="line">      <span class="keyword">throw</span> <span class="keyword">new</span> BeanInstantiationException(<span class="keyword">this</span>.beanDefinition.getBeanClass(),</span><br><span class="line">                                           <span class="string">&quot;Failed to invoke constructor for CGLIB enhanced subclass [&quot;</span> + subclass.getName() + <span class="string">&quot;]&quot;</span>, ex);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">//这个地方解决一个bug，bug提交报告https://jira.spring.io/browse/SPR-10785</span></span><br><span class="line">  <span class="comment">// SPR-10785: set callbacks directly on the instance instead of in the</span></span><br><span class="line">  <span class="comment">// enhanced class (via the Enhancer) in order to avoid memory leaks.</span></span><br><span class="line">  Factory factory = (Factory) instance;</span><br><span class="line">  factory.setCallbacks(<span class="keyword">new</span> Callback[] &#123;NoOp.INSTANCE,</span><br><span class="line">                                       <span class="keyword">new</span> LookupOverrideMethodInterceptor(<span class="keyword">this</span>.beanDefinition, <span class="keyword">this</span>.owner),</span><br><span class="line">                                       <span class="keyword">new</span> ReplaceOverrideMethodInterceptor(<span class="keyword">this</span>.beanDefinition, <span class="keyword">this</span>.owner)&#125;);</span><br><span class="line">  <span class="keyword">return</span> instance;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> Object <span class="token function">instantiate</span><span class="token punctuation">(</span><span class="token annotation punctuation">@Nullable</span> Constructor<span class="token operator">&lt;</span><span class="token operator">?</span><span class="token operator">></span> ctor<span class="token punctuation">,</span> <span class="token annotation punctuation">@Nullable</span> Object<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span> args<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+  Class<span class="token operator">&lt;</span><span class="token operator">?</span><span class="token operator">></span> subclass <span class="token operator">=</span> <span class="token function">createEnhancedSubclass</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>beanDefinition<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  Object instance<span class="token punctuation">;</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span>ctor <span class="token operator">==</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    instance <span class="token operator">=</span> BeanUtils<span class="token punctuation">.</span><span class="token function">instantiateClass</span><span class="token punctuation">(</span>subclass<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+  <span class="token keyword">else</span> <span class="token punctuation">{</span>
+    <span class="token keyword">try</span> <span class="token punctuation">{</span>
+      Constructor<span class="token operator">&lt;</span><span class="token operator">?</span><span class="token operator">></span> enhancedSubclassConstructor <span class="token operator">=</span> subclass<span class="token punctuation">.</span><span class="token function">getConstructor</span><span class="token punctuation">(</span>ctor<span class="token punctuation">.</span><span class="token function">getParameterTypes</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+      instance <span class="token operator">=</span> enhancedSubclassConstructor<span class="token punctuation">.</span><span class="token function">newInstance</span><span class="token punctuation">(</span>args<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">Exception</span> ex<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+      <span class="token keyword">throw</span> <span class="token keyword">new</span> <span class="token class-name">BeanInstantiationException</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>beanDefinition<span class="token punctuation">.</span><span class="token function">getBeanClass</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+                                           <span class="token string">"Failed to invoke constructor for CGLIB enhanced subclass ["</span> <span class="token operator">+</span> subclass<span class="token punctuation">.</span><span class="token function">getName</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">+</span> <span class="token string">"]"</span><span class="token punctuation">,</span> ex<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+  <span class="token punctuation">}</span>
+
+  <span class="token comment" spellcheck="true">//这个地方解决一个bug，bug提交报告https://jira.spring.io/browse/SPR-10785</span>
+  <span class="token comment" spellcheck="true">// SPR-10785: set callbacks directly on the instance instead of in the</span>
+  <span class="token comment" spellcheck="true">// enhanced class (via the Enhancer) in order to avoid memory leaks.</span>
+  Factory factory <span class="token operator">=</span> <span class="token punctuation">(</span>Factory<span class="token punctuation">)</span> instance<span class="token punctuation">;</span>
+  factory<span class="token punctuation">.</span><span class="token function">setCallbacks</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">Callback</span><span class="token punctuation">[</span><span class="token punctuation">]</span> <span class="token punctuation">{</span>NoOp<span class="token punctuation">.</span>INSTANCE<span class="token punctuation">,</span>
+                                       <span class="token keyword">new</span> <span class="token class-name">LookupOverrideMethodInterceptor</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>beanDefinition<span class="token punctuation">,</span> <span class="token keyword">this</span><span class="token punctuation">.</span>owner<span class="token punctuation">)</span><span class="token punctuation">,</span>
+                                       <span class="token keyword">new</span> <span class="token class-name">ReplaceOverrideMethodInterceptor</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>beanDefinition<span class="token punctuation">,</span> <span class="token keyword">this</span><span class="token punctuation">.</span>owner<span class="token punctuation">)</span><span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">return</span> instance<span class="token punctuation">;</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>调用 <code>createEnhancedSubclass()</code> 为提供的 BeanDefinition 创建 bean 类的增强子类。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> Class&lt;?&gt; createEnhancedSubclass(RootBeanDefinition beanDefinition) &#123;</span><br><span class="line"> <span class="comment">// cglib里面的用法，对原始class进行增强，并设置callback</span></span><br><span class="line"> Enhancer enhancer = <span class="keyword">new</span> Enhancer();</span><br><span class="line"> enhancer.setSuperclass(beanDefinition.getBeanClass());</span><br><span class="line"> enhancer.setNamingPolicy(SpringNamingPolicy.INSTANCE);</span><br><span class="line"> <span class="keyword">if</span> (<span class="keyword">this</span>.owner <span class="keyword">instanceof</span> ConfigurableBeanFactory) &#123;</span><br><span class="line">  ClassLoader cl = ((ConfigurableBeanFactory) <span class="keyword">this</span>.owner).getBeanClassLoader();</span><br><span class="line">  enhancer.setStrategy(<span class="keyword">new</span> ClassLoaderAwareGeneratorStrategy(cl));</span><br><span class="line"> &#125;</span><br><span class="line"> <span class="comment">// 过滤，自定义逻辑来指定调用的callback下标</span></span><br><span class="line"> enhancer.setCallbackFilter(<span class="keyword">new</span> MethodOverrideCallbackFilter(beanDefinition));</span><br><span class="line"> enhancer.setCallbackTypes(CALLBACK_TYPES);</span><br><span class="line"> <span class="keyword">return</span> enhancer.createClass();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">private</span> Class<span class="token operator">&lt;</span><span class="token operator">?</span><span class="token operator">></span> <span class="token function">createEnhancedSubclass</span><span class="token punctuation">(</span>RootBeanDefinition beanDefinition<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+ <span class="token comment" spellcheck="true">// cglib里面的用法，对原始class进行增强，并设置callback</span>
+ Enhancer enhancer <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Enhancer</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+ enhancer<span class="token punctuation">.</span><span class="token function">setSuperclass</span><span class="token punctuation">(</span>beanDefinition<span class="token punctuation">.</span><span class="token function">getBeanClass</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+ enhancer<span class="token punctuation">.</span><span class="token function">setNamingPolicy</span><span class="token punctuation">(</span>SpringNamingPolicy<span class="token punctuation">.</span>INSTANCE<span class="token punctuation">)</span><span class="token punctuation">;</span>
+ <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>owner <span class="token keyword">instanceof</span> <span class="token class-name">ConfigurableBeanFactory</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+  ClassLoader cl <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>ConfigurableBeanFactory<span class="token punctuation">)</span> <span class="token keyword">this</span><span class="token punctuation">.</span>owner<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getBeanClassLoader</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  enhancer<span class="token punctuation">.</span><span class="token function">setStrategy</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">ClassLoaderAwareGeneratorStrategy</span><span class="token punctuation">(</span>cl<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+ <span class="token punctuation">}</span>
+ <span class="token comment" spellcheck="true">// 过滤，自定义逻辑来指定调用的callback下标</span>
+ enhancer<span class="token punctuation">.</span><span class="token function">setCallbackFilter</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">MethodOverrideCallbackFilter</span><span class="token punctuation">(</span>beanDefinition<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+ enhancer<span class="token punctuation">.</span><span class="token function">setCallbackTypes</span><span class="token punctuation">(</span>CALLBACK_TYPES<span class="token punctuation">)</span><span class="token punctuation">;</span>
+ <span class="token keyword">return</span> enhancer<span class="token punctuation">.</span><span class="token function">createClass</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>获取子类增强 class 后，如果 Constructor 实例 ctr 为空，则调用默认构造函数（<code>BeanUtils.instantiateClass()</code>）来实例化类，否则则根据构造函数类型获取具体的构造器，调用 <code>newInstance()</code> 实例化类。在 <code>createEnhancedSubclass()</code> 我们注意两行代码：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">enhancer.setCallbackFilter(<span class="keyword">new</span> MethodOverrideCallbackFilter(beanDefinition));</span><br><span class="line">enhancer.setCallbackTypes(CALLBACK_TYPES);</span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-java"><code class="language-java">enhancer<span class="token punctuation">.</span><span class="token function">setCallbackFilter</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">MethodOverrideCallbackFilter</span><span class="token punctuation">(</span>beanDefinition<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+enhancer<span class="token punctuation">.</span><span class="token function">setCallbackTypes</span><span class="token punctuation">(</span>CALLBACK_TYPES<span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
 <p>通过 MethodOverrideCallbackFilter 来定义调用 callback 类型，MethodOverrideCallbackFilter 是用来定义 CGLIB 回调过滤方法的拦截器行为，它继承 CglibIdentitySupport 实现 CallbackFilter 接口， CallbackFilter 是 CGLIB 的一个回调过滤器，CglibIdentitySupport 则为 CGLIB 提供 <code>hashCode()</code> 和 <code>equals()</code> 方法，以确保 CGLIB 不会为每个 bean 生成不同的类。MethodOverrideCallbackFilter 实现 CallbackFilter <code>accept()</code>：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">accept</span><span class="params">(Method method)</span> </span>&#123;</span><br><span class="line">  MethodOverride methodOverride = getBeanDefinition().getMethodOverrides().getOverride(method);</span><br><span class="line">  <span class="keyword">if</span> (logger.isTraceEnabled()) &#123;</span><br><span class="line">    logger.trace(<span class="string">&quot;Override for &#x27;&quot;</span> + method.getName() + <span class="string">&quot;&#x27; is [&quot;</span> + methodOverride + <span class="string">&quot;]&quot;</span>);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">if</span> (methodOverride == <span class="keyword">null</span>) &#123;</span><br><span class="line">    <span class="keyword">return</span> PASSTHROUGH;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">else</span> <span class="keyword">if</span> (methodOverride <span class="keyword">instanceof</span> LookupOverride) &#123;</span><br><span class="line">    <span class="keyword">return</span> LOOKUP_OVERRIDE;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">else</span> <span class="keyword">if</span> (methodOverride <span class="keyword">instanceof</span> ReplaceOverride) &#123;</span><br><span class="line">    <span class="keyword">return</span> METHOD_REPLACER;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">throw</span> <span class="keyword">new</span> UnsupportedOperationException(<span class="string">&quot;Unexpected MethodOverride subclass: &quot;</span> +</span><br><span class="line">                                          methodOverride.getClass().getName());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">int</span> <span class="token function">accept</span><span class="token punctuation">(</span>Method method<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+  MethodOverride methodOverride <span class="token operator">=</span> <span class="token function">getBeanDefinition</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getMethodOverrides</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getOverride</span><span class="token punctuation">(</span>method<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span>logger<span class="token punctuation">.</span><span class="token function">isTraceEnabled</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    logger<span class="token punctuation">.</span><span class="token function">trace</span><span class="token punctuation">(</span><span class="token string">"Override for '"</span> <span class="token operator">+</span> method<span class="token punctuation">.</span><span class="token function">getName</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">+</span> <span class="token string">"' is ["</span> <span class="token operator">+</span> methodOverride <span class="token operator">+</span> <span class="token string">"]"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span>methodOverride <span class="token operator">==</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">return</span> PASSTHROUGH<span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+  <span class="token keyword">else</span> <span class="token keyword">if</span> <span class="token punctuation">(</span>methodOverride <span class="token keyword">instanceof</span> <span class="token class-name">LookupOverride</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">return</span> LOOKUP_OVERRIDE<span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+  <span class="token keyword">else</span> <span class="token keyword">if</span> <span class="token punctuation">(</span>methodOverride <span class="token keyword">instanceof</span> <span class="token class-name">ReplaceOverride</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">return</span> METHOD_REPLACER<span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+  <span class="token keyword">throw</span> <span class="token keyword">new</span> <span class="token class-name">UnsupportedOperationException</span><span class="token punctuation">(</span><span class="token string">"Unexpected MethodOverride subclass: "</span> <span class="token operator">+</span>
+                                          methodOverride<span class="token punctuation">.</span><span class="token function">getClass</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getName</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>根据 BeanDefinition 中定义的 MethodOverride 不同，返回不同的值， 这里返回的 PASSTHROUGH 、LOOKUP_OVERRIDE、METHOD_REPLACER 都是 Callbak 数组的下标，这里对应的数组为 CALLBACK_TYPES 数组，如下：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> Class&lt;?&gt;[] CALLBACK_TYPES </span><br><span class="line">  = <span class="keyword">new</span> Class&lt;?&gt;[] &#123;NoOp.class, LookupOverrideMethodInterceptor.class, ReplaceOverrideMethodInterceptor.class&#125;;</span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">private</span> <span class="token keyword">static</span> <span class="token keyword">final</span> Class<span class="token operator">&lt;</span><span class="token operator">?</span><span class="token operator">></span><span class="token punctuation">[</span><span class="token punctuation">]</span> CALLBACK_TYPES 
+  <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Class</span><span class="token operator">&lt;</span><span class="token operator">?</span><span class="token operator">></span><span class="token punctuation">[</span><span class="token punctuation">]</span> <span class="token punctuation">{</span>NoOp<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">,</span> LookupOverrideMethodInterceptor<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">,</span> ReplaceOverrideMethodInterceptor<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">}</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
 <p>这里又定义了两个熟悉的拦截器 ：LookupOverrideMethodInterceptor 和 ReplaceOverrideMethodInterceptor，两个拦截器分别对应两个不同的 callback 业务：</p>
 <p><strong>LookupOverrideMethodInterceptor</strong></p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">LookupOverrideMethodInterceptor</span> </span></span><br><span class="line"><span class="class">  <span class="keyword">extends</span> <span class="title">CglibIdentitySupport</span> <span class="keyword">implements</span> <span class="title">MethodInterceptor</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">final</span> BeanFactory owner;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="title">LookupOverrideMethodInterceptor</span><span class="params">(RootBeanDefinition beanDefinition, BeanFactory owner)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">super</span>(beanDefinition);</span><br><span class="line">    <span class="keyword">this</span>.owner = owner;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="meta">@Override</span></span><br><span class="line">  <span class="function"><span class="keyword">public</span> Object <span class="title">intercept</span><span class="params">(Object obj, Method method, Object[] args, MethodProxy mp)</span> <span class="keyword">throws</span> Throwable </span>&#123;</span><br><span class="line">    <span class="comment">// Cast is safe, as CallbackFilter filters are used selectively.</span></span><br><span class="line">    LookupOverride lo = (LookupOverride) getBeanDefinition().getMethodOverrides().getOverride(method);</span><br><span class="line">    Assert.state(lo != <span class="keyword">null</span>, <span class="string">&quot;LookupOverride not found&quot;</span>);</span><br><span class="line">    Object[] argsToUse = (args.length &gt; <span class="number">0</span> ? args : <span class="keyword">null</span>); <span class="comment">// if no-arg, don&#x27;t insist on args at all</span></span><br><span class="line">    <span class="keyword">if</span> (StringUtils.hasText(lo.getBeanName())) &#123;</span><br><span class="line">      <span class="keyword">return</span> (argsToUse != <span class="keyword">null</span> ? <span class="keyword">this</span>.owner.getBean(lo.getBeanName(), argsToUse) :</span><br><span class="line">              <span class="keyword">this</span>.owner.getBean(lo.getBeanName()));</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span> &#123;</span><br><span class="line">      <span class="keyword">return</span> (argsToUse != <span class="keyword">null</span> ? <span class="keyword">this</span>.owner.getBean(method.getReturnType(), argsToUse) :</span><br><span class="line">              <span class="keyword">this</span>.owner.getBean(method.getReturnType()));</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">private</span> <span class="token keyword">static</span> <span class="token keyword">class</span> <span class="token class-name">LookupOverrideMethodInterceptor</span> 
+  <span class="token keyword">extends</span> <span class="token class-name">CglibIdentitySupport</span> <span class="token keyword">implements</span> <span class="token class-name">MethodInterceptor</span> <span class="token punctuation">{</span>
+
+  <span class="token keyword">private</span> <span class="token keyword">final</span> BeanFactory owner<span class="token punctuation">;</span>
+
+  <span class="token keyword">public</span> <span class="token function">LookupOverrideMethodInterceptor</span><span class="token punctuation">(</span>RootBeanDefinition beanDefinition<span class="token punctuation">,</span> BeanFactory owner<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">super</span><span class="token punctuation">(</span>beanDefinition<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">this</span><span class="token punctuation">.</span>owner <span class="token operator">=</span> owner<span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+
+  <span class="token annotation punctuation">@Override</span>
+  <span class="token keyword">public</span> Object <span class="token function">intercept</span><span class="token punctuation">(</span>Object obj<span class="token punctuation">,</span> Method method<span class="token punctuation">,</span> Object<span class="token punctuation">[</span><span class="token punctuation">]</span> args<span class="token punctuation">,</span> MethodProxy mp<span class="token punctuation">)</span> <span class="token keyword">throws</span> Throwable <span class="token punctuation">{</span>
+    <span class="token comment" spellcheck="true">// Cast is safe, as CallbackFilter filters are used selectively.</span>
+    LookupOverride lo <span class="token operator">=</span> <span class="token punctuation">(</span>LookupOverride<span class="token punctuation">)</span> <span class="token function">getBeanDefinition</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getMethodOverrides</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getOverride</span><span class="token punctuation">(</span>method<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    Assert<span class="token punctuation">.</span><span class="token function">state</span><span class="token punctuation">(</span>lo <span class="token operator">!=</span> null<span class="token punctuation">,</span> <span class="token string">"LookupOverride not found"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    Object<span class="token punctuation">[</span><span class="token punctuation">]</span> argsToUse <span class="token operator">=</span> <span class="token punctuation">(</span>args<span class="token punctuation">.</span>length <span class="token operator">></span> <span class="token number">0</span> <span class="token operator">?</span> args <span class="token operator">:</span> null<span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment" spellcheck="true">// if no-arg, don't insist on args at all</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>StringUtils<span class="token punctuation">.</span><span class="token function">hasText</span><span class="token punctuation">(</span>lo<span class="token punctuation">.</span><span class="token function">getBeanName</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+      <span class="token keyword">return</span> <span class="token punctuation">(</span>argsToUse <span class="token operator">!=</span> null <span class="token operator">?</span> <span class="token keyword">this</span><span class="token punctuation">.</span>owner<span class="token punctuation">.</span><span class="token function">getBean</span><span class="token punctuation">(</span>lo<span class="token punctuation">.</span><span class="token function">getBeanName</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> argsToUse<span class="token punctuation">)</span> <span class="token operator">:</span>
+              <span class="token keyword">this</span><span class="token punctuation">.</span>owner<span class="token punctuation">.</span><span class="token function">getBean</span><span class="token punctuation">(</span>lo<span class="token punctuation">.</span><span class="token function">getBeanName</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    <span class="token keyword">else</span> <span class="token punctuation">{</span>
+      <span class="token keyword">return</span> <span class="token punctuation">(</span>argsToUse <span class="token operator">!=</span> null <span class="token operator">?</span> <span class="token keyword">this</span><span class="token punctuation">.</span>owner<span class="token punctuation">.</span><span class="token function">getBean</span><span class="token punctuation">(</span>method<span class="token punctuation">.</span><span class="token function">getReturnType</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> argsToUse<span class="token punctuation">)</span> <span class="token operator">:</span>
+              <span class="token keyword">this</span><span class="token punctuation">.</span>owner<span class="token punctuation">.</span><span class="token function">getBean</span><span class="token punctuation">(</span>method<span class="token punctuation">.</span><span class="token function">getReturnType</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p><strong>ReplaceOverrideMethodInterceptor</strong></p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">ReplaceOverrideMethodInterceptor</span> </span></span><br><span class="line"><span class="class">  <span class="keyword">extends</span> <span class="title">CglibIdentitySupport</span> <span class="keyword">implements</span> <span class="title">MethodInterceptor</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">final</span> BeanFactory owner;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="title">ReplaceOverrideMethodInterceptor</span><span class="params">(RootBeanDefinition beanDefinition, BeanFactory owner)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">super</span>(beanDefinition);</span><br><span class="line">    <span class="keyword">this</span>.owner = owner;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="meta">@Override</span></span><br><span class="line">  <span class="function"><span class="keyword">public</span> Object <span class="title">intercept</span><span class="params">(Object obj, Method method, Object[] args, MethodProxy mp)</span> <span class="keyword">throws</span> Throwable </span>&#123;</span><br><span class="line">    ReplaceOverride ro = (ReplaceOverride) getBeanDefinition().getMethodOverrides().getOverride(method);</span><br><span class="line">    Assert.state(ro != <span class="keyword">null</span>, <span class="string">&quot;ReplaceOverride not found&quot;</span>);</span><br><span class="line">    <span class="comment">// TODO could cache if a singleton for minor performance optimization</span></span><br><span class="line">    MethodReplacer mr = <span class="keyword">this</span>.owner.getBean(ro.getMethodReplacerBeanName(), MethodReplacer.class);</span><br><span class="line">    <span class="keyword">return</span> mr.reimplement(obj, method, args);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">private</span> <span class="token keyword">static</span> <span class="token keyword">class</span> <span class="token class-name">ReplaceOverrideMethodInterceptor</span> 
+  <span class="token keyword">extends</span> <span class="token class-name">CglibIdentitySupport</span> <span class="token keyword">implements</span> <span class="token class-name">MethodInterceptor</span> <span class="token punctuation">{</span>
+
+  <span class="token keyword">private</span> <span class="token keyword">final</span> BeanFactory owner<span class="token punctuation">;</span>
+
+  <span class="token keyword">public</span> <span class="token function">ReplaceOverrideMethodInterceptor</span><span class="token punctuation">(</span>RootBeanDefinition beanDefinition<span class="token punctuation">,</span> BeanFactory owner<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">super</span><span class="token punctuation">(</span>beanDefinition<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">this</span><span class="token punctuation">.</span>owner <span class="token operator">=</span> owner<span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+
+  <span class="token annotation punctuation">@Override</span>
+  <span class="token keyword">public</span> Object <span class="token function">intercept</span><span class="token punctuation">(</span>Object obj<span class="token punctuation">,</span> Method method<span class="token punctuation">,</span> Object<span class="token punctuation">[</span><span class="token punctuation">]</span> args<span class="token punctuation">,</span> MethodProxy mp<span class="token punctuation">)</span> <span class="token keyword">throws</span> Throwable <span class="token punctuation">{</span>
+    ReplaceOverride ro <span class="token operator">=</span> <span class="token punctuation">(</span>ReplaceOverride<span class="token punctuation">)</span> <span class="token function">getBeanDefinition</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getMethodOverrides</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getOverride</span><span class="token punctuation">(</span>method<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    Assert<span class="token punctuation">.</span><span class="token function">state</span><span class="token punctuation">(</span>ro <span class="token operator">!=</span> null<span class="token punctuation">,</span> <span class="token string">"ReplaceOverride not found"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token comment" spellcheck="true">// TODO could cache if a singleton for minor performance optimization</span>
+    MethodReplacer mr <span class="token operator">=</span> <span class="token keyword">this</span><span class="token punctuation">.</span>owner<span class="token punctuation">.</span><span class="token function">getBean</span><span class="token punctuation">(</span>ro<span class="token punctuation">.</span><span class="token function">getMethodReplacerBeanName</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> MethodReplacer<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">return</span> mr<span class="token punctuation">.</span><span class="token function">reimplement</span><span class="token punctuation">(</span>obj<span class="token punctuation">,</span> method<span class="token punctuation">,</span> args<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>通过这两个拦截器，再加上这篇博客：<a href="/2020/01/fa973ffe.html">IOC 之解析 bean 标签：meta、lookup-method、replace-method</a>，是不是一道绝佳的美食。</p>
 
-  </div>
-
-  
-    <div style="text-align:center;width:100%">
-      <img src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/640-2.gif">
-    </div>
-  
-
-  
-    <div>
-      <h4>版权声明</h4>
-      <pre>
-        
-        <strong>本文来源： </strong><a href="http://cmsblogs.com/?p=4022" title="Java技术驿站 | chenssy |【死磕 Spring】| IOC之bean的实例化策略：InstantiationStrategy" rel="external nofollow noopener noreferrer" target="_blank">http://cmsblogs.com/?p=4022</a>
-
-        <strong>本文链接：</strong><a href="https://www.cayzlh.com/2020/01/24/25302edf.html" title="/blog/IOC%E4%B9%8Bbean%E7%9A%84%E5%AE%9E%E4%BE%8B%E5%8C%96%E7%AD%96%E7%95%A5%EF%BC%9AInstantiationStrategy">https://www.cayzlh.com/2020/01/24/25302edf.html</a>
-
-        <strong>版权声明： </strong>
-        
-          文章内容仅用作学习和分享，转载请注明出处
-        
-      </pre>
-    </div>
-  
-
-</article>
-
-
-
-        
-          <div id="footer-post-container">
-  <div id="footer-post">
-
-    <div id="nav-footer" style="display: none">
-      <ul>
-        
-          <li><a href="/blog/">Home</a></li>
-        
-          <li><a href="/blog/archives/">Articles</a></li>
-        
-          <li><a href="/blog/about/">About</a></li>
-        
-          <li><a href="/blog/search/">Search</a></li>
-        
-      </ul>
-    </div>
-
-    <div id="toc-footer" style="display: none">
-      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#InstantiationStrategy"><span class="toc-number">1.</span> <span class="toc-text">InstantiationStrategy</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#SimpleInstantiationStrategy"><span class="toc-number">1.1.</span> <span class="toc-text">SimpleInstantiationStrategy</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#MethodOverrides"><span class="toc-number">1.2.</span> <span class="toc-text">MethodOverrides</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#CGLIB-%E5%AE%9E%E4%BE%8B%E5%8C%96%E7%AD%96%E7%95%A5"><span class="toc-number">1.3.</span> <span class="toc-text">CGLIB 实例化策略</span></a></li></ol></li></ol>
-    </div>
-
-    <div id="share-footer" style="display: none">
-      <ul>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.facebook.com/sharer.php?u=https://www.cayzlh.com/2020/01/24/25302edf.html"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://twitter.com/share?url=https://www.cayzlh.com/2020/01/24/25302edf.html&text=IOC之bean的实例化策略：InstantiationStrategy"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.linkedin.com/shareArticle?url=https://www.cayzlh.com/2020/01/24/25302edf.html&title=IOC之bean的实例化策略：InstantiationStrategy"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://pinterest.com/pin/create/bookmarklet/?url=https://www.cayzlh.com/2020/01/24/25302edf.html&is_video=false&description=IOC之bean的实例化策略：InstantiationStrategy"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="mailto:?subject=IOC之bean的实例化策略：InstantiationStrategy&body=Check out this article: https://www.cayzlh.com/2020/01/24/25302edf.html"><i class="fas fa-envelope fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://getpocket.com/save?url=https://www.cayzlh.com/2020/01/24/25302edf.html&title=IOC之bean的实例化策略：InstantiationStrategy"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://reddit.com/submit?url=https://www.cayzlh.com/2020/01/24/25302edf.html&title=IOC之bean的实例化策略：InstantiationStrategy"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.stumbleupon.com/submit?url=https://www.cayzlh.com/2020/01/24/25302edf.html&title=IOC之bean的实例化策略：InstantiationStrategy"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://digg.com/submit?url=https://www.cayzlh.com/2020/01/24/25302edf.html&title=IOC之bean的实例化策略：InstantiationStrategy"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.tumblr.com/share/link?url=https://www.cayzlh.com/2020/01/24/25302edf.html&name=IOC之bean的实例化策略：InstantiationStrategy&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://news.ycombinator.com/submitlink?u=https://www.cayzlh.com/2020/01/24/25302edf.html&t=IOC之bean的实例化策略：InstantiationStrategy"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
-</ul>
-
-    </div>
-
-    <div id="actions-footer">
-        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fas fa-bars fa-lg" aria-hidden="true"></i> Menu</a>
-        <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fas fa-list fa-lg" aria-hidden="true"></i> TOC</a>
-<!--        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fas fa-share-alt fa-lg" aria-hidden="true"></i> Share</a>-->
-        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a>
-    </div>
-
-  </div>
+            <!-- 文章结尾部分 -->
+            
+                
+<div style="text-align:center;width:100%">
+    <span class="octicon octicon-tag-add"></span>
+    
+        <a style="color: #24292e;" href="/blog/tags/Spring/">Spring</a>
+    
+        <a style="color: #24292e;" href="/blog/tags/%E8%BD%AC%E8%BD%BD/">转载</a>
+    
 </div>
 
-        
-        <footer id="footer">
-  <div class="footer-left">
-    CAYZLH &copy;
-    
-    
-    2019-2021
-    粤ICP备20058712号-1
-  </div>
-  <div class="footer-right">
-    <nav>
-      <ul>
-        
-          <li><a href="/blog/tools/">tools</a></li>
-        
-          <li><a href="/blog/links/">links</a></li>
-        
-      </ul>
-    </nav>
-  </div>
-</footer>
 
+
+    <div style="text-align:center;width:100%">
+        <img src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/640-2.gif">
     </div>
-    <!-- styles -->
-
-<link rel="stylesheet" href="/blog/lib/font-awesome/css/all.min.css">
 
 
-<link rel="stylesheet" href="/blog/lib/justified-gallery/css/justifiedGallery.min.css">
 
 
-    <!-- jquery -->
-
-<script src="/blog/lib/jquery/jquery.min.js"></script>
-
-
-<script src="/blog/lib/justified-gallery/js/jquery.justifiedGallery.min.js"></script>
-
-<!-- clipboard -->
-
-  
-<script src="/blog/lib/clipboard/clipboard.min.js"></script>
-
-  <script type="text/javascript">
-  $(function() {
-    // copy-btn HTML
-    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"Copy to clipboard!\">";
-    btn += '<i class="far fa-clone"></i>';
-    btn += '</span>'; 
-    // mount it!
-    $(".highlight table").before(btn);
-    var clip = new ClipboardJS('.btn-copy', {
-      text: function(trigger) {
-        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
-      }
-    });
-    clip.on('success', function(e) {
-      e.trigger.setAttribute('aria-label', "Copied!");
-      e.clearSelection();
-    })
-  })
-  </script>
-
-
-<script src="/blog/js/main.js"></script>
-
-<!-- search -->
-
-<!-- Google Analytics -->
-
-    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-129095667-1"></script>
-    <script>
-        window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
-        gtag('js', new Date());
-        gtag('config', 'UA-129095667-1');
-    </script>
-
-<!-- Baidu Analytics -->
-
-<!-- Cloudflare Analytics -->
-
-<!-- Umami Analytics -->
-
-<!-- Disqus Comments -->
+<div>
+    <h4>相关推荐</h4>
+    <ul class="post-copyright">
+        
+        <li class="post-copyright-author">
+            <a href="/blog/2020/01/23/cd2eaad8.html">IOC之PropertyPlaceholderConfigurer的应用</a>
+        </li>
+        
+        <li class="post-copyright-author">
+            <a href="/blog/2020/01/21/e8e94997.html">IOC之Bean的初始化</a>
+        </li>
+        
+        <li class="post-copyright-author">
+            <a href="/blog/2020/01/19/6271d9d2.html">IOC之Factory实例化bean</a>
+        </li>
+        
+        <li class="post-copyright-author">
+            <a href="/blog/2020/01/24/fcc18cc7.html">IOC之分析BeanWrapper</a>
+        </li>
+        
+        <li class="post-copyright-author">
+            <a href="/blog/2020/01/20/1293fb33.html">IOC之属性填充</a>
+        </li>
+        
+        <li class="post-copyright-author">
+            <a href="/blog/2020/01/19/1ad7c22b.html">IOC之开启Bean的实例化进程</a>
+        </li>
+        
+    </ul>
+    <br><br>
+</div>
 
 
+
+<div>
+    <h4>版权声明</h4>
+    <blockquote>
+        <ul class="post-copyright">
+            <li class="post-copyright-author">
+                <strong>本文来源： </strong>
+                
+                <a href="http://cmsblogs.com/?p=4022" title="Java技术驿站 | chenssy |【死磕 Spring】| IOC之bean的实例化策略：InstantiationStrategy" rel="external nofollow noopener noreferrer" target="_blank">Java技术驿站 | chenssy |【死磕 Spring】| IOC之bean的实例化策略：InstantiationStrategy</a></li>
+            <li class="post-copyright-link">
+                <strong>本文链接：</strong>
+                <a href="https://www.cayzlh.com/2020/01/24/25302edf.html" title="/blog/IOC%E4%B9%8Bbean%E7%9A%84%E5%AE%9E%E4%BE%8B%E5%8C%96%E7%AD%96%E7%95%A5%EF%BC%9AInstantiationStrategy">https://www.cayzlh.com/2020/01/24/25302edf.html</a>
+            </li>
+            <li class="post-copyright-license">
+                <strong>版权声明： </strong>
+                
+                    文章内容仅用作学习和分享，如有雷同，纯属拷贝。
+                
+            </li>
+        </ul>
+    </blockquote>
+</div>
+
+
+            
+            
+                <div class="comment">
+    <br><br><br>
+    
+</div>
+            
+        </div>
+        
+            <div class="col-md-3">
+                <h4>文章目录</h4>
+                <div id="toc" style="display: none;">
+                    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#InstantiationStrategy"><span class="toc-text">InstantiationStrategy</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#SimpleInstantiationStrategy"><span class="toc-text">SimpleInstantiationStrategy</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#MethodOverrides"><span class="toc-text">MethodOverrides</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#CGLIB-实例化策略"><span class="toc-text">CGLIB 实例化策略</span></a></li></ol></li></ol>
+                </div>
+                <div id="post-directory-module">
+                    <section class="post-directory">
+                        <!-- Links that trigger the jumping -->
+                        <!-- Added by javascript below -->
+                        <dl></dl>
+                    </section>
+                </div>
+
+                <script type="text/javascript">
+                    var getChild = function ($parent) {
+                        var child = {};
+                        child.path = $parent.find("a").attr("href");
+                        child.title = $parent.find("a").find("span").html();
+
+                        var $children = $($parent.children("ol").children());
+                        if ($children) {
+                            var children = [];
+                            $children.each(function () {
+                                children.push(getChild($(this)));
+                            });
+                            child.children = children;
+                        }
+                        return child;
+                    }
+                    $(document).ready(function () {
+                        var toc = [];
+                        $("#toc").children().children().each(function () {
+                            toc.push(getChild($(this)));
+                        });
+                        if (toc.length > 0) {
+                            $("#toc").remove();
+                            toc.forEach(function (t) {
+                                $(".post-directory dl").append("<dt><a class=\"jumper\" href="
+                                    + t.path
+                                    + ">"
+                                    + t.title
+                                    + "</a></dt>");
+                                var tc = t.children;
+                                if (tc.length > 0) {
+                                    tc.forEach(function (c) {
+                                        $(".post-directory dl").append(
+                                            "<dd><a class=\"jumper\" href="
+                                            + c.path
+                                            + ">"
+                                            + "&nbsp;&nbsp;- " + c.title
+                                            + "</a></dd>"
+                                        );
+                                    });
+                                }
+                            });
+
+                        }
+                        var fixmeTop = $('#post-directory-module').offset().top - 100;       // get initial position of the element
+
+                        $(window).scroll(function () {                  // assign scroll event listener
+
+                            var currentScroll = $(window).scrollTop(); // get current position
+
+                            if (currentScroll >= fixmeTop) {           // apply position: fixed if you
+                                $('#post-directory-module').css({      // scroll to that element or below it
+                                    top: '100px',
+                                    position: 'fixed',
+                                    width: 'inherit'
+                                });
+                            } else {                                   // apply position: static
+                                $('#post-directory-module').css({      // if you scroll above it
+                                    position: 'inherit',
+                                    width: 'inherit'
+                                });
+                            }
+
+                        });
+
+                        $("a.jumper").on("click", function (e) {
+
+                            e.preventDefault();
+
+                            $("body, html").animate({
+                                scrollTop: ($($(this).attr('href')).offset().top - 100)
+                            }, 600);
+
+                        });
+                    });
+
+                </script>
+            </div>
+        
+    </div>
+    
+</article>
+
+<script>
+    hljs.initHighlightingOnLoad();
+</script>
+</main>
+<footer class="container">
+    <div class="site-footer">
+        
+    <div class="card text-center">
+        <ul class="list-inline" style="margin-left: 0;">
+            
+                <li>
+                    <a target="_blank" href="https://github.com/cayzlh" rel="external nofollow noopener noreferrer">
+                          <span class="fa-stack fa-lg">
+                            <i class="fa fa-circle fa-stack-2x"></i>
+                            <i class="fa fa-github fa-stack-1x fa-inverse">
+                                
+                            </i>
+                          </span>
+                    </a>
+                </li>
+            
+                <li>
+                    <a target="_blank" href="https://www.zhihu.com/people/chenanyu" rel="external nofollow noopener noreferrer">
+                          <span class="fa-stack fa-lg">
+                            <i class="fa fa-circle fa-stack-2x"></i>
+                            <i class="fa  fa-stack-1x fa-inverse">
+                                知
+                            </i>
+                          </span>
+                    </a>
+                </li>
+            
+                <li>
+                    <a target="_blank" href="mailto:Q2F5emxo@cayzlh.com">
+                          <span class="fa-stack fa-lg">
+                            <i class="fa fa-circle fa-stack-2x"></i>
+                            <i class="fa fa-envelope fa-stack-1x fa-inverse">
+                                
+                            </i>
+                          </span>
+                    </a>
+                </li>
+            
+        </ul>
+    </div>
+
+
+        <div class="site-footer-links mobile-hidden">
+            
+                
+                
+            
+        </div>
+
+        <div class="site-footer-links mobile-hidden">
+        
+            <span class="meta-info-index hvr-grow">
+                
+                    <a href="https://www.cayzlh.com">
+                        🐳Ant丶 &copy; 2020
+                    </a>
+                
+            </span>
+        
+        
+            <span class="meta-info-index hvr-grow">
+                <a href="http://beian.miit.gov.cn" target="_blank" rel="external nofollow noopener noreferrer">粤ICP备20058712号-1</a>
+            </span>
+        
+        </div>
+
+        
+
+        
+    </div>
+    
+
+    
+        <!-- Third-Party JS -->
+        <script type="text/javascript" src="/blog/js/thirdparty/geopattern.min.js"></script>
+        <!-- My JS -->
+        <script type="text/javascript" src="/blog/js/script.js"></script>
+    
+
+    
+        <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js">
+        </script>
+    
+</footer>
 </body>
 </html>

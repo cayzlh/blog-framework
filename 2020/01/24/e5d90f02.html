@@ -1,173 +1,275 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
+
 <head>
-    <!-- so meta -->
     <meta charset="utf-8">
+    <meta name="keywords" content="Spring, IOC, PropertyOverrideConfigurer">
+    <meta name="description" content="Ant丶的网络日志, CAYZLH网络日志, CAYZLH, CAYZLH主页, Ant丶空间">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="HandheldFriendly" content="True">
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-    <meta name="description" content="分析Spring的PropertyOverrideConfigurer">
-<meta property="og:type" content="article">
-<meta property="og:title" content="IOC之深入分析PropertyOverrideConfigurer">
-<meta property="og:url" content="http://cmsblogs.com/?p=3924">
-<meta property="og:site_name" content="CAYZLH">
-<meta property="og:description" content="分析Spring的PropertyOverrideConfigurer">
-<meta property="og:locale" content="en_US">
-<meta property="og:image" content="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2020/05/27/15377119278769_ti0Upp_WR3LqN.jpg">
-<meta property="og:image" content="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2020/05/27/15377127284347_fDOIPu_94XAir.jpg">
-<meta property="og:image" content="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2020/05/27/spring-201809231001-20200527093418095_v2NThs.png">
-<meta property="og:image" content="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2020/05/27/spring-201809231002_8yTF1l_7kG2Gt.png">
-<meta property="article:published_time" content="2020-01-24T01:26:38.000Z">
-<meta property="article:modified_time" content="2020-05-27T01:48:07.292Z">
-<meta property="article:author" content="🐳Ant丶">
-<meta property="article:tag" content="Spring">
-<meta property="article:tag" content="转载">
-<meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2020/05/27/15377119278769_ti0Upp_WR3LqN.jpg">
-    
-    
-      
-        
-          <link rel="shortcut icon" href="/blog/images/favicon.ico">
-        
-      
-      
-        
-          <link rel="icon" type="image/png" href="/blog/images/favicon-192x192.png" sizes="192x192">
-        
-      
-      
-        
-          <link rel="apple-touch-icon" sizes="180x180" href="/blog/images/apple-touch-icon.png">
-        
-      
-    
-    <!-- title -->
-    <title>IOC之深入分析PropertyOverrideConfigurer</title>
-    <!-- styles -->
-    
-<link rel="stylesheet" href="/blog/css/style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="renderer" content="webkit|ie-stand|ie-comp">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <!-- Global site tag (gtag.js) - Google Analytics -->
 
-    <!-- persian styles -->
-    
-      
-<link rel="stylesheet" href="/blog/css/rtl.css">
+    <meta name="google-site-verification" content="VrcbMTVpFGlHkIERHBt753dAtXKF4qirjnDweuXSRJw">
+
+
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-129095667-1"></script>
+<script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() {
+        dataLayer.push(arguments);
+    }
+
+    gtag('js', new Date());
+    gtag('config', 'UA-129095667-1');
+</script>
+
+
+    <title>IOC之深入分析PropertyOverrideConfigurer | CAYZLH</title>
 
     
-    <!-- rss -->
+    <!-- Third-Party CSS -->
     
-    
-      <link rel="alternate" href="/blog/true" title="CAYZLH" type="application/atom+xml">
-    
-<meta name="generator" content="Hexo 5.3.0"></head>
+        <link rel="icon" type="image/svg+xml" href="/blog/favicon.svg">
+        <link rel="stylesheet" href="/blog/css/thirdparty/bootstrap.min.css">
+        <link rel="stylesheet" href="/blog/css/thirdparty/octicons.css">
+        <link rel="stylesheet" href="/blog/css/thirdparty/hover-min.css">
+        <link rel="stylesheet" href="/blog/css/thirdparty/user-content.min.css">
+        <link rel="stylesheet" href="/blog/css/thirdparty/syntax.css">
+        <link rel="stylesheet" href="/blog/css/thirdparty/gitalk.css">
 
-<body class="max-width mx-auto px3 ltr">
-    
-      <div id="header-post">
-  <a id="menu-icon" href="#"><i class="fas fa-bars fa-lg"></i></a>
-  <a id="menu-icon-tablet" href="#"><i class="fas fa-bars fa-lg"></i></a>
-  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fas fa-chevron-up fa-lg"></i></a>
-  <span id="menu">
-    <span id="nav">
-      <ul>
-        
-          <li><a href="/blog/">Home</a></li>
-        
-          <li><a href="/blog/archives/">Articles</a></li>
-        
-          <li><a href="/blog/about/">About</a></li>
-        
-          <li><a href="/blog/search/">Search</a></li>
-        
-      </ul>
-    </span>
-    <br>
-    <span id="actions">
-      <ul>
-        
-        <li><a class="icon" href="/blog/2020/01/24/683bb448.html"><i class="fas fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
-        
-        
-        <li><a class="icon" href="/blog/2020/01/23/cd2eaad8.html"><i class="fas fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
-        
-        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
-<!--        <li><a class="icon" href="#"><i class="fas fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>-->
-      </ul>
-      <span id="i-prev" class="info" style="display:none;">Previous</span>
-      <span id="i-next" class="info" style="display:none;">Next</span>
-      <span id="i-top" class="info" style="display:none;">Back to top</span>
-      <span id="i-share" class="info" style="display:none;">Share post</span>
-    </span>
-    <br>
-    <div id="share" style="display: none">
-      <ul>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.facebook.com/sharer.php?u=https://www.cayzlh.com/2020/01/24/e5d90f02.html"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://twitter.com/share?url=https://www.cayzlh.com/2020/01/24/e5d90f02.html&text=IOC之深入分析PropertyOverrideConfigurer"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.linkedin.com/shareArticle?url=https://www.cayzlh.com/2020/01/24/e5d90f02.html&title=IOC之深入分析PropertyOverrideConfigurer"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://pinterest.com/pin/create/bookmarklet/?url=https://www.cayzlh.com/2020/01/24/e5d90f02.html&is_video=false&description=IOC之深入分析PropertyOverrideConfigurer"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="mailto:?subject=IOC之深入分析PropertyOverrideConfigurer&body=Check out this article: https://www.cayzlh.com/2020/01/24/e5d90f02.html"><i class="fas fa-envelope " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://getpocket.com/save?url=https://www.cayzlh.com/2020/01/24/e5d90f02.html&title=IOC之深入分析PropertyOverrideConfigurer"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://reddit.com/submit?url=https://www.cayzlh.com/2020/01/24/e5d90f02.html&title=IOC之深入分析PropertyOverrideConfigurer"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.stumbleupon.com/submit?url=https://www.cayzlh.com/2020/01/24/e5d90f02.html&title=IOC之深入分析PropertyOverrideConfigurer"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://digg.com/submit?url=https://www.cayzlh.com/2020/01/24/e5d90f02.html&title=IOC之深入分析PropertyOverrideConfigurer"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.tumblr.com/share/link?url=https://www.cayzlh.com/2020/01/24/e5d90f02.html&name=IOC之深入分析PropertyOverrideConfigurer&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://news.ycombinator.com/submitlink?u=https://www.cayzlh.com/2020/01/24/e5d90f02.html&t=IOC之深入分析PropertyOverrideConfigurer"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
-</ul>
+        <!-- My CSS -->
+        <link rel="stylesheet" href="/blog/css/common.css">
 
-    </div>
-    <div id="toc">
-      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BD%BF%E7%94%A8"><span class="toc-number">1.</span> <span class="toc-text">使用</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AE%9E%E7%8E%B0%E5%8E%9F%E7%90%86"><span class="toc-number">2.</span> <span class="toc-text">实现原理</span></a></li></ol>
-    </div>
-  </span>
+        <link rel="stylesheet" href="/blog/css/sidebar-post-nav.css">
+
+        <link rel="stylesheet" href="/blog/css/blog-page.css">
+        <!-- CSS set in page -->
+
+        
+        <link rel="stylesheet" href="/blog/css/sidebar-popular-repo.css">
+    
+
+    <!-- CSS set in layout -->
+    <link rel="stylesheet" type="text/css" href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css">
+
+    
+        <script type="text/javascript" src="/blog/js/thirdparty/jquery.min.js"></script>
+        <script type="text/javascript" src="/blog/js/thirdparty/bootstrap.min.js"></script>
+        <script type="text/javascript" src="/blog/js/lock.js"></script>
+    
+
+    
+        <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.css">
+        <script src="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js"></script>
+
+        <link rel="stylesheet" href="//imsun.github.io/gitment/style/default.css">
+        <script src="//imsun.github.io/gitment/dist/gitment.browser.js"></script>
+
+        <script src="//unpkg.com/valine/dist/Valine.min.js"></script>
+
+    
+
+    <link rel="stylesheet" href="//cdn.bootcss.com/highlight.js/9.2.0/styles/github.min.css">
+    <script src="//cdn.bootcss.com/highlight.js/9.2.0/highlight.min.js"></script>
+<meta name="generator" content="Hexo 4.2.1"><link rel="alternate" href="/blog/atom.xml" title="CAYZLH" type="application/atom+xml">
+</head>
+
+<body>
+<header class="site-header">
+    <div class="site-header-topbar">
+        <div class="container">
+            <div class="topbar-menu">
+
+    
+        <div class="item">
+            <a href="/blog/categories/" title="分类">
+                分类
+            </a>
+        </div>
+    
+        <div class="item">
+            <a href="/blog/tags/" title="标签">
+                标签
+            </a>
+        </div>
+    
+        <div class="item">
+            <a href="https://meiriyiwen.com/random" target="_blank" title="每日一文" rel="external nofollow noopener noreferrer">
+                每日一文
+            </a>
+        </div>
+    
+        <div class="item">
+            <a href="/blog/links/" title="链接">
+                链接
+            </a>
+        </div>
+    
+        <div class="item">
+            <a href="/blog/about" title="关于">
+                关于
+            </a>
+        </div>
+    
+
 </div>
+        </div>
+    </div>
+    <div class="container">
+        <a id="site-header-brand" href="/blog/" title="CAYZLH">
+            <span class="octicon octicon-mark-github"></span>
+            CAYZLH
+        </a>
 
+        <nav class="site-header-nav" role="navigation">
     
-    <div class="content index py4">
-        
-        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
-  <header>
+        <div class=" site-header-nav-item hvr-underline-from-center">
+            <a href="/blog/" title="Home">
+                Home
+            </a>
+            
+        </div>
     
-    <h1 class="posttitle" itemprop="name headline">
-        IOC之深入分析PropertyOverrideConfigurer
-    </h1>
+        <div class=" site-header-nav-item hvr-underline-from-center">
+            <a href="/blog/archives" title="Archives">
+                Archives
+            </a>
+            
+        </div>
+    
+        <div class=" site-header-nav-item hvr-underline-from-center">
+            <a href="/blog/" title="Learning">
+                Learning
+            </a>
+            
+                <ul class="submenu">
+                    
 
+                        <li>
+                            <a href="/blog/categories/%E4%B9%A6%E7%B1%8D/%E3%80%8A%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3Java%E8%99%9A%E6%8B%9F%E6%9C%BA%E3%80%8B/">
+                                <span>深入理解Java虚拟机</span>
+                            </a>
+                        </li>
 
+                    
 
-    <div class="meta">
-      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
-        <span itemprop="name">Java技术驿站 | chenssy |【死磕 Spring】| IOC之深入分析PropertyOverrideConfigurer</span>
-      </span>
-      
-    <div class="postdate">
-      
-        <time datetime="2020-01-24T01:26:38.000Z" itemprop="datePublished">2020-01-24</time>
-        
-      
+                        <li>
+                            <a href="/blog/categories/%E4%B9%A6%E7%B1%8D/%E3%80%8AMyBatis%E6%8A%80%E6%9C%AF%E5%86%85%E5%B9%95%E3%80%8B/">
+                                <span>MyBatis技术内幕</span>
+                            </a>
+                        </li>
+
+                    
+
+                        <li>
+                            <a href="/blog/categories/Java/Java%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/">
+                                <span>Java设计模式</span>
+                            </a>
+                        </li>
+
+                    
+                </ul>
+            
+        </div>
+    
+        <div class=" site-header-nav-item hvr-underline-from-center">
+            <a href="/blog/" title="Tools">
+                Tools
+            </a>
+            
+                <ul class="submenu">
+                    
+
+                        <li>
+                            <a href="https://www.cayzlh.com/tools/online-JSONFormat/" target="_blank">
+                                <span>Json在线工具</span>
+                            </a>
+                        </li>
+
+                    
+
+                        <li>
+                            <a href="https://www.cayzlh.com/tools/online-markdown/" target="_blank">
+                                <span>Markdown在线转换工具</span>
+                            </a>
+                        </li>
+
+                    
+
+                        <li>
+                            <a href="https://www.cayzlh.com/tools/online-hash/" target="_blank">
+                                <span>在线HASH</span>
+                            </a>
+                        </li>
+
+                    
+                </ul>
+            
+        </div>
+    
+</nav>
     </div>
+</header>
+<main class="content">
+    <!-- 标题部分 -->
+<section class="jumbotron geopattern" data-pattern-id="IOC之深入分析PropertyOverrideConfigurer">
+    <div class="container">
+        <div id="jumbotron-meta-info">
+            <h1>IOC之深入分析PropertyOverrideConfigurer</h1>
+            <span class="meta-info">
+                <a><span class="octicon octicon-calendar"></span> 2020-01-24</a>
+                
+                    <a><span class="octicon octicon-book"></span></a>
+                    
+                        <a href="/blog/categories/Spring/">Spring</a>
+                    
+                        <a href="/blog/categories/Spring/%E3%80%8ASpring%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E3%80%8B/">《Spring源码分析》</a>
+                    
+                
+                
+                    
+                
+            </span>
+        </div>
 
-
-      
-    <div class="article-category">
-        <i class="fas fa-archive"></i>
-        <a class="category-link" href="/blog/categories/Spring/">Spring</a> › <a class="category-link" href="/blog/categories/Spring/%E3%80%8ASpring%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E3%80%8B/">《Spring源码分析》</a>
     </div>
+</section>
+<script>
+    $(document).ready(function(){
 
+        $('.geopattern').each(function(){
+            $(this).geopattern($(this).data('pattern-id'));
+        });
 
-      
-    <div class="article-tag">
-        <i class="fas fa-tag"></i>
-        <a class="tag-link-link" href="/blog/tags/Spring/" rel="tag">Spring</a>, <a class="tag-link-link" href="/blog/tags/%E8%BD%AC%E8%BD%BD/" rel="tag">转载</a>
-    </div>
-
-
-    </div>
-  </header>
-  
-
-  <div class="content" itemprop="articleBody">
-    <blockquote>
+    });
+</script>
+<!-- 文章内容部分 -->
+<article class="post container " itemscope itemtype="http://schema.org/BlogPosting" id="openwrite-container">
+    <div class="row">
+        <div class="col-md-9 markdown-body">
+            <!-- 文章开始部分 -->
+            <!--<div style="text-align:center">-->
+<!--    <img style="display:inline-block" width="130" height="27"-->
+<!--         src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/640-3.gif"-->
+<!--         data-loaded="true">-->
+<!--    <img style="display:inline-block" width="41" height="35"-->
+<!--         src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/640-4.gif"-->
+<!--         data-loaded="true">-->
+<!--    <img style="display:inline-block"-->
+<!--         width="130" height="27"-->
+<!--         src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/640-5.gif"-->
+<!--         data-loaded="true">-->
+<!--</div>-->
+            <blockquote>
 <p>本文作者：chenssy</p>
-<p>出处：<a target="_blank" rel="external nofollow noopener noreferrer" href="http://cmsblogs.com/?p=3924">http://cmsblogs.com/?p=3924</a></p>
+<p>出处：<a href="http://cmsblogs.com/?p=3924" target="_blank" rel="external nofollow noopener noreferrer">http://cmsblogs.com/?p=3924</a></p>
 <p>在学习<code>Spring源码</code>的过程中发现的好站+好贴，原创不易感谢作者。</p>
 <p>Spring版本：<strong>Spring 5.0.6.RELEASE</strong></p>
 </blockquote>
@@ -178,12 +280,25 @@
 <p>这个定义听起来有点儿玄乎，通俗点说就是我们可以通过 PropertyOverrideConfigurer 来覆盖任何 bean 中的任何属性，只要我们想。</p>
 <p><u>PropertyOverrideConfigurer 的使用规则是 <code>beanName.propertyName=value</code>，这里需要注意的是 beanName，propertyName 则是该 bean 中存在的属性。</u></p>
 <h2 id="使用"><a href="#使用" class="headerlink" title="使用"></a>使用</h2><p>依然使用以前的例子，Student.class，我们只需要修改下配置文件，声明下 PropertyOverrideConfigurer 以及其加载的配置文件。如下：</p>
-<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">bean</span> <span class="attr">class</span>=<span class="string">&quot;org.springframework.beans.factory.config.PropertyOverrideConfigurer&quot;</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">property</span> <span class="attr">name</span>=<span class="string">&quot;locations&quot;</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">list</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">value</span>&gt;</span>classpath:application.properties<span class="tag">&lt;/<span class="name">value</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">list</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;/<span class="name">property</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">bean</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">bean</span> <span class="attr">id</span>=<span class="string">&quot;student&quot;</span> <span class="attr">class</span>=<span class="string">&quot;org.springframework.core.service.StudentService&quot;</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">property</span> <span class="attr">name</span>=<span class="string">&quot;name&quot;</span> <span class="attr">value</span>=<span class="string">&quot;chenssy&quot;</span>/&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">bean</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-xml"><code class="language-xml"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>bean</span> <span class="token attr-name">class</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>org.springframework.beans.factory.config.PropertyOverrideConfigurer<span class="token punctuation">"</span></span><span class="token punctuation">></span></span>
+  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>property</span> <span class="token attr-name">name</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>locations<span class="token punctuation">"</span></span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>list</span><span class="token punctuation">></span></span>
+      <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>value</span><span class="token punctuation">></span></span>classpath:application.properties<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>value</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>list</span><span class="token punctuation">></span></span>
+  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>property</span><span class="token punctuation">></span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>bean</span><span class="token punctuation">></span></span>
+
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>bean</span> <span class="token attr-name">id</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>student<span class="token punctuation">"</span></span> <span class="token attr-name">class</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>org.springframework.core.service.StudentService<span class="token punctuation">"</span></span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>property</span> <span class="token attr-name">name</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>name<span class="token punctuation">"</span></span> <span class="token attr-name">value</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>chenssy<span class="token punctuation">"</span></span><span class="token punctuation">/></span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>bean</span><span class="token punctuation">></span></span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>指定 student 的 name 属性值为 chenssy，声明 PropertyOverrideConfigurer 加载的文件为 application.properties，内容如下：</p>
-<figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">student.name</span> = <span class="string">chenssy-PropertyOverrideConfigurer</span></span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-properties"><code class="language-properties"><span class="token attr-name">student.name</span> <span class="token punctuation">=</span> <span class="token attr-value">chenssy-PropertyOverrideConfigurer</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
 <p>指定 beanName 为 student 的 bean 的 name 属性值为 chenssy-PropertyOverrideConfigurer。</p>
 <p>测试打印 student 中的 name 属性值，如下：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">ApplicationContext context = <span class="keyword">new</span> ClassPathXmlApplicationContext(<span class="string">&quot;spring.xml&quot;</span>);</span><br><span class="line"></span><br><span class="line">StudentService studentService = (StudentService) context.getBean(<span class="string">&quot;student&quot;</span>);</span><br><span class="line">System.out.println(<span class="string">&quot;student name:&quot;</span> + studentService.getName());</span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-java"><code class="language-java">ApplicationContext context <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">ClassPathXmlApplicationContext</span><span class="token punctuation">(</span><span class="token string">"spring.xml"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+StudentService studentService <span class="token operator">=</span> <span class="token punctuation">(</span>StudentService<span class="token punctuation">)</span> context<span class="token punctuation">.</span><span class="token function">getBean</span><span class="token punctuation">(</span><span class="token string">"student"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"student name:"</span> <span class="token operator">+</span> studentService<span class="token punctuation">.</span><span class="token function">getName</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
 <p>运行结果为：</p>
 <p><img src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2020/05/27/15377119278769_ti0Upp_WR3LqN.jpg" alt="img"></p>
 <p>从中可以看出 PropertyOverrideConfigurer 定义的文件取代了 bean 中默认的值。</p>
@@ -191,9 +306,31 @@
 <p>这里先简单分析下：如果<code>PropertyOverrideConfigurer</code> 先作用，那么 <code>PropertyPlaceholderConfigurer</code> 在匹配占位符的时候就找不到了，如果 <code>PropertyOverrideConfigurer</code> 后作用，也会直接取代 <code>PropertyPlaceholderConfigurer</code> 定义的值，所以无论如何都会显示 <code>PropertyOverrideConfigurer</code> 定义的值。</p>
 <p>是不是这样呢？看如下例子：</p>
 <p>xml 配置文件调整如下：</p>
-<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">bean</span> <span class="attr">class</span>=<span class="string">&quot;org.springframework.beans.factory.config.PropertyOverrideConfigurer&quot;</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">property</span> <span class="attr">name</span>=<span class="string">&quot;locations&quot;</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">list</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">value</span>&gt;</span>classpath:application1.properties<span class="tag">&lt;/<span class="name">value</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">list</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;/<span class="name">property</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">bean</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">bean</span> <span class="attr">class</span>=<span class="string">&quot;org.springframework.beans.factory.config.PropertyPlaceholderConfigurer&quot;</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">property</span> <span class="attr">name</span>=<span class="string">&quot;locations&quot;</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">list</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">value</span>&gt;</span>classpath:application2.properties<span class="tag">&lt;/<span class="name">value</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">list</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;/<span class="name">property</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">bean</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">bean</span> <span class="attr">id</span>=<span class="string">&quot;student&quot;</span> <span class="attr">class</span>=<span class="string">&quot;org.springframework.core.service.StudentService&quot;</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">property</span> <span class="attr">name</span>=<span class="string">&quot;name&quot;</span> <span class="attr">value</span>=<span class="string">&quot;$&#123;studentService.name&#125;&quot;</span>/&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">bean</span>&gt;</span></span><br></pre></td></tr></table></figure>
-<p>指定 PropertyPlaceholderConfigurer 加载文件为 application1.properties，PropertyPlaceholderConfigurer 加载文件为 application2.properties，student 的 name 属性使用占位符 <code>$&#123;studentService.name&#125;</code>。配置文件内容为：</p>
-<figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># application1.properties：</span></span><br><span class="line"><span class="meta">student.name</span> = <span class="string">chenssy-PropertyOverrideConfigurer</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># application2.properties：</span></span><br><span class="line"><span class="meta">studentService.name</span> = <span class="string">chenssy-PropertyPlaceholderConfigurer</span></span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-xml"><code class="language-xml"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>bean</span> <span class="token attr-name">class</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>org.springframework.beans.factory.config.PropertyOverrideConfigurer<span class="token punctuation">"</span></span><span class="token punctuation">></span></span>
+  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>property</span> <span class="token attr-name">name</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>locations<span class="token punctuation">"</span></span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>list</span><span class="token punctuation">></span></span>
+      <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>value</span><span class="token punctuation">></span></span>classpath:application1.properties<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>value</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>list</span><span class="token punctuation">></span></span>
+  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>property</span><span class="token punctuation">></span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>bean</span><span class="token punctuation">></span></span>
+
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>bean</span> <span class="token attr-name">class</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>org.springframework.beans.factory.config.PropertyPlaceholderConfigurer<span class="token punctuation">"</span></span><span class="token punctuation">></span></span>
+  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>property</span> <span class="token attr-name">name</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>locations<span class="token punctuation">"</span></span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>list</span><span class="token punctuation">></span></span>
+      <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>value</span><span class="token punctuation">></span></span>classpath:application2.properties<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>value</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>list</span><span class="token punctuation">></span></span>
+  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>property</span><span class="token punctuation">></span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>bean</span><span class="token punctuation">></span></span>
+
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>bean</span> <span class="token attr-name">id</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>student<span class="token punctuation">"</span></span> <span class="token attr-name">class</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>org.springframework.core.service.StudentService<span class="token punctuation">"</span></span><span class="token punctuation">></span></span>
+  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>property</span> <span class="token attr-name">name</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>name<span class="token punctuation">"</span></span> <span class="token attr-name">value</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>${studentService.name}<span class="token punctuation">"</span></span><span class="token punctuation">/></span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>bean</span><span class="token punctuation">></span></span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>指定 PropertyPlaceholderConfigurer 加载文件为 application1.properties，PropertyPlaceholderConfigurer 加载文件为 application2.properties，student 的 name 属性使用占位符 <code>${studentService.name}</code>。配置文件内容为：</p>
+<pre class="line-numbers language-properties"><code class="language-properties"><span class="token comment" spellcheck="true"># application1.properties：</span>
+<span class="token attr-name">student.name</span> <span class="token punctuation">=</span> <span class="token attr-value">chenssy-PropertyOverrideConfigurer</span>
+
+<span class="token comment" spellcheck="true"># application2.properties：</span>
+<span class="token attr-name">studentService.name</span> <span class="token punctuation">=</span> <span class="token attr-value">chenssy-PropertyPlaceholderConfigurer</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>测试程序依然是打印 name 属性值，运行结果如下：</p>
 <p><img src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2020/05/27/15377127284347_fDOIPu_94XAir.jpg" alt="img"></p>
 <p>所以，上面的分析没有错。</p>
@@ -201,181 +338,351 @@
 <h2 id="实现原理"><a href="#实现原理" class="headerlink" title="实现原理"></a>实现原理</h2><p>UML 结构图如下：</p>
 <p><img src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2020/05/27/spring-201809231001-20200527093418095_v2NThs.png" alt="spring-201809231001"></p>
 <p>与 PropertyPlaceholderConfigurer 一样，也是继承 PropertyResourceConfigurer，我们知道 PropertyResourceConfigurer 对 BeanFactoryPostProcessor 的 <code>postProcessBeanFactory()</code> 提供了实现，在该实现中它会去读取指定配置文件中的内容，然后 <code>processProperties()</code> ，该方法是一个抽象方法，具体的实现由子类来实现，所以这里我们只需要看 PropertyOverrideConfigurer 中 <code>processProperties()</code> 中的具体实现，如下:</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title">processProperties</span><span class="params">(ConfigurableListableBeanFactory beanFactory, Properties props)</span></span></span><br><span class="line"><span class="function">  <span class="keyword">throws</span> BeansException </span>&#123;</span><br><span class="line">  <span class="comment">// 迭代配置文件中的内容</span></span><br><span class="line">  <span class="keyword">for</span> (Enumeration&lt;?&gt; names = props.propertyNames(); names.hasMoreElements();) &#123;</span><br><span class="line">    String key = (String) names.nextElement();</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">      processKey(beanFactory, key, props.getProperty(key));</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">catch</span> (BeansException ex) &#123;</span><br><span class="line">      String msg = <span class="string">&quot;Could not process key &#x27;&quot;</span> + key + <span class="string">&quot;&#x27; in PropertyOverrideConfigurer&quot;</span>;</span><br><span class="line">      <span class="keyword">if</span> (!<span class="keyword">this</span>.ignoreInvalidKeys) &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> BeanInitializationException(msg, ex);</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">if</span> (logger.isDebugEnabled()) &#123;</span><br><span class="line">        logger.debug(msg, ex);</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">protected</span> <span class="token keyword">void</span> <span class="token function">processProperties</span><span class="token punctuation">(</span>ConfigurableListableBeanFactory beanFactory<span class="token punctuation">,</span> Properties props<span class="token punctuation">)</span>
+  <span class="token keyword">throws</span> BeansException <span class="token punctuation">{</span>
+  <span class="token comment" spellcheck="true">// 迭代配置文件中的内容</span>
+  <span class="token keyword">for</span> <span class="token punctuation">(</span>Enumeration<span class="token operator">&lt;</span><span class="token operator">?</span><span class="token operator">></span> names <span class="token operator">=</span> props<span class="token punctuation">.</span><span class="token function">propertyNames</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> names<span class="token punctuation">.</span><span class="token function">hasMoreElements</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    String key <span class="token operator">=</span> <span class="token punctuation">(</span>String<span class="token punctuation">)</span> names<span class="token punctuation">.</span><span class="token function">nextElement</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">try</span> <span class="token punctuation">{</span>
+      <span class="token function">processKey</span><span class="token punctuation">(</span>beanFactory<span class="token punctuation">,</span> key<span class="token punctuation">,</span> props<span class="token punctuation">.</span><span class="token function">getProperty</span><span class="token punctuation">(</span>key<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">BeansException</span> ex<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+      String msg <span class="token operator">=</span> <span class="token string">"Could not process key '"</span> <span class="token operator">+</span> key <span class="token operator">+</span> <span class="token string">"' in PropertyOverrideConfigurer"</span><span class="token punctuation">;</span>
+      <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span><span class="token keyword">this</span><span class="token punctuation">.</span>ignoreInvalidKeys<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">throw</span> <span class="token keyword">new</span> <span class="token class-name">BeanInitializationException</span><span class="token punctuation">(</span>msg<span class="token punctuation">,</span> ex<span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token punctuation">}</span>
+      <span class="token keyword">if</span> <span class="token punctuation">(</span>logger<span class="token punctuation">.</span><span class="token function">isDebugEnabled</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        logger<span class="token punctuation">.</span><span class="token function">debug</span><span class="token punctuation">(</span>msg<span class="token punctuation">,</span> ex<span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>迭代 props 内容，依次调用 <code>processKey()</code>，如下:</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title">processKey</span><span class="params">(ConfigurableListableBeanFactory factory, String key, String value)</span></span></span><br><span class="line"><span class="function">  <span class="keyword">throws</span> BeansException </span>&#123;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 判断是否存在 &quot;.&quot;</span></span><br><span class="line">  <span class="comment">// 获取其索引位置</span></span><br><span class="line">  <span class="keyword">int</span> separatorIndex = key.indexOf(<span class="keyword">this</span>.beanNameSeparator);</span><br><span class="line">  <span class="comment">// 如果不存在，. 则抛出异常</span></span><br><span class="line">  <span class="keyword">if</span> (separatorIndex == -<span class="number">1</span>) &#123;</span><br><span class="line">    <span class="keyword">throw</span> <span class="keyword">new</span> BeanInitializationException(<span class="string">&quot;Invalid key &#x27;&quot;</span> + key +</span><br><span class="line">                                          <span class="string">&quot;&#x27;: expected &#x27;beanName&quot;</span> + <span class="keyword">this</span>.beanNameSeparator + <span class="string">&quot;property&#x27;&quot;</span>);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 得到 beanName</span></span><br><span class="line">  String beanName = key.substring(<span class="number">0</span>, separatorIndex);</span><br><span class="line">  <span class="comment">// 得到属性值</span></span><br><span class="line">  String beanProperty = key.substring(separatorIndex+<span class="number">1</span>);</span><br><span class="line">  <span class="keyword">this</span>.beanNames.add(beanName);</span><br><span class="line">  <span class="comment">// 替换</span></span><br><span class="line">  applyPropertyValue(factory, beanName, beanProperty, value);</span><br><span class="line">  <span class="keyword">if</span> (logger.isDebugEnabled()) &#123;</span><br><span class="line">    logger.debug(<span class="string">&quot;Property &#x27;&quot;</span> + key + <span class="string">&quot;&#x27; set to value [&quot;</span> + value + <span class="string">&quot;]&quot;</span>);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">protected</span> <span class="token keyword">void</span> <span class="token function">processKey</span><span class="token punctuation">(</span>ConfigurableListableBeanFactory factory<span class="token punctuation">,</span> String key<span class="token punctuation">,</span> String value<span class="token punctuation">)</span>
+  <span class="token keyword">throws</span> BeansException <span class="token punctuation">{</span>
+
+  <span class="token comment" spellcheck="true">// 判断是否存在 "."</span>
+  <span class="token comment" spellcheck="true">// 获取其索引位置</span>
+  <span class="token keyword">int</span> separatorIndex <span class="token operator">=</span> key<span class="token punctuation">.</span><span class="token function">indexOf</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>beanNameSeparator<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token comment" spellcheck="true">// 如果不存在，. 则抛出异常</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span>separatorIndex <span class="token operator">==</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">throw</span> <span class="token keyword">new</span> <span class="token class-name">BeanInitializationException</span><span class="token punctuation">(</span><span class="token string">"Invalid key '"</span> <span class="token operator">+</span> key <span class="token operator">+</span>
+                                          <span class="token string">"': expected 'beanName"</span> <span class="token operator">+</span> <span class="token keyword">this</span><span class="token punctuation">.</span>beanNameSeparator <span class="token operator">+</span> <span class="token string">"property'"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+
+  <span class="token comment" spellcheck="true">// 得到 beanName</span>
+  String beanName <span class="token operator">=</span> key<span class="token punctuation">.</span><span class="token function">substring</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">,</span> separatorIndex<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token comment" spellcheck="true">// 得到属性值</span>
+  String beanProperty <span class="token operator">=</span> key<span class="token punctuation">.</span><span class="token function">substring</span><span class="token punctuation">(</span>separatorIndex<span class="token operator">+</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">this</span><span class="token punctuation">.</span>beanNames<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span>beanName<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token comment" spellcheck="true">// 替换</span>
+  <span class="token function">applyPropertyValue</span><span class="token punctuation">(</span>factory<span class="token punctuation">,</span> beanName<span class="token punctuation">,</span> beanProperty<span class="token punctuation">,</span> value<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span>logger<span class="token punctuation">.</span><span class="token function">isDebugEnabled</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    logger<span class="token punctuation">.</span><span class="token function">debug</span><span class="token punctuation">(</span><span class="token string">"Property '"</span> <span class="token operator">+</span> key <span class="token operator">+</span> <span class="token string">"' set to value ["</span> <span class="token operator">+</span> value <span class="token operator">+</span> <span class="token string">"]"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>获取分割符 “.” 的索引位置，得到 beanName 以及相应的属性，然后调用 <code>applyPropertyValue()</code>，如下：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title">applyPropertyValue</span><span class="params">(</span></span></span><br><span class="line"><span class="function"><span class="params">  ConfigurableListableBeanFactory factory, String beanName, String property, String value)</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">  BeanDefinition bd = factory.getBeanDefinition(beanName);</span><br><span class="line">  BeanDefinition bdToUse = bd;</span><br><span class="line">  <span class="keyword">while</span> (bd != <span class="keyword">null</span>) &#123;</span><br><span class="line">    bdToUse = bd;</span><br><span class="line">    bd = bd.getOriginatingBeanDefinition();</span><br><span class="line">  &#125;</span><br><span class="line">  PropertyValue pv = <span class="keyword">new</span> PropertyValue(property, value);</span><br><span class="line">  pv.setOptional(<span class="keyword">this</span>.ignoreInvalidKeys);</span><br><span class="line">  bdToUse.getPropertyValues().addPropertyValue(pv);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">protected</span> <span class="token keyword">void</span> <span class="token function">applyPropertyValue</span><span class="token punctuation">(</span>
+  ConfigurableListableBeanFactory factory<span class="token punctuation">,</span> String beanName<span class="token punctuation">,</span> String property<span class="token punctuation">,</span> String value<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+
+  BeanDefinition bd <span class="token operator">=</span> factory<span class="token punctuation">.</span><span class="token function">getBeanDefinition</span><span class="token punctuation">(</span>beanName<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  BeanDefinition bdToUse <span class="token operator">=</span> bd<span class="token punctuation">;</span>
+  <span class="token keyword">while</span> <span class="token punctuation">(</span>bd <span class="token operator">!=</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    bdToUse <span class="token operator">=</span> bd<span class="token punctuation">;</span>
+    bd <span class="token operator">=</span> bd<span class="token punctuation">.</span><span class="token function">getOriginatingBeanDefinition</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+  PropertyValue pv <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">PropertyValue</span><span class="token punctuation">(</span>property<span class="token punctuation">,</span> value<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  pv<span class="token punctuation">.</span><span class="token function">setOptional</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>ignoreInvalidKeys<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  bdToUse<span class="token punctuation">.</span><span class="token function">getPropertyValues</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">addPropertyValue</span><span class="token punctuation">(</span>pv<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>从容器中获取 BeanDefinition ，然后根据属性 property 和 其值 value 构造成一个 PropertyValue 对象，最后调用 <code>addPropertyValue()</code> 方法。<strong>PropertyValue 是用于保存一组bean属性的信息和值的对像。</strong></p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> MutablePropertyValues <span class="title">addPropertyValue</span><span class="params">(PropertyValue pv)</span> </span>&#123;</span><br><span class="line"> <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="keyword">this</span>.propertyValueList.size(); i++) &#123;</span><br><span class="line">  PropertyValue currentPv = <span class="keyword">this</span>.propertyValueList.get(i);</span><br><span class="line">  <span class="keyword">if</span> (currentPv.getName().equals(pv.getName())) &#123;</span><br><span class="line">   pv = mergeIfRequired(pv, currentPv);</span><br><span class="line">   setPropertyValueAt(pv, i);</span><br><span class="line">   <span class="keyword">return</span> <span class="keyword">this</span>;</span><br><span class="line">  &#125;</span><br><span class="line"> &#125;</span><br><span class="line"> <span class="keyword">this</span>.propertyValueList.add(pv);</span><br><span class="line"> <span class="keyword">return</span> <span class="keyword">this</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-java"><code class="language-java"> <span class="token keyword">public</span> MutablePropertyValues <span class="token function">addPropertyValue</span><span class="token punctuation">(</span>PropertyValue pv<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+  <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> <span class="token keyword">this</span><span class="token punctuation">.</span>propertyValueList<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> i<span class="token operator">++</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+   PropertyValue currentPv <span class="token operator">=</span> <span class="token keyword">this</span><span class="token punctuation">.</span>propertyValueList<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span>i<span class="token punctuation">)</span><span class="token punctuation">;</span>
+   <span class="token keyword">if</span> <span class="token punctuation">(</span>currentPv<span class="token punctuation">.</span><span class="token function">getName</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">equals</span><span class="token punctuation">(</span>pv<span class="token punctuation">.</span><span class="token function">getName</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    pv <span class="token operator">=</span> <span class="token function">mergeIfRequired</span><span class="token punctuation">(</span>pv<span class="token punctuation">,</span> currentPv<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">setPropertyValueAt</span><span class="token punctuation">(</span>pv<span class="token punctuation">,</span> i<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">return</span> <span class="token keyword">this</span><span class="token punctuation">;</span>
+   <span class="token punctuation">}</span>
+  <span class="token punctuation">}</span>
+  <span class="token keyword">this</span><span class="token punctuation">.</span>propertyValueList<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span>pv<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">return</span> <span class="token keyword">this</span><span class="token punctuation">;</span>
+ <span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>添加 PropertyValue 对象，替换或者合并相同的属性值。整个过程其实与上面猜测相差不是很大。</p>
 <p>至此，PropertyOverrideConfigurer 到这里也就分析完毕了。最后看下 PropertyPlaceholderConfigurer 和 PropertyOverrideConfigurer 整体的结构图：</p>
 <p><img src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2020/05/27/spring-201809231002_8yTF1l_7kG2Gt.png" alt="spring-201809231002"></p>
 
-  </div>
-
-  
-    <div style="text-align:center;width:100%">
-      <img src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/640-2.gif">
-    </div>
-  
-
-  
-    <div>
-      <h4>版权声明</h4>
-      <pre>
-        
-        <strong>本文来源： </strong><a href="http://cmsblogs.com/?p=3924" title="Java技术驿站 | chenssy |【死磕 Spring】| IOC之深入分析PropertyOverrideConfigurer" rel="external nofollow noopener noreferrer" target="_blank">http://cmsblogs.com/?p=3924</a>
-
-        <strong>本文链接：</strong><a href="https://www.cayzlh.com/2020/01/24/e5d90f02.html" title="/blog/IOC%E4%B9%8B%E6%B7%B1%E5%85%A5%E5%88%86%E6%9E%90PropertyOverrideConfigurer">https://www.cayzlh.com/2020/01/24/e5d90f02.html</a>
-
-        <strong>版权声明： </strong>
-        
-          文章内容仅用作学习和分享，转载请注明出处
-        
-      </pre>
-    </div>
-  
-
-</article>
-
-
-
-        
-          <div id="footer-post-container">
-  <div id="footer-post">
-
-    <div id="nav-footer" style="display: none">
-      <ul>
-        
-          <li><a href="/blog/">Home</a></li>
-        
-          <li><a href="/blog/archives/">Articles</a></li>
-        
-          <li><a href="/blog/about/">About</a></li>
-        
-          <li><a href="/blog/search/">Search</a></li>
-        
-      </ul>
-    </div>
-
-    <div id="toc-footer" style="display: none">
-      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BD%BF%E7%94%A8"><span class="toc-number">1.</span> <span class="toc-text">使用</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AE%9E%E7%8E%B0%E5%8E%9F%E7%90%86"><span class="toc-number">2.</span> <span class="toc-text">实现原理</span></a></li></ol>
-    </div>
-
-    <div id="share-footer" style="display: none">
-      <ul>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.facebook.com/sharer.php?u=https://www.cayzlh.com/2020/01/24/e5d90f02.html"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://twitter.com/share?url=https://www.cayzlh.com/2020/01/24/e5d90f02.html&text=IOC之深入分析PropertyOverrideConfigurer"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.linkedin.com/shareArticle?url=https://www.cayzlh.com/2020/01/24/e5d90f02.html&title=IOC之深入分析PropertyOverrideConfigurer"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://pinterest.com/pin/create/bookmarklet/?url=https://www.cayzlh.com/2020/01/24/e5d90f02.html&is_video=false&description=IOC之深入分析PropertyOverrideConfigurer"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="mailto:?subject=IOC之深入分析PropertyOverrideConfigurer&body=Check out this article: https://www.cayzlh.com/2020/01/24/e5d90f02.html"><i class="fas fa-envelope fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://getpocket.com/save?url=https://www.cayzlh.com/2020/01/24/e5d90f02.html&title=IOC之深入分析PropertyOverrideConfigurer"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://reddit.com/submit?url=https://www.cayzlh.com/2020/01/24/e5d90f02.html&title=IOC之深入分析PropertyOverrideConfigurer"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.stumbleupon.com/submit?url=https://www.cayzlh.com/2020/01/24/e5d90f02.html&title=IOC之深入分析PropertyOverrideConfigurer"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://digg.com/submit?url=https://www.cayzlh.com/2020/01/24/e5d90f02.html&title=IOC之深入分析PropertyOverrideConfigurer"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.tumblr.com/share/link?url=https://www.cayzlh.com/2020/01/24/e5d90f02.html&name=IOC之深入分析PropertyOverrideConfigurer&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://news.ycombinator.com/submitlink?u=https://www.cayzlh.com/2020/01/24/e5d90f02.html&t=IOC之深入分析PropertyOverrideConfigurer"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
-</ul>
-
-    </div>
-
-    <div id="actions-footer">
-        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fas fa-bars fa-lg" aria-hidden="true"></i> Menu</a>
-        <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fas fa-list fa-lg" aria-hidden="true"></i> TOC</a>
-<!--        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fas fa-share-alt fa-lg" aria-hidden="true"></i> Share</a>-->
-        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a>
-    </div>
-
-  </div>
+            <!-- 文章结尾部分 -->
+            
+                
+<div style="text-align:center;width:100%">
+    <span class="octicon octicon-tag-add"></span>
+    
+        <a style="color: #24292e;" href="/blog/tags/Spring/">Spring</a>
+    
+        <a style="color: #24292e;" href="/blog/tags/%E8%BD%AC%E8%BD%BD/">转载</a>
+    
 </div>
 
-        
-        <footer id="footer">
-  <div class="footer-left">
-    CAYZLH &copy;
-    
-    
-    2019-2021
-    粤ICP备20058712号-1
-  </div>
-  <div class="footer-right">
-    <nav>
-      <ul>
-        
-          <li><a href="/blog/tools/">tools</a></li>
-        
-          <li><a href="/blog/links/">links</a></li>
-        
-      </ul>
-    </nav>
-  </div>
-</footer>
 
+
+    <div style="text-align:center;width:100%">
+        <img src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/640-2.gif">
     </div>
-    <!-- styles -->
-
-<link rel="stylesheet" href="/blog/lib/font-awesome/css/all.min.css">
 
 
-<link rel="stylesheet" href="/blog/lib/justified-gallery/css/justifiedGallery.min.css">
 
 
-    <!-- jquery -->
-
-<script src="/blog/lib/jquery/jquery.min.js"></script>
-
-
-<script src="/blog/lib/justified-gallery/js/jquery.justifiedGallery.min.js"></script>
-
-<!-- clipboard -->
-
-  
-<script src="/blog/lib/clipboard/clipboard.min.js"></script>
-
-  <script type="text/javascript">
-  $(function() {
-    // copy-btn HTML
-    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"Copy to clipboard!\">";
-    btn += '<i class="far fa-clone"></i>';
-    btn += '</span>'; 
-    // mount it!
-    $(".highlight table").before(btn);
-    var clip = new ClipboardJS('.btn-copy', {
-      text: function(trigger) {
-        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
-      }
-    });
-    clip.on('success', function(e) {
-      e.trigger.setAttribute('aria-label', "Copied!");
-      e.clearSelection();
-    })
-  })
-  </script>
-
-
-<script src="/blog/js/main.js"></script>
-
-<!-- search -->
-
-<!-- Google Analytics -->
-
-    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-129095667-1"></script>
-    <script>
-        window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
-        gtag('js', new Date());
-        gtag('config', 'UA-129095667-1');
-    </script>
-
-<!-- Baidu Analytics -->
-
-<!-- Cloudflare Analytics -->
-
-<!-- Umami Analytics -->
-
-<!-- Disqus Comments -->
+<div>
+    <h4>相关推荐</h4>
+    <ul class="post-copyright">
+        
+        <li class="post-copyright-author">
+            <a href="/blog/2020/01/23/cd2eaad8.html">IOC之PropertyPlaceholderConfigurer的应用</a>
+        </li>
+        
+        <li class="post-copyright-author">
+            <a href="/blog/2020/01/21/e8e94997.html">IOC之Bean的初始化</a>
+        </li>
+        
+        <li class="post-copyright-author">
+            <a href="/blog/2020/01/19/6271d9d2.html">IOC之Factory实例化bean</a>
+        </li>
+        
+        <li class="post-copyright-author">
+            <a href="/blog/2020/01/24/fcc18cc7.html">IOC之分析BeanWrapper</a>
+        </li>
+        
+        <li class="post-copyright-author">
+            <a href="/blog/2020/01/24/25302edf.html">IOC之bean的实例化策略：InstantiationStrategy</a>
+        </li>
+        
+        <li class="post-copyright-author">
+            <a href="/blog/2020/01/20/1293fb33.html">IOC之属性填充</a>
+        </li>
+        
+    </ul>
+    <br><br>
+</div>
 
 
+
+<div>
+    <h4>版权声明</h4>
+    <blockquote>
+        <ul class="post-copyright">
+            <li class="post-copyright-author">
+                <strong>本文来源： </strong>
+                
+                <a href="http://cmsblogs.com/?p=3924" title="Java技术驿站 | chenssy |【死磕 Spring】| IOC之深入分析PropertyOverrideConfigurer" rel="external nofollow noopener noreferrer" target="_blank">Java技术驿站 | chenssy |【死磕 Spring】| IOC之深入分析PropertyOverrideConfigurer</a></li>
+            <li class="post-copyright-link">
+                <strong>本文链接：</strong>
+                <a href="https://www.cayzlh.com/2020/01/24/e5d90f02.html" title="/blog/IOC%E4%B9%8B%E6%B7%B1%E5%85%A5%E5%88%86%E6%9E%90PropertyOverrideConfigurer">https://www.cayzlh.com/2020/01/24/e5d90f02.html</a>
+            </li>
+            <li class="post-copyright-license">
+                <strong>版权声明： </strong>
+                
+                    文章内容仅用作学习和分享，如有雷同，纯属拷贝。
+                
+            </li>
+        </ul>
+    </blockquote>
+</div>
+
+
+            
+            
+                <div class="comment">
+    <br><br><br>
+    
+</div>
+            
+        </div>
+        
+            <div class="col-md-3">
+                <h4>文章目录</h4>
+                <div id="toc" style="display: none;">
+                    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#使用"><span class="toc-text">使用</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#实现原理"><span class="toc-text">实现原理</span></a></li></ol>
+                </div>
+                <div id="post-directory-module">
+                    <section class="post-directory">
+                        <!-- Links that trigger the jumping -->
+                        <!-- Added by javascript below -->
+                        <dl></dl>
+                    </section>
+                </div>
+
+                <script type="text/javascript">
+                    var getChild = function ($parent) {
+                        var child = {};
+                        child.path = $parent.find("a").attr("href");
+                        child.title = $parent.find("a").find("span").html();
+
+                        var $children = $($parent.children("ol").children());
+                        if ($children) {
+                            var children = [];
+                            $children.each(function () {
+                                children.push(getChild($(this)));
+                            });
+                            child.children = children;
+                        }
+                        return child;
+                    }
+                    $(document).ready(function () {
+                        var toc = [];
+                        $("#toc").children().children().each(function () {
+                            toc.push(getChild($(this)));
+                        });
+                        if (toc.length > 0) {
+                            $("#toc").remove();
+                            toc.forEach(function (t) {
+                                $(".post-directory dl").append("<dt><a class=\"jumper\" href="
+                                    + t.path
+                                    + ">"
+                                    + t.title
+                                    + "</a></dt>");
+                                var tc = t.children;
+                                if (tc.length > 0) {
+                                    tc.forEach(function (c) {
+                                        $(".post-directory dl").append(
+                                            "<dd><a class=\"jumper\" href="
+                                            + c.path
+                                            + ">"
+                                            + "&nbsp;&nbsp;- " + c.title
+                                            + "</a></dd>"
+                                        );
+                                    });
+                                }
+                            });
+
+                        }
+                        var fixmeTop = $('#post-directory-module').offset().top - 100;       // get initial position of the element
+
+                        $(window).scroll(function () {                  // assign scroll event listener
+
+                            var currentScroll = $(window).scrollTop(); // get current position
+
+                            if (currentScroll >= fixmeTop) {           // apply position: fixed if you
+                                $('#post-directory-module').css({      // scroll to that element or below it
+                                    top: '100px',
+                                    position: 'fixed',
+                                    width: 'inherit'
+                                });
+                            } else {                                   // apply position: static
+                                $('#post-directory-module').css({      // if you scroll above it
+                                    position: 'inherit',
+                                    width: 'inherit'
+                                });
+                            }
+
+                        });
+
+                        $("a.jumper").on("click", function (e) {
+
+                            e.preventDefault();
+
+                            $("body, html").animate({
+                                scrollTop: ($($(this).attr('href')).offset().top - 100)
+                            }, 600);
+
+                        });
+                    });
+
+                </script>
+            </div>
+        
+    </div>
+    
+</article>
+
+<script>
+    hljs.initHighlightingOnLoad();
+</script>
+</main>
+<footer class="container">
+    <div class="site-footer">
+        
+    <div class="card text-center">
+        <ul class="list-inline" style="margin-left: 0;">
+            
+                <li>
+                    <a target="_blank" href="https://github.com/cayzlh" rel="external nofollow noopener noreferrer">
+                          <span class="fa-stack fa-lg">
+                            <i class="fa fa-circle fa-stack-2x"></i>
+                            <i class="fa fa-github fa-stack-1x fa-inverse">
+                                
+                            </i>
+                          </span>
+                    </a>
+                </li>
+            
+                <li>
+                    <a target="_blank" href="https://www.zhihu.com/people/chenanyu" rel="external nofollow noopener noreferrer">
+                          <span class="fa-stack fa-lg">
+                            <i class="fa fa-circle fa-stack-2x"></i>
+                            <i class="fa  fa-stack-1x fa-inverse">
+                                知
+                            </i>
+                          </span>
+                    </a>
+                </li>
+            
+                <li>
+                    <a target="_blank" href="mailto:Q2F5emxo@cayzlh.com">
+                          <span class="fa-stack fa-lg">
+                            <i class="fa fa-circle fa-stack-2x"></i>
+                            <i class="fa fa-envelope fa-stack-1x fa-inverse">
+                                
+                            </i>
+                          </span>
+                    </a>
+                </li>
+            
+        </ul>
+    </div>
+
+
+        <div class="site-footer-links mobile-hidden">
+            
+                
+                
+            
+        </div>
+
+        <div class="site-footer-links mobile-hidden">
+        
+            <span class="meta-info-index hvr-grow">
+                
+                    <a href="https://www.cayzlh.com">
+                        🐳Ant丶 &copy; 2020
+                    </a>
+                
+            </span>
+        
+        
+            <span class="meta-info-index hvr-grow">
+                <a href="http://beian.miit.gov.cn" target="_blank" rel="external nofollow noopener noreferrer">粤ICP备20058712号-1</a>
+            </span>
+        
+        </div>
+
+        
+
+        
+    </div>
+    
+
+    
+        <!-- Third-Party JS -->
+        <script type="text/javascript" src="/blog/js/thirdparty/geopattern.min.js"></script>
+        <!-- My JS -->
+        <script type="text/javascript" src="/blog/js/script.js"></script>
+    
+
+    
+        <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js">
+        </script>
+    
+</footer>
 </body>
 </html>

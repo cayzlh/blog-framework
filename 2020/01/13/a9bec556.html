@@ -1,173 +1,299 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
+
 <head>
-    <!-- so meta -->
     <meta charset="utf-8">
+    <meta name="keywords" content="Spring, 死磕Spring, Bean, IOC">
+    <meta name="description" content="Ant丶的网络日志, CAYZLH网络日志, CAYZLH, CAYZLH主页, Ant丶空间">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="HandheldFriendly" content="True">
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-    <meta name="description" content="分析Spring IoC之注册解析的BeanDefinitions的源码">
-<meta property="og:type" content="article">
-<meta property="og:title" content="IoC之注册解析的BeanDefinitions">
-<meta property="og:url" content="http://cmsblogs.com/?p=2763">
-<meta property="og:site_name" content="CAYZLH">
-<meta property="og:description" content="分析Spring IoC之注册解析的BeanDefinitions的源码">
-<meta property="og:locale" content="en_US">
-<meta property="article:published_time" content="2020-01-13T07:04:56.000Z">
-<meta property="article:modified_time" content="2020-05-21T13:38:03.876Z">
-<meta property="article:author" content="🐳Ant丶">
-<meta property="article:tag" content="Spring">
-<meta property="article:tag" content="死磕Spring">
-<meta name="twitter:card" content="summary">
-    
-    
-      
-        
-          <link rel="shortcut icon" href="/blog/images/favicon.ico">
-        
-      
-      
-        
-          <link rel="icon" type="image/png" href="/blog/images/favicon-192x192.png" sizes="192x192">
-        
-      
-      
-        
-          <link rel="apple-touch-icon" sizes="180x180" href="/blog/images/apple-touch-icon.png">
-        
-      
-    
-    <!-- title -->
-    <title>IoC之注册解析的BeanDefinitions</title>
-    <!-- styles -->
-    
-<link rel="stylesheet" href="/blog/css/style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="renderer" content="webkit|ie-stand|ie-comp">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <!-- Global site tag (gtag.js) - Google Analytics -->
 
-    <!-- persian styles -->
-    
-      
-<link rel="stylesheet" href="/blog/css/rtl.css">
+    <meta name="google-site-verification" content="VrcbMTVpFGlHkIERHBt753dAtXKF4qirjnDweuXSRJw">
+
+
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-129095667-1"></script>
+<script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() {
+        dataLayer.push(arguments);
+    }
+
+    gtag('js', new Date());
+    gtag('config', 'UA-129095667-1');
+</script>
+
+
+    <title>IoC之注册解析的BeanDefinitions | CAYZLH</title>
 
     
-    <!-- rss -->
+    <!-- Third-Party CSS -->
     
-    
-      <link rel="alternate" href="/blog/true" title="CAYZLH" type="application/atom+xml">
-    
-<meta name="generator" content="Hexo 5.3.0"></head>
+        <link rel="icon" type="image/svg+xml" href="/blog/favicon.svg">
+        <link rel="stylesheet" href="/blog/css/thirdparty/bootstrap.min.css">
+        <link rel="stylesheet" href="/blog/css/thirdparty/octicons.css">
+        <link rel="stylesheet" href="/blog/css/thirdparty/hover-min.css">
+        <link rel="stylesheet" href="/blog/css/thirdparty/user-content.min.css">
+        <link rel="stylesheet" href="/blog/css/thirdparty/syntax.css">
+        <link rel="stylesheet" href="/blog/css/thirdparty/gitalk.css">
 
-<body class="max-width mx-auto px3 ltr">
-    
-      <div id="header-post">
-  <a id="menu-icon" href="#"><i class="fas fa-bars fa-lg"></i></a>
-  <a id="menu-icon-tablet" href="#"><i class="fas fa-bars fa-lg"></i></a>
-  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fas fa-chevron-up fa-lg"></i></a>
-  <span id="menu">
-    <span id="nav">
-      <ul>
-        
-          <li><a href="/blog/">Home</a></li>
-        
-          <li><a href="/blog/archives/">Articles</a></li>
-        
-          <li><a href="/blog/about/">About</a></li>
-        
-          <li><a href="/blog/search/">Search</a></li>
-        
-      </ul>
-    </span>
-    <br>
-    <span id="actions">
-      <ul>
-        
-        <li><a class="icon" href="/blog/2020/01/14/af13201.html"><i class="fas fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
-        
-        
-        <li><a class="icon" href="/blog/2020/01/12/61e43345.html"><i class="fas fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
-        
-        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
-<!--        <li><a class="icon" href="#"><i class="fas fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>-->
-      </ul>
-      <span id="i-prev" class="info" style="display:none;">Previous</span>
-      <span id="i-next" class="info" style="display:none;">Next</span>
-      <span id="i-top" class="info" style="display:none;">Back to top</span>
-      <span id="i-share" class="info" style="display:none;">Share post</span>
-    </span>
-    <br>
-    <div id="share" style="display: none">
-      <ul>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.facebook.com/sharer.php?u=https://www.cayzlh.com/2020/01/13/a9bec556.html"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://twitter.com/share?url=https://www.cayzlh.com/2020/01/13/a9bec556.html&text=IoC之注册解析的BeanDefinitions"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.linkedin.com/shareArticle?url=https://www.cayzlh.com/2020/01/13/a9bec556.html&title=IoC之注册解析的BeanDefinitions"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://pinterest.com/pin/create/bookmarklet/?url=https://www.cayzlh.com/2020/01/13/a9bec556.html&is_video=false&description=IoC之注册解析的BeanDefinitions"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="mailto:?subject=IoC之注册解析的BeanDefinitions&body=Check out this article: https://www.cayzlh.com/2020/01/13/a9bec556.html"><i class="fas fa-envelope " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://getpocket.com/save?url=https://www.cayzlh.com/2020/01/13/a9bec556.html&title=IoC之注册解析的BeanDefinitions"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://reddit.com/submit?url=https://www.cayzlh.com/2020/01/13/a9bec556.html&title=IoC之注册解析的BeanDefinitions"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.stumbleupon.com/submit?url=https://www.cayzlh.com/2020/01/13/a9bec556.html&title=IoC之注册解析的BeanDefinitions"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://digg.com/submit?url=https://www.cayzlh.com/2020/01/13/a9bec556.html&title=IoC之注册解析的BeanDefinitions"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.tumblr.com/share/link?url=https://www.cayzlh.com/2020/01/13/a9bec556.html&name=IoC之注册解析的BeanDefinitions&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://news.ycombinator.com/submitlink?u=https://www.cayzlh.com/2020/01/13/a9bec556.html&t=IoC之注册解析的BeanDefinitions"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
-</ul>
+        <!-- My CSS -->
+        <link rel="stylesheet" href="/blog/css/common.css">
 
-    </div>
-    <div id="toc">
-      
-    </div>
-  </span>
+        <link rel="stylesheet" href="/blog/css/sidebar-post-nav.css">
+
+        <link rel="stylesheet" href="/blog/css/blog-page.css">
+        <!-- CSS set in page -->
+
+        
+        <link rel="stylesheet" href="/blog/css/sidebar-popular-repo.css">
+    
+
+    <!-- CSS set in layout -->
+    <link rel="stylesheet" type="text/css" href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css">
+
+    
+        <script type="text/javascript" src="/blog/js/thirdparty/jquery.min.js"></script>
+        <script type="text/javascript" src="/blog/js/thirdparty/bootstrap.min.js"></script>
+        <script type="text/javascript" src="/blog/js/lock.js"></script>
+    
+
+    
+        <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.css">
+        <script src="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js"></script>
+
+        <link rel="stylesheet" href="//imsun.github.io/gitment/style/default.css">
+        <script src="//imsun.github.io/gitment/dist/gitment.browser.js"></script>
+
+        <script src="//unpkg.com/valine/dist/Valine.min.js"></script>
+
+    
+
+    <link rel="stylesheet" href="//cdn.bootcss.com/highlight.js/9.2.0/styles/github.min.css">
+    <script src="//cdn.bootcss.com/highlight.js/9.2.0/highlight.min.js"></script>
+<meta name="generator" content="Hexo 4.2.1"><link rel="alternate" href="/blog/atom.xml" title="CAYZLH" type="application/atom+xml">
+</head>
+
+<body>
+<header class="site-header">
+    <div class="site-header-topbar">
+        <div class="container">
+            <div class="topbar-menu">
+
+    
+        <div class="item">
+            <a href="/blog/categories/" title="分类">
+                分类
+            </a>
+        </div>
+    
+        <div class="item">
+            <a href="/blog/tags/" title="标签">
+                标签
+            </a>
+        </div>
+    
+        <div class="item">
+            <a href="https://meiriyiwen.com/random" target="_blank" title="每日一文" rel="external nofollow noopener noreferrer">
+                每日一文
+            </a>
+        </div>
+    
+        <div class="item">
+            <a href="/blog/links/" title="链接">
+                链接
+            </a>
+        </div>
+    
+        <div class="item">
+            <a href="/blog/about" title="关于">
+                关于
+            </a>
+        </div>
+    
+
 </div>
+        </div>
+    </div>
+    <div class="container">
+        <a id="site-header-brand" href="/blog/" title="CAYZLH">
+            <span class="octicon octicon-mark-github"></span>
+            CAYZLH
+        </a>
 
+        <nav class="site-header-nav" role="navigation">
     
-    <div class="content index py4">
-        
-        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
-  <header>
+        <div class=" site-header-nav-item hvr-underline-from-center">
+            <a href="/blog/" title="Home">
+                Home
+            </a>
+            
+        </div>
     
-    <h1 class="posttitle" itemprop="name headline">
-        IoC之注册解析的BeanDefinitions
-    </h1>
+        <div class=" site-header-nav-item hvr-underline-from-center">
+            <a href="/blog/archives" title="Archives">
+                Archives
+            </a>
+            
+        </div>
+    
+        <div class=" site-header-nav-item hvr-underline-from-center">
+            <a href="/blog/" title="Learning">
+                Learning
+            </a>
+            
+                <ul class="submenu">
+                    
 
+                        <li>
+                            <a href="/blog/categories/%E4%B9%A6%E7%B1%8D/%E3%80%8A%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3Java%E8%99%9A%E6%8B%9F%E6%9C%BA%E3%80%8B/">
+                                <span>深入理解Java虚拟机</span>
+                            </a>
+                        </li>
 
+                    
 
-    <div class="meta">
-      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
-        <span itemprop="name">Java技术驿站-chenssy-【死磕 Spring】—– IoC之注册解析的BeanDefinitions</span>
-      </span>
-      
-    <div class="postdate">
-      
-        <time datetime="2020-01-13T07:04:56.000Z" itemprop="datePublished">2020-01-13</time>
-        
-      
+                        <li>
+                            <a href="/blog/categories/%E4%B9%A6%E7%B1%8D/%E3%80%8AMyBatis%E6%8A%80%E6%9C%AF%E5%86%85%E5%B9%95%E3%80%8B/">
+                                <span>MyBatis技术内幕</span>
+                            </a>
+                        </li>
+
+                    
+
+                        <li>
+                            <a href="/blog/categories/Java/Java%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/">
+                                <span>Java设计模式</span>
+                            </a>
+                        </li>
+
+                    
+                </ul>
+            
+        </div>
+    
+        <div class=" site-header-nav-item hvr-underline-from-center">
+            <a href="/blog/" title="Tools">
+                Tools
+            </a>
+            
+                <ul class="submenu">
+                    
+
+                        <li>
+                            <a href="https://www.cayzlh.com/tools/online-JSONFormat/" target="_blank">
+                                <span>Json在线工具</span>
+                            </a>
+                        </li>
+
+                    
+
+                        <li>
+                            <a href="https://www.cayzlh.com/tools/online-markdown/" target="_blank">
+                                <span>Markdown在线转换工具</span>
+                            </a>
+                        </li>
+
+                    
+
+                        <li>
+                            <a href="https://www.cayzlh.com/tools/online-hash/" target="_blank">
+                                <span>在线HASH</span>
+                            </a>
+                        </li>
+
+                    
+                </ul>
+            
+        </div>
+    
+</nav>
     </div>
+</header>
+<main class="content">
+    <!-- 标题部分 -->
+<section class="jumbotron geopattern" data-pattern-id="IoC之注册解析的BeanDefinitions">
+    <div class="container">
+        <div id="jumbotron-meta-info">
+            <h1>IoC之注册解析的BeanDefinitions</h1>
+            <span class="meta-info">
+                <a><span class="octicon octicon-calendar"></span> 2020-01-13</a>
+                
+                    <a><span class="octicon octicon-book"></span></a>
+                    
+                        <a href="/blog/categories/Spring/">Spring</a>
+                    
+                        <a href="/blog/categories/Spring/%E3%80%8ASpring%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E3%80%8B/">《Spring源码分析》</a>
+                    
+                
+                
+                    
+                
+            </span>
+        </div>
 
-
-      
-    <div class="article-category">
-        <i class="fas fa-archive"></i>
-        <a class="category-link" href="/blog/categories/Spring/">Spring</a> › <a class="category-link" href="/blog/categories/Spring/%E3%80%8ASpring%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E3%80%8B/">《Spring源码分析》</a>
     </div>
+</section>
+<script>
+    $(document).ready(function(){
 
+        $('.geopattern').each(function(){
+            $(this).geopattern($(this).data('pattern-id'));
+        });
 
-      
-    <div class="article-tag">
-        <i class="fas fa-tag"></i>
-        <a class="tag-link-link" href="/blog/tags/Spring/" rel="tag">Spring</a>, <a class="tag-link-link" href="/blog/tags/%E6%AD%BB%E7%A3%95Spring/" rel="tag">死磕Spring</a>
-    </div>
-
-
-    </div>
-  </header>
-  
-
-  <div class="content" itemprop="articleBody">
-    <blockquote>
+    });
+</script>
+<!-- 文章内容部分 -->
+<article class="post container " itemscope itemtype="http://schema.org/BlogPosting" id="openwrite-container">
+    <div class="row">
+        <div class="col-md-9 markdown-body">
+            <!-- 文章开始部分 -->
+            <!--<div style="text-align:center">-->
+<!--    <img style="display:inline-block" width="130" height="27"-->
+<!--         src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/640-3.gif"-->
+<!--         data-loaded="true">-->
+<!--    <img style="display:inline-block" width="41" height="35"-->
+<!--         src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/640-4.gif"-->
+<!--         data-loaded="true">-->
+<!--    <img style="display:inline-block"-->
+<!--         width="130" height="27"-->
+<!--         src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/640-5.gif"-->
+<!--         data-loaded="true">-->
+<!--</div>-->
+            <blockquote>
 <p>本文作者：chenssy</p>
-<p>出处：<a target="_blank" rel="external nofollow noopener noreferrer" href="http://cmsblogs.com/?p=2763">http://cmsblogs.com/?p=2763</a></p>
+<p>出处：<a href="http://cmsblogs.com/?p=2763" target="_blank" rel="external nofollow noopener noreferrer">http://cmsblogs.com/?p=2763</a></p>
 <p>在学习<code>Spring源码</code>的过程中发现的好站+好贴，感谢作者。Spring版本：<strong>Spring 5.0.6.RELEASE</strong></p>
 </blockquote>
 <hr>
 <p><code>DefaultBeanDefinitionDocumentReader.processBeanDefinition()</code> 完成 <code>Bean</code> 标签解析的核心工作，如下：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title">processBeanDefinition</span><span class="params">(Element ele, </span></span></span><br><span class="line"><span class="function"><span class="params">                                     BeanDefinitionParserDelegate delegate)</span> </span>&#123;</span><br><span class="line">  BeanDefinitionHolder bdHolder = delegate.parseBeanDefinitionElement(ele);</span><br><span class="line">  <span class="keyword">if</span> (bdHolder != <span class="keyword">null</span>) &#123;</span><br><span class="line">    bdHolder = delegate.decorateBeanDefinitionIfRequired(ele, bdHolder);</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">      <span class="comment">// Register the final decorated instance.</span></span><br><span class="line">      BeanDefinitionReaderUtils.registerBeanDefinition(bdHolder,</span><br><span class="line">                                                       getReaderContext().getRegistry());</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">catch</span> (BeanDefinitionStoreException ex) &#123;</span><br><span class="line">      getReaderContext().error(<span class="string">&quot;Failed to register bean definition with name &#x27;&quot;</span> </span><br><span class="line">                               +</span><br><span class="line">                               bdHolder.getBeanName() + <span class="string">&quot;&#x27;&quot;</span>, ele, ex);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// Send registration event.</span></span><br><span class="line">    getReaderContext().fireComponentRegistered(</span><br><span class="line">      <span class="keyword">new</span> BeanComponentDefinition(bdHolder));</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">protected</span> <span class="token keyword">void</span> <span class="token function">processBeanDefinition</span><span class="token punctuation">(</span>Element ele<span class="token punctuation">,</span> 
+                                     BeanDefinitionParserDelegate delegate<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+  BeanDefinitionHolder bdHolder <span class="token operator">=</span> delegate<span class="token punctuation">.</span><span class="token function">parseBeanDefinitionElement</span><span class="token punctuation">(</span>ele<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span>bdHolder <span class="token operator">!=</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    bdHolder <span class="token operator">=</span> delegate<span class="token punctuation">.</span><span class="token function">decorateBeanDefinitionIfRequired</span><span class="token punctuation">(</span>ele<span class="token punctuation">,</span> bdHolder<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">try</span> <span class="token punctuation">{</span>
+      <span class="token comment" spellcheck="true">// Register the final decorated instance.</span>
+      BeanDefinitionReaderUtils<span class="token punctuation">.</span><span class="token function">registerBeanDefinition</span><span class="token punctuation">(</span>bdHolder<span class="token punctuation">,</span>
+                                                       <span class="token function">getReaderContext</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getRegistry</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">BeanDefinitionStoreException</span> ex<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+      <span class="token function">getReaderContext</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">error</span><span class="token punctuation">(</span><span class="token string">"Failed to register bean definition with name '"</span> 
+                               <span class="token operator">+</span>
+                               bdHolder<span class="token punctuation">.</span><span class="token function">getBeanName</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">+</span> <span class="token string">"'"</span><span class="token punctuation">,</span> ele<span class="token punctuation">,</span> ex<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    <span class="token comment" spellcheck="true">// Send registration event.</span>
+    <span class="token function">getReaderContext</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">fireComponentRegistered</span><span class="token punctuation">(</span>
+      <span class="token keyword">new</span> <span class="token class-name">BeanComponentDefinition</span><span class="token punctuation">(</span>bdHolder<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>解析工作分为三步：</p>
 <ol>
 <li>解析默认标签；</li>
@@ -176,7 +302,23 @@
 </ol>
 <p>经过前面两个步骤的解析，这时的 <code>BeanDefinition</code> 已经可以满足后续的使用要求了，那么接下来的工作就是将这些 <code>BeanDefinition</code> 进行注册，也就是完成第三步。 注册 <code>BeanDefinition</code> 由 <code>BeanDefinitionReaderUtils.registerBeanDefinition()</code> 完成。</p>
 <p>如下：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">registerBeanDefinition</span><span class="params">(</span></span></span><br><span class="line"><span class="function"><span class="params">  BeanDefinitionHolder definitionHolder, BeanDefinitionRegistry registry)</span></span></span><br><span class="line"><span class="function">  <span class="keyword">throws</span> BeanDefinitionStoreException </span>&#123;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 注册 beanName</span></span><br><span class="line">  String beanName = definitionHolder.getBeanName();</span><br><span class="line">  registry.registerBeanDefinition(beanName, </span><br><span class="line">                                  definitionHolder.getBeanDefinition());</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 注册 alias </span></span><br><span class="line">  String[] aliases = definitionHolder.getAliases();</span><br><span class="line">  <span class="keyword">if</span> (aliases != <span class="keyword">null</span>) &#123;</span><br><span class="line">    <span class="keyword">for</span> (String alias : aliases) &#123;</span><br><span class="line">      registry.registerAlias(beanName, alias);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">registerBeanDefinition</span><span class="token punctuation">(</span>
+  BeanDefinitionHolder definitionHolder<span class="token punctuation">,</span> BeanDefinitionRegistry registry<span class="token punctuation">)</span>
+  <span class="token keyword">throws</span> BeanDefinitionStoreException <span class="token punctuation">{</span>
+
+  <span class="token comment" spellcheck="true">// 注册 beanName</span>
+  String beanName <span class="token operator">=</span> definitionHolder<span class="token punctuation">.</span><span class="token function">getBeanName</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  registry<span class="token punctuation">.</span><span class="token function">registerBeanDefinition</span><span class="token punctuation">(</span>beanName<span class="token punctuation">,</span> 
+                                  definitionHolder<span class="token punctuation">.</span><span class="token function">getBeanDefinition</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+  <span class="token comment" spellcheck="true">// 注册 alias </span>
+  String<span class="token punctuation">[</span><span class="token punctuation">]</span> aliases <span class="token operator">=</span> definitionHolder<span class="token punctuation">.</span><span class="token function">getAliases</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span>aliases <span class="token operator">!=</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">for</span> <span class="token punctuation">(</span>String alias <span class="token operator">:</span> aliases<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+      registry<span class="token punctuation">.</span><span class="token function">registerAlias</span><span class="token punctuation">(</span>beanName<span class="token punctuation">,</span> alias<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <ul>
 <li>首先通过 <code>beanName</code> 注册 <code>BeanDefinition</code> ，</li>
 <li>然后再注册别名 <code>alias</code>。</li>
@@ -185,7 +327,120 @@
 <p><code>BeanDefinition</code> 的注册由接口 <code>BeanDefinitionRegistry</code> 定义。 </p>
 </blockquote>
 <p><strong>通过 beanName 注册</strong> <code>BeanDefinitionRegistry.registerBeanDefinition()</code> 实现通过 <code>beanName</code> 注册 <code>BeanDefinition</code>，如下：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">registerBeanDefinition</span><span class="params">(String beanName, </span></span></span><br><span class="line"><span class="function"><span class="params">                                   BeanDefinition beanDefinition)</span></span></span><br><span class="line"><span class="function">  <span class="keyword">throws</span> BeanDefinitionStoreException </span>&#123;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 校验 beanName 与 beanDefinition</span></span><br><span class="line">  Assert.hasText(beanName, <span class="string">&quot;Bean name must not be empty&quot;</span>);</span><br><span class="line">  Assert.notNull(beanDefinition, <span class="string">&quot;BeanDefinition must not be null&quot;</span>);</span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> (beanDefinition <span class="keyword">instanceof</span> AbstractBeanDefinition) &#123;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">      <span class="comment">// 校验 BeanDefinition</span></span><br><span class="line">      <span class="comment">// 这是注册前的最后一次校验了，主要是对属性 methodOverrides 进行校验</span></span><br><span class="line">      ((AbstractBeanDefinition) beanDefinition).validate();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">catch</span> (BeanDefinitionValidationException ex) &#123;</span><br><span class="line">      <span class="keyword">throw</span> <span class="keyword">new</span> BeanDefinitionStoreException(</span><br><span class="line">        beanDefinition.getResourceDescription(), </span><br><span class="line">        beanName,<span class="string">&quot;Validation of bean definition failed&quot;</span>, ex);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  BeanDefinition oldBeanDefinition;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 从缓存中获取指定 beanName 的 BeanDefinition</span></span><br><span class="line">  oldBeanDefinition = <span class="keyword">this</span>.beanDefinitionMap.get(beanName);</span><br><span class="line">  <span class="comment">/**</span></span><br><span class="line"><span class="comment">         * 如果存在</span></span><br><span class="line"><span class="comment">         */</span></span><br><span class="line">  <span class="keyword">if</span> (oldBeanDefinition != <span class="keyword">null</span>) &#123;</span><br><span class="line">    <span class="comment">// 如果存在但是不允许覆盖，抛出异常</span></span><br><span class="line">    <span class="keyword">if</span> (!isAllowBeanDefinitionOverriding()) &#123;</span><br><span class="line">      <span class="keyword">throw</span> <span class="keyword">new</span> BeanDefinitionStoreException(</span><br><span class="line">        beanDefinition.getResourceDescription(), </span><br><span class="line">        beanName,</span><br><span class="line">        <span class="string">&quot;Cannot register bean definition [&quot;</span> </span><br><span class="line">        + beanDefinition + <span class="string">&quot;] for bean &#x27;&quot;</span> </span><br><span class="line">        + beanName +</span><br><span class="line">        <span class="string">&quot;&#x27;: There is already [&quot;</span> + oldBeanDefinition + <span class="string">&quot;] bound.&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">//</span></span><br><span class="line">    <span class="keyword">else</span> <span class="keyword">if</span> (oldBeanDefinition.getRole() &lt; beanDefinition.getRole()) &#123;</span><br><span class="line">      <span class="comment">// e.g. was ROLE_APPLICATION, </span></span><br><span class="line">      <span class="comment">// now overriding with ROLE_SUPPORT or ROLE_INFRASTRUCTURE</span></span><br><span class="line">      <span class="keyword">if</span> (<span class="keyword">this</span>.logger.isWarnEnabled()) &#123;</span><br><span class="line">        <span class="keyword">this</span>.logger.warn(</span><br><span class="line">          <span class="string">&quot;Overriding user-defined bean definition for bean &#x27;&quot;</span> </span><br><span class="line">          + beanName </span><br><span class="line">          + <span class="string">&quot;&#x27; with a framework-generated bean definition: replacing [&quot;</span> </span><br><span class="line">          + oldBeanDefinition + <span class="string">&quot;] with [&quot;</span> + beanDefinition + <span class="string">&quot;]&quot;</span>);</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 覆盖 beanDefinition 与 被覆盖的 beanDefinition 不是同类</span></span><br><span class="line">    <span class="keyword">else</span> <span class="keyword">if</span> (!beanDefinition.equals(oldBeanDefinition)) &#123;</span><br><span class="line">      <span class="keyword">if</span> (<span class="keyword">this</span>.logger.isInfoEnabled()) &#123;</span><br><span class="line">        <span class="keyword">this</span>.logger.info(</span><br><span class="line">          <span class="string">&quot;Overriding bean definition for bean &#x27;&quot;</span> </span><br><span class="line">          + beanName </span><br><span class="line">          + <span class="string">&quot;&#x27; with a different definition: replacing [&quot;</span> </span><br><span class="line">          + oldBeanDefinition </span><br><span class="line">          + <span class="string">&quot;] with [&quot;</span> + beanDefinition + <span class="string">&quot;]&quot;</span>);</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span> &#123;</span><br><span class="line">      <span class="keyword">if</span> (<span class="keyword">this</span>.logger.isDebugEnabled()) &#123;</span><br><span class="line">        <span class="keyword">this</span>.logger.debug(</span><br><span class="line">          <span class="string">&quot;Overriding bean definition for bean &#x27;&quot;</span> </span><br><span class="line">          + beanName </span><br><span class="line">          + <span class="string">&quot;&#x27; with an equivalent definition: replacing [&quot;</span> </span><br><span class="line">          + oldBeanDefinition </span><br><span class="line">          + <span class="string">&quot;] with [&quot;</span> + beanDefinition + <span class="string">&quot;]&quot;</span>);</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 允许覆盖，直接覆盖原有的 BeanDefinition</span></span><br><span class="line">    <span class="keyword">this</span>.beanDefinitionMap.put(beanName, beanDefinition);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="comment">/**</span></span><br><span class="line"><span class="comment">         * 不存在</span></span><br><span class="line"><span class="comment">         */</span></span><br><span class="line">  <span class="keyword">else</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 检测创建 Bean 阶段是否已经开启，如果开启了则需要对 beanDefinitionMap 进行并发控制</span></span><br><span class="line">    <span class="keyword">if</span> (hasBeanCreationStarted()) &#123;</span><br><span class="line">      <span class="comment">// beanDefinitionMap 为全局变量，避免并发情况</span></span><br><span class="line">      <span class="keyword">synchronized</span> (<span class="keyword">this</span>.beanDefinitionMap) &#123;</span><br><span class="line">        <span class="comment">//</span></span><br><span class="line">        <span class="keyword">this</span>.beanDefinitionMap.put(beanName, beanDefinition);</span><br><span class="line">        List&lt;String&gt; updatedDefinitions = </span><br><span class="line">          <span class="keyword">new</span> ArrayList&lt;&gt;(<span class="keyword">this</span>.beanDefinitionNames.size() + <span class="number">1</span>);</span><br><span class="line">        updatedDefinitions.addAll(<span class="keyword">this</span>.beanDefinitionNames);</span><br><span class="line">        updatedDefinitions.add(beanName);</span><br><span class="line">        <span class="keyword">this</span>.beanDefinitionNames = updatedDefinitions;</span><br><span class="line">        <span class="keyword">if</span> (<span class="keyword">this</span>.manualSingletonNames.contains(beanName)) &#123;</span><br><span class="line">          Set&lt;String&gt; updatedSingletons = </span><br><span class="line">            <span class="keyword">new</span> LinkedHashSet&lt;&gt;(<span class="keyword">this</span>.manualSingletonNames);</span><br><span class="line">          updatedSingletons.remove(beanName);</span><br><span class="line">          <span class="keyword">this</span>.manualSingletonNames = updatedSingletons;</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span> &#123;</span><br><span class="line">      <span class="comment">// 不会存在并发情况，直接设置</span></span><br><span class="line">      <span class="keyword">this</span>.beanDefinitionMap.put(beanName, beanDefinition);</span><br><span class="line">      <span class="keyword">this</span>.beanDefinitionNames.add(beanName);</span><br><span class="line">      <span class="keyword">this</span>.manualSingletonNames.remove(beanName);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">this</span>.frozenBeanDefinitionNames = <span class="keyword">null</span>;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> (oldBeanDefinition != <span class="keyword">null</span> || containsSingleton(beanName)) &#123;</span><br><span class="line">    <span class="comment">// 重新设置 beanName 对应的缓存</span></span><br><span class="line">    resetBeanDefinition(beanName);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">registerBeanDefinition</span><span class="token punctuation">(</span>String beanName<span class="token punctuation">,</span> 
+                                   BeanDefinition beanDefinition<span class="token punctuation">)</span>
+  <span class="token keyword">throws</span> BeanDefinitionStoreException <span class="token punctuation">{</span>
+
+  <span class="token comment" spellcheck="true">// 校验 beanName 与 beanDefinition</span>
+  Assert<span class="token punctuation">.</span><span class="token function">hasText</span><span class="token punctuation">(</span>beanName<span class="token punctuation">,</span> <span class="token string">"Bean name must not be empty"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  Assert<span class="token punctuation">.</span><span class="token function">notNull</span><span class="token punctuation">(</span>beanDefinition<span class="token punctuation">,</span> <span class="token string">"BeanDefinition must not be null"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+  <span class="token keyword">if</span> <span class="token punctuation">(</span>beanDefinition <span class="token keyword">instanceof</span> <span class="token class-name">AbstractBeanDefinition</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">try</span> <span class="token punctuation">{</span>
+      <span class="token comment" spellcheck="true">// 校验 BeanDefinition</span>
+      <span class="token comment" spellcheck="true">// 这是注册前的最后一次校验了，主要是对属性 methodOverrides 进行校验</span>
+      <span class="token punctuation">(</span><span class="token punctuation">(</span>AbstractBeanDefinition<span class="token punctuation">)</span> beanDefinition<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">validate</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">BeanDefinitionValidationException</span> ex<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+      <span class="token keyword">throw</span> <span class="token keyword">new</span> <span class="token class-name">BeanDefinitionStoreException</span><span class="token punctuation">(</span>
+        beanDefinition<span class="token punctuation">.</span><span class="token function">getResourceDescription</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> 
+        beanName<span class="token punctuation">,</span><span class="token string">"Validation of bean definition failed"</span><span class="token punctuation">,</span> ex<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+  <span class="token punctuation">}</span>
+
+  BeanDefinition oldBeanDefinition<span class="token punctuation">;</span>
+
+  <span class="token comment" spellcheck="true">// 从缓存中获取指定 beanName 的 BeanDefinition</span>
+  oldBeanDefinition <span class="token operator">=</span> <span class="token keyword">this</span><span class="token punctuation">.</span>beanDefinitionMap<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span>beanName<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token comment" spellcheck="true">/**
+         * 如果存在
+         */</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span>oldBeanDefinition <span class="token operator">!=</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token comment" spellcheck="true">// 如果存在但是不允许覆盖，抛出异常</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span><span class="token function">isAllowBeanDefinitionOverriding</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+      <span class="token keyword">throw</span> <span class="token keyword">new</span> <span class="token class-name">BeanDefinitionStoreException</span><span class="token punctuation">(</span>
+        beanDefinition<span class="token punctuation">.</span><span class="token function">getResourceDescription</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> 
+        beanName<span class="token punctuation">,</span>
+        <span class="token string">"Cannot register bean definition ["</span> 
+        <span class="token operator">+</span> beanDefinition <span class="token operator">+</span> <span class="token string">"] for bean '"</span> 
+        <span class="token operator">+</span> beanName <span class="token operator">+</span>
+        <span class="token string">"': There is already ["</span> <span class="token operator">+</span> oldBeanDefinition <span class="token operator">+</span> <span class="token string">"] bound."</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    <span class="token comment" spellcheck="true">//</span>
+    <span class="token keyword">else</span> <span class="token keyword">if</span> <span class="token punctuation">(</span>oldBeanDefinition<span class="token punctuation">.</span><span class="token function">getRole</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">&lt;</span> beanDefinition<span class="token punctuation">.</span><span class="token function">getRole</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+      <span class="token comment" spellcheck="true">// e.g. was ROLE_APPLICATION, </span>
+      <span class="token comment" spellcheck="true">// now overriding with ROLE_SUPPORT or ROLE_INFRASTRUCTURE</span>
+      <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>logger<span class="token punctuation">.</span><span class="token function">isWarnEnabled</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">this</span><span class="token punctuation">.</span>logger<span class="token punctuation">.</span><span class="token function">warn</span><span class="token punctuation">(</span>
+          <span class="token string">"Overriding user-defined bean definition for bean '"</span> 
+          <span class="token operator">+</span> beanName 
+          <span class="token operator">+</span> <span class="token string">"' with a framework-generated bean definition: replacing ["</span> 
+          <span class="token operator">+</span> oldBeanDefinition <span class="token operator">+</span> <span class="token string">"] with ["</span> <span class="token operator">+</span> beanDefinition <span class="token operator">+</span> <span class="token string">"]"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+    <span class="token comment" spellcheck="true">// 覆盖 beanDefinition 与 被覆盖的 beanDefinition 不是同类</span>
+    <span class="token keyword">else</span> <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>beanDefinition<span class="token punctuation">.</span><span class="token function">equals</span><span class="token punctuation">(</span>oldBeanDefinition<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+      <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>logger<span class="token punctuation">.</span><span class="token function">isInfoEnabled</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">this</span><span class="token punctuation">.</span>logger<span class="token punctuation">.</span><span class="token function">info</span><span class="token punctuation">(</span>
+          <span class="token string">"Overriding bean definition for bean '"</span> 
+          <span class="token operator">+</span> beanName 
+          <span class="token operator">+</span> <span class="token string">"' with a different definition: replacing ["</span> 
+          <span class="token operator">+</span> oldBeanDefinition 
+          <span class="token operator">+</span> <span class="token string">"] with ["</span> <span class="token operator">+</span> beanDefinition <span class="token operator">+</span> <span class="token string">"]"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+    <span class="token keyword">else</span> <span class="token punctuation">{</span>
+      <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>logger<span class="token punctuation">.</span><span class="token function">isDebugEnabled</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">this</span><span class="token punctuation">.</span>logger<span class="token punctuation">.</span><span class="token function">debug</span><span class="token punctuation">(</span>
+          <span class="token string">"Overriding bean definition for bean '"</span> 
+          <span class="token operator">+</span> beanName 
+          <span class="token operator">+</span> <span class="token string">"' with an equivalent definition: replacing ["</span> 
+          <span class="token operator">+</span> oldBeanDefinition 
+          <span class="token operator">+</span> <span class="token string">"] with ["</span> <span class="token operator">+</span> beanDefinition <span class="token operator">+</span> <span class="token string">"]"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token comment" spellcheck="true">// 允许覆盖，直接覆盖原有的 BeanDefinition</span>
+    <span class="token keyword">this</span><span class="token punctuation">.</span>beanDefinitionMap<span class="token punctuation">.</span><span class="token function">put</span><span class="token punctuation">(</span>beanName<span class="token punctuation">,</span> beanDefinition<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+  <span class="token comment" spellcheck="true">/**
+         * 不存在
+         */</span>
+  <span class="token keyword">else</span> <span class="token punctuation">{</span>
+
+    <span class="token comment" spellcheck="true">// 检测创建 Bean 阶段是否已经开启，如果开启了则需要对 beanDefinitionMap 进行并发控制</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">hasBeanCreationStarted</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+      <span class="token comment" spellcheck="true">// beanDefinitionMap 为全局变量，避免并发情况</span>
+      <span class="token keyword">synchronized</span> <span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>beanDefinitionMap<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token comment" spellcheck="true">//</span>
+        <span class="token keyword">this</span><span class="token punctuation">.</span>beanDefinitionMap<span class="token punctuation">.</span><span class="token function">put</span><span class="token punctuation">(</span>beanName<span class="token punctuation">,</span> beanDefinition<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        List<span class="token operator">&lt;</span>String<span class="token operator">></span> updatedDefinitions <span class="token operator">=</span> 
+          <span class="token keyword">new</span> <span class="token class-name">ArrayList</span><span class="token operator">&lt;</span><span class="token operator">></span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>beanDefinitionNames<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">+</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        updatedDefinitions<span class="token punctuation">.</span><span class="token function">addAll</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>beanDefinitionNames<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        updatedDefinitions<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span>beanName<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">this</span><span class="token punctuation">.</span>beanDefinitionNames <span class="token operator">=</span> updatedDefinitions<span class="token punctuation">;</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>manualSingletonNames<span class="token punctuation">.</span><span class="token function">contains</span><span class="token punctuation">(</span>beanName<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+          Set<span class="token operator">&lt;</span>String<span class="token operator">></span> updatedSingletons <span class="token operator">=</span> 
+            <span class="token keyword">new</span> <span class="token class-name">LinkedHashSet</span><span class="token operator">&lt;</span><span class="token operator">></span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>manualSingletonNames<span class="token punctuation">)</span><span class="token punctuation">;</span>
+          updatedSingletons<span class="token punctuation">.</span><span class="token function">remove</span><span class="token punctuation">(</span>beanName<span class="token punctuation">)</span><span class="token punctuation">;</span>
+          <span class="token keyword">this</span><span class="token punctuation">.</span>manualSingletonNames <span class="token operator">=</span> updatedSingletons<span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+      <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+    <span class="token keyword">else</span> <span class="token punctuation">{</span>
+      <span class="token comment" spellcheck="true">// 不会存在并发情况，直接设置</span>
+      <span class="token keyword">this</span><span class="token punctuation">.</span>beanDefinitionMap<span class="token punctuation">.</span><span class="token function">put</span><span class="token punctuation">(</span>beanName<span class="token punctuation">,</span> beanDefinition<span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token keyword">this</span><span class="token punctuation">.</span>beanDefinitionNames<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span>beanName<span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token keyword">this</span><span class="token punctuation">.</span>manualSingletonNames<span class="token punctuation">.</span><span class="token function">remove</span><span class="token punctuation">(</span>beanName<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    <span class="token keyword">this</span><span class="token punctuation">.</span>frozenBeanDefinitionNames <span class="token operator">=</span> null<span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+
+  <span class="token keyword">if</span> <span class="token punctuation">(</span>oldBeanDefinition <span class="token operator">!=</span> null <span class="token operator">||</span> <span class="token function">containsSingleton</span><span class="token punctuation">(</span>beanName<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token comment" spellcheck="true">// 重新设置 beanName 对应的缓存</span>
+    <span class="token function">resetBeanDefinition</span><span class="token punctuation">(</span>beanName<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>处理过程如下：</p>
 <ul>
 <li>首先 <code>BeanDefinition</code> 进行校验，该校验也是注册过程中的最后一次校验了，主要是对 <code>AbstractBeanDefinition</code> 的 <code>methodOverrides</code> 属性进行校验</li>
@@ -198,175 +453,231 @@
 <p><code>BeanDefinition</code> 的缓存也不是神奇的东西，就是定义 <code>map</code> ，<code>key</code> 为 <code>beanName</code>，<code>value</code> 为 <code>BeanDefinition</code>。 </p>
 </blockquote>
 <p><strong>注册 alias</strong> <code>BeanDefinitionRegistry.registerAlias</code> 完成 <code>alias</code> 的注册。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">registerAlias</span><span class="params">(String name, String alias)</span> </span>&#123;</span><br><span class="line">  <span class="comment">// 校验 name 、 alias</span></span><br><span class="line">  Assert.hasText(name, <span class="string">&quot;&#x27;name&#x27; must not be empty&quot;</span>);</span><br><span class="line">  Assert.hasText(alias, <span class="string">&quot;&#x27;alias&#x27; must not be empty&quot;</span>);</span><br><span class="line">  <span class="keyword">synchronized</span> (<span class="keyword">this</span>.aliasMap) &#123;</span><br><span class="line">    <span class="comment">// name == alias 则去掉alias</span></span><br><span class="line">    <span class="keyword">if</span> (alias.equals(name)) &#123;</span><br><span class="line">      <span class="keyword">this</span>.aliasMap.remove(alias);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span> &#123;</span><br><span class="line">      <span class="comment">// 缓存缓存记录</span></span><br><span class="line">      String registeredName = <span class="keyword">this</span>.aliasMap.get(alias);</span><br><span class="line">      <span class="keyword">if</span> (registeredName != <span class="keyword">null</span>) &#123;</span><br><span class="line">        <span class="comment">// 缓存中的相等，则直接返回</span></span><br><span class="line">        <span class="keyword">if</span> (registeredName.equals(name)) &#123;</span><br><span class="line">          <span class="comment">// An existing alias - no need to re-register</span></span><br><span class="line">          <span class="keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// 不允许则抛出异常</span></span><br><span class="line">        <span class="keyword">if</span> (!allowAliasOverriding()) &#123;</span><br><span class="line">          <span class="keyword">throw</span> <span class="keyword">new</span> IllegalStateException(</span><br><span class="line">            <span class="string">&quot;Cannot register alias &#x27;&quot;</span> + alias + <span class="string">&quot;&#x27; for name &#x27;&quot;</span> </span><br><span class="line">            + name + <span class="string">&quot;&#x27;: It is already registered for name &#x27;&quot;</span> </span><br><span class="line">            + registeredName + <span class="string">&quot;&#x27;.&quot;</span>);</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="comment">// 当 A --&gt; B 存在时，如果再次出现 A --&gt; B --&gt; C 则抛出异常</span></span><br><span class="line">      checkForAliasCircle(name, alias);</span><br><span class="line">      <span class="comment">// 注册 alias</span></span><br><span class="line">      <span class="keyword">this</span>.aliasMap.put(alias, name);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">registerAlias</span><span class="token punctuation">(</span>String name<span class="token punctuation">,</span> String alias<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+  <span class="token comment" spellcheck="true">// 校验 name 、 alias</span>
+  Assert<span class="token punctuation">.</span><span class="token function">hasText</span><span class="token punctuation">(</span>name<span class="token punctuation">,</span> <span class="token string">"'name' must not be empty"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  Assert<span class="token punctuation">.</span><span class="token function">hasText</span><span class="token punctuation">(</span>alias<span class="token punctuation">,</span> <span class="token string">"'alias' must not be empty"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">synchronized</span> <span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>aliasMap<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token comment" spellcheck="true">// name == alias 则去掉alias</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>alias<span class="token punctuation">.</span><span class="token function">equals</span><span class="token punctuation">(</span>name<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+      <span class="token keyword">this</span><span class="token punctuation">.</span>aliasMap<span class="token punctuation">.</span><span class="token function">remove</span><span class="token punctuation">(</span>alias<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    <span class="token keyword">else</span> <span class="token punctuation">{</span>
+      <span class="token comment" spellcheck="true">// 缓存缓存记录</span>
+      String registeredName <span class="token operator">=</span> <span class="token keyword">this</span><span class="token punctuation">.</span>aliasMap<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span>alias<span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token keyword">if</span> <span class="token punctuation">(</span>registeredName <span class="token operator">!=</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token comment" spellcheck="true">// 缓存中的相等，则直接返回</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>registeredName<span class="token punctuation">.</span><span class="token function">equals</span><span class="token punctuation">(</span>name<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+          <span class="token comment" spellcheck="true">// An existing alias - no need to re-register</span>
+          <span class="token keyword">return</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+        <span class="token comment" spellcheck="true">// 不允许则抛出异常</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span><span class="token function">allowAliasOverriding</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+          <span class="token keyword">throw</span> <span class="token keyword">new</span> <span class="token class-name">IllegalStateException</span><span class="token punctuation">(</span>
+            <span class="token string">"Cannot register alias '"</span> <span class="token operator">+</span> alias <span class="token operator">+</span> <span class="token string">"' for name '"</span> 
+            <span class="token operator">+</span> name <span class="token operator">+</span> <span class="token string">"': It is already registered for name '"</span> 
+            <span class="token operator">+</span> registeredName <span class="token operator">+</span> <span class="token string">"'."</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+      <span class="token punctuation">}</span>
+      <span class="token comment" spellcheck="true">// 当 A --> B 存在时，如果再次出现 A --> B --> C 则抛出异常</span>
+      <span class="token function">checkForAliasCircle</span><span class="token punctuation">(</span>name<span class="token punctuation">,</span> alias<span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token comment" spellcheck="true">// 注册 alias</span>
+      <span class="token keyword">this</span><span class="token punctuation">.</span>aliasMap<span class="token punctuation">.</span><span class="token function">put</span><span class="token punctuation">(</span>alias<span class="token punctuation">,</span> name<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>注册 <code>alias</code> 和注册 <code>BeanDefinition</code> 的过程差不多。在最后调用了 <code>checkForAliasCircle()</code> 来对别名进行了检测。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">hasAlias</span><span class="params">(String name, String alias)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">for</span> (Map.Entry&lt;String, String&gt; entry : <span class="keyword">this</span>.aliasMap.entrySet()) &#123;</span><br><span class="line">    String registeredName = entry.getValue();</span><br><span class="line">    <span class="keyword">if</span> (registeredName.equals(name)) &#123;</span><br><span class="line">      String registeredAlias = entry.getKey();</span><br><span class="line">      <span class="keyword">return</span> (registeredAlias.equals(alias) || hasAlias(registeredAlias, alias));</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> <span class="keyword">false</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">boolean</span> <span class="token function">hasAlias</span><span class="token punctuation">(</span>String name<span class="token punctuation">,</span> String alias<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+  <span class="token keyword">for</span> <span class="token punctuation">(</span>Map<span class="token punctuation">.</span>Entry<span class="token operator">&lt;</span>String<span class="token punctuation">,</span> String<span class="token operator">></span> entry <span class="token operator">:</span> <span class="token keyword">this</span><span class="token punctuation">.</span>aliasMap<span class="token punctuation">.</span><span class="token function">entrySet</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    String registeredName <span class="token operator">=</span> entry<span class="token punctuation">.</span><span class="token function">getValue</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>registeredName<span class="token punctuation">.</span><span class="token function">equals</span><span class="token punctuation">(</span>name<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+      String registeredAlias <span class="token operator">=</span> entry<span class="token punctuation">.</span><span class="token function">getKey</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token keyword">return</span> <span class="token punctuation">(</span>registeredAlias<span class="token punctuation">.</span><span class="token function">equals</span><span class="token punctuation">(</span>alias<span class="token punctuation">)</span> <span class="token operator">||</span> <span class="token function">hasAlias</span><span class="token punctuation">(</span>registeredAlias<span class="token punctuation">,</span> alias<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+  <span class="token punctuation">}</span>
+  <span class="token keyword">return</span> <span class="token boolean">false</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>如果 <code>name</code> 、 <code>alias</code> 为 <strong>1</strong> 、<strong>3</strong> ，则构成 <strong>（1,3）</strong>，加入集合中存在<strong>（A,1）</strong>、<strong>（3,A）</strong>的情况则会出错。 到这里 <code>BeanDefinition</code>、<code>alias</code> 都已经注入到缓存中，下一步则是等待初始化使用了。</p>
 
-  </div>
-
-  
-    <div style="text-align:center;width:100%">
-      <img src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/640-2.gif">
-    </div>
-  
-
-  
-    <div>
-      <h4>版权声明</h4>
-      <pre>
-        
-        <strong>本文来源： </strong><a href="http://cmsblogs.com/?p=2763" title="Java技术驿站-chenssy-【死磕 Spring】—– IoC之注册解析的BeanDefinitions" rel="external nofollow noopener noreferrer" target="_blank">http://cmsblogs.com/?p=2763</a>
-
-        <strong>本文链接：</strong><a href="https://www.cayzlh.com/2020/01/13/a9bec556.html" title="/blog/IoC%E4%B9%8B%E6%B3%A8%E5%86%8C%E8%A7%A3%E6%9E%90%E7%9A%84BeanDefinitions">https://www.cayzlh.com/2020/01/13/a9bec556.html</a>
-
-        <strong>版权声明： </strong>
-        
-          文章内容仅用作学习和分享，转载请注明出处
-        
-      </pre>
-    </div>
-  
-
-</article>
-
-
-
-        
-          <div id="footer-post-container">
-  <div id="footer-post">
-
-    <div id="nav-footer" style="display: none">
-      <ul>
-        
-          <li><a href="/blog/">Home</a></li>
-        
-          <li><a href="/blog/archives/">Articles</a></li>
-        
-          <li><a href="/blog/about/">About</a></li>
-        
-          <li><a href="/blog/search/">Search</a></li>
-        
-      </ul>
-    </div>
-
-    <div id="toc-footer" style="display: none">
-      
-    </div>
-
-    <div id="share-footer" style="display: none">
-      <ul>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.facebook.com/sharer.php?u=https://www.cayzlh.com/2020/01/13/a9bec556.html"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://twitter.com/share?url=https://www.cayzlh.com/2020/01/13/a9bec556.html&text=IoC之注册解析的BeanDefinitions"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.linkedin.com/shareArticle?url=https://www.cayzlh.com/2020/01/13/a9bec556.html&title=IoC之注册解析的BeanDefinitions"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://pinterest.com/pin/create/bookmarklet/?url=https://www.cayzlh.com/2020/01/13/a9bec556.html&is_video=false&description=IoC之注册解析的BeanDefinitions"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="mailto:?subject=IoC之注册解析的BeanDefinitions&body=Check out this article: https://www.cayzlh.com/2020/01/13/a9bec556.html"><i class="fas fa-envelope fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://getpocket.com/save?url=https://www.cayzlh.com/2020/01/13/a9bec556.html&title=IoC之注册解析的BeanDefinitions"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://reddit.com/submit?url=https://www.cayzlh.com/2020/01/13/a9bec556.html&title=IoC之注册解析的BeanDefinitions"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.stumbleupon.com/submit?url=https://www.cayzlh.com/2020/01/13/a9bec556.html&title=IoC之注册解析的BeanDefinitions"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://digg.com/submit?url=https://www.cayzlh.com/2020/01/13/a9bec556.html&title=IoC之注册解析的BeanDefinitions"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.tumblr.com/share/link?url=https://www.cayzlh.com/2020/01/13/a9bec556.html&name=IoC之注册解析的BeanDefinitions&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://news.ycombinator.com/submitlink?u=https://www.cayzlh.com/2020/01/13/a9bec556.html&t=IoC之注册解析的BeanDefinitions"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
-</ul>
-
-    </div>
-
-    <div id="actions-footer">
-        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fas fa-bars fa-lg" aria-hidden="true"></i> Menu</a>
-        <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fas fa-list fa-lg" aria-hidden="true"></i> TOC</a>
-<!--        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fas fa-share-alt fa-lg" aria-hidden="true"></i> Share</a>-->
-        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a>
-    </div>
-
-  </div>
+            <!-- 文章结尾部分 -->
+            
+                
+<div style="text-align:center;width:100%">
+    <span class="octicon octicon-tag-add"></span>
+    
+        <a style="color: #24292e;" href="/blog/tags/Spring/">Spring</a>
+    
+        <a style="color: #24292e;" href="/blog/tags/%E6%AD%BB%E7%A3%95Spring/">死磕Spring</a>
+    
 </div>
 
-        
-        <footer id="footer">
-  <div class="footer-left">
-    CAYZLH &copy;
-    
-    
-    2019-2021
-    粤ICP备20058712号-1
-  </div>
-  <div class="footer-right">
-    <nav>
-      <ul>
-        
-          <li><a href="/blog/tools/">tools</a></li>
-        
-          <li><a href="/blog/links/">links</a></li>
-        
-      </ul>
-    </nav>
-  </div>
-</footer>
 
+
+    <div style="text-align:center;width:100%">
+        <img src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/640-2.gif">
     </div>
-    <!-- styles -->
-
-<link rel="stylesheet" href="/blog/lib/font-awesome/css/all.min.css">
 
 
-<link rel="stylesheet" href="/blog/lib/justified-gallery/css/justifiedGallery.min.css">
 
 
-    <!-- jquery -->
-
-<script src="/blog/lib/jquery/jquery.min.js"></script>
-
-
-<script src="/blog/lib/justified-gallery/js/jquery.justifiedGallery.min.js"></script>
-
-<!-- clipboard -->
-
-  
-<script src="/blog/lib/clipboard/clipboard.min.js"></script>
-
-  <script type="text/javascript">
-  $(function() {
-    // copy-btn HTML
-    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"Copy to clipboard!\">";
-    btn += '<i class="far fa-clone"></i>';
-    btn += '</span>'; 
-    // mount it!
-    $(".highlight table").before(btn);
-    var clip = new ClipboardJS('.btn-copy', {
-      text: function(trigger) {
-        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
-      }
-    });
-    clip.on('success', function(e) {
-      e.trigger.setAttribute('aria-label', "Copied!");
-      e.clearSelection();
-    })
-  })
-  </script>
-
-
-<script src="/blog/js/main.js"></script>
-
-<!-- search -->
-
-<!-- Google Analytics -->
-
-    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-129095667-1"></script>
-    <script>
-        window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
-        gtag('js', new Date());
-        gtag('config', 'UA-129095667-1');
-    </script>
-
-<!-- Baidu Analytics -->
-
-<!-- Cloudflare Analytics -->
-
-<!-- Umami Analytics -->
-
-<!-- Disqus Comments -->
+<div>
+    <h4>相关推荐</h4>
+    <ul class="post-copyright">
+        
+        <li class="post-copyright-author">
+            <a href="/blog/2020/01/26/101fc769.html">4张图带你读懂Spring IOC的世界</a>
+        </li>
+        
+        <li class="post-copyright-author">
+            <a href="/blog/2020/01/26/1a84ff95.html">ApplicationContext相关接口架构分析</a>
+        </li>
+        
+        <li class="post-copyright-author">
+            <a href="/blog/2020/01/25/86c712d3.html">IOC之BeanDefinition注册机：BeanDefinitionRegistry</a>
+        </li>
+        
+        <li class="post-copyright-author">
+            <a href="/blog/2020/01/02/8f7aa5ac.html">IOC之Spring统一资源加载策略</a>
+        </li>
+        
+        <li class="post-copyright-author">
+            <a href="/blog/2020/01/17/c4a8e2a2.html">IOC之parentBeanFactory与依赖处理</a>
+        </li>
+        
+        <li class="post-copyright-author">
+            <a href="/blog/2020/01/16/c9c155de.html">IOC之从单例缓存中获取单例bean</a>
+        </li>
+        
+    </ul>
+    <br><br>
+</div>
 
 
+
+<div>
+    <h4>版权声明</h4>
+    <blockquote>
+        <ul class="post-copyright">
+            <li class="post-copyright-author">
+                <strong>本文来源： </strong>
+                
+                <a href="http://cmsblogs.com/?p=2763" title="Java技术驿站-chenssy-【死磕 Spring】—– IoC之注册解析的BeanDefinitions" rel="external nofollow noopener noreferrer" target="_blank">Java技术驿站-chenssy-【死磕 Spring】—– IoC之注册解析的BeanDefinitions</a></li>
+            <li class="post-copyright-link">
+                <strong>本文链接：</strong>
+                <a href="https://www.cayzlh.com/2020/01/13/a9bec556.html" title="/blog/IoC%E4%B9%8B%E6%B3%A8%E5%86%8C%E8%A7%A3%E6%9E%90%E7%9A%84BeanDefinitions">https://www.cayzlh.com/2020/01/13/a9bec556.html</a>
+            </li>
+            <li class="post-copyright-license">
+                <strong>版权声明： </strong>
+                
+                    文章内容仅用作学习和分享，如有雷同，纯属拷贝。
+                
+            </li>
+        </ul>
+    </blockquote>
+</div>
+
+
+            
+            
+                <div class="comment">
+    <br><br><br>
+    
+</div>
+            
+        </div>
+        
+    </div>
+    
+</article>
+
+<script>
+    hljs.initHighlightingOnLoad();
+</script>
+</main>
+<footer class="container">
+    <div class="site-footer">
+        
+    <div class="card text-center">
+        <ul class="list-inline" style="margin-left: 0;">
+            
+                <li>
+                    <a target="_blank" href="https://github.com/cayzlh" rel="external nofollow noopener noreferrer">
+                          <span class="fa-stack fa-lg">
+                            <i class="fa fa-circle fa-stack-2x"></i>
+                            <i class="fa fa-github fa-stack-1x fa-inverse">
+                                
+                            </i>
+                          </span>
+                    </a>
+                </li>
+            
+                <li>
+                    <a target="_blank" href="https://www.zhihu.com/people/chenanyu" rel="external nofollow noopener noreferrer">
+                          <span class="fa-stack fa-lg">
+                            <i class="fa fa-circle fa-stack-2x"></i>
+                            <i class="fa  fa-stack-1x fa-inverse">
+                                知
+                            </i>
+                          </span>
+                    </a>
+                </li>
+            
+                <li>
+                    <a target="_blank" href="mailto:Q2F5emxo@cayzlh.com">
+                          <span class="fa-stack fa-lg">
+                            <i class="fa fa-circle fa-stack-2x"></i>
+                            <i class="fa fa-envelope fa-stack-1x fa-inverse">
+                                
+                            </i>
+                          </span>
+                    </a>
+                </li>
+            
+        </ul>
+    </div>
+
+
+        <div class="site-footer-links mobile-hidden">
+            
+                
+                
+            
+        </div>
+
+        <div class="site-footer-links mobile-hidden">
+        
+            <span class="meta-info-index hvr-grow">
+                
+                    <a href="https://www.cayzlh.com">
+                        🐳Ant丶 &copy; 2020
+                    </a>
+                
+            </span>
+        
+        
+            <span class="meta-info-index hvr-grow">
+                <a href="http://beian.miit.gov.cn" target="_blank" rel="external nofollow noopener noreferrer">粤ICP备20058712号-1</a>
+            </span>
+        
+        </div>
+
+        
+
+        
+    </div>
+    
+
+    
+        <!-- Third-Party JS -->
+        <script type="text/javascript" src="/blog/js/thirdparty/geopattern.min.js"></script>
+        <!-- My JS -->
+        <script type="text/javascript" src="/blog/js/script.js"></script>
+    
+
+    
+        <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js">
+        </script>
+    
+</footer>
 </body>
 </html>

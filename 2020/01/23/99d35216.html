@@ -1,170 +1,275 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
+
 <head>
-    <!-- so meta -->
     <meta charset="utf-8">
+    <meta name="keywords" content="Spring, PropertyPlaceholderConfigurer">
+    <meta name="description" content="Ant丶的网络日志, CAYZLH网络日志, CAYZLH, CAYZLH主页, Ant丶空间">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="HandheldFriendly" content="True">
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-    <meta name="description" content="分析Spring的PropertyPlaceholderConfigurer">
-<meta property="og:type" content="article">
-<meta property="og:title" content="IOC之深入分析PropertyPlaceholderConfigurer">
-<meta property="og:url" content="http://cmsblogs.com/?p=3837">
-<meta property="og:site_name" content="CAYZLH">
-<meta property="og:description" content="分析Spring的PropertyPlaceholderConfigurer">
-<meta property="og:locale" content="en_US">
-<meta property="og:image" content="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2020/05/26/201809161001_Jd3Eac_N7lPj5.png">
-<meta property="article:published_time" content="2020-01-23T14:22:02.000Z">
-<meta property="article:modified_time" content="2020-05-26T14:28:11.690Z">
-<meta property="article:author" content="🐳Ant丶">
-<meta property="article:tag" content="Spring">
-<meta property="article:tag" content="转载">
-<meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2020/05/26/201809161001_Jd3Eac_N7lPj5.png">
-    
-    
-      
-        
-          <link rel="shortcut icon" href="/blog/images/favicon.ico">
-        
-      
-      
-        
-          <link rel="icon" type="image/png" href="/blog/images/favicon-192x192.png" sizes="192x192">
-        
-      
-      
-        
-          <link rel="apple-touch-icon" sizes="180x180" href="/blog/images/apple-touch-icon.png">
-        
-      
-    
-    <!-- title -->
-    <title>IOC之深入分析PropertyPlaceholderConfigurer</title>
-    <!-- styles -->
-    
-<link rel="stylesheet" href="/blog/css/style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="renderer" content="webkit|ie-stand|ie-comp">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <!-- Global site tag (gtag.js) - Google Analytics -->
 
-    <!-- persian styles -->
-    
-      
-<link rel="stylesheet" href="/blog/css/rtl.css">
+    <meta name="google-site-verification" content="VrcbMTVpFGlHkIERHBt753dAtXKF4qirjnDweuXSRJw">
+
+
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-129095667-1"></script>
+<script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() {
+        dataLayer.push(arguments);
+    }
+
+    gtag('js', new Date());
+    gtag('config', 'UA-129095667-1');
+</script>
+
+
+    <title>IOC之深入分析PropertyPlaceholderConfigurer | CAYZLH</title>
 
     
-    <!-- rss -->
+    <!-- Third-Party CSS -->
     
-    
-      <link rel="alternate" href="/blog/true" title="CAYZLH" type="application/atom+xml">
-    
-<meta name="generator" content="Hexo 5.3.0"></head>
+        <link rel="icon" type="image/svg+xml" href="/blog/favicon.svg">
+        <link rel="stylesheet" href="/blog/css/thirdparty/bootstrap.min.css">
+        <link rel="stylesheet" href="/blog/css/thirdparty/octicons.css">
+        <link rel="stylesheet" href="/blog/css/thirdparty/hover-min.css">
+        <link rel="stylesheet" href="/blog/css/thirdparty/user-content.min.css">
+        <link rel="stylesheet" href="/blog/css/thirdparty/syntax.css">
+        <link rel="stylesheet" href="/blog/css/thirdparty/gitalk.css">
 
-<body class="max-width mx-auto px3 ltr">
-    
-      <div id="header-post">
-  <a id="menu-icon" href="#"><i class="fas fa-bars fa-lg"></i></a>
-  <a id="menu-icon-tablet" href="#"><i class="fas fa-bars fa-lg"></i></a>
-  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fas fa-chevron-up fa-lg"></i></a>
-  <span id="menu">
-    <span id="nav">
-      <ul>
-        
-          <li><a href="/blog/">Home</a></li>
-        
-          <li><a href="/blog/archives/">Articles</a></li>
-        
-          <li><a href="/blog/about/">About</a></li>
-        
-          <li><a href="/blog/search/">Search</a></li>
-        
-      </ul>
-    </span>
-    <br>
-    <span id="actions">
-      <ul>
-        
-        <li><a class="icon" href="/blog/2020/01/23/cd2eaad8.html"><i class="fas fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
-        
-        
-        <li><a class="icon" href="/blog/2020/01/23/81b83a69.html"><i class="fas fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
-        
-        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
-<!--        <li><a class="icon" href="#"><i class="fas fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>-->
-      </ul>
-      <span id="i-prev" class="info" style="display:none;">Previous</span>
-      <span id="i-next" class="info" style="display:none;">Next</span>
-      <span id="i-top" class="info" style="display:none;">Back to top</span>
-      <span id="i-share" class="info" style="display:none;">Share post</span>
-    </span>
-    <br>
-    <div id="share" style="display: none">
-      <ul>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.facebook.com/sharer.php?u=https://www.cayzlh.com/2020/01/23/99d35216.html"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://twitter.com/share?url=https://www.cayzlh.com/2020/01/23/99d35216.html&text=IOC之深入分析PropertyPlaceholderConfigurer"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.linkedin.com/shareArticle?url=https://www.cayzlh.com/2020/01/23/99d35216.html&title=IOC之深入分析PropertyPlaceholderConfigurer"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://pinterest.com/pin/create/bookmarklet/?url=https://www.cayzlh.com/2020/01/23/99d35216.html&is_video=false&description=IOC之深入分析PropertyPlaceholderConfigurer"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="mailto:?subject=IOC之深入分析PropertyPlaceholderConfigurer&body=Check out this article: https://www.cayzlh.com/2020/01/23/99d35216.html"><i class="fas fa-envelope " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://getpocket.com/save?url=https://www.cayzlh.com/2020/01/23/99d35216.html&title=IOC之深入分析PropertyPlaceholderConfigurer"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://reddit.com/submit?url=https://www.cayzlh.com/2020/01/23/99d35216.html&title=IOC之深入分析PropertyPlaceholderConfigurer"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.stumbleupon.com/submit?url=https://www.cayzlh.com/2020/01/23/99d35216.html&title=IOC之深入分析PropertyPlaceholderConfigurer"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://digg.com/submit?url=https://www.cayzlh.com/2020/01/23/99d35216.html&title=IOC之深入分析PropertyPlaceholderConfigurer"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.tumblr.com/share/link?url=https://www.cayzlh.com/2020/01/23/99d35216.html&name=IOC之深入分析PropertyPlaceholderConfigurer&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://news.ycombinator.com/submitlink?u=https://www.cayzlh.com/2020/01/23/99d35216.html&t=IOC之深入分析PropertyPlaceholderConfigurer"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
-</ul>
+        <!-- My CSS -->
+        <link rel="stylesheet" href="/blog/css/common.css">
 
-    </div>
-    <div id="toc">
-      
-    </div>
-  </span>
+        <link rel="stylesheet" href="/blog/css/sidebar-post-nav.css">
+
+        <link rel="stylesheet" href="/blog/css/blog-page.css">
+        <!-- CSS set in page -->
+
+        
+        <link rel="stylesheet" href="/blog/css/sidebar-popular-repo.css">
+    
+
+    <!-- CSS set in layout -->
+    <link rel="stylesheet" type="text/css" href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css">
+
+    
+        <script type="text/javascript" src="/blog/js/thirdparty/jquery.min.js"></script>
+        <script type="text/javascript" src="/blog/js/thirdparty/bootstrap.min.js"></script>
+        <script type="text/javascript" src="/blog/js/lock.js"></script>
+    
+
+    
+        <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.css">
+        <script src="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js"></script>
+
+        <link rel="stylesheet" href="//imsun.github.io/gitment/style/default.css">
+        <script src="//imsun.github.io/gitment/dist/gitment.browser.js"></script>
+
+        <script src="//unpkg.com/valine/dist/Valine.min.js"></script>
+
+    
+
+    <link rel="stylesheet" href="//cdn.bootcss.com/highlight.js/9.2.0/styles/github.min.css">
+    <script src="//cdn.bootcss.com/highlight.js/9.2.0/highlight.min.js"></script>
+<meta name="generator" content="Hexo 4.2.1"><link rel="alternate" href="/blog/atom.xml" title="CAYZLH" type="application/atom+xml">
+</head>
+
+<body>
+<header class="site-header">
+    <div class="site-header-topbar">
+        <div class="container">
+            <div class="topbar-menu">
+
+    
+        <div class="item">
+            <a href="/blog/categories/" title="分类">
+                分类
+            </a>
+        </div>
+    
+        <div class="item">
+            <a href="/blog/tags/" title="标签">
+                标签
+            </a>
+        </div>
+    
+        <div class="item">
+            <a href="https://meiriyiwen.com/random" target="_blank" title="每日一文" rel="external nofollow noopener noreferrer">
+                每日一文
+            </a>
+        </div>
+    
+        <div class="item">
+            <a href="/blog/links/" title="链接">
+                链接
+            </a>
+        </div>
+    
+        <div class="item">
+            <a href="/blog/about" title="关于">
+                关于
+            </a>
+        </div>
+    
+
 </div>
+        </div>
+    </div>
+    <div class="container">
+        <a id="site-header-brand" href="/blog/" title="CAYZLH">
+            <span class="octicon octicon-mark-github"></span>
+            CAYZLH
+        </a>
 
+        <nav class="site-header-nav" role="navigation">
     
-    <div class="content index py4">
-        
-        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
-  <header>
+        <div class=" site-header-nav-item hvr-underline-from-center">
+            <a href="/blog/" title="Home">
+                Home
+            </a>
+            
+        </div>
     
-    <h1 class="posttitle" itemprop="name headline">
-        IOC之深入分析PropertyPlaceholderConfigurer
-    </h1>
+        <div class=" site-header-nav-item hvr-underline-from-center">
+            <a href="/blog/archives" title="Archives">
+                Archives
+            </a>
+            
+        </div>
+    
+        <div class=" site-header-nav-item hvr-underline-from-center">
+            <a href="/blog/" title="Learning">
+                Learning
+            </a>
+            
+                <ul class="submenu">
+                    
 
+                        <li>
+                            <a href="/blog/categories/%E4%B9%A6%E7%B1%8D/%E3%80%8A%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3Java%E8%99%9A%E6%8B%9F%E6%9C%BA%E3%80%8B/">
+                                <span>深入理解Java虚拟机</span>
+                            </a>
+                        </li>
 
+                    
 
-    <div class="meta">
-      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
-        <span itemprop="name">Java技术驿站 | chenssy |【死磕 Spring】| IOC之深入分析PropertyPlaceholderConfigurer</span>
-      </span>
-      
-    <div class="postdate">
-      
-        <time datetime="2020-01-23T14:22:02.000Z" itemprop="datePublished">2020-01-23</time>
-        
-      
+                        <li>
+                            <a href="/blog/categories/%E4%B9%A6%E7%B1%8D/%E3%80%8AMyBatis%E6%8A%80%E6%9C%AF%E5%86%85%E5%B9%95%E3%80%8B/">
+                                <span>MyBatis技术内幕</span>
+                            </a>
+                        </li>
+
+                    
+
+                        <li>
+                            <a href="/blog/categories/Java/Java%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/">
+                                <span>Java设计模式</span>
+                            </a>
+                        </li>
+
+                    
+                </ul>
+            
+        </div>
+    
+        <div class=" site-header-nav-item hvr-underline-from-center">
+            <a href="/blog/" title="Tools">
+                Tools
+            </a>
+            
+                <ul class="submenu">
+                    
+
+                        <li>
+                            <a href="https://www.cayzlh.com/tools/online-JSONFormat/" target="_blank">
+                                <span>Json在线工具</span>
+                            </a>
+                        </li>
+
+                    
+
+                        <li>
+                            <a href="https://www.cayzlh.com/tools/online-markdown/" target="_blank">
+                                <span>Markdown在线转换工具</span>
+                            </a>
+                        </li>
+
+                    
+
+                        <li>
+                            <a href="https://www.cayzlh.com/tools/online-hash/" target="_blank">
+                                <span>在线HASH</span>
+                            </a>
+                        </li>
+
+                    
+                </ul>
+            
+        </div>
+    
+</nav>
     </div>
+</header>
+<main class="content">
+    <!-- 标题部分 -->
+<section class="jumbotron geopattern" data-pattern-id="IOC之深入分析PropertyPlaceholderConfigurer">
+    <div class="container">
+        <div id="jumbotron-meta-info">
+            <h1>IOC之深入分析PropertyPlaceholderConfigurer</h1>
+            <span class="meta-info">
+                <a><span class="octicon octicon-calendar"></span> 2020-01-23</a>
+                
+                    <a><span class="octicon octicon-book"></span></a>
+                    
+                        <a href="/blog/categories/Spring/">Spring</a>
+                    
+                        <a href="/blog/categories/Spring/%E3%80%8ASpring%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E3%80%8B/">《Spring源码分析》</a>
+                    
+                
+                
+                    
+                
+            </span>
+        </div>
 
-
-      
-    <div class="article-category">
-        <i class="fas fa-archive"></i>
-        <a class="category-link" href="/blog/categories/Spring/">Spring</a> › <a class="category-link" href="/blog/categories/Spring/%E3%80%8ASpring%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E3%80%8B/">《Spring源码分析》</a>
     </div>
+</section>
+<script>
+    $(document).ready(function(){
 
+        $('.geopattern').each(function(){
+            $(this).geopattern($(this).data('pattern-id'));
+        });
 
-      
-    <div class="article-tag">
-        <i class="fas fa-tag"></i>
-        <a class="tag-link-link" href="/blog/tags/Spring/" rel="tag">Spring</a>, <a class="tag-link-link" href="/blog/tags/%E8%BD%AC%E8%BD%BD/" rel="tag">转载</a>
-    </div>
-
-
-    </div>
-  </header>
-  
-
-  <div class="content" itemprop="articleBody">
-    <blockquote>
+    });
+</script>
+<!-- 文章内容部分 -->
+<article class="post container " itemscope itemtype="http://schema.org/BlogPosting" id="openwrite-container">
+    <div class="row">
+        <div class="col-md-9 markdown-body">
+            <!-- 文章开始部分 -->
+            <!--<div style="text-align:center">-->
+<!--    <img style="display:inline-block" width="130" height="27"-->
+<!--         src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/640-3.gif"-->
+<!--         data-loaded="true">-->
+<!--    <img style="display:inline-block" width="41" height="35"-->
+<!--         src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/640-4.gif"-->
+<!--         data-loaded="true">-->
+<!--    <img style="display:inline-block"-->
+<!--         width="130" height="27"-->
+<!--         src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/640-5.gif"-->
+<!--         data-loaded="true">-->
+<!--</div>-->
+            <blockquote>
 <p>本文作者：chenssy</p>
-<p>出处：<a target="_blank" rel="external nofollow noopener noreferrer" href="http://cmsblogs.com/?p=3837">http://cmsblogs.com/?p=3837</a></p>
+<p>出处：<a href="http://cmsblogs.com/?p=3837" target="_blank" rel="external nofollow noopener noreferrer">http://cmsblogs.com/?p=3837</a></p>
 <p>在学习<code>Spring源码</code>的过程中发现的好站+好贴，原创不易感谢作者。</p>
 <p>Spring版本：<strong>Spring 5.0.6.RELEASE</strong></p>
 </blockquote>
@@ -176,19 +281,67 @@
 <p><img src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2020/05/26/201809161001_Jd3Eac_N7lPj5.png" alt="201809161001"></p>
 <p>从 PropertyPlaceholderConfigurer 的结构图可以看出，它间接实现了 Aware 和 BeanFactoryPostProcessor 两大扩展接口，这里只需要关注 BeanFactoryPostProcessor 即可。</p>
 <p>我们知道 BeanFactoryPostProcessor 提供了 <code>postProcessBeanFactory()</code>，在这个体系中该方法的是在 PropertyResourceConfigurer 中实现，该类为属性资源的配置类，他实现了 BeanFactoryPostProcessor 接口，如下：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">postProcessBeanFactory</span><span class="params">(ConfigurableListableBeanFactory beanFactory)</span> <span class="keyword">throws</span> BeansException </span>&#123;</span><br><span class="line"> <span class="keyword">try</span> &#123;</span><br><span class="line">  Properties mergedProps = mergeProperties();</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 转换合并属性</span></span><br><span class="line">  convertProperties(mergedProps);</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 子类处理</span></span><br><span class="line">  processProperties(beanFactory, mergedProps);</span><br><span class="line"> &#125;</span><br><span class="line"> <span class="keyword">catch</span> (IOException ex) &#123;</span><br><span class="line">  <span class="keyword">throw</span> <span class="keyword">new</span> BeanInitializationException(<span class="string">&quot;Could not load properties&quot;</span>, ex);</span><br><span class="line"> &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-java"><code class="language-java"> <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">postProcessBeanFactory</span><span class="token punctuation">(</span>ConfigurableListableBeanFactory beanFactory<span class="token punctuation">)</span> <span class="token keyword">throws</span> BeansException <span class="token punctuation">{</span>
+  <span class="token keyword">try</span> <span class="token punctuation">{</span>
+   Properties mergedProps <span class="token operator">=</span> <span class="token function">mergeProperties</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+   <span class="token comment" spellcheck="true">// 转换合并属性</span>
+   <span class="token function">convertProperties</span><span class="token punctuation">(</span>mergedProps<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+   <span class="token comment" spellcheck="true">// 子类处理</span>
+   <span class="token function">processProperties</span><span class="token punctuation">(</span>beanFactory<span class="token punctuation">,</span> mergedProps<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+  <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">IOException</span> ex<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+   <span class="token keyword">throw</span> <span class="token keyword">new</span> <span class="token class-name">BeanInitializationException</span><span class="token punctuation">(</span><span class="token string">"Could not load properties"</span><span class="token punctuation">,</span> ex<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+ <span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <ul>
 <li><code>mergeProperties()</code>：返回合并的 Properties 实例，Properties 实例维护这一组 key-value ，其实就是 Properties 配置文件中的内容。</li>
 <li><code>convertProperties()</code>：转换合并的值，其实就是将原始值替换为真正的值</li>
 <li><code>processProperties()</code>：前面两个步骤已经将配置文件中的值进行了处理，那么该方法就是真正的替换过程，该方法由子类实现。</li>
 </ul>
 <p>在 PropertyPlaceholderConfigurer 重写 <code>processProperties()</code>:</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title">processProperties</span><span class="params">(ConfigurableListableBeanFactory beanFactoryToProcess, Properties props)</span></span></span><br><span class="line"><span class="function">  <span class="keyword">throws</span> BeansException </span>&#123;</span><br><span class="line"></span><br><span class="line"> StringValueResolver valueResolver = <span class="keyword">new</span> PlaceholderResolvingStringValueResolver(props);</span><br><span class="line"> doProcessProperties(beanFactoryToProcess, valueResolver);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-java"><code class="language-java"> <span class="token keyword">protected</span> <span class="token keyword">void</span> <span class="token function">processProperties</span><span class="token punctuation">(</span>ConfigurableListableBeanFactory beanFactoryToProcess<span class="token punctuation">,</span> Properties props<span class="token punctuation">)</span>
+   <span class="token keyword">throws</span> BeansException <span class="token punctuation">{</span>
+
+  StringValueResolver valueResolver <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">PlaceholderResolvingStringValueResolver</span><span class="token punctuation">(</span>props<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token function">doProcessProperties</span><span class="token punctuation">(</span>beanFactoryToProcess<span class="token punctuation">,</span> valueResolver<span class="token punctuation">)</span><span class="token punctuation">;</span>
+ <span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>首先构造一个 PlaceholderResolvingStringValueResolver 类型的 StringValueResolver 实例。StringValueResolver 为一个解析 String 类型值的策略接口，该接口提供了 <code>resolveStringValue()</code> 方法用于解析 String 值。PlaceholderResolvingStringValueResolver 为其一个解析策略，构造方法如下：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="title">PlaceholderResolvingStringValueResolver</span><span class="params">(Properties props)</span> </span>&#123;</span><br><span class="line"> <span class="keyword">this</span>.helper = <span class="keyword">new</span> PropertyPlaceholderHelper(</span><br><span class="line">   placeholderPrefix, placeholderSuffix, valueSeparator, ignoreUnresolvablePlaceholders);</span><br><span class="line"> <span class="keyword">this</span>.resolver = <span class="keyword">new</span> PropertyPlaceholderConfigurerResolver(props);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token function">PlaceholderResolvingStringValueResolver</span><span class="token punctuation">(</span>Properties props<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+ <span class="token keyword">this</span><span class="token punctuation">.</span>helper <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">PropertyPlaceholderHelper</span><span class="token punctuation">(</span>
+   placeholderPrefix<span class="token punctuation">,</span> placeholderSuffix<span class="token punctuation">,</span> valueSeparator<span class="token punctuation">,</span> ignoreUnresolvablePlaceholders<span class="token punctuation">)</span><span class="token punctuation">;</span>
+ <span class="token keyword">this</span><span class="token punctuation">.</span>resolver <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">PropertyPlaceholderConfigurerResolver</span><span class="token punctuation">(</span>props<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>在构造 String 值解析器 StringValueResolver 时，将已经解析的 Properties 实例对象封装在 PlaceholderResolver 实例 resolver 中。PlaceholderResolver 是一个用于解析字符串中包含占位符的替换值的策略接口，该接口有一个 <code>resolvePlaceholder()</code> 方法，用于返回占位符的替换值。还有一个 PropertyPlaceholderHelper 工具，从名字上面看应该是进行替换的。</p>
 <p>得到 String 解析器的实例 valueResolver 后，则会调用 <code>doProcessProperties()</code> 方法来进行诊治的替换操作，该方法在父类 PlaceholderConfigurerSupport 中实现，如下：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title">doProcessProperties</span><span class="params">(ConfigurableListableBeanFactory beanFactoryToProcess,</span></span></span><br><span class="line"><span class="function"><span class="params">  StringValueResolver valueResolver)</span> </span>&#123;</span><br><span class="line"></span><br><span class="line"> BeanDefinitionVisitor visitor = <span class="keyword">new</span> BeanDefinitionVisitor(valueResolver);</span><br><span class="line"></span><br><span class="line"> String[] beanNames = beanFactoryToProcess.getBeanDefinitionNames();</span><br><span class="line"> <span class="keyword">for</span> (String curName : beanNames) &#123;</span><br><span class="line">  <span class="comment">// 校验</span></span><br><span class="line">  <span class="comment">// 1. 当前实例 PlaceholderConfigurerSupport 不在解析范围内</span></span><br><span class="line">     <span class="comment">// 2. 同一个 Spring 容器</span></span><br><span class="line">  <span class="keyword">if</span> (!(curName.equals(<span class="keyword">this</span>.beanName) &amp;&amp; beanFactoryToProcess.equals(<span class="keyword">this</span>.beanFactory))) &#123;</span><br><span class="line">   BeanDefinition bd = beanFactoryToProcess.getBeanDefinition(curName);</span><br><span class="line">   <span class="keyword">try</span> &#123;</span><br><span class="line">    visitor.visitBeanDefinition(bd);</span><br><span class="line">   &#125;</span><br><span class="line">   <span class="keyword">catch</span> (Exception ex) &#123;</span><br><span class="line">    <span class="keyword">throw</span> <span class="keyword">new</span> BeanDefinitionStoreException(bd.getResourceDescription(), curName, ex.getMessage(), ex);</span><br><span class="line">   &#125;</span><br><span class="line">  &#125;</span><br><span class="line"> &#125;</span><br><span class="line"></span><br><span class="line"> <span class="comment">// 别名的占位符</span></span><br><span class="line"> beanFactoryToProcess.resolveAliases(valueResolver);</span><br><span class="line"></span><br><span class="line"> <span class="comment">// 解析嵌入值的占位符，例如注释属性</span></span><br><span class="line">       beanFactoryToProcess.addEmbeddedValueResolver(valueResolver);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-java"><code class="language-java"> <span class="token keyword">protected</span> <span class="token keyword">void</span> <span class="token function">doProcessProperties</span><span class="token punctuation">(</span>ConfigurableListableBeanFactory beanFactoryToProcess<span class="token punctuation">,</span>
+   StringValueResolver valueResolver<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+
+  BeanDefinitionVisitor visitor <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">BeanDefinitionVisitor</span><span class="token punctuation">(</span>valueResolver<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+  String<span class="token punctuation">[</span><span class="token punctuation">]</span> beanNames <span class="token operator">=</span> beanFactoryToProcess<span class="token punctuation">.</span><span class="token function">getBeanDefinitionNames</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">for</span> <span class="token punctuation">(</span>String curName <span class="token operator">:</span> beanNames<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+   <span class="token comment" spellcheck="true">// 校验</span>
+   <span class="token comment" spellcheck="true">// 1. 当前实例 PlaceholderConfigurerSupport 不在解析范围内</span>
+      <span class="token comment" spellcheck="true">// 2. 同一个 Spring 容器</span>
+   <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span><span class="token punctuation">(</span>curName<span class="token punctuation">.</span><span class="token function">equals</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>beanName<span class="token punctuation">)</span> <span class="token operator">&amp;&amp;</span> beanFactoryToProcess<span class="token punctuation">.</span><span class="token function">equals</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>beanFactory<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    BeanDefinition bd <span class="token operator">=</span> beanFactoryToProcess<span class="token punctuation">.</span><span class="token function">getBeanDefinition</span><span class="token punctuation">(</span>curName<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">try</span> <span class="token punctuation">{</span>
+     visitor<span class="token punctuation">.</span><span class="token function">visitBeanDefinition</span><span class="token punctuation">(</span>bd<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">Exception</span> ex<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+     <span class="token keyword">throw</span> <span class="token keyword">new</span> <span class="token class-name">BeanDefinitionStoreException</span><span class="token punctuation">(</span>bd<span class="token punctuation">.</span><span class="token function">getResourceDescription</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> curName<span class="token punctuation">,</span> ex<span class="token punctuation">.</span><span class="token function">getMessage</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> ex<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+   <span class="token punctuation">}</span>
+  <span class="token punctuation">}</span>
+
+  <span class="token comment" spellcheck="true">// 别名的占位符</span>
+  beanFactoryToProcess<span class="token punctuation">.</span><span class="token function">resolveAliases</span><span class="token punctuation">(</span>valueResolver<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+  <span class="token comment" spellcheck="true">// 解析嵌入值的占位符，例如注释属性</span>
+        beanFactoryToProcess<span class="token punctuation">.</span><span class="token function">addEmbeddedValueResolver</span><span class="token punctuation">(</span>valueResolver<span class="token punctuation">)</span><span class="token punctuation">;</span>
+ <span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>流程如下：</p>
 <ol>
 <li>根据 String 值解析策略 valueResolver 得到 BeanDefinitionVisitor 实例。BeanDefinitionVisitor 是 BeanDefinition 的访问者，我们通过它可以实现对 BeanDefinition 内容的进行访问，内容很多，例如Scope、PropertyValues、FactoryMethodName 等等。</li>
@@ -197,21 +350,137 @@
 <li>解析嵌入值的占位符，例如注释属性</li>
 </ol>
 <p>这个方法核心在于 <code>visitBeanDefinition()</code> 的调用，如下：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">visitBeanDefinition</span><span class="params">(BeanDefinition beanDefinition)</span> </span>&#123;</span><br><span class="line"> visitParentName(beanDefinition);</span><br><span class="line"> visitBeanClassName(beanDefinition);</span><br><span class="line"> visitFactoryBeanName(beanDefinition);</span><br><span class="line"> visitFactoryMethodName(beanDefinition);</span><br><span class="line"> visitScope(beanDefinition);</span><br><span class="line"> <span class="keyword">if</span> (beanDefinition.hasPropertyValues()) &#123;</span><br><span class="line">  visitPropertyValues(beanDefinition.getPropertyValues());</span><br><span class="line"> &#125;</span><br><span class="line"> <span class="keyword">if</span> (beanDefinition.hasConstructorArgumentValues()) &#123;</span><br><span class="line">  ConstructorArgumentValues cas = beanDefinition.getConstructorArgumentValues();</span><br><span class="line">  visitIndexedArgumentValues(cas.getIndexedArgumentValues());</span><br><span class="line">  visitGenericArgumentValues(cas.getGenericArgumentValues());</span><br><span class="line"> &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-java"><code class="language-java"> <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">visitBeanDefinition</span><span class="token punctuation">(</span>BeanDefinition beanDefinition<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+  <span class="token function">visitParentName</span><span class="token punctuation">(</span>beanDefinition<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token function">visitBeanClassName</span><span class="token punctuation">(</span>beanDefinition<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token function">visitFactoryBeanName</span><span class="token punctuation">(</span>beanDefinition<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token function">visitFactoryMethodName</span><span class="token punctuation">(</span>beanDefinition<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token function">visitScope</span><span class="token punctuation">(</span>beanDefinition<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span>beanDefinition<span class="token punctuation">.</span><span class="token function">hasPropertyValues</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+   <span class="token function">visitPropertyValues</span><span class="token punctuation">(</span>beanDefinition<span class="token punctuation">.</span><span class="token function">getPropertyValues</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span>beanDefinition<span class="token punctuation">.</span><span class="token function">hasConstructorArgumentValues</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+   ConstructorArgumentValues cas <span class="token operator">=</span> beanDefinition<span class="token punctuation">.</span><span class="token function">getConstructorArgumentValues</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+   <span class="token function">visitIndexedArgumentValues</span><span class="token punctuation">(</span>cas<span class="token punctuation">.</span><span class="token function">getIndexedArgumentValues</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+   <span class="token function">visitGenericArgumentValues</span><span class="token punctuation">(</span>cas<span class="token punctuation">.</span><span class="token function">getGenericArgumentValues</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+ <span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>我们可以看到该方法基本访问了 BeanDefinition 中所有值得访问的东西了，包括 parent 、class 、factory-bean 、factory-method 、scope 、property 、constructor-arg ，本篇文章的主题是 property，所以关注 <code>visitPropertyValues()</code> 即可。如下：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title">visitPropertyValues</span><span class="params">(MutablePropertyValues pvs)</span> </span>&#123;</span><br><span class="line"> PropertyValue[] pvArray = pvs.getPropertyValues();</span><br><span class="line"> <span class="keyword">for</span> (PropertyValue pv : pvArray) &#123;</span><br><span class="line">  Object newVal = resolveValue(pv.getValue());</span><br><span class="line">  <span class="keyword">if</span> (!ObjectUtils.nullSafeEquals(newVal, pv.getValue())) &#123;</span><br><span class="line">   pvs.add(pv.getName(), newVal);</span><br><span class="line">  &#125;</span><br><span class="line"> &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-java"><code class="language-java"> <span class="token keyword">protected</span> <span class="token keyword">void</span> <span class="token function">visitPropertyValues</span><span class="token punctuation">(</span>MutablePropertyValues pvs<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+  PropertyValue<span class="token punctuation">[</span><span class="token punctuation">]</span> pvArray <span class="token operator">=</span> pvs<span class="token punctuation">.</span><span class="token function">getPropertyValues</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">for</span> <span class="token punctuation">(</span>PropertyValue pv <span class="token operator">:</span> pvArray<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+   Object newVal <span class="token operator">=</span> <span class="token function">resolveValue</span><span class="token punctuation">(</span>pv<span class="token punctuation">.</span><span class="token function">getValue</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+   <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>ObjectUtils<span class="token punctuation">.</span><span class="token function">nullSafeEquals</span><span class="token punctuation">(</span>newVal<span class="token punctuation">,</span> pv<span class="token punctuation">.</span><span class="token function">getValue</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    pvs<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span>pv<span class="token punctuation">.</span><span class="token function">getName</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> newVal<span class="token punctuation">)</span><span class="token punctuation">;</span>
+   <span class="token punctuation">}</span>
+  <span class="token punctuation">}</span>
+ <span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>过程就是对属性数组进行遍历，调用 <code>resolveValue()</code> 对属性进行解析获取最新值，如果新值和旧值不等，则用新值替换旧值。<code>resolveValue()</code> 实现如下：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> Object <span class="title">resolveValue</span><span class="params">(<span class="meta">@Nullable</span> Object value)</span> </span>&#123;</span><br><span class="line"> <span class="comment">// 由于 Properties 中的是 String，所以把前面一堆 if 去掉</span></span><br><span class="line"> <span class="keyword">else</span> <span class="keyword">if</span> (value <span class="keyword">instanceof</span> String) &#123;</span><br><span class="line">  <span class="keyword">return</span> resolveStringValue((String) value);</span><br><span class="line"> &#125;</span><br><span class="line"> <span class="keyword">return</span> value;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-java"><code class="language-java"> <span class="token keyword">protected</span> Object <span class="token function">resolveValue</span><span class="token punctuation">(</span><span class="token annotation punctuation">@Nullable</span> Object value<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+  <span class="token comment" spellcheck="true">// 由于 Properties 中的是 String，所以把前面一堆 if 去掉</span>
+  <span class="token keyword">else</span> <span class="token keyword">if</span> <span class="token punctuation">(</span>value <span class="token keyword">instanceof</span> <span class="token class-name">String</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+   <span class="token keyword">return</span> <span class="token function">resolveStringValue</span><span class="token punctuation">(</span><span class="token punctuation">(</span>String<span class="token punctuation">)</span> value<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+  <span class="token keyword">return</span> value<span class="token punctuation">;</span>
+ <span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>由于配置的是 String 类型，所以只需要看 String 相关的，<code>resolveStringValue()</code> 实现如下：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"> <span class="function"><span class="keyword">protected</span> String <span class="title">resolveStringValue</span><span class="params">(String strVal)</span> </span>&#123;</span><br><span class="line"> <span class="keyword">if</span> (<span class="keyword">this</span>.valueResolver == <span class="keyword">null</span>) &#123;</span><br><span class="line">  <span class="keyword">throw</span> <span class="keyword">new</span> IllegalStateException(<span class="string">&quot;No StringValueResolver specified - pass a resolver &quot;</span> +</span><br><span class="line">    <span class="string">&quot;object into the constructor or override the &#x27;resolveStringValue&#x27; method&quot;</span>);</span><br><span class="line"> &#125;</span><br><span class="line"> String resolvedValue = <span class="keyword">this</span>.valueResolver.resolveStringValue(strVal);</span><br><span class="line"> <span class="keyword">return</span> (strVal.equals(resolvedValue) ? strVal : resolvedValue);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-java"><code class="language-java">  <span class="token keyword">protected</span> String <span class="token function">resolveStringValue</span><span class="token punctuation">(</span>String strVal<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>valueResolver <span class="token operator">==</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+   <span class="token keyword">throw</span> <span class="token keyword">new</span> <span class="token class-name">IllegalStateException</span><span class="token punctuation">(</span><span class="token string">"No StringValueResolver specified - pass a resolver "</span> <span class="token operator">+</span>
+     <span class="token string">"object into the constructor or override the 'resolveStringValue' method"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+  String resolvedValue <span class="token operator">=</span> <span class="token keyword">this</span><span class="token punctuation">.</span>valueResolver<span class="token punctuation">.</span><span class="token function">resolveStringValue</span><span class="token punctuation">(</span>strVal<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">return</span> <span class="token punctuation">(</span>strVal<span class="token punctuation">.</span><span class="token function">equals</span><span class="token punctuation">(</span>resolvedValue<span class="token punctuation">)</span> <span class="token operator">?</span> strVal <span class="token operator">:</span> resolvedValue<span class="token punctuation">)</span><span class="token punctuation">;</span>
+ <span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>valueResolver 是我们在构造 BeanDefinitionVisitor 实例时传入的 String 类型解析器 PlaceholderResolvingStringValueResolver，调用其 <code>resolveStringValue()</code> 如下：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> String <span class="title">resolveStringValue</span><span class="params">(String strVal)</span> <span class="keyword">throws</span> BeansException </span>&#123;</span><br><span class="line"> String resolved = <span class="keyword">this</span>.helper.replacePlaceholders(strVal, <span class="keyword">this</span>.resolver);</span><br><span class="line"> <span class="keyword">if</span> (trimValues) &#123;</span><br><span class="line">  resolved = resolved.trim();</span><br><span class="line"> &#125;</span><br><span class="line"> <span class="keyword">return</span> (resolved.equals(nullValue) ? <span class="keyword">null</span> : resolved);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> String <span class="token function">resolveStringValue</span><span class="token punctuation">(</span>String strVal<span class="token punctuation">)</span> <span class="token keyword">throws</span> BeansException <span class="token punctuation">{</span>
+ String resolved <span class="token operator">=</span> <span class="token keyword">this</span><span class="token punctuation">.</span>helper<span class="token punctuation">.</span><span class="token function">replacePlaceholders</span><span class="token punctuation">(</span>strVal<span class="token punctuation">,</span> <span class="token keyword">this</span><span class="token punctuation">.</span>resolver<span class="token punctuation">)</span><span class="token punctuation">;</span>
+ <span class="token keyword">if</span> <span class="token punctuation">(</span>trimValues<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+  resolved <span class="token operator">=</span> resolved<span class="token punctuation">.</span><span class="token function">trim</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+ <span class="token punctuation">}</span>
+ <span class="token keyword">return</span> <span class="token punctuation">(</span>resolved<span class="token punctuation">.</span><span class="token function">equals</span><span class="token punctuation">(</span>nullValue<span class="token punctuation">)</span> <span class="token operator">?</span> null <span class="token operator">:</span> resolved<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>helper 为 PropertyPlaceholderHelper 实例对象，而 PropertyPlaceholderHelper 则是处理应用程序中包含占位符的字符串工具类。在构造 helper 实例对象时需要传入了几个参数：placeholderPrefix、placeholderSuffix、valueSeparator，这些值在 PlaceholderConfigurerSupport 中定义如下：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">protected</span> String placeholderPrefix = <span class="string">&quot;$&#123;&quot;</span>;</span><br><span class="line"><span class="keyword">protected</span> String placeholderSuffix = <span class="string">&quot;&#125;&quot;</span>;</span><br><span class="line"><span class="keyword">protected</span> String valueSeparator = <span class="string">&quot;:&quot;</span>;</span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">protected</span> String placeholderPrefix <span class="token operator">=</span> <span class="token string">"${"</span><span class="token punctuation">;</span>
+<span class="token keyword">protected</span> String placeholderSuffix <span class="token operator">=</span> <span class="token string">"}"</span><span class="token punctuation">;</span>
+<span class="token keyword">protected</span> String valueSeparator <span class="token operator">=</span> <span class="token string">":"</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
 <p>调用 <code>replacePlaceholders()</code> 进行占位符替换，如下：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> String <span class="title">replacePlaceholders</span><span class="params">(String value, PlaceholderResolver placeholderResolver)</span> </span>&#123;</span><br><span class="line"> Assert.notNull(value, <span class="string">&quot;&#x27;value&#x27; must not be null&quot;</span>);</span><br><span class="line"> <span class="keyword">return</span> parseStringValue(value, placeholderResolver, <span class="keyword">new</span> HashSet&lt;&gt;());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>调用 <code>parseStringValue()</code>，这个方法是这篇博客最核心的地方，<code>$&#123;&#125;</code> 占位符的替换：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> String <span class="title">parseStringValue</span><span class="params">(</span></span></span><br><span class="line"><span class="function"><span class="params">  String value, PlaceholderResolver placeholderResolver, Set&lt;String&gt; visitedPlaceholders)</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">  StringBuilder result = <span class="keyword">new</span> StringBuilder(value);</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 获取前缀 &quot;$&#123;&quot; 的索引位置</span></span><br><span class="line">  <span class="keyword">int</span> startIndex = value.indexOf(<span class="keyword">this</span>.placeholderPrefix);</span><br><span class="line">  <span class="keyword">while</span> (startIndex != -<span class="number">1</span>) &#123;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 获取 后缀 &quot;&#125;&quot; 的索引位置</span></span><br><span class="line">    <span class="keyword">int</span> endIndex = findPlaceholderEndIndex(result, startIndex);</span><br><span class="line">    <span class="keyword">if</span> (endIndex != -<span class="number">1</span>) &#123;</span><br><span class="line"></span><br><span class="line">      <span class="comment">// 截取 &quot;$&#123;&quot; 和 &quot;&#125;&quot; 中间的内容，这也就是我们在配置文件中对应的值</span></span><br><span class="line">      String placeholder = result.substring(startIndex + <span class="keyword">this</span>.placeholderPrefix.length(), endIndex);</span><br><span class="line">      String originalPlaceholder = placeholder;</span><br><span class="line">      <span class="keyword">if</span> (!visitedPlaceholders.add(originalPlaceholder)) &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> IllegalArgumentException(</span><br><span class="line">          <span class="string">&quot;Circular placeholder reference &#x27;&quot;</span> + originalPlaceholder + <span class="string">&quot;&#x27; in property definitions&quot;</span>);</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="comment">// 解析占位符键中包含的占位符，真正的值</span></span><br><span class="line">      placeholder = parseStringValue(placeholder, placeholderResolver, visitedPlaceholders);</span><br><span class="line">      <span class="comment">// 从 Properties 中获取 placeHolder 对应的值 propVal</span></span><br><span class="line">      String propVal = placeholderResolver.resolvePlaceholder(placeholder);</span><br><span class="line">      <span class="comment">// 如果不存在</span></span><br><span class="line">      <span class="keyword">if</span> (propVal == <span class="keyword">null</span> &amp;&amp; <span class="keyword">this</span>.valueSeparator != <span class="keyword">null</span>) &#123;</span><br><span class="line">        <span class="comment">// 查询 : 的位置</span></span><br><span class="line">        <span class="keyword">int</span> separatorIndex = placeholder.indexOf(<span class="keyword">this</span>.valueSeparator);</span><br><span class="line">        <span class="comment">// 如果存在 :</span></span><br><span class="line">        <span class="keyword">if</span> (separatorIndex != -<span class="number">1</span>) &#123;</span><br><span class="line">          <span class="comment">// 获取 : 前面部分 actualPlaceholder</span></span><br><span class="line">          String actualPlaceholder = placeholder.substring(<span class="number">0</span>, separatorIndex);</span><br><span class="line">          <span class="comment">// 获取 : 后面部分 defaultValue</span></span><br><span class="line">          String defaultValue = placeholder.substring(separatorIndex + <span class="keyword">this</span>.valueSeparator.length());</span><br><span class="line"></span><br><span class="line">          <span class="comment">// 从 Properties 中获取 actualPlaceholder 对应的值</span></span><br><span class="line">          propVal = placeholderResolver.resolvePlaceholder(actualPlaceholder);</span><br><span class="line">          <span class="comment">// 如果不存在 则返回 defaultValue</span></span><br><span class="line">          <span class="keyword">if</span> (propVal == <span class="keyword">null</span>) &#123;</span><br><span class="line">            propVal = defaultValue;</span><br><span class="line">          &#125;</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">if</span> (propVal != <span class="keyword">null</span>) &#123;</span><br><span class="line">        propVal = parseStringValue(propVal, placeholderResolver, visitedPlaceholders);</span><br><span class="line">        result.replace(startIndex, endIndex + <span class="keyword">this</span>.placeholderSuffix.length(), propVal);</span><br><span class="line">        <span class="keyword">if</span> (logger.isTraceEnabled()) &#123;</span><br><span class="line">          logger.trace(<span class="string">&quot;Resolved placeholder &#x27;&quot;</span> + placeholder + <span class="string">&quot;&#x27;&quot;</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        startIndex = result.indexOf(<span class="keyword">this</span>.placeholderPrefix, startIndex + propVal.length());</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">else</span> <span class="keyword">if</span> (<span class="keyword">this</span>.ignoreUnresolvablePlaceholders) &#123;</span><br><span class="line">        <span class="comment">// 忽略值</span></span><br><span class="line">        startIndex = result.indexOf(<span class="keyword">this</span>.placeholderPrefix, endIndex + <span class="keyword">this</span>.placeholderSuffix.length());</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> IllegalArgumentException(<span class="string">&quot;Could not resolve placeholder &#x27;&quot;</span> +</span><br><span class="line">                                           placeholder + <span class="string">&quot;&#x27;&quot;</span> + <span class="string">&quot; in value \&quot;&quot;</span> + value + <span class="string">&quot;\&quot;&quot;</span>);</span><br><span class="line">      &#125;</span><br><span class="line"></span><br><span class="line">      <span class="comment">//</span></span><br><span class="line">      visitedPlaceholders.remove(originalPlaceholder);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span> &#123;</span><br><span class="line">      startIndex = -<span class="number">1</span>;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 返回propVal，就是替换之后的值</span></span><br><span class="line">  <span class="keyword">return</span> result.toString();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-java"><code class="language-java"> <span class="token keyword">public</span> String <span class="token function">replacePlaceholders</span><span class="token punctuation">(</span>String value<span class="token punctuation">,</span> PlaceholderResolver placeholderResolver<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+  Assert<span class="token punctuation">.</span><span class="token function">notNull</span><span class="token punctuation">(</span>value<span class="token punctuation">,</span> <span class="token string">"'value' must not be null"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">return</span> <span class="token function">parseStringValue</span><span class="token punctuation">(</span>value<span class="token punctuation">,</span> placeholderResolver<span class="token punctuation">,</span> <span class="token keyword">new</span> <span class="token class-name">HashSet</span><span class="token operator">&lt;</span><span class="token operator">></span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+ <span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<p>调用 <code>parseStringValue()</code>，这个方法是这篇博客最核心的地方，<code>${}</code> 占位符的替换：</p>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">protected</span> String <span class="token function">parseStringValue</span><span class="token punctuation">(</span>
+  String value<span class="token punctuation">,</span> PlaceholderResolver placeholderResolver<span class="token punctuation">,</span> Set<span class="token operator">&lt;</span>String<span class="token operator">></span> visitedPlaceholders<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+
+  StringBuilder result <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">StringBuilder</span><span class="token punctuation">(</span>value<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+  <span class="token comment" spellcheck="true">// 获取前缀 "${" 的索引位置</span>
+  <span class="token keyword">int</span> startIndex <span class="token operator">=</span> value<span class="token punctuation">.</span><span class="token function">indexOf</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>placeholderPrefix<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">while</span> <span class="token punctuation">(</span>startIndex <span class="token operator">!=</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+
+    <span class="token comment" spellcheck="true">// 获取 后缀 "}" 的索引位置</span>
+    <span class="token keyword">int</span> endIndex <span class="token operator">=</span> <span class="token function">findPlaceholderEndIndex</span><span class="token punctuation">(</span>result<span class="token punctuation">,</span> startIndex<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>endIndex <span class="token operator">!=</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+
+      <span class="token comment" spellcheck="true">// 截取 "${" 和 "}" 中间的内容，这也就是我们在配置文件中对应的值</span>
+      String placeholder <span class="token operator">=</span> result<span class="token punctuation">.</span><span class="token function">substring</span><span class="token punctuation">(</span>startIndex <span class="token operator">+</span> <span class="token keyword">this</span><span class="token punctuation">.</span>placeholderPrefix<span class="token punctuation">.</span><span class="token function">length</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> endIndex<span class="token punctuation">)</span><span class="token punctuation">;</span>
+      String originalPlaceholder <span class="token operator">=</span> placeholder<span class="token punctuation">;</span>
+      <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>visitedPlaceholders<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span>originalPlaceholder<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">throw</span> <span class="token keyword">new</span> <span class="token class-name">IllegalArgumentException</span><span class="token punctuation">(</span>
+          <span class="token string">"Circular placeholder reference '"</span> <span class="token operator">+</span> originalPlaceholder <span class="token operator">+</span> <span class="token string">"' in property definitions"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token punctuation">}</span>
+      <span class="token comment" spellcheck="true">// 解析占位符键中包含的占位符，真正的值</span>
+      placeholder <span class="token operator">=</span> <span class="token function">parseStringValue</span><span class="token punctuation">(</span>placeholder<span class="token punctuation">,</span> placeholderResolver<span class="token punctuation">,</span> visitedPlaceholders<span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token comment" spellcheck="true">// 从 Properties 中获取 placeHolder 对应的值 propVal</span>
+      String propVal <span class="token operator">=</span> placeholderResolver<span class="token punctuation">.</span><span class="token function">resolvePlaceholder</span><span class="token punctuation">(</span>placeholder<span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token comment" spellcheck="true">// 如果不存在</span>
+      <span class="token keyword">if</span> <span class="token punctuation">(</span>propVal <span class="token operator">==</span> null <span class="token operator">&amp;&amp;</span> <span class="token keyword">this</span><span class="token punctuation">.</span>valueSeparator <span class="token operator">!=</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token comment" spellcheck="true">// 查询 : 的位置</span>
+        <span class="token keyword">int</span> separatorIndex <span class="token operator">=</span> placeholder<span class="token punctuation">.</span><span class="token function">indexOf</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>valueSeparator<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token comment" spellcheck="true">// 如果存在 :</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>separatorIndex <span class="token operator">!=</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+          <span class="token comment" spellcheck="true">// 获取 : 前面部分 actualPlaceholder</span>
+          String actualPlaceholder <span class="token operator">=</span> placeholder<span class="token punctuation">.</span><span class="token function">substring</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">,</span> separatorIndex<span class="token punctuation">)</span><span class="token punctuation">;</span>
+          <span class="token comment" spellcheck="true">// 获取 : 后面部分 defaultValue</span>
+          String defaultValue <span class="token operator">=</span> placeholder<span class="token punctuation">.</span><span class="token function">substring</span><span class="token punctuation">(</span>separatorIndex <span class="token operator">+</span> <span class="token keyword">this</span><span class="token punctuation">.</span>valueSeparator<span class="token punctuation">.</span><span class="token function">length</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+          <span class="token comment" spellcheck="true">// 从 Properties 中获取 actualPlaceholder 对应的值</span>
+          propVal <span class="token operator">=</span> placeholderResolver<span class="token punctuation">.</span><span class="token function">resolvePlaceholder</span><span class="token punctuation">(</span>actualPlaceholder<span class="token punctuation">)</span><span class="token punctuation">;</span>
+          <span class="token comment" spellcheck="true">// 如果不存在 则返回 defaultValue</span>
+          <span class="token keyword">if</span> <span class="token punctuation">(</span>propVal <span class="token operator">==</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            propVal <span class="token operator">=</span> defaultValue<span class="token punctuation">;</span>
+          <span class="token punctuation">}</span>
+        <span class="token punctuation">}</span>
+      <span class="token punctuation">}</span>
+      <span class="token keyword">if</span> <span class="token punctuation">(</span>propVal <span class="token operator">!=</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        propVal <span class="token operator">=</span> <span class="token function">parseStringValue</span><span class="token punctuation">(</span>propVal<span class="token punctuation">,</span> placeholderResolver<span class="token punctuation">,</span> visitedPlaceholders<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        result<span class="token punctuation">.</span><span class="token function">replace</span><span class="token punctuation">(</span>startIndex<span class="token punctuation">,</span> endIndex <span class="token operator">+</span> <span class="token keyword">this</span><span class="token punctuation">.</span>placeholderSuffix<span class="token punctuation">.</span><span class="token function">length</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> propVal<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>logger<span class="token punctuation">.</span><span class="token function">isTraceEnabled</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+          logger<span class="token punctuation">.</span><span class="token function">trace</span><span class="token punctuation">(</span><span class="token string">"Resolved placeholder '"</span> <span class="token operator">+</span> placeholder <span class="token operator">+</span> <span class="token string">"'"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+        startIndex <span class="token operator">=</span> result<span class="token punctuation">.</span><span class="token function">indexOf</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>placeholderPrefix<span class="token punctuation">,</span> startIndex <span class="token operator">+</span> propVal<span class="token punctuation">.</span><span class="token function">length</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token punctuation">}</span>
+      <span class="token keyword">else</span> <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>ignoreUnresolvablePlaceholders<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token comment" spellcheck="true">// 忽略值</span>
+        startIndex <span class="token operator">=</span> result<span class="token punctuation">.</span><span class="token function">indexOf</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>placeholderPrefix<span class="token punctuation">,</span> endIndex <span class="token operator">+</span> <span class="token keyword">this</span><span class="token punctuation">.</span>placeholderSuffix<span class="token punctuation">.</span><span class="token function">length</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token punctuation">}</span>
+      <span class="token keyword">else</span> <span class="token punctuation">{</span>
+        <span class="token keyword">throw</span> <span class="token keyword">new</span> <span class="token class-name">IllegalArgumentException</span><span class="token punctuation">(</span><span class="token string">"Could not resolve placeholder '"</span> <span class="token operator">+</span>
+                                           placeholder <span class="token operator">+</span> <span class="token string">"'"</span> <span class="token operator">+</span> <span class="token string">" in value \""</span> <span class="token operator">+</span> value <span class="token operator">+</span> <span class="token string">"\""</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token punctuation">}</span>
+
+      <span class="token comment" spellcheck="true">//</span>
+      visitedPlaceholders<span class="token punctuation">.</span><span class="token function">remove</span><span class="token punctuation">(</span>originalPlaceholder<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    <span class="token keyword">else</span> <span class="token punctuation">{</span>
+      startIndex <span class="token operator">=</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+  <span class="token punctuation">}</span>
+
+  <span class="token comment" spellcheck="true">// 返回propVal，就是替换之后的值</span>
+  <span class="token keyword">return</span> result<span class="token punctuation">.</span><span class="token function">toString</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>流程如下</p>
 <ol>
 <li>获取占位符前缀 “${“ 的索引位置 startIndex</li>
@@ -222,170 +491,185 @@
 <li>返回 propVal，也就是 Properties 中对应的值</li>
 </ol>
 
-  </div>
-
-  
-    <div style="text-align:center;width:100%">
-      <img src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/640-2.gif">
-    </div>
-  
-
-  
-    <div>
-      <h4>版权声明</h4>
-      <pre>
-        
-        <strong>本文来源： </strong><a href="http://cmsblogs.com/?p=3837" title="Java技术驿站 | chenssy |【死磕 Spring】| IOC之深入分析PropertyPlaceholderConfigurer" rel="external nofollow noopener noreferrer" target="_blank">http://cmsblogs.com/?p=3837</a>
-
-        <strong>本文链接：</strong><a href="https://www.cayzlh.com/2020/01/23/99d35216.html" title="/blog/IOC%E4%B9%8B%E6%B7%B1%E5%85%A5%E5%88%86%E6%9E%90PropertyPlaceholderConfigurer">https://www.cayzlh.com/2020/01/23/99d35216.html</a>
-
-        <strong>版权声明： </strong>
-        
-          文章内容仅用作学习和分享，转载请注明出处
-        
-      </pre>
-    </div>
-  
-
-</article>
-
-
-
-        
-          <div id="footer-post-container">
-  <div id="footer-post">
-
-    <div id="nav-footer" style="display: none">
-      <ul>
-        
-          <li><a href="/blog/">Home</a></li>
-        
-          <li><a href="/blog/archives/">Articles</a></li>
-        
-          <li><a href="/blog/about/">About</a></li>
-        
-          <li><a href="/blog/search/">Search</a></li>
-        
-      </ul>
-    </div>
-
-    <div id="toc-footer" style="display: none">
-      
-    </div>
-
-    <div id="share-footer" style="display: none">
-      <ul>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.facebook.com/sharer.php?u=https://www.cayzlh.com/2020/01/23/99d35216.html"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://twitter.com/share?url=https://www.cayzlh.com/2020/01/23/99d35216.html&text=IOC之深入分析PropertyPlaceholderConfigurer"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.linkedin.com/shareArticle?url=https://www.cayzlh.com/2020/01/23/99d35216.html&title=IOC之深入分析PropertyPlaceholderConfigurer"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://pinterest.com/pin/create/bookmarklet/?url=https://www.cayzlh.com/2020/01/23/99d35216.html&is_video=false&description=IOC之深入分析PropertyPlaceholderConfigurer"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="mailto:?subject=IOC之深入分析PropertyPlaceholderConfigurer&body=Check out this article: https://www.cayzlh.com/2020/01/23/99d35216.html"><i class="fas fa-envelope fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://getpocket.com/save?url=https://www.cayzlh.com/2020/01/23/99d35216.html&title=IOC之深入分析PropertyPlaceholderConfigurer"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://reddit.com/submit?url=https://www.cayzlh.com/2020/01/23/99d35216.html&title=IOC之深入分析PropertyPlaceholderConfigurer"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.stumbleupon.com/submit?url=https://www.cayzlh.com/2020/01/23/99d35216.html&title=IOC之深入分析PropertyPlaceholderConfigurer"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://digg.com/submit?url=https://www.cayzlh.com/2020/01/23/99d35216.html&title=IOC之深入分析PropertyPlaceholderConfigurer"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="http://www.tumblr.com/share/link?url=https://www.cayzlh.com/2020/01/23/99d35216.html&name=IOC之深入分析PropertyPlaceholderConfigurer&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="external nofollow noopener noreferrer" href="https://news.ycombinator.com/submitlink?u=https://www.cayzlh.com/2020/01/23/99d35216.html&t=IOC之深入分析PropertyPlaceholderConfigurer"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
-</ul>
-
-    </div>
-
-    <div id="actions-footer">
-        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fas fa-bars fa-lg" aria-hidden="true"></i> Menu</a>
-        <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fas fa-list fa-lg" aria-hidden="true"></i> TOC</a>
-<!--        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fas fa-share-alt fa-lg" aria-hidden="true"></i> Share</a>-->
-        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a>
-    </div>
-
-  </div>
+            <!-- 文章结尾部分 -->
+            
+                
+<div style="text-align:center;width:100%">
+    <span class="octicon octicon-tag-add"></span>
+    
+        <a style="color: #24292e;" href="/blog/tags/Spring/">Spring</a>
+    
+        <a style="color: #24292e;" href="/blog/tags/%E8%BD%AC%E8%BD%BD/">转载</a>
+    
 </div>
 
-        
-        <footer id="footer">
-  <div class="footer-left">
-    CAYZLH &copy;
-    
-    
-    2019-2021
-    粤ICP备20058712号-1
-  </div>
-  <div class="footer-right">
-    <nav>
-      <ul>
-        
-          <li><a href="/blog/tools/">tools</a></li>
-        
-          <li><a href="/blog/links/">links</a></li>
-        
-      </ul>
-    </nav>
-  </div>
-</footer>
 
+
+    <div style="text-align:center;width:100%">
+        <img src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/640-2.gif">
     </div>
-    <!-- styles -->
-
-<link rel="stylesheet" href="/blog/lib/font-awesome/css/all.min.css">
 
 
-<link rel="stylesheet" href="/blog/lib/justified-gallery/css/justifiedGallery.min.css">
 
 
-    <!-- jquery -->
-
-<script src="/blog/lib/jquery/jquery.min.js"></script>
-
-
-<script src="/blog/lib/justified-gallery/js/jquery.justifiedGallery.min.js"></script>
-
-<!-- clipboard -->
-
-  
-<script src="/blog/lib/clipboard/clipboard.min.js"></script>
-
-  <script type="text/javascript">
-  $(function() {
-    // copy-btn HTML
-    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"Copy to clipboard!\">";
-    btn += '<i class="far fa-clone"></i>';
-    btn += '</span>'; 
-    // mount it!
-    $(".highlight table").before(btn);
-    var clip = new ClipboardJS('.btn-copy', {
-      text: function(trigger) {
-        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
-      }
-    });
-    clip.on('success', function(e) {
-      e.trigger.setAttribute('aria-label', "Copied!");
-      e.clearSelection();
-    })
-  })
-  </script>
-
-
-<script src="/blog/js/main.js"></script>
-
-<!-- search -->
-
-<!-- Google Analytics -->
-
-    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-129095667-1"></script>
-    <script>
-        window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
-        gtag('js', new Date());
-        gtag('config', 'UA-129095667-1');
-    </script>
-
-<!-- Baidu Analytics -->
-
-<!-- Cloudflare Analytics -->
-
-<!-- Umami Analytics -->
-
-<!-- Disqus Comments -->
+<div>
+    <h4>相关推荐</h4>
+    <ul class="post-copyright">
+        
+        <li class="post-copyright-author">
+            <a href="/blog/2020/01/23/cd2eaad8.html">IOC之PropertyPlaceholderConfigurer的应用</a>
+        </li>
+        
+        <li class="post-copyright-author">
+            <a href="/blog/2020/01/21/e8e94997.html">IOC之Bean的初始化</a>
+        </li>
+        
+        <li class="post-copyright-author">
+            <a href="/blog/2020/01/19/6271d9d2.html">IOC之Factory实例化bean</a>
+        </li>
+        
+        <li class="post-copyright-author">
+            <a href="/blog/2020/01/24/fcc18cc7.html">IOC之分析BeanWrapper</a>
+        </li>
+        
+        <li class="post-copyright-author">
+            <a href="/blog/2020/01/24/25302edf.html">IOC之bean的实例化策略：InstantiationStrategy</a>
+        </li>
+        
+        <li class="post-copyright-author">
+            <a href="/blog/2020/01/20/1293fb33.html">IOC之属性填充</a>
+        </li>
+        
+    </ul>
+    <br><br>
+</div>
 
 
+
+<div>
+    <h4>版权声明</h4>
+    <blockquote>
+        <ul class="post-copyright">
+            <li class="post-copyright-author">
+                <strong>本文来源： </strong>
+                
+                <a href="http://cmsblogs.com/?p=3837" title="Java技术驿站 | chenssy |【死磕 Spring】| IOC之深入分析PropertyPlaceholderConfigurer" rel="external nofollow noopener noreferrer" target="_blank">Java技术驿站 | chenssy |【死磕 Spring】| IOC之深入分析PropertyPlaceholderConfigurer</a></li>
+            <li class="post-copyright-link">
+                <strong>本文链接：</strong>
+                <a href="https://www.cayzlh.com/2020/01/23/99d35216.html" title="/blog/IOC%E4%B9%8B%E6%B7%B1%E5%85%A5%E5%88%86%E6%9E%90PropertyPlaceholderConfigurer">https://www.cayzlh.com/2020/01/23/99d35216.html</a>
+            </li>
+            <li class="post-copyright-license">
+                <strong>版权声明： </strong>
+                
+                    文章内容仅用作学习和分享，如有雷同，纯属拷贝。
+                
+            </li>
+        </ul>
+    </blockquote>
+</div>
+
+
+            
+            
+                <div class="comment">
+    <br><br><br>
+    
+</div>
+            
+        </div>
+        
+    </div>
+    
+</article>
+
+<script>
+    hljs.initHighlightingOnLoad();
+</script>
+</main>
+<footer class="container">
+    <div class="site-footer">
+        
+    <div class="card text-center">
+        <ul class="list-inline" style="margin-left: 0;">
+            
+                <li>
+                    <a target="_blank" href="https://github.com/cayzlh" rel="external nofollow noopener noreferrer">
+                          <span class="fa-stack fa-lg">
+                            <i class="fa fa-circle fa-stack-2x"></i>
+                            <i class="fa fa-github fa-stack-1x fa-inverse">
+                                
+                            </i>
+                          </span>
+                    </a>
+                </li>
+            
+                <li>
+                    <a target="_blank" href="https://www.zhihu.com/people/chenanyu" rel="external nofollow noopener noreferrer">
+                          <span class="fa-stack fa-lg">
+                            <i class="fa fa-circle fa-stack-2x"></i>
+                            <i class="fa  fa-stack-1x fa-inverse">
+                                知
+                            </i>
+                          </span>
+                    </a>
+                </li>
+            
+                <li>
+                    <a target="_blank" href="mailto:Q2F5emxo@cayzlh.com">
+                          <span class="fa-stack fa-lg">
+                            <i class="fa fa-circle fa-stack-2x"></i>
+                            <i class="fa fa-envelope fa-stack-1x fa-inverse">
+                                
+                            </i>
+                          </span>
+                    </a>
+                </li>
+            
+        </ul>
+    </div>
+
+
+        <div class="site-footer-links mobile-hidden">
+            
+                
+                
+            
+        </div>
+
+        <div class="site-footer-links mobile-hidden">
+        
+            <span class="meta-info-index hvr-grow">
+                
+                    <a href="https://www.cayzlh.com">
+                        🐳Ant丶 &copy; 2020
+                    </a>
+                
+            </span>
+        
+        
+            <span class="meta-info-index hvr-grow">
+                <a href="http://beian.miit.gov.cn" target="_blank" rel="external nofollow noopener noreferrer">粤ICP备20058712号-1</a>
+            </span>
+        
+        </div>
+
+        
+
+        
+    </div>
+    
+
+    
+        <!-- Third-Party JS -->
+        <script type="text/javascript" src="/blog/js/thirdparty/geopattern.min.js"></script>
+        <!-- My JS -->
+        <script type="text/javascript" src="/blog/js/script.js"></script>
+    
+
+    
+        <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js">
+        </script>
+    
+</footer>
 </body>
 </html>
