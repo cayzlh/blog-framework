@@ -83,7 +83,7 @@
 
     <link rel="stylesheet" href="//cdn.bootcss.com/highlight.js/9.2.0/styles/github.min.css">
     <script src="//cdn.bootcss.com/highlight.js/9.2.0/highlight.min.js"></script>
-<meta name="generator" content="Hexo 4.2.1"><link rel="alternate" href="/blog/atom.xml" title="BLOG | CAYZLH" type="application/atom+xml">
+<meta name="generator" content="Hexo 5.4.0"><link rel="alternate" href="/blog/atom.xml" title="BLOG | CAYZLH" type="application/atom+xml">
 </head>
 
 <body>
@@ -94,7 +94,7 @@
 
     
         <div class="item">
-            <a href="https://www.cayzlh.com" title="导航">
+            <a href="https://www.cayzlh.com/" title="导航">
                 导航
             </a>
         </div>
@@ -296,15 +296,16 @@
 <p>使用使用<code>volatile</code>来控制并发的代码：</p>
 <pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">volatile</span> <span class="token keyword">boolean</span> shutdownRequested<span class="token punctuation">;</span>
 
-<span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">shutdown</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+<span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">shutdown</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
     shutdownRequested <span class="token operator">=</span> <span class="token boolean">false</span><span class="token punctuation">;</span>
-<span class="token punctuation">}</span>
+<span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
 
-<span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">doWork</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
-    <span class="token keyword">while</span> <span class="token punctuation">(</span><span class="token operator">!</span>shutdownRequested<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+<span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">doWork</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
+    <span class="token keyword">while</span> <span class="token punctuation">(</span><span class="token operator">!</span>shutdownRequested<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
         <span class="token comment" spellcheck="true">// do stuff</span>
-    <span class="token punctuation">}</span>
-<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+    <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
+<span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <h4 id="第二"><a href="#第二" class="headerlink" title="第二"></a>第二</h4><p><strong>禁止指令重排序优化</strong>，普通的变量仅仅会保证在该方法的执行过程中所有依赖赋值结果的地方都能获取到正确的结果，而不能保证变量赋值操作的顺序与程序代码中的执行顺序一致。<strong>因为在一个线程的方法执行过程中无法感知到这点，这就是Java内存模型中描述的所谓的“线程内存表现为串行的语义”（Within-Thread As-If-Serial Semantics）。</strong></p>
 <p>指令重排序会干扰程序的并罚执行的例子：</p>
 <pre class="line-numbers language-java"><code class="language-java">Map configOptions<span class="token punctuation">;</span>
@@ -320,11 +321,12 @@ initialized <span class="token operator">=</span> <span class="token boolean">tr
 
 <span class="token comment" spellcheck="true">// 假设以下代码在线程B中执行</span>
 <span class="token comment" spellcheck="true">// 等待initialized为true，代表线程A已经把配置信息初始化完成　</span>
-<span class="token keyword">while</span> <span class="token punctuation">(</span><span class="token operator">!</span>initialized<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+<span class="token keyword">while</span> <span class="token punctuation">(</span><span class="token operator">!</span>initialized<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
     <span class="token function">sleep</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token punctuation">}</span>
+<span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
 <span class="token comment" spellcheck="true">// 使用线程A中初始化好的配置信息</span>
-<span class="token function">doSomethingWithConfig</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<span class="token function">doSomethingWithConfig</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>这段伪代码描述的场景十分常见，只是我们在处理配置文件时一般不会出现并发而已。如果<code>initialized</code>没有使用<code>volatile</code>修饰，就可能会由于指令重排序的优化，导致线程A中最后一句中的“initialized = true;”被提前执行，这样线程B中使用配置信息的代码就可能出现错误，而<code>volatile</code>可以避免这类情况的发生。</p>
 <h4 id="Java内存模型中对volatile变量定义的特殊规则。"><a href="#Java内存模型中对volatile变量定义的特殊规则。" class="headerlink" title="Java内存模型中对volatile变量定义的特殊规则。"></a>Java内存模型中对<code>volatile</code>变量定义的特殊规则。</h4><p>假定T表示一个线程，V和W分别表示两个<code>volatile</code>型变量，那么在进行<code>read</code>、<code>load</code>、<code>use</code>、<code>asign</code>、<code>store</code>和<code>write</code>操作时需要满足如下的规则：</p>
 <ul>
@@ -400,7 +402,7 @@ initialized <span class="token operator">=</span> <span class="token boolean">tr
 <h2 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h2><p>了解了虚拟机Java内存模型的结构及操作，讲解了原子性、可见性、有序性在Java内存模型中的体现，先行发生原则的规则及使用。还有线程在Java语言之中时如何实现的。</p>
 <h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ul>
 <li>周志明，深入理解Java虚拟机：JVM高级特性与最佳实践，机械工业出版社</li>
-<li><a href="https://www.google.com/imghp?hl=zh-CN&tab=wi" target="_blank" rel="external nofollow noopener noreferrer">图片来源</a></li>
+<li><a target="_blank" rel="external nofollow noopener noreferrer" href="https://www.google.com/imghp?hl=zh-CN&tab=wi">图片来源</a></li>
 </ul>
 
             <!-- 文章结尾部分 -->
@@ -431,11 +433,15 @@ initialized <span class="token operator">=</span> <span class="token boolean">tr
     <ul class="post-copyright">
         
         <li class="post-copyright-author">
-            <a href="/blog/2018/09/08/bc3decee.html">Java内存区域内存溢出异常</a>
+            <a href="/blog/2018/09/11/ddb92a08.html">垃圾收集器与内存分配策略</a>
         </li>
         
         <li class="post-copyright-author">
-            <a href="/blog/2018/09/11/ddb92a08.html">垃圾收集器与内存分配策略</a>
+            <a href="/blog/2018/09/13/fea7515.html">虚拟机性能监控与故障处理工具</a>
+        </li>
+        
+        <li class="post-copyright-author">
+            <a href="/blog/2018/09/08/bc3decee.html">Java内存区域内存溢出异常</a>
         </li>
         
         <li class="post-copyright-author">
@@ -444,10 +450,6 @@ initialized <span class="token operator">=</span> <span class="token boolean">tr
         
         <li class="post-copyright-author">
             <a href="/blog/2018/09/16/4cd43d51.html">虚拟机字节码执行引擎</a>
-        </li>
-        
-        <li class="post-copyright-author">
-            <a href="/blog/2018/09/13/fea7515.html">虚拟机性能监控与故障处理工具</a>
         </li>
         
         <li class="post-copyright-author">
@@ -515,7 +517,7 @@ initialized <span class="token operator">=</span> <span class="token boolean">tr
         </div>
         <div class="col-md-3 markdown-body">
             <h4>文章目录</h4>
-            <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#概述"><span class="toc-text">概述</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#硬件的效率与一致性"><span class="toc-text">硬件的效率与一致性</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Java内存模型"><span class="toc-text">Java内存模型</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#主内存与工作内存"><span class="toc-text">主内存与工作内存</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#内存间交互操作"><span class="toc-text">内存间交互操作</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#对于volatile型变量的特殊规则"><span class="toc-text">对于volatile型变量的特殊规则</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#第一"><span class="toc-text">第一</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#第二"><span class="toc-text">第二</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Java内存模型中对volatile变量定义的特殊规则。"><span class="toc-text">Java内存模型中对volatile变量定义的特殊规则。</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#对于long和double型变量的特殊规则"><span class="toc-text">对于long和double型变量的特殊规则</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#原子性、可见性与有序性"><span class="toc-text">原子性、可见性与有序性</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#原子性"><span class="toc-text">原子性</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#可见性"><span class="toc-text">可见性</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#有序性"><span class="toc-text">有序性</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#先行发生原则"><span class="toc-text">先行发生原则</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Java内存模型下一些天然的先行发生关系："><span class="toc-text">Java内存模型下一些天然的先行发生关系：</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Java与线程"><span class="toc-text">Java与线程</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#线程的实现"><span class="toc-text">线程的实现</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#使用内核线程实现"><span class="toc-text">使用内核线程实现</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#使用用户线程实现"><span class="toc-text">使用用户线程实现</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#混合实现"><span class="toc-text">混合实现</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Java线程的实现"><span class="toc-text">Java线程的实现</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Java线程调度"><span class="toc-text">Java线程调度</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#协同式调度"><span class="toc-text">协同式调度</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#抢占式调度"><span class="toc-text">抢占式调度</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#状态转换"><span class="toc-text">状态转换</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#小结"><span class="toc-text">小结</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li></ol>
+            <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%A6%82%E8%BF%B0"><span class="toc-text">概述</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%A1%AC%E4%BB%B6%E7%9A%84%E6%95%88%E7%8E%87%E4%B8%8E%E4%B8%80%E8%87%B4%E6%80%A7"><span class="toc-text">硬件的效率与一致性</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Java%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B"><span class="toc-text">Java内存模型</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%BB%E5%86%85%E5%AD%98%E4%B8%8E%E5%B7%A5%E4%BD%9C%E5%86%85%E5%AD%98"><span class="toc-text">主内存与工作内存</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%86%85%E5%AD%98%E9%97%B4%E4%BA%A4%E4%BA%92%E6%93%8D%E4%BD%9C"><span class="toc-text">内存间交互操作</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%AF%B9%E4%BA%8Evolatile%E5%9E%8B%E5%8F%98%E9%87%8F%E7%9A%84%E7%89%B9%E6%AE%8A%E8%A7%84%E5%88%99"><span class="toc-text">对于volatile型变量的特殊规则</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E7%AC%AC%E4%B8%80"><span class="toc-text">第一</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E7%AC%AC%E4%BA%8C"><span class="toc-text">第二</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Java%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B%E4%B8%AD%E5%AF%B9volatile%E5%8F%98%E9%87%8F%E5%AE%9A%E4%B9%89%E7%9A%84%E7%89%B9%E6%AE%8A%E8%A7%84%E5%88%99%E3%80%82"><span class="toc-text">Java内存模型中对volatile变量定义的特殊规则。</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%AF%B9%E4%BA%8Elong%E5%92%8Cdouble%E5%9E%8B%E5%8F%98%E9%87%8F%E7%9A%84%E7%89%B9%E6%AE%8A%E8%A7%84%E5%88%99"><span class="toc-text">对于long和double型变量的特殊规则</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%8E%9F%E5%AD%90%E6%80%A7%E3%80%81%E5%8F%AF%E8%A7%81%E6%80%A7%E4%B8%8E%E6%9C%89%E5%BA%8F%E6%80%A7"><span class="toc-text">原子性、可见性与有序性</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%8E%9F%E5%AD%90%E6%80%A7"><span class="toc-text">原子性</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%8F%AF%E8%A7%81%E6%80%A7"><span class="toc-text">可见性</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%9C%89%E5%BA%8F%E6%80%A7"><span class="toc-text">有序性</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%85%88%E8%A1%8C%E5%8F%91%E7%94%9F%E5%8E%9F%E5%88%99"><span class="toc-text">先行发生原则</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Java%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B%E4%B8%8B%E4%B8%80%E4%BA%9B%E5%A4%A9%E7%84%B6%E7%9A%84%E5%85%88%E8%A1%8C%E5%8F%91%E7%94%9F%E5%85%B3%E7%B3%BB%EF%BC%9A"><span class="toc-text">Java内存模型下一些天然的先行发生关系：</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Java%E4%B8%8E%E7%BA%BF%E7%A8%8B"><span class="toc-text">Java与线程</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%BA%BF%E7%A8%8B%E7%9A%84%E5%AE%9E%E7%8E%B0"><span class="toc-text">线程的实现</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E4%BD%BF%E7%94%A8%E5%86%85%E6%A0%B8%E7%BA%BF%E7%A8%8B%E5%AE%9E%E7%8E%B0"><span class="toc-text">使用内核线程实现</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E4%BD%BF%E7%94%A8%E7%94%A8%E6%88%B7%E7%BA%BF%E7%A8%8B%E5%AE%9E%E7%8E%B0"><span class="toc-text">使用用户线程实现</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%B7%B7%E5%90%88%E5%AE%9E%E7%8E%B0"><span class="toc-text">混合实现</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Java%E7%BA%BF%E7%A8%8B%E7%9A%84%E5%AE%9E%E7%8E%B0"><span class="toc-text">Java线程的实现</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Java%E7%BA%BF%E7%A8%8B%E8%B0%83%E5%BA%A6"><span class="toc-text">Java线程调度</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%8D%8F%E5%90%8C%E5%BC%8F%E8%B0%83%E5%BA%A6"><span class="toc-text">协同式调度</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%8A%A2%E5%8D%A0%E5%BC%8F%E8%B0%83%E5%BA%A6"><span class="toc-text">抢占式调度</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%8A%B6%E6%80%81%E8%BD%AC%E6%8D%A2"><span class="toc-text">状态转换</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%B0%8F%E7%BB%93"><span class="toc-text">小结</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8F%82%E8%80%83"><span class="toc-text">参考</span></a></li></ol>
         </div>
     </div>
     
@@ -588,7 +590,7 @@ initialized <span class="token operator">=</span> <span class="token boolean">tr
         
         
             <span class="meta-info-index hvr-grow">
-                <a href="http://beian.miit.gov.cn" target="_blank" rel="external nofollow noopener noreferrer">粤ICP备20058712号-1</a>
+                <a target="_blank" rel="external nofollow noopener noreferrer" href="http://beian.miit.gov.cn">粤ICP备20058712号-1</a>
             </span>
         
         </div>

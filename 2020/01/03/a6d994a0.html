@@ -83,7 +83,7 @@
 
     <link rel="stylesheet" href="//cdn.bootcss.com/highlight.js/9.2.0/styles/github.min.css">
     <script src="//cdn.bootcss.com/highlight.js/9.2.0/highlight.min.js"></script>
-<meta name="generator" content="Hexo 4.2.1"><link rel="alternate" href="/blog/atom.xml" title="BLOG | CAYZLH" type="application/atom+xml">
+<meta name="generator" content="Hexo 5.4.0"><link rel="alternate" href="/blog/atom.xml" title="BLOG | CAYZLH" type="application/atom+xml">
 </head>
 
 <body>
@@ -94,7 +94,7 @@
 
     
         <div class="item">
-            <a href="https://www.cayzlh.com" title="导航">
+            <a href="https://www.cayzlh.com/" title="导航">
                 导航
             </a>
         </div>
@@ -240,7 +240,7 @@
 <!--</div>-->
             <blockquote>
 <p>本文作者：chenssy</p>
-<p>出处：<a href="http://cmsblogs.com/?p=2658" target="_blank" rel="external nofollow noopener noreferrer">http://cmsblogs.com/?p=2658</a></p>
+<p>出处：<a target="_blank" rel="external nofollow noopener noreferrer" href="http://cmsblogs.com/?p=2658">http://cmsblogs.com/?p=2658</a></p>
 <p>在学习<code>Spring源码</code>的过程中发现的好站+好贴，感谢作者。Spring版本：<strong>Spring 5.0.6.RELEASE</strong></p>
 </blockquote>
 <hr>
@@ -248,7 +248,8 @@
 <pre class="line-numbers language-java"><code class="language-java">ClassPathResource resource <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">ClassPathResource</span><span class="token punctuation">(</span><span class="token string">"bean.xml"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
 DefaultListableBeanFactory factory <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">DefaultListableBeanFactory</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
 XmlBeanDefinitionReader reader <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">XmlBeanDefinitionReader</span><span class="token punctuation">(</span>factory<span class="token punctuation">)</span><span class="token punctuation">;</span>
-reader<span class="token punctuation">.</span><span class="token function">loadBeanDefinitions</span><span class="token punctuation">(</span>resource<span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+reader<span class="token punctuation">.</span><span class="token function">loadBeanDefinitions</span><span class="token punctuation">(</span>resource<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
 <p>这段代码是 <code>Spring</code> 中编程式使用 <code>IOC</code> 容器，通过这四段简单的代码，我们可以初步判断 <code>IOC</code> 容器的使用过程。</p>
 <ul>
 <li><p>获取资源</p>
@@ -273,103 +274,106 @@ reader<span class="token punctuation">.</span><span class="token function">loadB
 <p>XML Resource =&gt; XML Document =&gt; Bean Definition 。</p>
 </blockquote>
 <p>资源定位在前面已经分析了，下面我们直接分析加载，上面提过<code>reader.loadBeanDefinitions(resource)</code> 才是加载资源的真正实现，所以我们直接从该方法入手。</p>
-<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">int</span> <span class="token function">loadBeanDefinitions</span><span class="token punctuation">(</span>Resource resource<span class="token punctuation">)</span> <span class="token keyword">throws</span> BeanDefinitionStoreException <span class="token punctuation">{</span>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">int</span> <span class="token function">loadBeanDefinitions</span><span class="token punctuation">(</span>Resource resource<span class="token punctuation">)</span> <span class="token keyword">throws</span> BeanDefinitionStoreException <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
   <span class="token keyword">return</span> <span class="token function">loadBeanDefinitions</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">EncodedResource</span><span class="token punctuation">(</span>resource<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
 <p>从指定的 <code>xml</code> 文件加载 <code>BeanDefinition</code>，这里会先对 <code>Resource</code> 资源封装成 <code>EncodedResource</code>。这里为什么需要将 <code>Resource</code> 封装成 <code>EncodedResource</code>呢？主要是为了对 <code>Resource</code> 进行编码，保证内容读取的正确性。封装成 <code>EncodedResource</code> 后，调用<code>loadBeanDefinitions()</code>，这个方法才是真正的逻辑实现。如下：</p>
 <pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">int</span> <span class="token function">loadBeanDefinitions</span><span class="token punctuation">(</span>EncodedResource encodedResource<span class="token punctuation">)</span> 
-  <span class="token keyword">throws</span> BeanDefinitionStoreException <span class="token punctuation">{</span>
+  <span class="token keyword">throws</span> BeanDefinitionStoreException <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
   Assert<span class="token punctuation">.</span><span class="token function">notNull</span><span class="token punctuation">(</span>encodedResource<span class="token punctuation">,</span> <span class="token string">"EncodedResource must not be null"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-  <span class="token keyword">if</span> <span class="token punctuation">(</span>logger<span class="token punctuation">.</span><span class="token function">isInfoEnabled</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span>logger<span class="token punctuation">.</span><span class="token function">isInfoEnabled</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
     logger<span class="token punctuation">.</span><span class="token function">info</span><span class="token punctuation">(</span><span class="token string">"Loading XML bean definitions from "</span> 
                 <span class="token operator">+</span> encodedResource<span class="token punctuation">.</span><span class="token function">getResource</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-  <span class="token punctuation">}</span>
+  <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
 
   <span class="token comment" spellcheck="true">// 获取已经加载过的资源</span>
   Set<span class="token operator">&lt;</span>EncodedResource<span class="token operator">></span> currentResources <span class="token operator">=</span> 
     <span class="token keyword">this</span><span class="token punctuation">.</span>resourcesCurrentlyBeingLoaded<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-  <span class="token keyword">if</span> <span class="token punctuation">(</span>currentResources <span class="token operator">==</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span>currentResources <span class="token operator">==</span> null<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
     currentResources <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">HashSet</span><span class="token operator">&lt;</span><span class="token operator">></span><span class="token punctuation">(</span><span class="token number">4</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
     <span class="token keyword">this</span><span class="token punctuation">.</span>resourcesCurrentlyBeingLoaded<span class="token punctuation">.</span><span class="token function">set</span><span class="token punctuation">(</span>currentResources<span class="token punctuation">)</span><span class="token punctuation">;</span>
-  <span class="token punctuation">}</span>
+  <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
 
   <span class="token comment" spellcheck="true">// 将当前资源加入记录中</span>
-  <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>currentResources<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span>encodedResource<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>currentResources<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span>encodedResource<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
     <span class="token keyword">throw</span> <span class="token keyword">new</span> <span class="token class-name">BeanDefinitionStoreException</span><span class="token punctuation">(</span>
       <span class="token string">"Detected cyclic loading of "</span> 
       <span class="token operator">+</span> encodedResource <span class="token operator">+</span> <span class="token string">" - check your import definitions!"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-  <span class="token punctuation">}</span>
-  <span class="token keyword">try</span> <span class="token punctuation">{</span>
+  <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
+  <span class="token keyword">try</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
     <span class="token comment" spellcheck="true">// 从 EncodedResource 获取封装的 Resource 并从 Resource 中获取其中的 InputStream</span>
     InputStream inputStream <span class="token operator">=</span> encodedResource<span class="token punctuation">.</span><span class="token function">getResource</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getInputStream</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token keyword">try</span> <span class="token punctuation">{</span>
+    <span class="token keyword">try</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
       InputSource inputSource <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">InputSource</span><span class="token punctuation">(</span>inputStream<span class="token punctuation">)</span><span class="token punctuation">;</span>
       <span class="token comment" spellcheck="true">// 设置编码</span>
-      <span class="token keyword">if</span> <span class="token punctuation">(</span>encodedResource<span class="token punctuation">.</span><span class="token function">getEncoding</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">!=</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+      <span class="token keyword">if</span> <span class="token punctuation">(</span>encodedResource<span class="token punctuation">.</span><span class="token function">getEncoding</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">!=</span> null<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
         inputSource<span class="token punctuation">.</span><span class="token function">setEncoding</span><span class="token punctuation">(</span>encodedResource<span class="token punctuation">.</span><span class="token function">getEncoding</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-      <span class="token punctuation">}</span>
+      <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
       <span class="token comment" spellcheck="true">// 核心逻辑部分</span>
       <span class="token keyword">return</span> <span class="token function">doLoadBeanDefinitions</span><span class="token punctuation">(</span>inputSource<span class="token punctuation">,</span> 
                                    encodedResource<span class="token punctuation">.</span><span class="token function">getResource</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token punctuation">}</span>
-    <span class="token keyword">finally</span> <span class="token punctuation">{</span>
+    <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
+    <span class="token keyword">finally</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
       inputStream<span class="token punctuation">.</span><span class="token function">close</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token punctuation">}</span>
-  <span class="token punctuation">}</span>
-  <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">IOException</span> ex<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
+  <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
+  <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">IOException</span> ex<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
     <span class="token keyword">throw</span> <span class="token keyword">new</span> <span class="token class-name">BeanDefinitionStoreException</span><span class="token punctuation">(</span>
       <span class="token string">"IOException parsing XML document from "</span> 
       <span class="token operator">+</span> encodedResource<span class="token punctuation">.</span><span class="token function">getResource</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> ex<span class="token punctuation">)</span><span class="token punctuation">;</span>
-  <span class="token punctuation">}</span>
-  <span class="token keyword">finally</span> <span class="token punctuation">{</span>
+  <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
+  <span class="token keyword">finally</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
     <span class="token comment" spellcheck="true">// 从缓存中剔除该资源</span>
     currentResources<span class="token punctuation">.</span><span class="token function">remove</span><span class="token punctuation">(</span>encodedResource<span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token keyword">if</span> <span class="token punctuation">(</span>currentResources<span class="token punctuation">.</span><span class="token function">isEmpty</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>currentResources<span class="token punctuation">.</span><span class="token function">isEmpty</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
       <span class="token keyword">this</span><span class="token punctuation">.</span>resourcesCurrentlyBeingLoaded<span class="token punctuation">.</span><span class="token function">remove</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token punctuation">}</span>
-  <span class="token punctuation">}</span>
-<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+    <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
+  <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
+<span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>首先通过</p>
 <p><code>resourcesCurrentlyBeingLoaded.get()</code> 来获取已经加载过的资源，然后将 <code>encodedResource</code> 加入其中，如果 <code>resourcesCurrentlyBeingLoaded</code> 中已经存在该资源，则抛出 <code>BeanDefinitionStoreException</code> 异常。完成后从 <code>encodedResource</code> 获取封装的 <code>Resource</code> 资源并从 <code>Resource</code> 中获取相应的 <code>InputStream</code> ，最后将 <code>InputStream</code> 封装为 <code>InputSource</code> 调用 <code>doLoadBeanDefinitions()</code>。</p>
 <p>方法 <code>doLoadBeanDefinitions()</code> 为从 <code>xml</code> 文件中加载 <code>BeanDefinition</code> 的真正逻辑，如下:</p>
 <pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">protected</span> <span class="token keyword">int</span> <span class="token function">doLoadBeanDefinitions</span><span class="token punctuation">(</span>InputSource inputSource<span class="token punctuation">,</span> Resource resource<span class="token punctuation">)</span> 
-  <span class="token keyword">throws</span> BeanDefinitionStoreException <span class="token punctuation">{</span>
-  <span class="token keyword">try</span> <span class="token punctuation">{</span>
+  <span class="token keyword">throws</span> BeanDefinitionStoreException <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
+  <span class="token keyword">try</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
     <span class="token comment" spellcheck="true">// 获取 Document 实例</span>
     Document doc <span class="token operator">=</span> <span class="token function">doLoadDocument</span><span class="token punctuation">(</span>inputSource<span class="token punctuation">,</span> resource<span class="token punctuation">)</span><span class="token punctuation">;</span>
     <span class="token comment" spellcheck="true">// 根据 Document 实例****注册 Bean信息</span>
     <span class="token keyword">return</span> <span class="token function">registerBeanDefinitions</span><span class="token punctuation">(</span>doc<span class="token punctuation">,</span> resource<span class="token punctuation">)</span><span class="token punctuation">;</span>
-  <span class="token punctuation">}</span>
-  <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">BeanDefinitionStoreException</span> ex<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+  <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
+  <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">BeanDefinitionStoreException</span> ex<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
     <span class="token keyword">throw</span> ex<span class="token punctuation">;</span>
-  <span class="token punctuation">}</span>
-  <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">SAXParseException</span> ex<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+  <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
+  <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">SAXParseException</span> ex<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
     <span class="token keyword">throw</span> <span class="token keyword">new</span> <span class="token class-name">XmlBeanDefinitionStoreException</span><span class="token punctuation">(</span>resource<span class="token punctuation">.</span><span class="token function">getDescription</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
                                               <span class="token string">"Line "</span> <span class="token operator">+</span> ex<span class="token punctuation">.</span><span class="token function">getLineNumber</span><span class="token punctuation">(</span><span class="token punctuation">)</span> 
                                               <span class="token operator">+</span> <span class="token string">" in XML document from "</span> 
                                               <span class="token operator">+</span> resource <span class="token operator">+</span> <span class="token string">" is invalid"</span><span class="token punctuation">,</span> ex<span class="token punctuation">)</span><span class="token punctuation">;</span>
-  <span class="token punctuation">}</span>
-  <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">SAXException</span> ex<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+  <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
+  <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">SAXException</span> ex<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
     <span class="token keyword">throw</span> <span class="token keyword">new</span> <span class="token class-name">XmlBeanDefinitionStoreException</span><span class="token punctuation">(</span>resource<span class="token punctuation">.</span><span class="token function">getDescription</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
                                     <span class="token string">"XML document from "</span> 
                                               <span class="token operator">+</span> resource <span class="token operator">+</span> <span class="token string">" is invalid"</span><span class="token punctuation">,</span> ex<span class="token punctuation">)</span><span class="token punctuation">;</span>
-  <span class="token punctuation">}</span>
-  <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">ParserConfigurationException</span> ex<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+  <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
+  <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">ParserConfigurationException</span> ex<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
     <span class="token keyword">throw</span> <span class="token keyword">new</span> <span class="token class-name">BeanDefinitionStoreException</span><span class="token punctuation">(</span>resource<span class="token punctuation">.</span><span class="token function">getDescription</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
                                    <span class="token string">"Parser configuration exception parsing XML from "</span> 
                                            <span class="token operator">+</span> resource<span class="token punctuation">,</span> ex<span class="token punctuation">)</span><span class="token punctuation">;</span>
-  <span class="token punctuation">}</span>
-  <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">IOException</span> ex<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+  <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
+  <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">IOException</span> ex<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
     <span class="token keyword">throw</span> <span class="token keyword">new</span> <span class="token class-name">BeanDefinitionStoreException</span><span class="token punctuation">(</span>resource<span class="token punctuation">.</span><span class="token function">getDescription</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
                                            <span class="token string">"IOException parsing XML document from "</span> 
                                            <span class="token operator">+</span> resource<span class="token punctuation">,</span> ex<span class="token punctuation">)</span><span class="token punctuation">;</span>
-  <span class="token punctuation">}</span>
-  <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">Throwable</span> ex<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+  <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
+  <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">Throwable</span> ex<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
     <span class="token keyword">throw</span> <span class="token keyword">new</span> <span class="token class-name">BeanDefinitionStoreException</span><span class="token punctuation">(</span>resource<span class="token punctuation">.</span><span class="token function">getDescription</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
                                <span class="token string">"Unexpected exception parsing XML document from "</span> 
                                            <span class="token operator">+</span> resource<span class="token punctuation">,</span> ex<span class="token punctuation">)</span><span class="token punctuation">;</span>
-  <span class="token punctuation">}</span>
-<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+  <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
+<span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>核心部分就是 <code>try</code> 块的两行代码。</p>
 <ol>
 <li>调用 <code>doLoadDocument()</code> 方法，根据 <code>xml</code> 文件获取 <code>Document</code> 实例。</li>
@@ -377,12 +381,13 @@ reader<span class="token punctuation">.</span><span class="token function">loadB
 </ol>
 <p><code>doLoadDocument()</code>方法内部还获取了 <code>xml</code> 文件的验证模式。如下:</p>
 <pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">protected</span> Document <span class="token function">doLoadDocument</span><span class="token punctuation">(</span>InputSource inputSource<span class="token punctuation">,</span> Resource resource<span class="token punctuation">)</span> 
-  <span class="token keyword">throws</span> Exception <span class="token punctuation">{</span>
+  <span class="token keyword">throws</span> Exception <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
   <span class="token keyword">return</span> <span class="token keyword">this</span><span class="token punctuation">.</span>documentLoader<span class="token punctuation">.</span><span class="token function">loadDocument</span><span class="token punctuation">(</span>inputSource<span class="token punctuation">,</span>
                                           <span class="token function">getEntityResolver</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token keyword">this</span><span class="token punctuation">.</span>errorHandler<span class="token punctuation">,</span>
                                           <span class="token function">getValidationModeForResource</span><span class="token punctuation">(</span>resource<span class="token punctuation">)</span><span class="token punctuation">,</span> 
                                           <span class="token function">isNamespaceAware</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>调用<code>getValidationModeForResource()</code> 获取指定资源（<code>xml</code>）的验证模式。</p>
 <p><strong>所以 <code>doLoadBeanDefinitions()</code>主要就是做了三件事情。</strong> </p>
 <ol>
@@ -421,15 +426,7 @@ reader<span class="token punctuation">.</span><span class="token function">loadB
         </li>
         
         <li class="post-copyright-author">
-            <a href="/blog/2020/01/26/1a84ff95.html">ApplicationContext相关接口架构分析</a>
-        </li>
-        
-        <li class="post-copyright-author">
             <a href="/blog/2020/01/25/86c712d3.html">IOC之BeanDefinition注册机：BeanDefinitionRegistry</a>
-        </li>
-        
-        <li class="post-copyright-author">
-            <a href="/blog/2020/01/02/8f7aa5ac.html">IOC之Spring统一资源加载策略</a>
         </li>
         
         <li class="post-copyright-author">
@@ -438,6 +435,14 @@ reader<span class="token punctuation">.</span><span class="token function">loadB
         
         <li class="post-copyright-author">
             <a href="/blog/2020/01/16/c9c155de.html">IOC之从单例缓存中获取单例bean</a>
+        </li>
+        
+        <li class="post-copyright-author">
+            <a href="/blog/2020/01/26/90c034e1.html">IOC之分析bean的生命周期</a>
+        </li>
+        
+        <li class="post-copyright-author">
+            <a href="/blog/2020/01/18/13d2205c.html">IOC之分析各scope的bean创建</a>
         </li>
         
     </ul>
@@ -553,7 +558,7 @@ reader<span class="token punctuation">.</span><span class="token function">loadB
         
         
             <span class="meta-info-index hvr-grow">
-                <a href="http://beian.miit.gov.cn" target="_blank" rel="external nofollow noopener noreferrer">粤ICP备20058712号-1</a>
+                <a target="_blank" rel="external nofollow noopener noreferrer" href="http://beian.miit.gov.cn">粤ICP备20058712号-1</a>
             </span>
         
         </div>
