@@ -1,244 +1,21 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
+<!DOCTYPE html><html lang="[&quot;zh-Hans&quot;,&quot;en&quot;,&quot;default&quot;]"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"><meta name="description" content="分析Spring的Aware接口"><meta name="keywords" content="IOC, Spring, Aware接口"><meta name="author" content="🐳Ant丶"><meta name="copyright" content="🐳Ant丶"><title>IOC之深入分析Aware接口 | BLOG | CAYZLH</title><link rel="shortcut icon" href="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/logo/favicon.ico"><link rel="stylesheet" href="/blog/css/index.css?version=1.9.0"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/font-awesome@latest/css/font-awesome.min.css?version=1.9.0"><meta name="format-detection" content="telephone=no"><meta http-equiv="x-dns-prefetch-control" content="on"><link rel="dns-prefetch" href="https://cdn.jsdelivr.net"><link rel="dns-prefetch" href="https://www.google-analytics.com"><script>(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
 
-<head>
-    <meta charset="utf-8">
-    <meta name="keywords" content="IOC, Spring, Aware接口">
-    <meta name="description" content="Ant丶的网络日志, CAYZLH网络日志, CAYZLH, CAYZLH主页, Ant丶空间">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <meta name="renderer" content="webkit|ie-stand|ie-comp">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="format-detection" content="telephone=no">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <!-- Global site tag (gtag.js) - Google Analytics -->
-
-    <meta name="google-site-verification" content="VrcbMTVpFGlHkIERHBt753dAtXKF4qirjnDweuXSRJw">
-
-
-    <!-- Global site tag (gtag.js) - Google Analytics -->
-
-<script async src="https://www.googletagmanager.com/gtag/js?id=UA-129095667-1"></script>
-<script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag() {
-        dataLayer.push(arguments);
-    }
-
-    gtag('js', new Date());
-    gtag('config', 'UA-129095667-1');
-</script>
-
-
-    <title>IOC之深入分析Aware接口 | BLOG | CAYZLH</title>
-
-    
-    <!-- Third-Party CSS -->
-    
-
-        <link rel="shortcut icon" href="/blog/image/favicon.ico">
-        <link rel="icon" type="image/png" href="/blog/image/favicon-192x192.png" sizes="192x192">
-        <link rel="apple-touch-icon" sizes="180x180" href="/blog/image/apple-touch-icon.png">
-
-        <link rel="stylesheet" href="/blog/css/thirdparty/bootstrap.min.css">
-        <link rel="stylesheet" href="/blog/css/thirdparty/octicons.css">
-        <link rel="stylesheet" href="/blog/css/thirdparty/hover-min.css">
-        <link rel="stylesheet" href="/blog/css/thirdparty/user-content.min.css">
-        <link rel="stylesheet" href="/blog/css/thirdparty/syntax.css">
-        <link rel="stylesheet" href="/blog/css/thirdparty/gitalk.css">
-
-        <!-- My CSS -->
-        <link rel="stylesheet" href="/blog/css/common.css">
-
-        <link rel="stylesheet" href="/blog/css/sidebar-post-nav.css">
-
-        <link rel="stylesheet" href="/blog/css/blog-page.css">
-        <!-- CSS set in page -->
-
-        
-        <link rel="stylesheet" href="/blog/css/sidebar-popular-repo.css">
-    
-
-    <!-- CSS set in layout -->
-    <link rel="stylesheet" type="text/css" href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css">
-
-    
-        <script type="text/javascript" src="/blog/js/thirdparty/jquery.min.js"></script>
-        <script type="text/javascript" src="/blog/js/thirdparty/bootstrap.min.js"></script>
-        <script type="text/javascript" src="/blog/js/lock.js"></script>
-    
-
-    
-        <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.css">
-        <script src="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js"></script>
-
-        <link rel="stylesheet" href="//imsun.github.io/gitment/style/default.css">
-        <script src="//imsun.github.io/gitment/dist/gitment.browser.js"></script>
-
-        <script src="//unpkg.com/valine/dist/Valine.min.js"></script>
-        <script src="//cdn.jsdelivr.net/npm/twikoo@1.2.0/dist/twikoo.all.min.js"></script>
-
-    
-
-    <link rel="stylesheet" href="//cdn.bootcss.com/highlight.js/9.2.0/styles/github.min.css">
-    <script src="//cdn.bootcss.com/highlight.js/9.2.0/highlight.min.js"></script>
-<meta name="generator" content="Hexo 5.4.0"><link rel="alternate" href="/blog/atom.xml" title="BLOG | CAYZLH" type="application/atom+xml">
-</head>
-
-<body>
-<header class="site-header">
-    <div class="site-header-topbar">
-        <div class="container">
-            <div class="topbar-menu">
-
-    
-        <div class="item">
-            <a href="https://www.cayzlh.com/" title="导航">
-                导航
-            </a>
-        </div>
-    
-        <div class="item">
-            <a href="/blog/categories/" title="分类">
-                分类
-            </a>
-        </div>
-    
-        <div class="item">
-            <a href="/blog/tags/" title="标签">
-                标签
-            </a>
-        </div>
-    
-        <div class="item">
-            <a href="/blog/links/" title="链接">
-                链接
-            </a>
-        </div>
-    
-        <div class="item">
-            <a href="/blog/about" title="关于">
-                关于
-            </a>
-        </div>
-    
-
-</div>
-        </div>
-    </div>
-    <div class="container">
-        <a id="site-header-brand" href="/blog/" title="BLOG | CAYZLH">
-            <span class="octicon octicon-watch"></span>
-            BLOG | CAYZLH
-        </a>
-
-        <nav class="site-header-nav" role="navigation">
-    
-        <div class=" site-header-nav-item hvr-underline-from-center">
-            <a href="/blog/" title="Home">
-                Home
-            </a>
-            
-        </div>
-    
-        <div class=" site-header-nav-item hvr-underline-from-center">
-            <a href="/blog/archives" title="Archives">
-                Archives
-            </a>
-            
-        </div>
-    
-        <div class=" site-header-nav-item hvr-underline-from-center">
-            <a href="/blog/" title="Learning">
-                Learning
-            </a>
-            
-                <ul class="submenu">
-                    
-
-                        <li>
-                            <a href="/blog/categories/%E4%B9%A6%E7%B1%8D/%E3%80%8A%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3Java%E8%99%9A%E6%8B%9F%E6%9C%BA%E3%80%8B/">
-                                <span>深入理解Java虚拟机</span>
-                            </a>
-                        </li>
-
-                    
-
-                        <li>
-                            <a href="/blog/categories/%E4%B9%A6%E7%B1%8D/%E3%80%8AMyBatis%E6%8A%80%E6%9C%AF%E5%86%85%E5%B9%95%E3%80%8B/">
-                                <span>MyBatis技术内幕</span>
-                            </a>
-                        </li>
-
-                    
-
-                        <li>
-                            <a href="/blog/categories/Java/Java%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/">
-                                <span>Java设计模式</span>
-                            </a>
-                        </li>
-
-                    
-                </ul>
-            
-        </div>
-    
-</nav>
-    </div>
-</header>
-
-<main class="content">
-    <!-- 标题部分 -->
-<section class="jumbotron geopattern" data-pattern-id="IOC之深入分析Aware接口">
-    <div class="container">
-        <div id="jumbotron-meta-info">
-            <h1>IOC之深入分析Aware接口</h1>
-            <span class="meta-info">
-                <a><span class="octicon octicon-calendar"></span> 2020-01-22</a>
-                
-                    <a><span class="octicon octicon-book"></span></a>
-                    
-                        <a href="/blog/categories/Spring/">Spring</a>
-                    
-                        <a href="/blog/categories/Spring/%E3%80%8ASpring%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E3%80%8B/">《Spring源码分析》</a>
-                    
-                
-                
-                    
-                
-            </span>
-        </div>
-
-    </div>
-</section>
-<script>
-    $(document).ready(function(){
-
-        $('.geopattern').each(function(){
-            $(this).geopattern($(this).data('pattern-id'));
-        });
-
-    });
-</script>
-<!-- 文章内容部分 -->
-<article class="post container " itemscope itemtype="http://schema.org/BlogPosting" id="openwrite-container">
-    <div class="row">
-        <div class="col-md-9 markdown-body">
-            <!-- 文章开始部分 -->
-            <!--<div style="text-align:center">-->
-<!--    <img style="display:inline-block" width="130" height="27"-->
-<!--         src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/640-3.gif"-->
-<!--         data-loaded="true">-->
-<!--    <img style="display:inline-block" width="41" height="35"-->
-<!--         src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/640-4.gif"-->
-<!--         data-loaded="true">-->
-<!--    <img style="display:inline-block"-->
-<!--         width="130" height="27"-->
-<!--         src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/640-5.gif"-->
-<!--         data-loaded="true">-->
-<!--</div>-->
-            <blockquote>
+ga('create', 'UA-129095667-1', 'auto');
+ga('send', 'pageview');</script><meta name="google-site-verification" content="VrcbMTVpFGlHkIERHBt753dAtXKF4qirjnDweuXSRJw"><meta http-equiv="Cache-Control" content="no-transform"><meta http-equiv="Cache-Control" content="no-siteapp"><script src="https://v1.hitokoto.cn/?encode=js&amp;charset=utf-8&amp;select=.footer_custom_text" defer></script><script>var GLOBAL_CONFIG = { 
+  root: '/blog/',
+  algolia: undefined,
+  localSearch: {"path":"search.xml","languages":{"hits_empty":"找不到您查询的内容:${query}"}},
+  copy: {
+    success: '复制成功',
+    error: '复制错误',
+    noSupport: '浏览器不支持'
+  },
+  hexoVersion: '5.4.0'
+} </script><meta name="generator" content="Hexo 5.4.0"><link rel="alternate" href="/blog/atom.xml" title="BLOG | CAYZLH" type="application/atom+xml">
+</head><body><i class="fa fa-arrow-right" id="toggle-sidebar" aria-hidden="true"></i><div id="sidebar" data-display="true"><div class="toggle-sidebar-info text-center"><span data-toggle="切换文章详情">切换站点概览</span><hr></div><div class="sidebar-toc"><div class="sidebar-toc__title">目录</div><div class="sidebar-toc__progress"><span class="progress-notice">你已经读了</span><span class="progress-num">0</span><span class="progress-percentage">%</span><div class="sidebar-toc__progress-bar"></div></div><div class="sidebar-toc__content"></div></div><div class="author-info hide"><div class="author-info__avatar text-center"><img src="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/image/IMG_4207.JPG"></div><div class="author-info__name text-center">🐳Ant丶</div><div class="author-info__description text-center">CODE IS POETRY</div><div class="follow-button"><a target="_blank" rel="external nofollow noopener noreferrer" href="https://telegram.me/Q2F5emxo">contact me</a></div><hr><div class="author-info-articles"><a class="author-info-articles__archives article-meta" href="/blog/archives"><span class="pull-left">文章</span><span class="pull-right">98</span></a><a class="author-info-articles__tags article-meta" href="/blog/tags"><span class="pull-left">标签</span><span class="pull-right">15</span></a><a class="author-info-articles__categories article-meta" href="/blog/categories"><span class="pull-left">分类</span><span class="pull-right">14</span></a><a class="author-info-articles__categories article-meta" href="/blog/categories/%E4%B9%A6%E7%B1%8D/%E3%80%8A%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3Java%E8%99%9A%E6%8B%9F%E6%9C%BA%E3%80%8B/"><span class="pull-left">《深入理解Java虚拟机》</span><span class="pull-right">√</span></a><a class="author-info-articles__categories article-meta" href="/blog/categories/%E4%B9%A6%E7%B1%8D/%E3%80%8AMyBatis%E6%8A%80%E6%9C%AF%E5%86%85%E5%B9%95%E3%80%8B/"><span class="pull-left">《MyBatis技术内幕》</span><span class="pull-right">√</span></a><a class="author-info-articles__categories article-meta" href="/blog/categories/Java/Java%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/"><span class="pull-left">Java设计模式</span><span class="pull-right">√</span></a></div></div></div><div id="content-outer"><div class="no-bg" id="top-container"><div id="page-header"><span class="pull-left"> <a id="site-name" href="/blog/">BLOG | CAYZLH</a></span><i class="fa fa-bars toggle-menu pull-right" aria-hidden="true"></i><span class="pull-right"><a class="site-page social-icon search"><i class="fa fa-search"></i><span> 搜索</span></a></span></div><div id="post-info"><div id="post-title">IOC之深入分析Aware接口</div><div id="post-meta"><time class="post-meta__date"><i class="fa fa-calendar" aria-hidden="true"></i> 2020-01-22</time><span class="post-meta__separator">|</span><i class="fa fa-inbox post-meta__icon" aria-hidden="true"></i><a class="post-meta__categories" href="/blog/categories/Spring/">Spring</a><i class="fa fa-angle-right" aria-hidden="true"></i><i class="fa fa-inbox post-meta__icon" aria-hidden="true"></i><a class="post-meta__categories" href="/blog/categories/Spring/%E3%80%8ASpring%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E3%80%8B/">《Spring源码分析》</a><div class="post-meta-wordcount"><span>字数总计: </span><span class="word-count">1.4k</span><span class="post-meta__separator">|</span><span>阅读时长: 5 分钟</span></div></div></div></div><div class="layout" id="content-inner"><article id="post"><div class="article-container" id="post-content"><blockquote>
 <p>本文作者：chenssy</p>
 <p>出处：<a target="_blank" rel="external nofollow noopener noreferrer" href="http://cmsblogs.com/?p=3335">http://cmsblogs.com/?p=3335</a></p>
 <p>在学习<code>Spring源码</code>的过程中发现的好站+好贴，感谢作者。Spring版本：<strong>Spring 5.0.6.RELEASE</strong></p>
@@ -257,156 +34,31 @@
 </ol>
 <p>接下来将会详细分析这三件事情，这篇主要分析 Aware 接口。</p>
 <p>Aware 接口定义如下：</p>
-<pre class="line-numbers language-java"><code class="language-java"><span class="token comment" spellcheck="true">/**
- * Marker superinterface indicating that a bean is eligible to be
- * notified by the Spring container of a particular framework object
- * through a callback-style method. Actual method signature is
- * determined by individual subinterfaces, but should typically
- * consist of just one void-returning method that accepts a single
- * argument.
- *
- * &lt;p>Note that merely implementing &amp;#123;@link Aware&amp;#125; provides no default
- * functionality. Rather, processing must be done explicitly, for example
- * in a &amp;#123;@link org.springframework.beans.factory.config.BeanPostProcessor BeanPostProcessor&amp;#125;.
- * Refer to &amp;#123;@link org.springframework.context.support.ApplicationContextAwareProcessor&amp;#125;
- * and &amp;#123;@link org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory&amp;#125;
- * for examples of processing &amp;#123;@code *Aware&amp;#125; interface callbacks.
- *
- * @author Chris Beams
- * @since 3.1
- */</span>
-<span class="token keyword">public</span> <span class="token keyword">interface</span> <span class="token class-name">Aware</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * Marker superinterface indicating that a bean is eligible to be</span></span><br><span class="line"><span class="comment"> * notified by the Spring container of a particular framework object</span></span><br><span class="line"><span class="comment"> * through a callback-style method. Actual method signature is</span></span><br><span class="line"><span class="comment"> * determined by individual subinterfaces, but should typically</span></span><br><span class="line"><span class="comment"> * consist of just one void-returning method that accepts a single</span></span><br><span class="line"><span class="comment"> * argument.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * &lt;p&gt;Note that merely implementing &#123;<span class="doctag">@link</span> Aware&#125; provides no default</span></span><br><span class="line"><span class="comment"> * functionality. Rather, processing must be done explicitly, for example</span></span><br><span class="line"><span class="comment"> * in a &#123;<span class="doctag">@link</span> org.springframework.beans.factory.config.BeanPostProcessor BeanPostProcessor&#125;.</span></span><br><span class="line"><span class="comment"> * Refer to &#123;<span class="doctag">@link</span> org.springframework.context.support.ApplicationContextAwareProcessor&#125;</span></span><br><span class="line"><span class="comment"> * and &#123;<span class="doctag">@link</span> org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory&#125;</span></span><br><span class="line"><span class="comment"> * for examples of processing &#123;<span class="doctag">@code</span> *Aware&#125; interface callbacks.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@author</span> Chris Beams</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@since</span> 3.1</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">Aware</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p><strong>Aware 接口为 Spring 容器的核心接口，是一个具有标识作用的超级接口，实现了该接口的 bean 是具有被 Spring 容器通知的能力，通知的方式是采用回调的方式。</strong></p>
 <p>Aware 接口是一个空接口，实际的方法签名由各个子接口来确定，且该接口通常只会有一个接收单参数的 set 方法，该 set 方法的命名方式为 set + 去掉接口名中的 Aware 后缀，即 XxxAware 接口，则方法定义为 setXxx()，例如 BeanNameAware（setBeanName），ApplicationContextAware（setApplicationContext）。</p>
 <p>Aware 的子接口需要提供一个 <code>setXxx</code> 方法，我们知道 set 是设置属性值的方法，即 Aware 类接口的 <code>setXxx</code> 方法其实就是设置 xxx 属性值的。</p>
 <p> Aware 的含义是感知的、感应的，那么在 Spring 容器中是如何实现感知并设置属性值得呢？我们可以从初始化 bean 中的激活 Aware 的方法 <code>invokeAwareMethods()</code> 中看到一点点，如下：</p>
-<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">private</span> <span class="token keyword">void</span> <span class="token function">invokeAwareMethods</span><span class="token punctuation">(</span><span class="token keyword">final</span> String beanName<span class="token punctuation">,</span> <span class="token keyword">final</span> Object bean<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-  <span class="token keyword">if</span> <span class="token punctuation">(</span>bean <span class="token keyword">instanceof</span> <span class="token class-name">Aware</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-    <span class="token keyword">if</span> <span class="token punctuation">(</span>bean <span class="token keyword">instanceof</span> <span class="token class-name">BeanNameAware</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-      <span class="token punctuation">(</span><span class="token punctuation">(</span>BeanNameAware<span class="token punctuation">)</span> bean<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">setBeanName</span><span class="token punctuation">(</span>beanName<span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-    <span class="token keyword">if</span> <span class="token punctuation">(</span>bean <span class="token keyword">instanceof</span> <span class="token class-name">BeanClassLoaderAware</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-      ClassLoader bcl <span class="token operator">=</span> <span class="token function">getBeanClassLoader</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-      <span class="token keyword">if</span> <span class="token punctuation">(</span>bcl <span class="token operator">!=</span> null<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-        <span class="token punctuation">(</span><span class="token punctuation">(</span>BeanClassLoaderAware<span class="token punctuation">)</span> bean<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">setBeanClassLoader</span><span class="token punctuation">(</span>bcl<span class="token punctuation">)</span><span class="token punctuation">;</span>
-      <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-    <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-    <span class="token keyword">if</span> <span class="token punctuation">(</span>bean <span class="token keyword">instanceof</span> <span class="token class-name">BeanFactoryAware</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-      <span class="token punctuation">(</span><span class="token punctuation">(</span>BeanFactoryAware<span class="token punctuation">)</span> bean<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">setBeanFactory</span><span class="token punctuation">(</span>AbstractAutowireCapableBeanFactory<span class="token punctuation">.</span><span class="token keyword">this</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-  <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-<span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">invokeAwareMethods</span><span class="params">(<span class="keyword">final</span> String beanName, <span class="keyword">final</span> Object bean)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (bean <span class="keyword">instanceof</span> Aware) &#123;</span><br><span class="line">    <span class="keyword">if</span> (bean <span class="keyword">instanceof</span> BeanNameAware) &#123;</span><br><span class="line">      ((BeanNameAware) bean).setBeanName(beanName);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (bean <span class="keyword">instanceof</span> BeanClassLoaderAware) &#123;</span><br><span class="line">      ClassLoader bcl = getBeanClassLoader();</span><br><span class="line">      <span class="keyword">if</span> (bcl != <span class="keyword">null</span>) &#123;</span><br><span class="line">        ((BeanClassLoaderAware) bean).setBeanClassLoader(bcl);</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (bean <span class="keyword">instanceof</span> BeanFactoryAware) &#123;</span><br><span class="line">      ((BeanFactoryAware) bean).setBeanFactory(AbstractAutowireCapableBeanFactory.<span class="keyword">this</span>);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 <p>首先判断 bean 实例是否属于 Aware 接口的范畴，如果是的话，则调用实例的 <code>setXxx()</code> 方法给实例设置 xxx 属性值，在 <code>invokeAwareMethods()</code> 方法主要是设置 beanName，beanClassLoader、BeanFactory 中三个属性值。</p>
 <p>Spring 提供了一系列的 Aware 接口，如下图（部分）：</p>
 <p><img src="https://gitee.com/cayzlh/img-repo/raw/master/2020/05/25/201808210001-20200525092857844_al0UaW.png" alt="201808210001"></p>
 <p>上面只是一部分子类，从这里我们可以看到 Spring 提供的 Aware 接口是是何其多。同时从上图我们也看到了几个比较熟悉的接口，如 <code>BeanClassLoaderAware</code>、<code>BeanFactoryAware</code>、<code>BeanNameAware</code>，下面就这三个接口来做一个简单的演示，先看各自的定义：</p>
-<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">interface</span> <span class="token class-name">BeanClassLoaderAware</span> <span class="token keyword">extends</span> <span class="token class-name">Aware</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">BeanClassLoaderAware</span> <span class="keyword">extends</span> <span class="title">Aware</span> </span>&#123;</span><br><span class="line"></span><br><span class="line"> <span class="comment">/**</span></span><br><span class="line"><span class="comment">  * 将 BeanClassLoader 提供给 bean 实例回调</span></span><br><span class="line"><span class="comment">  * 在 bean 属性填充之后、初始化回调之前回调，</span></span><br><span class="line"><span class="comment">  * 例如InitializingBean的InitializingBean.afterPropertiesSet（）方法或自定义init方法</span></span><br><span class="line"><span class="comment">  */</span></span><br><span class="line"> <span class="function"><span class="keyword">void</span> <span class="title">setBeanClassLoader</span><span class="params">(ClassLoader classLoader)</span></span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">BeanFactoryAware</span> <span class="keyword">extends</span> <span class="title">Aware</span> </span>&#123;</span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">  * 将 BeanFactory 提供给 bean 实例回调</span></span><br><span class="line"><span class="comment">  * 调用时机和 setBeanClassLoader 一样</span></span><br><span class="line"><span class="comment">  */</span></span><br><span class="line"> <span class="function"><span class="keyword">void</span> <span class="title">setBeanFactory</span><span class="params">(BeanFactory beanFactory)</span> <span class="keyword">throws</span> BeansException</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">BeanNameAware</span> <span class="keyword">extends</span> <span class="title">Aware</span> </span>&#123;</span><br><span class="line"> <span class="comment">/**</span></span><br><span class="line"><span class="comment">  * 在创建此 bean 的 bean工厂中设置 beanName</span></span><br><span class="line"><span class="comment">  */</span></span><br><span class="line"> <span class="function"><span class="keyword">void</span> <span class="title">setBeanName</span><span class="params">(String name)</span></span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">ApplicationContextAware</span> <span class="keyword">extends</span> <span class="title">Aware</span> </span>&#123;</span><br><span class="line"> <span class="comment">/**</span></span><br><span class="line"><span class="comment">  * 设置此 bean 对象的 ApplicationContext，通常，该方法用于初始化对象</span></span><br><span class="line"><span class="comment">  */</span></span><br><span class="line"> <span class="function"><span class="keyword">void</span> <span class="title">setApplicationContext</span><span class="params">(ApplicationContext applicationContext)</span> <span class="keyword">throws</span> BeansException</span>;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
- <span class="token comment" spellcheck="true">/**
-  * 将 BeanClassLoader 提供给 bean 实例回调
-  * 在 bean 属性填充之后、初始化回调之前回调，
-  * 例如InitializingBean的InitializingBean.afterPropertiesSet（）方法或自定义init方法
-  */</span>
- <span class="token keyword">void</span> <span class="token function">setBeanClassLoader</span><span class="token punctuation">(</span>ClassLoader classLoader<span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-
-<span class="token keyword">public</span> <span class="token keyword">interface</span> <span class="token class-name">BeanFactoryAware</span> <span class="token keyword">extends</span> <span class="token class-name">Aware</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-    <span class="token comment" spellcheck="true">/**
-  * 将 BeanFactory 提供给 bean 实例回调
-  * 调用时机和 setBeanClassLoader 一样
-  */</span>
- <span class="token keyword">void</span> <span class="token function">setBeanFactory</span><span class="token punctuation">(</span>BeanFactory beanFactory<span class="token punctuation">)</span> <span class="token keyword">throws</span> BeansException<span class="token punctuation">;</span>
-<span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-
-<span class="token keyword">public</span> <span class="token keyword">interface</span> <span class="token class-name">BeanNameAware</span> <span class="token keyword">extends</span> <span class="token class-name">Aware</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
- <span class="token comment" spellcheck="true">/**
-  * 在创建此 bean 的 bean工厂中设置 beanName
-  */</span>
- <span class="token keyword">void</span> <span class="token function">setBeanName</span><span class="token punctuation">(</span>String name<span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-
-<span class="token keyword">public</span> <span class="token keyword">interface</span> <span class="token class-name">ApplicationContextAware</span> <span class="token keyword">extends</span> <span class="token class-name">Aware</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
- <span class="token comment" spellcheck="true">/**
-  * 设置此 bean 对象的 ApplicationContext，通常，该方法用于初始化对象
-  */</span>
- <span class="token keyword">void</span> <span class="token function">setApplicationContext</span><span class="token punctuation">(</span>ApplicationContext applicationContext<span class="token punctuation">)</span> <span class="token keyword">throws</span> BeansException<span class="token punctuation">;</span>
-
-<span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>下面简单演示下上面四个接口的使用方法：</p>
-<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">MyApplicationAware</span> <span class="token keyword">implements</span> <span class="token class-name">BeanNameAware</span><span class="token punctuation">,</span>BeanFactoryAware<span class="token punctuation">,</span>BeanClassLoaderAware<span class="token punctuation">,</span>ApplicationContextAware<span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">MyApplicationAware</span> <span class="keyword">implements</span> <span class="title">BeanNameAware</span>,<span class="title">BeanFactoryAware</span>,<span class="title">BeanClassLoaderAware</span>,<span class="title">ApplicationContextAware</span></span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> String beanName;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> BeanFactory beanFactory;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> ClassLoader classLoader;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> ApplicationContext applicationContext;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">setBeanClassLoader</span><span class="params">(ClassLoader classLoader)</span> </span>&#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;调用了 BeanClassLoaderAware 的 setBeanClassLoader 方法&quot;</span>);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">this</span>.classLoader = classLoader;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">setBeanFactory</span><span class="params">(BeanFactory beanFactory)</span> <span class="keyword">throws</span> BeansException </span>&#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;调用了 BeanFactoryAware 的 setBeanFactory 方法&quot;</span>);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">this</span>.beanFactory = beanFactory;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">setBeanName</span><span class="params">(String name)</span> </span>&#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;调用了 BeanNameAware 的 setBeanName 方法&quot;</span>);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">this</span>.beanName = name;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">setApplicationContext</span><span class="params">(ApplicationContext applicationContext)</span> </span></span><br><span class="line"><span class="function">      <span class="keyword">throws</span> BeansException </span>&#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;调用了 ApplicationContextAware 的 setApplicationContext 方法&quot;</span>);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">this</span>.applicationContext = applicationContext;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">display</span><span class="params">()</span></span>&#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;beanName:&quot;</span> + beanName);</span><br><span class="line"></span><br><span class="line">        System.out.println(<span class="string">&quot;是否为单例：&quot;</span> + beanFactory.isSingleton(beanName));</span><br><span class="line"></span><br><span class="line">        System.out.println(<span class="string">&quot;系统环境为：&quot;</span> + applicationContext.getEnvironment());</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-    <span class="token keyword">private</span> String beanName<span class="token punctuation">;</span>
-
-    <span class="token keyword">private</span> BeanFactory beanFactory<span class="token punctuation">;</span>
-
-    <span class="token keyword">private</span> ClassLoader classLoader<span class="token punctuation">;</span>
-
-    <span class="token keyword">private</span> ApplicationContext applicationContext<span class="token punctuation">;</span>
-
-    <span class="token annotation punctuation">@Override</span>
-    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">setBeanClassLoader</span><span class="token punctuation">(</span>ClassLoader classLoader<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"调用了 BeanClassLoaderAware 的 setBeanClassLoader 方法"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-
-        <span class="token keyword">this</span><span class="token punctuation">.</span>classLoader <span class="token operator">=</span> classLoader<span class="token punctuation">;</span>
-    <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-
-    <span class="token annotation punctuation">@Override</span>
-    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">setBeanFactory</span><span class="token punctuation">(</span>BeanFactory beanFactory<span class="token punctuation">)</span> <span class="token keyword">throws</span> BeansException <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"调用了 BeanFactoryAware 的 setBeanFactory 方法"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-
-        <span class="token keyword">this</span><span class="token punctuation">.</span>beanFactory <span class="token operator">=</span> beanFactory<span class="token punctuation">;</span>
-    <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-
-    <span class="token annotation punctuation">@Override</span>
-    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">setBeanName</span><span class="token punctuation">(</span>String name<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"调用了 BeanNameAware 的 setBeanName 方法"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-
-        <span class="token keyword">this</span><span class="token punctuation">.</span>beanName <span class="token operator">=</span> name<span class="token punctuation">;</span>
-    <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-
-    <span class="token annotation punctuation">@Override</span>
-    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">setApplicationContext</span><span class="token punctuation">(</span>ApplicationContext applicationContext<span class="token punctuation">)</span> 
-      <span class="token keyword">throws</span> BeansException <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"调用了 ApplicationContextAware 的 setApplicationContext 方法"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-
-        <span class="token keyword">this</span><span class="token punctuation">.</span>applicationContext <span class="token operator">=</span> applicationContext<span class="token punctuation">;</span>
-    <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-
-    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">display</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"beanName:"</span> <span class="token operator">+</span> beanName<span class="token punctuation">)</span><span class="token punctuation">;</span>
-
-        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"是否为单例："</span> <span class="token operator">+</span> beanFactory<span class="token punctuation">.</span><span class="token function">isSingleton</span><span class="token punctuation">(</span>beanName<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-
-        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"系统环境为："</span> <span class="token operator">+</span> applicationContext<span class="token punctuation">.</span><span class="token function">getEnvironment</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-<span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>测试方法如下:</p>
-<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">main</span><span class="token punctuation">(</span>String<span class="token punctuation">[</span><span class="token punctuation">]</span> args<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-  ClassPathResource resource <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">ClassPathResource</span><span class="token punctuation">(</span><span class="token string">"spring.xml"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-  DefaultListableBeanFactory factory <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">DefaultListableBeanFactory</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-  XmlBeanDefinitionReader reader <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">XmlBeanDefinitionReader</span><span class="token punctuation">(</span>factory<span class="token punctuation">)</span><span class="token punctuation">;</span>
-  reader<span class="token punctuation">.</span><span class="token function">loadBeanDefinitions</span><span class="token punctuation">(</span>resource<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">  ClassPathResource resource = <span class="keyword">new</span> ClassPathResource(<span class="string">&quot;spring.xml&quot;</span>);</span><br><span class="line">  DefaultListableBeanFactory factory = <span class="keyword">new</span> DefaultListableBeanFactory();</span><br><span class="line">  XmlBeanDefinitionReader reader = <span class="keyword">new</span> XmlBeanDefinitionReader(factory);</span><br><span class="line">  reader.loadBeanDefinitions(resource);</span><br><span class="line"></span><br><span class="line">  MyApplicationAware applicationAware = (MyApplicationAware) factory.getBean(<span class="string">&quot;myApplicationAware&quot;</span>);</span><br><span class="line">  applicationAware.display();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-  MyApplicationAware applicationAware <span class="token operator">=</span> <span class="token punctuation">(</span>MyApplicationAware<span class="token punctuation">)</span> factory<span class="token punctuation">.</span><span class="token function">getBean</span><span class="token punctuation">(</span><span class="token string">"myApplicationAware"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-  applicationAware<span class="token punctuation">.</span><span class="token function">display</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>运行结果：</p>
 <p><img src="https://gitee.com/cayzlh/img-repo/raw/master/2020/05/25/201808210002-20200525093149590_fdZ67N.png" alt="201808210002"></p>
 <p>从该运行结果可以看出，这里只执行了三个 Aware 接口的 set 方法，原因就是痛 <code>getBean()</code> 调用时在激活 Aware 接口时只检测了 BeanNameAware、BeanClassLoaderAware、BeanFactoryAware 三个 Aware 接口。如果将测试方法调整为下面：</p>
-<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">main</span><span class="token punctuation">(</span>String<span class="token punctuation">[</span><span class="token punctuation">]</span> args<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-  ApplicationContext applicationContext <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">ClassPathXmlApplicationContext</span><span class="token punctuation">(</span><span class="token string">"spring.xml"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-  MyApplicationAware applicationAware <span class="token operator">=</span> 
-    <span class="token punctuation">(</span>MyApplicationAware<span class="token punctuation">)</span> applicationContext<span class="token punctuation">.</span><span class="token function">getBean</span><span class="token punctuation">(</span><span class="token string">"myApplicationAware"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-  applicationAware<span class="token punctuation">.</span><span class="token function">display</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">  ApplicationContext applicationContext = <span class="keyword">new</span> ClassPathXmlApplicationContext(<span class="string">&quot;spring.xml&quot;</span>);</span><br><span class="line">  MyApplicationAware applicationAware = </span><br><span class="line">    (MyApplicationAware) applicationContext.getBean(<span class="string">&quot;myApplicationAware&quot;</span>);</span><br><span class="line">  applicationAware.display();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 <p>则运行结果如下：</p>
 <p><img src="https://gitee.com/cayzlh/img-repo/raw/master/2020/05/25/201808210003-20200525093254904_40wEa7.png" alt="201808210003"></p>
 <p>从这了我们基本上就可以 Aware 真正的含义是什么了？</p>
@@ -427,191 +79,8 @@
 <li>NotificationPublisherAware：JMX通知</li>
 <li>BeanNameAware：声明Spring Bean的名字</li>
 </ul>
-
-            <!-- 文章结尾部分 -->
-            
-                
-<div style="text-align:center;width:100%">
-    <span class="octicon octicon-tag-add"></span>
-    
-        <a style="color: #24292e;" href="/blog/tags/Spring/">Spring</a>
-    
-        <a style="color: #24292e;" href="/blog/tags/%E8%BD%AC%E8%BD%BD/">转载</a>
-    
-</div>
-
-
-
-    <div style="text-align:center;width:100%">
-        <img src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/640-2.gif">
-    </div>
-
-
-
-
-<div>
-    <h4>相关推荐</h4>
-    <ul class="post-copyright">
-        
-        <li class="post-copyright-author">
-            <a href="/blog/2020/01/21/e8e94997.html">IOC之Bean的初始化</a>
-        </li>
-        
-        <li class="post-copyright-author">
-            <a href="/blog/2020/01/23/cd2eaad8.html">IOC之PropertyPlaceholderConfigurer的应用</a>
-        </li>
-        
-        <li class="post-copyright-author">
-            <a href="/blog/2020/01/24/25302edf.html">IOC之bean的实例化策略：InstantiationStrategy</a>
-        </li>
-        
-        <li class="post-copyright-author">
-            <a href="/blog/2020/01/24/fcc18cc7.html">IOC之分析BeanWrapper</a>
-        </li>
-        
-        <li class="post-copyright-author">
-            <a href="/blog/2020/01/19/1ad7c22b.html">IOC之开启Bean的实例化进程</a>
-        </li>
-        
-        <li class="post-copyright-author">
-            <a href="/blog/2020/01/21/7ee1f554.html">IOC之循环依赖</a>
-        </li>
-        
-    </ul>
-    <br><br>
-</div>
-
-
-
-<div>
-    <h4>版权声明</h4>
-    <blockquote>
-        <ul class="post-copyright">
-            <li class="post-copyright-author">
-                <strong>本文来源： </strong>
-                
-                <a href="http://cmsblogs.com/?p=3335" title="Java技术驿站 | chenssy |【死磕 Spring】| IOC之深入分析Aware接口" rel="external nofollow noopener noreferrer" target="_blank">Java技术驿站 | chenssy |【死磕 Spring】| IOC之深入分析Aware接口</a></li>
-            <li class="post-copyright-link">
-                <strong>本文链接：</strong>
-                <a href="https://www.cayzlh.com/2020/01/22/26a31db5.html" title="/blog/IOC%E4%B9%8B%E6%B7%B1%E5%85%A5%E5%88%86%E6%9E%90Aware%E6%8E%A5%E5%8F%A3">https://www.cayzlh.com/2020/01/22/26a31db5.html</a>
-            </li>
-            <li class="post-copyright-license">
-                <strong>版权声明： </strong>
-                
-                    文章内容仅用作学习和分享，如有雷同，纯属拷贝。
-                
-            </li>
-        </ul>
-    </blockquote>
-</div>
-
-
-            
-            
-                <div class="comment">
-    <br><br><br>
-    
-</div>
-
-            
-        </div>
-        <div class="col-md-3 markdown-body">
-            <h4>文章目录</h4>
-            
-        </div>
-    </div>
-    
-</article>
-
-
-<script>
-    hljs.initHighlightingOnLoad();
-</script>
-</main>
-<footer class="container">
-    <div class="site-footer">
-        
-    <div class="card text-center">
-        <ul class="list-inline" style="margin-left: 0;">
-            
-                <li>
-                    <a target="_blank" href="https://github.com/cayzlh" rel="external nofollow noopener noreferrer">
-                          <span class="fa-stack fa-lg">
-                            <i class="fa fa-circle fa-stack-2x"></i>
-                            <i class="fa fa-github fa-stack-1x fa-inverse">
-                                
-                            </i>
-                          </span>
-                    </a>
-                </li>
-            
-                <li>
-                    <a target="_blank" href="https://telegram.me/Q2F5emxo" rel="external nofollow noopener noreferrer">
-                          <span class="fa-stack fa-lg">
-                            <i class="fa fa-circle fa-stack-2x"></i>
-                            <i class="fa fa-rocket fa-stack-1x fa-inverse">
-                                
-                            </i>
-                          </span>
-                    </a>
-                </li>
-            
-                <li>
-                    <a target="_blank" href="mailto:chenanyu@cayzlh.com">
-                          <span class="fa-stack fa-lg">
-                            <i class="fa fa-circle fa-stack-2x"></i>
-                            <i class="fa fa-envelope fa-stack-1x fa-inverse">
-                                
-                            </i>
-                          </span>
-                    </a>
-                </li>
-            
-        </ul>
-    </div>
-
-
-        <div class="site-footer-links mobile-hidden">
-            
-                
-                
-            
-        </div>
-
-        <div class="site-footer-links mobile-hidden">
-        
-            <span class="meta-info-index hvr-grow">
-                
-                    <a href="https://www.cayzlh.com">
-                        🐳Ant丶 &copy; 2020
-                    </a>
-                
-            </span>
-        
-        
-            <span class="meta-info-index hvr-grow">
-                <a target="_blank" rel="external nofollow noopener noreferrer" href="http://beian.miit.gov.cn">粤ICP备20058712号-1</a>
-            </span>
-        
-        </div>
-
-        
-
-        
-    </div>
-    
-
-    
-        <!-- Third-Party JS -->
-        <script type="text/javascript" src="/blog/js/thirdparty/geopattern.min.js"></script>
-        <!-- My JS -->
-        <script type="text/javascript" src="/blog/js/script.js"></script>
-    
-
-    
-        <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js">
-        </script>
-    
-</footer>
-</body>
-</html>
+</div></article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta">文章作者: </span><span class="post-copyright-info"><a href="mailto:undefined" rel="external nofollow noopener noreferrer" target="_blank">🐳Ant丶</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta">文章链接: </span><span class="post-copyright-info"><a href="https://www.cayzlh.com/2020/01/22/26a31db5.html">https://www.cayzlh.com/2020/01/22/26a31db5.html</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta">版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a target="_blank" rel="external nofollow noopener noreferrer" href="https://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来自 <a href="https://www.cayzlh.com">BLOG | CAYZLH</a>！</span></div></div><div class="post-meta__tag-list"><a class="post-meta__tags" href="/blog/tags/Spring/">Spring</a><a class="post-meta__tags" href="/blog/tags/%E8%BD%AC%E8%BD%BD/">转载</a></div><nav id="pagination"><div class="prev-post pull-left"><a href="/blog/2020/01/22/aa8c9efa.html"><i class="fa fa-chevron-left">  </i><span>IOC之深入分析BeanPostProcessor</span></a></div><div class="next-post pull-right"><a href="/blog/2020/01/21/abeafe18.html"><span>IOC之加载Bean——总结篇</span><i class="fa fa-chevron-right"></i></a></div></nav></div></div><footer><div class="layout" id="footer"><div class="footer_custom_text">hitokoto</div><div class="copyright">🐳Ant丶 &copy;2019 - 2021</div><div class="icp"><a><span>粤ICP备20058712号</span></a></div><div class="busuanzi"><script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></div></footer><i class="fa fa-arrow-up" id="go-up" aria-hidden="true"></i><script src="https://cdn.jsdelivr.net/npm/animejs@latest/anime.min.js"></script><script src="https://cdn.jsdelivr.net/npm/jquery@latest/dist/jquery.min.js"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@latest/dist/jquery.fancybox.min.js"></script><script src="https://cdn.jsdelivr.net/npm/velocity-animate@latest/velocity.min.js"></script><script src="https://cdn.jsdelivr.net/npm/velocity-ui-pack@latest/velocity.ui.min.js"></script><script src="/blog/js/utils.js?version=1.9.0"></script><script src="/blog/js/fancybox.js?version=1.9.0"></script><script src="/blog/js/sidebar.js?version=1.9.0"></script><script src="/blog/js/copy.js?version=1.9.0"></script><script src="/blog/js/fireworks.js?version=1.9.0"></script><script src="/blog/js/transition.js?version=1.9.0"></script><script src="/blog/js/scroll.js?version=1.9.0"></script><script src="/blog/js/head.js?version=1.9.0"></script><script src="/blog/js/search/local-search.js"></script><script>if(/Android|webOS|iPhone|iPod|iPad|BlackBerry/i.test(navigator.userAgent)) {
+  $('#nav').addClass('is-mobile')
+  $('footer').addClass('is-mobile')
+  $('#top-container').addClass('is-mobile')
+}</script><div class="search-dialog" id="local-search"><div class="search-dialog__title" id="local-search-title">本地搜索</div><div id="local-input-panel"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="搜索文章"></div></div></div><hr><div id="local-search-results"><div id="local-hits"></div><div id="local-stats"><div class="local-search-stats__hr" id="hr"><span>Powered by</span> <a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/wzpan/hexo-generator-search" style="color:#49B1F5;">hexo-generator-search</a></div></div></div><span class="search-close-button"><i class="fa fa-times"></i></span></div><div class="search-mask"></div></body></html>

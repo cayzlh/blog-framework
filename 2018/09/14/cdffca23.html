@@ -1,244 +1,21 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
+<!DOCTYPE html><html lang="[&quot;zh-Hans&quot;,&quot;en&quot;,&quot;default&quot;]"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"><meta name="description" content="《深入理解Java虚拟机》第7章内容小结，虚拟机类加载机制"><meta name="keywords" content="深入理解Java虚拟机, Java虚拟机, 虚拟机类加载机制"><meta name="author" content="🐳Ant丶"><meta name="copyright" content="🐳Ant丶"><title>虚拟机类加载机制 | BLOG | CAYZLH</title><link rel="shortcut icon" href="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/logo/favicon.ico"><link rel="stylesheet" href="/blog/css/index.css?version=1.9.0"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/font-awesome@latest/css/font-awesome.min.css?version=1.9.0"><meta name="format-detection" content="telephone=no"><meta http-equiv="x-dns-prefetch-control" content="on"><link rel="dns-prefetch" href="https://cdn.jsdelivr.net"><link rel="dns-prefetch" href="https://www.google-analytics.com"><script>(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
 
-<head>
-    <meta charset="utf-8">
-    <meta name="keywords" content="深入理解Java虚拟机, Java虚拟机, 虚拟机类加载机制">
-    <meta name="description" content="Ant丶的网络日志, CAYZLH网络日志, CAYZLH, CAYZLH主页, Ant丶空间">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <meta name="renderer" content="webkit|ie-stand|ie-comp">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="format-detection" content="telephone=no">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <!-- Global site tag (gtag.js) - Google Analytics -->
-
-    <meta name="google-site-verification" content="VrcbMTVpFGlHkIERHBt753dAtXKF4qirjnDweuXSRJw">
-
-
-    <!-- Global site tag (gtag.js) - Google Analytics -->
-
-<script async src="https://www.googletagmanager.com/gtag/js?id=UA-129095667-1"></script>
-<script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag() {
-        dataLayer.push(arguments);
-    }
-
-    gtag('js', new Date());
-    gtag('config', 'UA-129095667-1');
-</script>
-
-
-    <title>虚拟机类加载机制 | BLOG | CAYZLH</title>
-
-    
-    <!-- Third-Party CSS -->
-    
-
-        <link rel="shortcut icon" href="/blog/image/favicon.ico">
-        <link rel="icon" type="image/png" href="/blog/image/favicon-192x192.png" sizes="192x192">
-        <link rel="apple-touch-icon" sizes="180x180" href="/blog/image/apple-touch-icon.png">
-
-        <link rel="stylesheet" href="/blog/css/thirdparty/bootstrap.min.css">
-        <link rel="stylesheet" href="/blog/css/thirdparty/octicons.css">
-        <link rel="stylesheet" href="/blog/css/thirdparty/hover-min.css">
-        <link rel="stylesheet" href="/blog/css/thirdparty/user-content.min.css">
-        <link rel="stylesheet" href="/blog/css/thirdparty/syntax.css">
-        <link rel="stylesheet" href="/blog/css/thirdparty/gitalk.css">
-
-        <!-- My CSS -->
-        <link rel="stylesheet" href="/blog/css/common.css">
-
-        <link rel="stylesheet" href="/blog/css/sidebar-post-nav.css">
-
-        <link rel="stylesheet" href="/blog/css/blog-page.css">
-        <!-- CSS set in page -->
-
-        
-        <link rel="stylesheet" href="/blog/css/sidebar-popular-repo.css">
-    
-
-    <!-- CSS set in layout -->
-    <link rel="stylesheet" type="text/css" href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css">
-
-    
-        <script type="text/javascript" src="/blog/js/thirdparty/jquery.min.js"></script>
-        <script type="text/javascript" src="/blog/js/thirdparty/bootstrap.min.js"></script>
-        <script type="text/javascript" src="/blog/js/lock.js"></script>
-    
-
-    
-        <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.css">
-        <script src="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js"></script>
-
-        <link rel="stylesheet" href="//imsun.github.io/gitment/style/default.css">
-        <script src="//imsun.github.io/gitment/dist/gitment.browser.js"></script>
-
-        <script src="//unpkg.com/valine/dist/Valine.min.js"></script>
-        <script src="//cdn.jsdelivr.net/npm/twikoo@1.2.0/dist/twikoo.all.min.js"></script>
-
-    
-
-    <link rel="stylesheet" href="//cdn.bootcss.com/highlight.js/9.2.0/styles/github.min.css">
-    <script src="//cdn.bootcss.com/highlight.js/9.2.0/highlight.min.js"></script>
-<meta name="generator" content="Hexo 5.4.0"><link rel="alternate" href="/blog/atom.xml" title="BLOG | CAYZLH" type="application/atom+xml">
-</head>
-
-<body>
-<header class="site-header">
-    <div class="site-header-topbar">
-        <div class="container">
-            <div class="topbar-menu">
-
-    
-        <div class="item">
-            <a href="https://www.cayzlh.com/" title="导航">
-                导航
-            </a>
-        </div>
-    
-        <div class="item">
-            <a href="/blog/categories/" title="分类">
-                分类
-            </a>
-        </div>
-    
-        <div class="item">
-            <a href="/blog/tags/" title="标签">
-                标签
-            </a>
-        </div>
-    
-        <div class="item">
-            <a href="/blog/links/" title="链接">
-                链接
-            </a>
-        </div>
-    
-        <div class="item">
-            <a href="/blog/about" title="关于">
-                关于
-            </a>
-        </div>
-    
-
-</div>
-        </div>
-    </div>
-    <div class="container">
-        <a id="site-header-brand" href="/blog/" title="BLOG | CAYZLH">
-            <span class="octicon octicon-watch"></span>
-            BLOG | CAYZLH
-        </a>
-
-        <nav class="site-header-nav" role="navigation">
-    
-        <div class=" site-header-nav-item hvr-underline-from-center">
-            <a href="/blog/" title="Home">
-                Home
-            </a>
-            
-        </div>
-    
-        <div class=" site-header-nav-item hvr-underline-from-center">
-            <a href="/blog/archives" title="Archives">
-                Archives
-            </a>
-            
-        </div>
-    
-        <div class=" site-header-nav-item hvr-underline-from-center">
-            <a href="/blog/" title="Learning">
-                Learning
-            </a>
-            
-                <ul class="submenu">
-                    
-
-                        <li>
-                            <a href="/blog/categories/%E4%B9%A6%E7%B1%8D/%E3%80%8A%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3Java%E8%99%9A%E6%8B%9F%E6%9C%BA%E3%80%8B/">
-                                <span>深入理解Java虚拟机</span>
-                            </a>
-                        </li>
-
-                    
-
-                        <li>
-                            <a href="/blog/categories/%E4%B9%A6%E7%B1%8D/%E3%80%8AMyBatis%E6%8A%80%E6%9C%AF%E5%86%85%E5%B9%95%E3%80%8B/">
-                                <span>MyBatis技术内幕</span>
-                            </a>
-                        </li>
-
-                    
-
-                        <li>
-                            <a href="/blog/categories/Java/Java%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/">
-                                <span>Java设计模式</span>
-                            </a>
-                        </li>
-
-                    
-                </ul>
-            
-        </div>
-    
-</nav>
-    </div>
-</header>
-
-<main class="content">
-    <!-- 标题部分 -->
-<section class="jumbotron geopattern" data-pattern-id="虚拟机类加载机制">
-    <div class="container">
-        <div id="jumbotron-meta-info">
-            <h1>虚拟机类加载机制</h1>
-            <span class="meta-info">
-                <a><span class="octicon octicon-calendar"></span> 2018-09-14</a>
-                
-                    <a><span class="octicon octicon-book"></span></a>
-                    
-                        <a href="/blog/categories/%E4%B9%A6%E7%B1%8D/">书籍</a>
-                    
-                        <a href="/blog/categories/%E4%B9%A6%E7%B1%8D/%E3%80%8A%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3Java%E8%99%9A%E6%8B%9F%E6%9C%BA%E3%80%8B/">《深入理解Java虚拟机》</a>
-                    
-                
-                
-                    
-                
-            </span>
-        </div>
-
-    </div>
-</section>
-<script>
-    $(document).ready(function(){
-
-        $('.geopattern').each(function(){
-            $(this).geopattern($(this).data('pattern-id'));
-        });
-
-    });
-</script>
-<!-- 文章内容部分 -->
-<article class="post container " itemscope itemtype="http://schema.org/BlogPosting" id="openwrite-container">
-    <div class="row">
-        <div class="col-md-9 markdown-body">
-            <!-- 文章开始部分 -->
-            <!--<div style="text-align:center">-->
-<!--    <img style="display:inline-block" width="130" height="27"-->
-<!--         src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/640-3.gif"-->
-<!--         data-loaded="true">-->
-<!--    <img style="display:inline-block" width="41" height="35"-->
-<!--         src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/640-4.gif"-->
-<!--         data-loaded="true">-->
-<!--    <img style="display:inline-block"-->
-<!--         width="130" height="27"-->
-<!--         src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/640-5.gif"-->
-<!--         data-loaded="true">-->
-<!--</div>-->
-            <blockquote>
+ga('create', 'UA-129095667-1', 'auto');
+ga('send', 'pageview');</script><meta name="google-site-verification" content="VrcbMTVpFGlHkIERHBt753dAtXKF4qirjnDweuXSRJw"><meta http-equiv="Cache-Control" content="no-transform"><meta http-equiv="Cache-Control" content="no-siteapp"><script src="https://v1.hitokoto.cn/?encode=js&amp;charset=utf-8&amp;select=.footer_custom_text" defer></script><script>var GLOBAL_CONFIG = { 
+  root: '/blog/',
+  algolia: undefined,
+  localSearch: {"path":"search.xml","languages":{"hits_empty":"找不到您查询的内容:${query}"}},
+  copy: {
+    success: '复制成功',
+    error: '复制错误',
+    noSupport: '浏览器不支持'
+  },
+  hexoVersion: '5.4.0'
+} </script><meta name="generator" content="Hexo 5.4.0"><link rel="alternate" href="/blog/atom.xml" title="BLOG | CAYZLH" type="application/atom+xml">
+</head><body><i class="fa fa-arrow-right" id="toggle-sidebar" aria-hidden="true"></i><div id="sidebar" data-display="true"><div class="toggle-sidebar-info text-center"><span data-toggle="切换文章详情">切换站点概览</span><hr></div><div class="sidebar-toc"><div class="sidebar-toc__title">目录</div><div class="sidebar-toc__progress"><span class="progress-notice">你已经读了</span><span class="progress-num">0</span><span class="progress-percentage">%</span><div class="sidebar-toc__progress-bar"></div></div><div class="sidebar-toc__content"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%A6%82%E8%BF%B0"><span class="toc-text">概述</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%B1%BB%E5%8A%A0%E8%BD%BD%E7%9A%84%E6%97%B6%E6%9C%BA"><span class="toc-text">类加载的时机</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%A2%AB%E5%8A%A8%E5%BC%95%E7%94%A8%E5%9C%B0%E4%BE%8B%E5%AD%90%E4%B9%8B%E4%B8%80"><span class="toc-text">被动引用地例子之一</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%A2%AB%E5%8A%A8%E5%BC%95%E7%94%A8%E7%9A%84%E4%BE%8B%E5%AD%90%E4%B9%8B%E4%BA%8C"><span class="toc-text">被动引用的例子之二</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%A2%AB%E5%8A%A8%E5%BC%95%E7%94%A8%E7%9A%84%E4%BE%8B%E5%AD%90%E4%B9%8B%E4%B8%89"><span class="toc-text">被动引用的例子之三</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%B1%BB%E5%8A%A0%E8%BD%BD%E7%9A%84%E8%BF%87%E7%A8%8B"><span class="toc-text">类加载的过程</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%8A%A0%E8%BD%BD"><span class="toc-text">加载</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%AA%8C%E8%AF%81"><span class="toc-text">验证</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%96%87%E4%BB%B6%E6%A0%BC%E5%BC%8F%E9%AA%8C%E8%AF%81"><span class="toc-text">文件格式验证</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%85%83%E6%95%B0%E6%8D%AE%E9%AA%8C%E8%AF%81"><span class="toc-text">元数据验证</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%AD%97%E8%8A%82%E7%A0%81%E9%AA%8C%E8%AF%81"><span class="toc-text">字节码验证</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E7%AC%A6%E5%8F%B7%E5%BC%95%E7%94%A8%E9%AA%8C%E8%AF%81"><span class="toc-text">符号引用验证</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%87%86%E5%A4%87"><span class="toc-text">准备</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%A7%A3%E6%9E%90"><span class="toc-text">解析</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E7%B1%BB%E6%88%96%E6%8E%A5%E5%8F%A3%E7%9A%84%E8%A7%A3%E6%9E%90"><span class="toc-text">类或接口的解析</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%AD%97%E6%AE%B5%E8%A7%A3%E6%9E%90"><span class="toc-text">字段解析</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E7%B1%BB%E6%96%B9%E6%B3%95%E8%A7%A3%E6%9E%90"><span class="toc-text">类方法解析</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%8E%A5%E5%8F%A3%E6%96%B9%E6%B3%95%E8%A7%A3%E6%9E%90"><span class="toc-text">接口方法解析</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%88%9D%E5%A7%8B%E5%8C%96"><span class="toc-text">初始化</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%B1%BB%E5%8A%A0%E8%BD%BD%E5%99%A8"><span class="toc-text">类加载器</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%B1%BB%E4%B8%8E%E7%B1%BB%E5%8A%A0%E8%BD%BD%E5%99%A8"><span class="toc-text">类与类加载器</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%8F%8C%E4%BA%B2%E5%A7%94%E6%B4%BE%E6%A8%A1%E5%9E%8B"><span class="toc-text">双亲委派模型</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%A0%B4%E5%9D%8F%E5%8F%8C%E4%BA%B2%E5%A7%94%E6%B4%BE%E6%A8%A1%E5%9E%8B"><span class="toc-text">破坏双亲委派模型</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E7%AC%AC%E4%B8%80%E6%AC%A1%E7%A0%B4%E5%9D%8F"><span class="toc-text">第一次破坏</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E7%AC%AC%E4%BA%8C%E6%AC%A1%E7%A0%B4%E5%9D%8F"><span class="toc-text">第二次破坏</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%A6%82%E6%9E%9C%E5%9F%BA%E7%A1%80%E7%B1%BB%E5%8F%88%E8%A6%81%E8%B0%83%E7%94%A8%E5%9B%9E%E7%94%A8%E6%88%B7%E7%9A%84%E4%BB%A3%E7%A0%81%EF%BC%8C%E9%82%A3%E8%AF%A5%E4%B9%88%E5%8A%9E%EF%BC%9F"><span class="toc-text">如果基础类又要调用回用户的代码，那该么办？</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E7%AC%AC%E4%B8%89%E6%AC%A1%E7%A0%B4%E5%9D%8F"><span class="toc-text">第三次破坏</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%B0%8F%E7%BB%93"><span class="toc-text">小结</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8F%82%E8%80%83"><span class="toc-text">参考</span></a></li></ol></div></div><div class="author-info hide"><div class="author-info__avatar text-center"><img src="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/image/IMG_4207.JPG"></div><div class="author-info__name text-center">🐳Ant丶</div><div class="author-info__description text-center">CODE IS POETRY</div><div class="follow-button"><a target="_blank" rel="external nofollow noopener noreferrer" href="https://telegram.me/Q2F5emxo">contact me</a></div><hr><div class="author-info-articles"><a class="author-info-articles__archives article-meta" href="/blog/archives"><span class="pull-left">文章</span><span class="pull-right">98</span></a><a class="author-info-articles__tags article-meta" href="/blog/tags"><span class="pull-left">标签</span><span class="pull-right">15</span></a><a class="author-info-articles__categories article-meta" href="/blog/categories"><span class="pull-left">分类</span><span class="pull-right">14</span></a><a class="author-info-articles__categories article-meta" href="/blog/categories/%E4%B9%A6%E7%B1%8D/%E3%80%8A%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3Java%E8%99%9A%E6%8B%9F%E6%9C%BA%E3%80%8B/"><span class="pull-left">《深入理解Java虚拟机》</span><span class="pull-right">√</span></a><a class="author-info-articles__categories article-meta" href="/blog/categories/%E4%B9%A6%E7%B1%8D/%E3%80%8AMyBatis%E6%8A%80%E6%9C%AF%E5%86%85%E5%B9%95%E3%80%8B/"><span class="pull-left">《MyBatis技术内幕》</span><span class="pull-right">√</span></a><a class="author-info-articles__categories article-meta" href="/blog/categories/Java/Java%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/"><span class="pull-left">Java设计模式</span><span class="pull-right">√</span></a></div></div></div><div id="content-outer"><div class="no-bg" id="top-container"><div id="page-header"><span class="pull-left"> <a id="site-name" href="/blog/">BLOG | CAYZLH</a></span><i class="fa fa-bars toggle-menu pull-right" aria-hidden="true"></i><span class="pull-right"><a class="site-page social-icon search"><i class="fa fa-search"></i><span> 搜索</span></a></span></div><div id="post-info"><div id="post-title">虚拟机类加载机制</div><div id="post-meta"><time class="post-meta__date"><i class="fa fa-calendar" aria-hidden="true"></i> 2018-09-14</time><span class="post-meta__separator">|</span><i class="fa fa-inbox post-meta__icon" aria-hidden="true"></i><a class="post-meta__categories" href="/blog/categories/%E4%B9%A6%E7%B1%8D/">书籍</a><i class="fa fa-angle-right" aria-hidden="true"></i><i class="fa fa-inbox post-meta__icon" aria-hidden="true"></i><a class="post-meta__categories" href="/blog/categories/%E4%B9%A6%E7%B1%8D/%E3%80%8A%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3Java%E8%99%9A%E6%8B%9F%E6%9C%BA%E3%80%8B/">《深入理解Java虚拟机》</a><div class="post-meta-wordcount"><span>字数总计: </span><span class="word-count">7.8k</span><span class="post-meta__separator">|</span><span>阅读时长: 23 分钟</span></div></div></div></div><div class="layout" id="content-inner"><article id="post"><div class="article-container" id="post-content"><blockquote>
 <p>代码编译的结果从本地机器码变为字节码，是存储格式发展的一小步，确实编程语言发展的一大步</p>
 </blockquote>
 <h2 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h2><p><strong>虚拟机把描述类的数据从Class文件加载到内存，并对数据进行校验、转换解析和初始化，最终形成可以被虚拟机直接使用的Java类型，这就是虚拟机的类加载机制。</strong></p>
@@ -254,101 +31,29 @@
 <li>当虚拟机启动时，用户需要指定一个要执行地主类（包括main()方法地那个类），虚拟机会先初始化这个主类。</li>
 </ul>
 <h3 id="被动引用地例子之一"><a href="#被动引用地例子之一" class="headerlink" title="被动引用地例子之一"></a>被动引用地例子之一</h3><p>父类：</p>
-<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">package</span> com<span class="token punctuation">.</span>cayzlh<span class="token punctuation">.</span>reference1<span class="token punctuation">;</span>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">package</span> com.cayzlh.reference1;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 被动使用类字段演示一</span></span><br><span class="line"><span class="comment"> *  通过子类引用父类的静态字段，不会导致子类初始化</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">SuperClass</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">static</span> &#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;SuperClass init..&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">int</span> value = <span class="number">123</span>;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<span class="token comment" spellcheck="true">/**
- * 被动使用类字段演示一
- *  通过子类引用父类的静态字段，不会导致子类初始化
- */</span>
-<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">SuperClass</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-
-    <span class="token keyword">static</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"SuperClass init.."</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-
-    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">int</span> value <span class="token operator">=</span> <span class="token number">123</span><span class="token punctuation">;</span>
-
-<span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>子类：</p>
-<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">package</span> com<span class="token punctuation">.</span>cayzlh<span class="token punctuation">.</span>reference1<span class="token punctuation">;</span>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">package</span> com.cayzlh.reference1;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">SubClass</span> <span class="keyword">extends</span> <span class="title">SuperClass</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">static</span> &#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;SubClass init..&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">SubClass</span> <span class="token keyword">extends</span> <span class="token class-name">SuperClass</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-
-    <span class="token keyword">static</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"SubClass init.."</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-
-<span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>执行：</p>
-<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">package</span> com<span class="token punctuation">.</span>cayzlh<span class="token punctuation">.</span>reference1<span class="token punctuation">;</span>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">package</span> com.cayzlh.reference1;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 非主动使用类字段演示</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">NotInitialization</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">        System.out.println(SuperClass.value);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<span class="token comment" spellcheck="true">/**
- * 非主动使用类字段演示
- */</span>
-<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">NotInitialization</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-
-    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">main</span><span class="token punctuation">(</span>String<span class="token punctuation">[</span><span class="token punctuation">]</span> args<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>SuperClass<span class="token punctuation">.</span>value<span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-
-<span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>运行结果：</p>
 <p><img src="https://gitee.com/cayzlh/img-repo/raw/master/2020/04/19/B2cEYa.png" alt="运行结果"></p>
 <p>上述代码运行之后， 只会输出“SuperClass init..”，而不会输出“SubClass init..”。<strong>对于静态字段，只有直接定义这个字段的类才会被初始化，因此通过子类来引用父类中定义的静态字段，只会触发父类的初始化而不会触发子类的初始化。</strong>至于是否要触发子类的加载和验证，再虚拟机规范中没有明确规定，这点取决于虚拟机的具体实现。</p>
 <h3 id="被动引用的例子之二"><a href="#被动引用的例子之二" class="headerlink" title="被动引用的例子之二"></a>被动引用的例子之二</h3><p>代码：</p>
-<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">package</span> com<span class="token punctuation">.</span>cayzlh<span class="token punctuation">.</span>reference2<span class="token punctuation">;</span>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">package</span> com.cayzlh.reference2;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> com.cayzlh.reference1.SuperClass;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 通过数组定义来引用，不会触发此类的初始化</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">NotInitialization</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">        SuperClass[] sca = <span class="keyword">new</span> SuperClass[<span class="number">10</span>];</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<span class="token keyword">import</span> com<span class="token punctuation">.</span>cayzlh<span class="token punctuation">.</span>reference1<span class="token punctuation">.</span>SuperClass<span class="token punctuation">;</span>
-
-<span class="token comment" spellcheck="true">/**
- * 通过数组定义来引用，不会触发此类的初始化
- */</span>
-<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">NotInitialization</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-
-    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">main</span><span class="token punctuation">(</span>String<span class="token punctuation">[</span><span class="token punctuation">]</span> args<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-        SuperClass<span class="token punctuation">[</span><span class="token punctuation">]</span> sca <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">SuperClass</span><span class="token punctuation">[</span><span class="token number">10</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
-    <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-
-<span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>运行结果：</p>
 <p><img src="https://gitee.com/cayzlh/img-repo/raw/master/2020/04/19/SslBsv.png" alt="运行结果"></p>
 <p>运行之后发现没有输出“SuperClass init..”，说明并没有触发<code>SuperClass</code>类的初始化阶段。</p>
 <h3 id="被动引用的例子之三"><a href="#被动引用的例子之三" class="headerlink" title="被动引用的例子之三"></a>被动引用的例子之三</h3><p>代码1：</p>
-<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">package</span> com<span class="token punctuation">.</span>cayzlh<span class="token punctuation">.</span>reference3<span class="token punctuation">;</span>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">package</span> com.cayzlh.reference3;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 常量在编译阶段会存入调用类的常量池中，</span></span><br><span class="line"><span class="comment"> * 本质上没有直接引用到定义定义常量的类，</span></span><br><span class="line"><span class="comment"> * 因此不能触发定义常量的类的初始化</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">ConstClass</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">static</span> &#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;ConstClass init..&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">final</span> String HELLOWORLD = <span class="string">&quot;Hello World.&quot;</span>;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<span class="token comment" spellcheck="true">/**
- * 常量在编译阶段会存入调用类的常量池中，
- * 本质上没有直接引用到定义定义常量的类，
- * 因此不能触发定义常量的类的初始化
- */</span>
-<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">ConstClass</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-
-    <span class="token keyword">static</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"ConstClass init.."</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-
-    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">final</span> String HELLOWORLD <span class="token operator">=</span> <span class="token string">"Hello World."</span><span class="token punctuation">;</span>
-
-<span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>代码2：</p>
-<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">package</span> com<span class="token punctuation">.</span>cayzlh<span class="token punctuation">.</span>reference3<span class="token punctuation">;</span>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">package</span> com.cayzlh.reference3;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 非主动使用类字段演示</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">NotInitialization</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">        System.out.println(ConstClass.HELLOWORLD);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<span class="token comment" spellcheck="true">/**
- * 非主动使用类字段演示
- */</span>
-<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">NotInitialization</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-
-    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">main</span><span class="token punctuation">(</span>String<span class="token punctuation">[</span><span class="token punctuation">]</span> args<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>ConstClass<span class="token punctuation">.</span>HELLOWORLD<span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-
-<span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>运行结果：</p>
 <p><img src="https://gitee.com/cayzlh/img-repo/raw/master/2020/04/19/MDhSi7.png" alt="运行结果"></p>
 <p>上述代码运行之后，没有输出“ConstClass init..”，这是因为虽然在Java源码中引用了ConstClass类中的常量HELLOWORLD，但是在编译阶段将此常量的值”Hello World.”存储到了<code>NotInitialization</code>类的常量池中，对常量ConstClass.HELLOWORLD的引用都被转化为NotInitialization类对自身常量池的引用了。<strong>也就是说实际上NotInitialization的Class文件之中并没有ConstClass类的符号引用入口，这两个类在编译成Class之后就不再存在任何联系了。</strong></p>
@@ -405,12 +110,12 @@
 <p>验证阶段对于虚拟机的类加载机制来说，是一个非常重要的、但不一定时必要的阶段。如果所运行的全部代码（包括自己写的、第三方包中的代码）都已经被反复使用和验证过，在实施阶段就口可以考虑使用<code>-Xverify:none</code>参数来关闭大部分的类验证措施，以缩短虚拟机类加载的时间。</p>
 </blockquote>
 <h3 id="准备"><a href="#准备" class="headerlink" title="准备"></a>准备</h3><p><strong>准备阶段是正式为类变量分配内存并设置类变量初始值的阶段，这些内存都将在方法区中进行分配。</strong>这个阶段中有两个容易产生混淆的概念需要强调一下，首先是这时候进行内存分配的仅包括<strong>类变量（被<code>static</code>修饰的变量），而不包括实例变量，实例变量将会在对象实例化时随着对象一起分配在Java堆中。</strong>其次时这里所说的初始值“通常情况”下时数据类型的零值，假设一个类变量定义为：</p>
-<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">int</span> value <span class="token operator">=</span> <span class="token number">123</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">int</span> value = <span class="number">123</span>;</span><br></pre></td></tr></table></figure>
+
 <p>那么变量value在准备阶段过后的初始值是0而不是123，因为这时候尚未开始执行任何Java方法，而把value赋值为123的putstatic指令是程序被编译后，存放于类结构器<clinit>()方法之中，所以value赋值为123的动作将在初始化阶段才会被执行。</clinit></p>
 <p>“通常情况”下时数据类型的零值，那相对的会有一些“特殊情况”：如果类字段的字段属性表中存在ConstantValue属性，那在准备阶段变量value就会被初始化为ConstantValue属性所指的值，如：</p>
-<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">final</span> <span class="token keyword">int</span> value <span class="token operator">=</span> <span class="token number">123</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">int</span> value = <span class="number">123</span>;</span><br></pre></td></tr></table></figure>
+
 <p>编译时将会为value生成ConstantValues属性，在准备阶段虚拟机就会根据ConstantValue的设置将value赋值为123。</p>
 <h3 id="解析"><a href="#解析" class="headerlink" title="解析"></a>解析</h3><p><strong>解析阶段是虚拟机将常量池内的符号引用替换为直接引用的过程。</strong>解析阶段中所说的直接引用与符号引用有什么关联呢？</p>
 <ul>
@@ -494,214 +199,8 @@
 <li>周志明，深入理解Java虚拟机：JVM高级特性与最佳实践，机械工业出版社 </li>
 <li><a target="_blank" rel="external nofollow noopener noreferrer" href="https://www.jianshu.com/p/166c5360a40b">破坏双亲委派模型</a></li>
 </ul>
-
-            <!-- 文章结尾部分 -->
-            
-                
-<div style="text-align:center;width:100%">
-    <span class="octicon octicon-tag-add"></span>
-    
-        <a style="color: #24292e;" href="/blog/tags/Java/">Java</a>
-    
-        <a style="color: #24292e;" href="/blog/tags/JVM/">JVM</a>
-    
-        <a style="color: #24292e;" href="/blog/tags/%E3%80%8A%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3Java%E8%99%9A%E6%8B%9F%E6%9C%BA%E3%80%8B/">《深入理解Java虚拟机》</a>
-    
-</div>
-
-
-
-    <div style="text-align:center;width:100%">
-        <img src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/640-2.gif">
-    </div>
-
-
-
-
-<div>
-    <h4>相关推荐</h4>
-    <ul class="post-copyright">
-        
-        <li class="post-copyright-author">
-            <a href="/blog/2018/09/11/ddb92a08.html">垃圾收集器与内存分配策略</a>
-        </li>
-        
-        <li class="post-copyright-author">
-            <a href="/blog/2018/09/13/fea7515.html">虚拟机性能监控与故障处理工具</a>
-        </li>
-        
-        <li class="post-copyright-author">
-            <a href="/blog/2018/09/18/badf9669.html">Java内存模型与线程</a>
-        </li>
-        
-        <li class="post-copyright-author">
-            <a href="/blog/2018/09/08/bc3decee.html">Java内存区域内存溢出异常</a>
-        </li>
-        
-        <li class="post-copyright-author">
-            <a href="/blog/2018/09/21/7876bd5d.html">线程安全与锁优化</a>
-        </li>
-        
-        <li class="post-copyright-author">
-            <a href="/blog/2018/09/16/4cd43d51.html">虚拟机字节码执行引擎</a>
-        </li>
-        
-    </ul>
-    <br><br>
-</div>
-
-
-
-<div>
-    <h4>版权声明</h4>
-    <blockquote>
-        <ul class="post-copyright">
-            <li class="post-copyright-author">
-                <strong>本文来源： </strong>
-                
-                <a href="https://www.cayzlh.com/blog" title="🐳Ant丶" rel="noopener external nofollow noreferrer" target="_blank">🐳Ant丶</a></li>
-            <li class="post-copyright-link">
-                <strong>本文链接：</strong>
-                <a href="https://www.cayzlh.com/2018/09/14/cdffca23.html" title="/blog/%E8%99%9A%E6%8B%9F%E6%9C%BA%E7%B1%BB%E5%8A%A0%E8%BD%BD%E6%9C%BA%E5%88%B6">https://www.cayzlh.com/2018/09/14/cdffca23.html</a>
-            </li>
-            <li class="post-copyright-license">
-                <strong>版权声明： </strong>
-                
-                    文章内容仅用作学习和分享，如有雷同，纯属拷贝。
-                
-            </li>
-        </ul>
-    </blockquote>
-</div>
-
-
-            
-            
-                <div class="comment">
-    <br><br><br>
-    
-        
-
-        
-
-        
-
-        
-                <h4>留言区</h4>
-                <div id="tcomment"></div>
-                <script src="https://cdn.jsdelivr.net/npm/twikoo@1.2.0/dist/twikoo.all.min.js"></script>
-                <script>
-                twikoo.init({
-                        envId: 'cayzlh-7g0jcpd31a34ccaf',
-                        el: '#tcomment',
-                        region: 'ap-guangzhou', // 环境地域，默认为 ap-shanghai，如果您的环境地域不是上海，需传此参数
-                        // path: 'window.location.pathname', // 用于区分不同文章的自定义 js 路径，如果您的文章路径不是 location.pathname，需传此参数
-                })
-                </script>
-        
-
-    
-</div>
-
-            
-        </div>
-        <div class="col-md-3 markdown-body">
-            <h4>文章目录</h4>
-            <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%A6%82%E8%BF%B0"><span class="toc-text">概述</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%B1%BB%E5%8A%A0%E8%BD%BD%E7%9A%84%E6%97%B6%E6%9C%BA"><span class="toc-text">类加载的时机</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%A2%AB%E5%8A%A8%E5%BC%95%E7%94%A8%E5%9C%B0%E4%BE%8B%E5%AD%90%E4%B9%8B%E4%B8%80"><span class="toc-text">被动引用地例子之一</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%A2%AB%E5%8A%A8%E5%BC%95%E7%94%A8%E7%9A%84%E4%BE%8B%E5%AD%90%E4%B9%8B%E4%BA%8C"><span class="toc-text">被动引用的例子之二</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%A2%AB%E5%8A%A8%E5%BC%95%E7%94%A8%E7%9A%84%E4%BE%8B%E5%AD%90%E4%B9%8B%E4%B8%89"><span class="toc-text">被动引用的例子之三</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%B1%BB%E5%8A%A0%E8%BD%BD%E7%9A%84%E8%BF%87%E7%A8%8B"><span class="toc-text">类加载的过程</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%8A%A0%E8%BD%BD"><span class="toc-text">加载</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%AA%8C%E8%AF%81"><span class="toc-text">验证</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%96%87%E4%BB%B6%E6%A0%BC%E5%BC%8F%E9%AA%8C%E8%AF%81"><span class="toc-text">文件格式验证</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%85%83%E6%95%B0%E6%8D%AE%E9%AA%8C%E8%AF%81"><span class="toc-text">元数据验证</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%AD%97%E8%8A%82%E7%A0%81%E9%AA%8C%E8%AF%81"><span class="toc-text">字节码验证</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E7%AC%A6%E5%8F%B7%E5%BC%95%E7%94%A8%E9%AA%8C%E8%AF%81"><span class="toc-text">符号引用验证</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%87%86%E5%A4%87"><span class="toc-text">准备</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%A7%A3%E6%9E%90"><span class="toc-text">解析</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E7%B1%BB%E6%88%96%E6%8E%A5%E5%8F%A3%E7%9A%84%E8%A7%A3%E6%9E%90"><span class="toc-text">类或接口的解析</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%AD%97%E6%AE%B5%E8%A7%A3%E6%9E%90"><span class="toc-text">字段解析</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E7%B1%BB%E6%96%B9%E6%B3%95%E8%A7%A3%E6%9E%90"><span class="toc-text">类方法解析</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%8E%A5%E5%8F%A3%E6%96%B9%E6%B3%95%E8%A7%A3%E6%9E%90"><span class="toc-text">接口方法解析</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%88%9D%E5%A7%8B%E5%8C%96"><span class="toc-text">初始化</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%B1%BB%E5%8A%A0%E8%BD%BD%E5%99%A8"><span class="toc-text">类加载器</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%B1%BB%E4%B8%8E%E7%B1%BB%E5%8A%A0%E8%BD%BD%E5%99%A8"><span class="toc-text">类与类加载器</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%8F%8C%E4%BA%B2%E5%A7%94%E6%B4%BE%E6%A8%A1%E5%9E%8B"><span class="toc-text">双亲委派模型</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%A0%B4%E5%9D%8F%E5%8F%8C%E4%BA%B2%E5%A7%94%E6%B4%BE%E6%A8%A1%E5%9E%8B"><span class="toc-text">破坏双亲委派模型</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E7%AC%AC%E4%B8%80%E6%AC%A1%E7%A0%B4%E5%9D%8F"><span class="toc-text">第一次破坏</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E7%AC%AC%E4%BA%8C%E6%AC%A1%E7%A0%B4%E5%9D%8F"><span class="toc-text">第二次破坏</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%A6%82%E6%9E%9C%E5%9F%BA%E7%A1%80%E7%B1%BB%E5%8F%88%E8%A6%81%E8%B0%83%E7%94%A8%E5%9B%9E%E7%94%A8%E6%88%B7%E7%9A%84%E4%BB%A3%E7%A0%81%EF%BC%8C%E9%82%A3%E8%AF%A5%E4%B9%88%E5%8A%9E%EF%BC%9F"><span class="toc-text">如果基础类又要调用回用户的代码，那该么办？</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E7%AC%AC%E4%B8%89%E6%AC%A1%E7%A0%B4%E5%9D%8F"><span class="toc-text">第三次破坏</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%B0%8F%E7%BB%93"><span class="toc-text">小结</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8F%82%E8%80%83"><span class="toc-text">参考</span></a></li></ol>
-        </div>
-    </div>
-    
-</article>
-
-
-<script>
-    hljs.initHighlightingOnLoad();
-</script>
-</main>
-<footer class="container">
-    <div class="site-footer">
-        
-    <div class="card text-center">
-        <ul class="list-inline" style="margin-left: 0;">
-            
-                <li>
-                    <a target="_blank" href="https://github.com/cayzlh" rel="external nofollow noopener noreferrer">
-                          <span class="fa-stack fa-lg">
-                            <i class="fa fa-circle fa-stack-2x"></i>
-                            <i class="fa fa-github fa-stack-1x fa-inverse">
-                                
-                            </i>
-                          </span>
-                    </a>
-                </li>
-            
-                <li>
-                    <a target="_blank" href="https://telegram.me/Q2F5emxo" rel="external nofollow noopener noreferrer">
-                          <span class="fa-stack fa-lg">
-                            <i class="fa fa-circle fa-stack-2x"></i>
-                            <i class="fa fa-rocket fa-stack-1x fa-inverse">
-                                
-                            </i>
-                          </span>
-                    </a>
-                </li>
-            
-                <li>
-                    <a target="_blank" href="mailto:chenanyu@cayzlh.com">
-                          <span class="fa-stack fa-lg">
-                            <i class="fa fa-circle fa-stack-2x"></i>
-                            <i class="fa fa-envelope fa-stack-1x fa-inverse">
-                                
-                            </i>
-                          </span>
-                    </a>
-                </li>
-            
-        </ul>
-    </div>
-
-
-        <div class="site-footer-links mobile-hidden">
-            
-                
-                
-            
-        </div>
-
-        <div class="site-footer-links mobile-hidden">
-        
-            <span class="meta-info-index hvr-grow">
-                
-                    <a href="https://www.cayzlh.com">
-                        🐳Ant丶 &copy; 2020
-                    </a>
-                
-            </span>
-        
-        
-            <span class="meta-info-index hvr-grow">
-                <a target="_blank" rel="external nofollow noopener noreferrer" href="http://beian.miit.gov.cn">粤ICP备20058712号-1</a>
-            </span>
-        
-        </div>
-
-        
-
-        
-    </div>
-    
-
-    
-        <!-- Third-Party JS -->
-        <script type="text/javascript" src="/blog/js/thirdparty/geopattern.min.js"></script>
-        <!-- My JS -->
-        <script type="text/javascript" src="/blog/js/script.js"></script>
-    
-
-    
-        <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js">
-        </script>
-    
-</footer>
-</body>
-</html>
+</div></article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta">文章作者: </span><span class="post-copyright-info"><a href="mailto:undefined" rel="external nofollow noopener noreferrer" target="_blank">🐳Ant丶</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta">文章链接: </span><span class="post-copyright-info"><a href="https://www.cayzlh.com/2018/09/14/cdffca23.html">https://www.cayzlh.com/2018/09/14/cdffca23.html</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta">版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a target="_blank" rel="external nofollow noopener noreferrer" href="https://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来自 <a href="https://www.cayzlh.com">BLOG | CAYZLH</a>！</span></div></div><div class="post-meta__tag-list"><a class="post-meta__tags" href="/blog/tags/Java/">Java</a><a class="post-meta__tags" href="/blog/tags/JVM/">JVM</a><a class="post-meta__tags" href="/blog/tags/%E3%80%8A%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3Java%E8%99%9A%E6%8B%9F%E6%9C%BA%E3%80%8B/">《深入理解Java虚拟机》</a></div><nav id="pagination"><div class="prev-post pull-left"><a href="/blog/2018/09/16/4cd43d51.html"><i class="fa fa-chevron-left">  </i><span>虚拟机字节码执行引擎</span></a></div><div class="next-post pull-right"><a href="/blog/2018/09/13/fea7515.html"><span>虚拟机性能监控与故障处理工具</span><i class="fa fa-chevron-right"></i></a></div></nav></div></div><footer><div class="layout" id="footer"><div class="footer_custom_text">hitokoto</div><div class="copyright">🐳Ant丶 &copy;2019 - 2021</div><div class="icp"><a><span>粤ICP备20058712号</span></a></div><div class="busuanzi"><script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></div></footer><i class="fa fa-arrow-up" id="go-up" aria-hidden="true"></i><script src="https://cdn.jsdelivr.net/npm/animejs@latest/anime.min.js"></script><script src="https://cdn.jsdelivr.net/npm/jquery@latest/dist/jquery.min.js"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@latest/dist/jquery.fancybox.min.js"></script><script src="https://cdn.jsdelivr.net/npm/velocity-animate@latest/velocity.min.js"></script><script src="https://cdn.jsdelivr.net/npm/velocity-ui-pack@latest/velocity.ui.min.js"></script><script src="/blog/js/utils.js?version=1.9.0"></script><script src="/blog/js/fancybox.js?version=1.9.0"></script><script src="/blog/js/sidebar.js?version=1.9.0"></script><script src="/blog/js/copy.js?version=1.9.0"></script><script src="/blog/js/fireworks.js?version=1.9.0"></script><script src="/blog/js/transition.js?version=1.9.0"></script><script src="/blog/js/scroll.js?version=1.9.0"></script><script src="/blog/js/head.js?version=1.9.0"></script><script src="/blog/js/search/local-search.js"></script><script>if(/Android|webOS|iPhone|iPod|iPad|BlackBerry/i.test(navigator.userAgent)) {
+  $('#nav').addClass('is-mobile')
+  $('footer').addClass('is-mobile')
+  $('#top-container').addClass('is-mobile')
+}</script><div class="search-dialog" id="local-search"><div class="search-dialog__title" id="local-search-title">本地搜索</div><div id="local-input-panel"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="搜索文章"></div></div></div><hr><div id="local-search-results"><div id="local-hits"></div><div id="local-stats"><div class="local-search-stats__hr" id="hr"><span>Powered by</span> <a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/wzpan/hexo-generator-search" style="color:#49B1F5;">hexo-generator-search</a></div></div></div><span class="search-close-button"><i class="fa fa-times"></i></span></div><div class="search-mask"></div></body></html>

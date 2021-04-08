@@ -1,283 +1,33 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
+<!DOCTYPE html><html lang="[&quot;zh-Hans&quot;,&quot;en&quot;,&quot;default&quot;]"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"><meta name="description" content="Spring 中有两种解析 Bean 的方式：如果根节点或者子节点采用默认命名空间的话，则调用"><meta name="keywords" content="IoC, Spring"><meta name="author" content="🐳Ant丶"><meta name="copyright" content="🐳Ant丶"><title>IoC之解析Bean：解析import标签 | BLOG | CAYZLH</title><link rel="shortcut icon" href="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/logo/favicon.ico"><link rel="stylesheet" href="/blog/css/index.css?version=1.9.0"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/font-awesome@latest/css/font-awesome.min.css?version=1.9.0"><meta name="format-detection" content="telephone=no"><meta http-equiv="x-dns-prefetch-control" content="on"><link rel="dns-prefetch" href="https://cdn.jsdelivr.net"><link rel="dns-prefetch" href="https://www.google-analytics.com"><script>(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
 
-<head>
-    <meta charset="utf-8">
-    <meta name="keywords" content="IoC, Spring">
-    <meta name="description" content="Ant丶的网络日志, CAYZLH网络日志, CAYZLH, CAYZLH主页, Ant丶空间">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <meta name="renderer" content="webkit|ie-stand|ie-comp">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="format-detection" content="telephone=no">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <!-- Global site tag (gtag.js) - Google Analytics -->
-
-    <meta name="google-site-verification" content="VrcbMTVpFGlHkIERHBt753dAtXKF4qirjnDweuXSRJw">
-
-
-    <!-- Global site tag (gtag.js) - Google Analytics -->
-
-<script async src="https://www.googletagmanager.com/gtag/js?id=UA-129095667-1"></script>
-<script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag() {
-        dataLayer.push(arguments);
-    }
-
-    gtag('js', new Date());
-    gtag('config', 'UA-129095667-1');
-</script>
-
-
-    <title>IoC之解析Bean：解析import标签 | BLOG | CAYZLH</title>
-
-    
-    <!-- Third-Party CSS -->
-    
-
-        <link rel="shortcut icon" href="/blog/image/favicon.ico">
-        <link rel="icon" type="image/png" href="/blog/image/favicon-192x192.png" sizes="192x192">
-        <link rel="apple-touch-icon" sizes="180x180" href="/blog/image/apple-touch-icon.png">
-
-        <link rel="stylesheet" href="/blog/css/thirdparty/bootstrap.min.css">
-        <link rel="stylesheet" href="/blog/css/thirdparty/octicons.css">
-        <link rel="stylesheet" href="/blog/css/thirdparty/hover-min.css">
-        <link rel="stylesheet" href="/blog/css/thirdparty/user-content.min.css">
-        <link rel="stylesheet" href="/blog/css/thirdparty/syntax.css">
-        <link rel="stylesheet" href="/blog/css/thirdparty/gitalk.css">
-
-        <!-- My CSS -->
-        <link rel="stylesheet" href="/blog/css/common.css">
-
-        <link rel="stylesheet" href="/blog/css/sidebar-post-nav.css">
-
-        <link rel="stylesheet" href="/blog/css/blog-page.css">
-        <!-- CSS set in page -->
-
-        
-        <link rel="stylesheet" href="/blog/css/sidebar-popular-repo.css">
-    
-
-    <!-- CSS set in layout -->
-    <link rel="stylesheet" type="text/css" href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css">
-
-    
-        <script type="text/javascript" src="/blog/js/thirdparty/jquery.min.js"></script>
-        <script type="text/javascript" src="/blog/js/thirdparty/bootstrap.min.js"></script>
-        <script type="text/javascript" src="/blog/js/lock.js"></script>
-    
-
-    
-        <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.css">
-        <script src="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js"></script>
-
-        <link rel="stylesheet" href="//imsun.github.io/gitment/style/default.css">
-        <script src="//imsun.github.io/gitment/dist/gitment.browser.js"></script>
-
-        <script src="//unpkg.com/valine/dist/Valine.min.js"></script>
-        <script src="//cdn.jsdelivr.net/npm/twikoo@1.2.0/dist/twikoo.all.min.js"></script>
-
-    
-
-    <link rel="stylesheet" href="//cdn.bootcss.com/highlight.js/9.2.0/styles/github.min.css">
-    <script src="//cdn.bootcss.com/highlight.js/9.2.0/highlight.min.js"></script>
-<meta name="generator" content="Hexo 5.4.0"><link rel="alternate" href="/blog/atom.xml" title="BLOG | CAYZLH" type="application/atom+xml">
-</head>
-
-<body>
-<header class="site-header">
-    <div class="site-header-topbar">
-        <div class="container">
-            <div class="topbar-menu">
-
-    
-        <div class="item">
-            <a href="https://www.cayzlh.com/" title="导航">
-                导航
-            </a>
-        </div>
-    
-        <div class="item">
-            <a href="/blog/categories/" title="分类">
-                分类
-            </a>
-        </div>
-    
-        <div class="item">
-            <a href="/blog/tags/" title="标签">
-                标签
-            </a>
-        </div>
-    
-        <div class="item">
-            <a href="/blog/links/" title="链接">
-                链接
-            </a>
-        </div>
-    
-        <div class="item">
-            <a href="/blog/about" title="关于">
-                关于
-            </a>
-        </div>
-    
-
-</div>
-        </div>
-    </div>
-    <div class="container">
-        <a id="site-header-brand" href="/blog/" title="BLOG | CAYZLH">
-            <span class="octicon octicon-watch"></span>
-            BLOG | CAYZLH
-        </a>
-
-        <nav class="site-header-nav" role="navigation">
-    
-        <div class=" site-header-nav-item hvr-underline-from-center">
-            <a href="/blog/" title="Home">
-                Home
-            </a>
-            
-        </div>
-    
-        <div class=" site-header-nav-item hvr-underline-from-center">
-            <a href="/blog/archives" title="Archives">
-                Archives
-            </a>
-            
-        </div>
-    
-        <div class=" site-header-nav-item hvr-underline-from-center">
-            <a href="/blog/" title="Learning">
-                Learning
-            </a>
-            
-                <ul class="submenu">
-                    
-
-                        <li>
-                            <a href="/blog/categories/%E4%B9%A6%E7%B1%8D/%E3%80%8A%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3Java%E8%99%9A%E6%8B%9F%E6%9C%BA%E3%80%8B/">
-                                <span>深入理解Java虚拟机</span>
-                            </a>
-                        </li>
-
-                    
-
-                        <li>
-                            <a href="/blog/categories/%E4%B9%A6%E7%B1%8D/%E3%80%8AMyBatis%E6%8A%80%E6%9C%AF%E5%86%85%E5%B9%95%E3%80%8B/">
-                                <span>MyBatis技术内幕</span>
-                            </a>
-                        </li>
-
-                    
-
-                        <li>
-                            <a href="/blog/categories/Java/Java%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/">
-                                <span>Java设计模式</span>
-                            </a>
-                        </li>
-
-                    
-                </ul>
-            
-        </div>
-    
-</nav>
-    </div>
-</header>
-
-<main class="content">
-    <!-- 标题部分 -->
-<section class="jumbotron geopattern" data-pattern-id="IoC之解析Bean：解析import标签">
-    <div class="container">
-        <div id="jumbotron-meta-info">
-            <h1>IoC之解析Bean：解析import标签</h1>
-            <span class="meta-info">
-                <a><span class="octicon octicon-calendar"></span> 2020-01-07</a>
-                
-                    <a><span class="octicon octicon-book"></span></a>
-                    
-                        <a href="/blog/categories/Spring/">Spring</a>
-                    
-                        <a href="/blog/categories/Spring/%E3%80%8ASpring%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E3%80%8B/">《Spring源码分析》</a>
-                    
-                
-                
-                    
-                
-            </span>
-        </div>
-
-    </div>
-</section>
-<script>
-    $(document).ready(function(){
-
-        $('.geopattern').each(function(){
-            $(this).geopattern($(this).data('pattern-id'));
-        });
-
-    });
-</script>
-<!-- 文章内容部分 -->
-<article class="post container " itemscope itemtype="http://schema.org/BlogPosting" id="openwrite-container">
-    <div class="row">
-        <div class="col-md-9 markdown-body">
-            <!-- 文章开始部分 -->
-            <!--<div style="text-align:center">-->
-<!--    <img style="display:inline-block" width="130" height="27"-->
-<!--         src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/640-3.gif"-->
-<!--         data-loaded="true">-->
-<!--    <img style="display:inline-block" width="41" height="35"-->
-<!--         src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/640-4.gif"-->
-<!--         data-loaded="true">-->
-<!--    <img style="display:inline-block"-->
-<!--         width="130" height="27"-->
-<!--         src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/640-5.gif"-->
-<!--         data-loaded="true">-->
-<!--</div>-->
-            <blockquote>
+ga('create', 'UA-129095667-1', 'auto');
+ga('send', 'pageview');</script><meta name="google-site-verification" content="VrcbMTVpFGlHkIERHBt753dAtXKF4qirjnDweuXSRJw"><meta http-equiv="Cache-Control" content="no-transform"><meta http-equiv="Cache-Control" content="no-siteapp"><script src="https://v1.hitokoto.cn/?encode=js&amp;charset=utf-8&amp;select=.footer_custom_text" defer></script><script>var GLOBAL_CONFIG = { 
+  root: '/blog/',
+  algolia: undefined,
+  localSearch: {"path":"search.xml","languages":{"hits_empty":"找不到您查询的内容:${query}"}},
+  copy: {
+    success: '复制成功',
+    error: '复制错误',
+    noSupport: '浏览器不支持'
+  },
+  hexoVersion: '5.4.0'
+} </script><meta name="generator" content="Hexo 5.4.0"><link rel="alternate" href="/blog/atom.xml" title="BLOG | CAYZLH" type="application/atom+xml">
+</head><body><i class="fa fa-arrow-right" id="toggle-sidebar" aria-hidden="true"></i><div id="sidebar" data-display="true"><div class="toggle-sidebar-info text-center"><span data-toggle="切换文章详情">切换站点概览</span><hr></div><div class="sidebar-toc"><div class="sidebar-toc__title">目录</div><div class="sidebar-toc__progress"><span class="progress-notice">你已经读了</span><span class="progress-num">0</span><span class="progress-percentage">%</span><div class="sidebar-toc__progress-bar"></div></div><div class="sidebar-toc__content"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#import-%E6%A0%87%E7%AD%BE%E7%9A%84%E5%A4%84%E7%90%86"><span class="toc-text">import 标签的处理</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#importBeanDefinitionResource"><span class="toc-text">importBeanDefinitionResource</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%9B%B8%E5%AF%B9%E8%B7%AF%E5%BE%84"><span class="toc-text">相对路径</span></a></li></ol></li></ol></div></div><div class="author-info hide"><div class="author-info__avatar text-center"><img src="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/image/IMG_4207.JPG"></div><div class="author-info__name text-center">🐳Ant丶</div><div class="author-info__description text-center">CODE IS POETRY</div><div class="follow-button"><a target="_blank" rel="external nofollow noopener noreferrer" href="https://telegram.me/Q2F5emxo">contact me</a></div><hr><div class="author-info-articles"><a class="author-info-articles__archives article-meta" href="/blog/archives"><span class="pull-left">文章</span><span class="pull-right">98</span></a><a class="author-info-articles__tags article-meta" href="/blog/tags"><span class="pull-left">标签</span><span class="pull-right">15</span></a><a class="author-info-articles__categories article-meta" href="/blog/categories"><span class="pull-left">分类</span><span class="pull-right">14</span></a><a class="author-info-articles__categories article-meta" href="/blog/categories/%E4%B9%A6%E7%B1%8D/%E3%80%8A%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3Java%E8%99%9A%E6%8B%9F%E6%9C%BA%E3%80%8B/"><span class="pull-left">《深入理解Java虚拟机》</span><span class="pull-right">√</span></a><a class="author-info-articles__categories article-meta" href="/blog/categories/%E4%B9%A6%E7%B1%8D/%E3%80%8AMyBatis%E6%8A%80%E6%9C%AF%E5%86%85%E5%B9%95%E3%80%8B/"><span class="pull-left">《MyBatis技术内幕》</span><span class="pull-right">√</span></a><a class="author-info-articles__categories article-meta" href="/blog/categories/Java/Java%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/"><span class="pull-left">Java设计模式</span><span class="pull-right">√</span></a></div></div></div><div id="content-outer"><div class="no-bg" id="top-container"><div id="page-header"><span class="pull-left"> <a id="site-name" href="/blog/">BLOG | CAYZLH</a></span><i class="fa fa-bars toggle-menu pull-right" aria-hidden="true"></i><span class="pull-right"><a class="site-page social-icon search"><i class="fa fa-search"></i><span> 搜索</span></a></span></div><div id="post-info"><div id="post-title">IoC之解析Bean：解析import标签</div><div id="post-meta"><time class="post-meta__date"><i class="fa fa-calendar" aria-hidden="true"></i> 2020-01-07</time><span class="post-meta__separator">|</span><i class="fa fa-inbox post-meta__icon" aria-hidden="true"></i><a class="post-meta__categories" href="/blog/categories/Spring/">Spring</a><i class="fa fa-angle-right" aria-hidden="true"></i><i class="fa fa-inbox post-meta__icon" aria-hidden="true"></i><a class="post-meta__categories" href="/blog/categories/Spring/%E3%80%8ASpring%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E3%80%8B/">《Spring源码分析》</a><div class="post-meta-wordcount"><span>字数总计: </span><span class="word-count">1.5k</span><span class="post-meta__separator">|</span><span>阅读时长: 6 分钟</span></div></div></div></div><div class="layout" id="content-inner"><article id="post"><div class="article-container" id="post-content"><blockquote>
 <p>本文作者：chenssy</p>
 <p>出处：<a target="_blank" rel="external nofollow noopener noreferrer" href="http://cmsblogs.com/?p=2724">http://cmsblogs.com/?p=2724</a></p>
 <p>在学习<code>Spring源码</code>的过程中发现的好站+好贴，感谢作者。Spring版本：<strong>Spring 5.0.6.RELEASE</strong></p>
 </blockquote>
 <hr>
 <p>在<a href="/2020/01/06/9de498cf.html">IOC 之 注册 BeanDefinition</a>中分析到，<code>Spring</code> 中有两种解析 <code>Bean</code> 的方式。如果根节点或者子节点采用默认命名空间的话，则调用 <code>parseDefaultElement()</code> 进行默认标签解析，否则调用 <code>delegate.parseCustomElement()</code> 方法进行自定义解析。所以，以下博客就这两个方法进行详细分析说明，先从默认标签解析过程开始，源码如下：</p>
-<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">private</span> <span class="token keyword">void</span> <span class="token function">parseDefaultElement</span><span class="token punctuation">(</span>Element ele<span class="token punctuation">,</span> 
-                                 BeanDefinitionParserDelegate delegate<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-    <span class="token comment" spellcheck="true">// 对 import 标签的解析</span>
-  <span class="token keyword">if</span> <span class="token punctuation">(</span>delegate<span class="token punctuation">.</span><span class="token function">nodeNameEquals</span><span class="token punctuation">(</span>ele<span class="token punctuation">,</span> IMPORT_ELEMENT<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-    <span class="token function">importBeanDefinitionResource</span><span class="token punctuation">(</span>ele<span class="token punctuation">)</span><span class="token punctuation">;</span>
-  <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-      <span class="token comment" spellcheck="true">// 对 alias 标签的解析</span>
-  <span class="token keyword">else</span> <span class="token keyword">if</span> <span class="token punctuation">(</span>delegate<span class="token punctuation">.</span><span class="token function">nodeNameEquals</span><span class="token punctuation">(</span>ele<span class="token punctuation">,</span> ALIAS_ELEMENT<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-    <span class="token function">processAliasRegistration</span><span class="token punctuation">(</span>ele<span class="token punctuation">)</span><span class="token punctuation">;</span>
-  <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-      <span class="token comment" spellcheck="true">// 对 bean 标签的解析</span>
-  <span class="token keyword">else</span> <span class="token keyword">if</span> <span class="token punctuation">(</span>delegate<span class="token punctuation">.</span><span class="token function">nodeNameEquals</span><span class="token punctuation">(</span>ele<span class="token punctuation">,</span> BEAN_ELEMENT<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-    <span class="token function">processBeanDefinition</span><span class="token punctuation">(</span>ele<span class="token punctuation">,</span> delegate<span class="token punctuation">)</span><span class="token punctuation">;</span>
-  <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-      <span class="token comment" spellcheck="true">// 对 beans 标签的解析</span>
-  <span class="token keyword">else</span> <span class="token keyword">if</span> <span class="token punctuation">(</span>delegate<span class="token punctuation">.</span><span class="token function">nodeNameEquals</span><span class="token punctuation">(</span>ele<span class="token punctuation">,</span> NESTED_BEANS_ELEMENT<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-      <span class="token comment" spellcheck="true">// recurse</span>
-    <span class="token function">doRegisterBeanDefinitions</span><span class="token punctuation">(</span>ele<span class="token punctuation">)</span><span class="token punctuation">;</span>
-  <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-<span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">parseDefaultElement</span><span class="params">(Element ele, </span></span></span><br><span class="line"><span class="function"><span class="params">                                 BeanDefinitionParserDelegate delegate)</span> </span>&#123;</span><br><span class="line">	<span class="comment">// 对 import 标签的解析</span></span><br><span class="line">  <span class="keyword">if</span> (delegate.nodeNameEquals(ele, IMPORT_ELEMENT)) &#123;</span><br><span class="line">    importBeanDefinitionResource(ele);</span><br><span class="line">  &#125;</span><br><span class="line">  	<span class="comment">// 对 alias 标签的解析</span></span><br><span class="line">  <span class="keyword">else</span> <span class="keyword">if</span> (delegate.nodeNameEquals(ele, ALIAS_ELEMENT)) &#123;</span><br><span class="line">    processAliasRegistration(ele);</span><br><span class="line">  &#125;</span><br><span class="line">  	<span class="comment">// 对 bean 标签的解析</span></span><br><span class="line">  <span class="keyword">else</span> <span class="keyword">if</span> (delegate.nodeNameEquals(ele, BEAN_ELEMENT)) &#123;</span><br><span class="line">    processBeanDefinition(ele, delegate);</span><br><span class="line">  &#125;</span><br><span class="line">  	<span class="comment">// 对 beans 标签的解析</span></span><br><span class="line">  <span class="keyword">else</span> <span class="keyword">if</span> (delegate.nodeNameEquals(ele, NESTED_BEANS_ELEMENT)) &#123;</span><br><span class="line">  	<span class="comment">// recurse</span></span><br><span class="line">    doRegisterBeanDefinitions(ele);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 <p>方法的功能一目了然，分别是对四种不同的标签进行解析，分别是 <code>import</code>、<code>alias</code>、<code>bean</code>、<code>beans</code>。咱门从第一个标签 <code>import</code> 开始。</p>
 <h2 id="import-标签的处理"><a href="#import-标签的处理" class="headerlink" title="import 标签的处理"></a>import 标签的处理</h2><p>经历过 <code>Spring</code> 配置文件的小伙伴都知道，如果工程比较大，配置文件的维护会让人觉得恐怖，文件太多了，想象将所有的配置都放在一个 <code>spring.xml</code> 配置文件中，哪种后怕感是不是很明显？所有针对这种情况 <code>Spring</code> 提供了一个分模块的思路，利用 <code>import</code> 标签，例如我们可以构造一个这样的 <code>spring.xml</code>。</p>
-<pre class="line-numbers language-xml"><code class="language-xml"><span class="token prolog">&lt;?xml version="1.0" encoding="UTF-8"?></span>
-<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>beans</span> <span class="token attr-name">xmlns</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>http://www.springframework.org/schema/beans<span class="token punctuation">"</span></span>
-       <span class="token attr-name"><span class="token namespace">xmlns:</span>xsi</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>http://www.w3.org/2001/XMLSchema-instance<span class="token punctuation">"</span></span>
-       <span class="token attr-name"><span class="token namespace">xsi:</span>schemaLocation</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>http://www.springframework.org/schema/beans
-       http://www.springframework.org/schema/beans/spring-beans.xsd<span class="token punctuation">"</span></span><span class="token punctuation">></span></span>
+<figure class="highlight xml"><table><tr><td class="code"><pre><span class="line"><span class="meta">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">beans</span> <span class="attr">xmlns</span>=<span class="string">&quot;http://www.springframework.org/schema/beans&quot;</span></span></span><br><span class="line"><span class="tag">       <span class="attr">xmlns:xsi</span>=<span class="string">&quot;http://www.w3.org/2001/XMLSchema-instance&quot;</span></span></span><br><span class="line"><span class="tag">       <span class="attr">xsi:schemaLocation</span>=<span class="string">&quot;http://www.springframework.org/schema/beans</span></span></span><br><span class="line"><span class="tag"><span class="string">       http://www.springframework.org/schema/beans/spring-beans.xsd&quot;</span>&gt;</span></span><br><span class="line"></span><br><span class="line">    <span class="tag">&lt;<span class="name">import</span> <span class="attr">resource</span>=<span class="string">&quot;spring-student.xml&quot;</span>/&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">import</span> <span class="attr">resource</span>=<span class="string">&quot;spring-student-dtd.xml&quot;</span>/&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">beans</span>&gt;</span></span><br></pre></td></tr></table></figure>
 
-    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>import</span> <span class="token attr-name">resource</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>spring-student.xml<span class="token punctuation">"</span></span><span class="token punctuation">/></span></span>
-    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>import</span> <span class="token attr-name">resource</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>spring-student-dtd.xml<span class="token punctuation">"</span></span><span class="token punctuation">/></span></span>
-<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>beans</span><span class="token punctuation">></span></span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p><code>spring.xml</code> 配置文件中使用 <code>import</code> 标签的方式导入其他模块的配置文件。</p>
 <ul>
 <li>如果有配置需要修改直接修改相应配置文件即可。</li>
@@ -285,89 +35,8 @@
 </ul>
 <p>这样大大简化了配置后期维护的复杂度，同时也易于管理。 </p>
 <h2 id="importBeanDefinitionResource"><a href="#importBeanDefinitionResource" class="headerlink" title="importBeanDefinitionResource"></a>importBeanDefinitionResource</h2><p><code>Spring</code> 利用 <code>importBeanDefinitionResource()</code> 方法完成对 <code>import</code> 标签的解析。</p>
-<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">protected</span> <span class="token keyword">void</span> <span class="token function">importBeanDefinitionResource</span><span class="token punctuation">(</span>Element ele<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-  <span class="token comment" spellcheck="true">// 获取 resource 的属性值 </span>
-  String location <span class="token operator">=</span> ele<span class="token punctuation">.</span><span class="token function">getAttribute</span><span class="token punctuation">(</span>RESOURCE_ATTRIBUTE<span class="token punctuation">)</span><span class="token punctuation">;</span>
-  <span class="token comment" spellcheck="true">// 为空，直接退出</span>
-  <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>StringUtils<span class="token punctuation">.</span><span class="token function">hasText</span><span class="token punctuation">(</span>location<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-    <span class="token function">getReaderContext</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">error</span><span class="token punctuation">(</span><span class="token string">"Resource location must not be empty"</span><span class="token punctuation">,</span> ele<span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token keyword">return</span><span class="token punctuation">;</span>
-  <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title">importBeanDefinitionResource</span><span class="params">(Element ele)</span> </span>&#123;</span><br><span class="line">  <span class="comment">// 获取 resource 的属性值 </span></span><br><span class="line">  String location = ele.getAttribute(RESOURCE_ATTRIBUTE);</span><br><span class="line">  <span class="comment">// 为空，直接退出</span></span><br><span class="line">  <span class="keyword">if</span> (!StringUtils.hasText(location)) &#123;</span><br><span class="line">    getReaderContext().error(<span class="string">&quot;Resource location must not be empty&quot;</span>, ele);</span><br><span class="line">    <span class="keyword">return</span>;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 解析系统属性，格式如 ：&quot;$&#123;user.dir&#125;&quot;</span></span><br><span class="line">  location = getReaderContext().getEnvironment().resolveRequiredPlaceholders(location);</span><br><span class="line"></span><br><span class="line">  Set&lt;Resource&gt; actualResources = <span class="keyword">new</span> LinkedHashSet&lt;&gt;(<span class="number">4</span>);</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 判断 location 是相对路径还是绝对路径</span></span><br><span class="line">  <span class="keyword">boolean</span> absoluteLocation = <span class="keyword">false</span>;</span><br><span class="line">  <span class="keyword">try</span> &#123;</span><br><span class="line">    absoluteLocation = ResourcePatternUtils.isUrl(location) || ResourceUtils.toURI(location).isAbsolute();</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">catch</span> (URISyntaxException ex) &#123;</span><br><span class="line">    <span class="comment">// cannot convert to an URI, considering the location relative</span></span><br><span class="line">    <span class="comment">// unless it is the well-known Spring prefix &quot;classpath*:&quot;</span></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 绝对路径</span></span><br><span class="line">  <span class="keyword">if</span> (absoluteLocation) &#123;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">      <span class="comment">// 直接根据地质加载相应的配置文件</span></span><br><span class="line">      <span class="keyword">int</span> importCount = getReaderContext()</span><br><span class="line">        .getReader().loadBeanDefinitions(location, actualResources);</span><br><span class="line">      <span class="keyword">if</span> (logger.isDebugEnabled()) &#123;</span><br><span class="line">        logger.debug(<span class="string">&quot;Imported &quot;</span> </span><br><span class="line">                     + importCount </span><br><span class="line">                     + <span class="string">&quot; bean definitions from URL location [&quot;</span> </span><br><span class="line">                     + location + <span class="string">&quot;]&quot;</span>);</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">catch</span> (BeanDefinitionStoreException ex) &#123;</span><br><span class="line">      getReaderContext().error(</span><br><span class="line">        <span class="string">&quot;Failed to import bean definitions from URL location [&quot;</span> </span><br><span class="line">        + location + <span class="string">&quot;]&quot;</span>, ele, ex);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="comment">// 相对路径则根据相应的地质计算出绝对路径地址</span></span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">      <span class="keyword">int</span> importCount;</span><br><span class="line">      Resource relativeResource = getReaderContext()</span><br><span class="line">        .getResource().createRelative(location);</span><br><span class="line">      <span class="keyword">if</span> (relativeResource.exists()) &#123;</span><br><span class="line">        importCount = getReaderContext()</span><br><span class="line">          .getReader().loadBeanDefinitions(relativeResource);</span><br><span class="line">        actualResources.add(relativeResource);</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">else</span> &#123;</span><br><span class="line">        String baseLocation = getReaderContext()</span><br><span class="line">          .getResource().getURL().toString();</span><br><span class="line">        importCount = getReaderContext().getReader()</span><br><span class="line">          .loadBeanDefinitions(</span><br><span class="line">          StringUtils.applyRelativePath(baseLocation, location), </span><br><span class="line">          actualResources);</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">if</span> (logger.isDebugEnabled()) &#123;</span><br><span class="line">        logger.debug(<span class="string">&quot;Imported &quot;</span> + importCount </span><br><span class="line">                     + <span class="string">&quot; bean definitions from relative location [&quot;</span> </span><br><span class="line">                     + location + <span class="string">&quot;]&quot;</span>);</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">catch</span> (IOException ex) &#123;</span><br><span class="line">      getReaderContext().error(<span class="string">&quot;Failed to resolve current resource location&quot;</span>, ele, ex);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">catch</span> (BeanDefinitionStoreException ex) &#123;</span><br><span class="line">      getReaderContext()</span><br><span class="line">        .error(<span class="string">&quot;Failed to import bean definitions from relative location [&quot;</span> </span><br><span class="line">               + location + <span class="string">&quot;]&quot;</span>,</span><br><span class="line">                               ele, ex);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="comment">// 解析成功后，进行监听器激活处理</span></span><br><span class="line">  Resource[] actResArray = actualResources.toArray(<span class="keyword">new</span> Resource[<span class="number">0</span>]);</span><br><span class="line">  getReaderContext().fireImportProcessed(location, actResArray, extractSource(ele));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-  <span class="token comment" spellcheck="true">// 解析系统属性，格式如 ："$&amp;#123;user.dir&amp;#125;"</span>
-  location <span class="token operator">=</span> <span class="token function">getReaderContext</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getEnvironment</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">resolveRequiredPlaceholders</span><span class="token punctuation">(</span>location<span class="token punctuation">)</span><span class="token punctuation">;</span>
-
-  Set<span class="token operator">&lt;</span>Resource<span class="token operator">></span> actualResources <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">LinkedHashSet</span><span class="token operator">&lt;</span><span class="token operator">></span><span class="token punctuation">(</span><span class="token number">4</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-
-  <span class="token comment" spellcheck="true">// 判断 location 是相对路径还是绝对路径</span>
-  <span class="token keyword">boolean</span> absoluteLocation <span class="token operator">=</span> <span class="token boolean">false</span><span class="token punctuation">;</span>
-  <span class="token keyword">try</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-    absoluteLocation <span class="token operator">=</span> ResourcePatternUtils<span class="token punctuation">.</span><span class="token function">isUrl</span><span class="token punctuation">(</span>location<span class="token punctuation">)</span> <span class="token operator">||</span> ResourceUtils<span class="token punctuation">.</span><span class="token function">toURI</span><span class="token punctuation">(</span>location<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">isAbsolute</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-  <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-  <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">URISyntaxException</span> ex<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-    <span class="token comment" spellcheck="true">// cannot convert to an URI, considering the location relative</span>
-    <span class="token comment" spellcheck="true">// unless it is the well-known Spring prefix "classpath*:"</span>
-  <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-
-  <span class="token comment" spellcheck="true">// 绝对路径</span>
-  <span class="token keyword">if</span> <span class="token punctuation">(</span>absoluteLocation<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-    <span class="token keyword">try</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-      <span class="token comment" spellcheck="true">// 直接根据地质加载相应的配置文件</span>
-      <span class="token keyword">int</span> importCount <span class="token operator">=</span> <span class="token function">getReaderContext</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
-        <span class="token punctuation">.</span><span class="token function">getReader</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">loadBeanDefinitions</span><span class="token punctuation">(</span>location<span class="token punctuation">,</span> actualResources<span class="token punctuation">)</span><span class="token punctuation">;</span>
-      <span class="token keyword">if</span> <span class="token punctuation">(</span>logger<span class="token punctuation">.</span><span class="token function">isDebugEnabled</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-        logger<span class="token punctuation">.</span><span class="token function">debug</span><span class="token punctuation">(</span><span class="token string">"Imported "</span> 
-                     <span class="token operator">+</span> importCount 
-                     <span class="token operator">+</span> <span class="token string">" bean definitions from URL location ["</span> 
-                     <span class="token operator">+</span> location <span class="token operator">+</span> <span class="token string">"]"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-      <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-    <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-    <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">BeanDefinitionStoreException</span> ex<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-      <span class="token function">getReaderContext</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">error</span><span class="token punctuation">(</span>
-        <span class="token string">"Failed to import bean definitions from URL location ["</span> 
-        <span class="token operator">+</span> location <span class="token operator">+</span> <span class="token string">"]"</span><span class="token punctuation">,</span> ele<span class="token punctuation">,</span> ex<span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-  <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-  <span class="token keyword">else</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-    <span class="token comment" spellcheck="true">// 相对路径则根据相应的地质计算出绝对路径地址</span>
-    <span class="token keyword">try</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-      <span class="token keyword">int</span> importCount<span class="token punctuation">;</span>
-      Resource relativeResource <span class="token operator">=</span> <span class="token function">getReaderContext</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
-        <span class="token punctuation">.</span><span class="token function">getResource</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">createRelative</span><span class="token punctuation">(</span>location<span class="token punctuation">)</span><span class="token punctuation">;</span>
-      <span class="token keyword">if</span> <span class="token punctuation">(</span>relativeResource<span class="token punctuation">.</span><span class="token function">exists</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-        importCount <span class="token operator">=</span> <span class="token function">getReaderContext</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
-          <span class="token punctuation">.</span><span class="token function">getReader</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">loadBeanDefinitions</span><span class="token punctuation">(</span>relativeResource<span class="token punctuation">)</span><span class="token punctuation">;</span>
-        actualResources<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span>relativeResource<span class="token punctuation">)</span><span class="token punctuation">;</span>
-      <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-      <span class="token keyword">else</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-        String baseLocation <span class="token operator">=</span> <span class="token function">getReaderContext</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
-          <span class="token punctuation">.</span><span class="token function">getResource</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getURL</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">toString</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        importCount <span class="token operator">=</span> <span class="token function">getReaderContext</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getReader</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
-          <span class="token punctuation">.</span><span class="token function">loadBeanDefinitions</span><span class="token punctuation">(</span>
-          StringUtils<span class="token punctuation">.</span><span class="token function">applyRelativePath</span><span class="token punctuation">(</span>baseLocation<span class="token punctuation">,</span> location<span class="token punctuation">)</span><span class="token punctuation">,</span> 
-          actualResources<span class="token punctuation">)</span><span class="token punctuation">;</span>
-      <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-      <span class="token keyword">if</span> <span class="token punctuation">(</span>logger<span class="token punctuation">.</span><span class="token function">isDebugEnabled</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-        logger<span class="token punctuation">.</span><span class="token function">debug</span><span class="token punctuation">(</span><span class="token string">"Imported "</span> <span class="token operator">+</span> importCount 
-                     <span class="token operator">+</span> <span class="token string">" bean definitions from relative location ["</span> 
-                     <span class="token operator">+</span> location <span class="token operator">+</span> <span class="token string">"]"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-      <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-    <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-    <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">IOException</span> ex<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-      <span class="token function">getReaderContext</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">error</span><span class="token punctuation">(</span><span class="token string">"Failed to resolve current resource location"</span><span class="token punctuation">,</span> ele<span class="token punctuation">,</span> ex<span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-    <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">BeanDefinitionStoreException</span> ex<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-      <span class="token function">getReaderContext</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
-        <span class="token punctuation">.</span><span class="token function">error</span><span class="token punctuation">(</span><span class="token string">"Failed to import bean definitions from relative location ["</span> 
-               <span class="token operator">+</span> location <span class="token operator">+</span> <span class="token string">"]"</span><span class="token punctuation">,</span>
-                               ele<span class="token punctuation">,</span> ex<span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-  <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-  <span class="token comment" spellcheck="true">// 解析成功后，进行监听器激活处理</span>
-  Resource<span class="token punctuation">[</span><span class="token punctuation">]</span> actResArray <span class="token operator">=</span> actualResources<span class="token punctuation">.</span><span class="token function">toArray</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">Resource</span><span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-  <span class="token function">getReaderContext</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">fireImportProcessed</span><span class="token punctuation">(</span>location<span class="token punctuation">,</span> actResArray<span class="token punctuation">,</span> <span class="token function">extractSource</span><span class="token punctuation">(</span>ele<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p><strong>解析 import 过程较为清晰，整个过程如下：</strong></p>
 <ol>
 <li>获取 <code>source</code> 属性的值，该值表示资源的路径</li>
@@ -378,9 +47,8 @@
 <li>通知监听器，完成解析</li>
 </ol>
 <p><strong>判断路径</strong> 方法通过以下方法来判断 <code>location</code> 是为相对路径还是绝对路径：</p>
-<pre class="line-numbers language-java"><code class="language-java">absoluteLocation <span class="token operator">=</span> ResourcePatternUtils<span class="token punctuation">.</span><span class="token function">isUrl</span><span class="token punctuation">(</span>location<span class="token punctuation">)</span> <span class="token operator">||</span> 
-ResourceUtils<span class="token punctuation">.</span><span class="token function">toURI</span><span class="token punctuation">(</span>location<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">isAbsolute</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">absoluteLocation = ResourcePatternUtils.isUrl(location) || </span><br><span class="line">ResourceUtils.toURI(location).isAbsolute();</span><br></pre></td></tr></table></figure>
+
 <p>判断绝对路径的规则如下：</p>
 <ul>
 <li>以 <strong>classpath*:</strong> 或者 <strong>classpath:</strong> 开头为绝对路径</li>
@@ -388,56 +56,8 @@ ResourceUtils<span class="token punctuation">.</span><span class="token function
 <li>根据 <code>location</code> 构造 <code>java.net.URI</code> 判断调用 <code>isAbsolute()</code> 判断是否为绝对路径</li>
 </ul>
 <p><strong>绝对路径</strong> 如果 <code>location</code> 为绝对路径则调用 <code>loadBeanDefinitions()</code>，该方法在 <code>AbstractBeanDefinitionReader</code> 中定义。</p>
-<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">int</span> <span class="token function">loadBeanDefinitions</span><span class="token punctuation">(</span>String location<span class="token punctuation">,</span> <span class="token annotation punctuation">@Nullable</span> Set<span class="token operator">&lt;</span>Resource<span class="token operator">></span> actualResources<span class="token punctuation">)</span> 
-  <span class="token keyword">throws</span> BeanDefinitionStoreException <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-  ResourceLoader resourceLoader <span class="token operator">=</span> <span class="token function">getResourceLoader</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-  <span class="token keyword">if</span> <span class="token punctuation">(</span>resourceLoader <span class="token operator">==</span> null<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-    <span class="token keyword">throw</span> <span class="token keyword">new</span> <span class="token class-name">BeanDefinitionStoreException</span><span class="token punctuation">(</span>
-      <span class="token string">"Cannot import bean definitions from location ["</span> 
-      <span class="token operator">+</span> location <span class="token operator">+</span> <span class="token string">"]: no ResourceLoader available"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-  <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">loadBeanDefinitions</span><span class="params">(String location, <span class="meta">@Nullable</span> Set&lt;Resource&gt; actualResources)</span> </span></span><br><span class="line"><span class="function">  <span class="keyword">throws</span> BeanDefinitionStoreException </span>&#123;</span><br><span class="line">  ResourceLoader resourceLoader = getResourceLoader();</span><br><span class="line">  <span class="keyword">if</span> (resourceLoader == <span class="keyword">null</span>) &#123;</span><br><span class="line">    <span class="keyword">throw</span> <span class="keyword">new</span> BeanDefinitionStoreException(</span><br><span class="line">      <span class="string">&quot;Cannot import bean definitions from location [&quot;</span> </span><br><span class="line">      + location + <span class="string">&quot;]: no ResourceLoader available&quot;</span>);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> (resourceLoader <span class="keyword">instanceof</span> ResourcePatternResolver) &#123;</span><br><span class="line">    <span class="comment">// Resource pattern matching available.</span></span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">      Resource[] resources = ((ResourcePatternResolver) resourceLoader)</span><br><span class="line">        .getResources(location);</span><br><span class="line">      <span class="keyword">int</span> loadCount = loadBeanDefinitions(resources);</span><br><span class="line">      <span class="keyword">if</span> (actualResources != <span class="keyword">null</span>) &#123;</span><br><span class="line">        <span class="keyword">for</span> (Resource resource : resources) &#123;</span><br><span class="line">          actualResources.add(resource);</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">if</span> (logger.isDebugEnabled()) &#123;</span><br><span class="line">        logger.debug(<span class="string">&quot;Loaded &quot;</span> + loadCount </span><br><span class="line">                     + <span class="string">&quot; bean definitions from location pattern [&quot;</span> </span><br><span class="line">                     + location + <span class="string">&quot;]&quot;</span>);</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">return</span> loadCount;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">catch</span> (IOException ex) &#123;</span><br><span class="line">      <span class="keyword">throw</span> <span class="keyword">new</span> BeanDefinitionStoreException(</span><br><span class="line">        <span class="string">&quot;Could not resolve bean definition resource pattern [&quot;</span> </span><br><span class="line">        + location + <span class="string">&quot;]&quot;</span>, ex);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="comment">// Can only load single resources by absolute URL.</span></span><br><span class="line">    Resource resource = resourceLoader.getResource(location);</span><br><span class="line">    <span class="keyword">int</span> loadCount = loadBeanDefinitions(resource);</span><br><span class="line">    <span class="keyword">if</span> (actualResources != <span class="keyword">null</span>) &#123;</span><br><span class="line">      actualResources.add(resource);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (logger.isDebugEnabled()) &#123;</span><br><span class="line">      logger.debug(<span class="string">&quot;Loaded &quot;</span> </span><br><span class="line">                   + loadCount </span><br><span class="line">                   + <span class="string">&quot; bean definitions from location [&quot;</span> </span><br><span class="line">                   + location + <span class="string">&quot;]&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> loadCount;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-  <span class="token keyword">if</span> <span class="token punctuation">(</span>resourceLoader <span class="token keyword">instanceof</span> <span class="token class-name">ResourcePatternResolver</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-    <span class="token comment" spellcheck="true">// Resource pattern matching available.</span>
-    <span class="token keyword">try</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-      Resource<span class="token punctuation">[</span><span class="token punctuation">]</span> resources <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>ResourcePatternResolver<span class="token punctuation">)</span> resourceLoader<span class="token punctuation">)</span>
-        <span class="token punctuation">.</span><span class="token function">getResources</span><span class="token punctuation">(</span>location<span class="token punctuation">)</span><span class="token punctuation">;</span>
-      <span class="token keyword">int</span> loadCount <span class="token operator">=</span> <span class="token function">loadBeanDefinitions</span><span class="token punctuation">(</span>resources<span class="token punctuation">)</span><span class="token punctuation">;</span>
-      <span class="token keyword">if</span> <span class="token punctuation">(</span>actualResources <span class="token operator">!=</span> null<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-        <span class="token keyword">for</span> <span class="token punctuation">(</span>Resource resource <span class="token operator">:</span> resources<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-          actualResources<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span>resource<span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-      <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-      <span class="token keyword">if</span> <span class="token punctuation">(</span>logger<span class="token punctuation">.</span><span class="token function">isDebugEnabled</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-        logger<span class="token punctuation">.</span><span class="token function">debug</span><span class="token punctuation">(</span><span class="token string">"Loaded "</span> <span class="token operator">+</span> loadCount 
-                     <span class="token operator">+</span> <span class="token string">" bean definitions from location pattern ["</span> 
-                     <span class="token operator">+</span> location <span class="token operator">+</span> <span class="token string">"]"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-      <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-      <span class="token keyword">return</span> loadCount<span class="token punctuation">;</span>
-    <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-    <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">IOException</span> ex<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-      <span class="token keyword">throw</span> <span class="token keyword">new</span> <span class="token class-name">BeanDefinitionStoreException</span><span class="token punctuation">(</span>
-        <span class="token string">"Could not resolve bean definition resource pattern ["</span> 
-        <span class="token operator">+</span> location <span class="token operator">+</span> <span class="token string">"]"</span><span class="token punctuation">,</span> ex<span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-  <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-  <span class="token keyword">else</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-    <span class="token comment" spellcheck="true">// Can only load single resources by absolute URL.</span>
-    Resource resource <span class="token operator">=</span> resourceLoader<span class="token punctuation">.</span><span class="token function">getResource</span><span class="token punctuation">(</span>location<span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token keyword">int</span> loadCount <span class="token operator">=</span> <span class="token function">loadBeanDefinitions</span><span class="token punctuation">(</span>resource<span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token keyword">if</span> <span class="token punctuation">(</span>actualResources <span class="token operator">!=</span> null<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-      actualResources<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span>resource<span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-    <span class="token keyword">if</span> <span class="token punctuation">(</span>logger<span class="token punctuation">.</span><span class="token function">isDebugEnabled</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-      logger<span class="token punctuation">.</span><span class="token function">debug</span><span class="token punctuation">(</span><span class="token string">"Loaded "</span> 
-                   <span class="token operator">+</span> loadCount 
-                   <span class="token operator">+</span> <span class="token string">" bean definitions from location ["</span> 
-                   <span class="token operator">+</span> location <span class="token operator">+</span> <span class="token string">"]"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-    <span class="token keyword">return</span> loadCount<span class="token punctuation">;</span>
-  <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-<span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>整个逻辑比较简单：</p>
 <ol>
 <li>首先获取 ResourceLoader</li>
@@ -451,191 +71,8 @@ ResourceUtils<span class="token punctuation">.</span><span class="token function
 <li>否则构造一个绝对 <code>location</code> ，调用 <code>AbstractBeanDefinitionReader.loadBeanDefinitions()</code> 方法，与绝对路径过程一样。 </li>
 </ol>
 <p>至此，<code>import</code> 标签解析完毕，整个过程比较清晰明了：<strong>获取 source 属性值，得到正确的资源路径，然后调用 <code>loadBeanDefinitions()</code> 方法进行递归的 BeanDefinition 加载</strong></p>
-
-            <!-- 文章结尾部分 -->
-            
-                
-<div style="text-align:center;width:100%">
-    <span class="octicon octicon-tag-add"></span>
-    
-        <a style="color: #24292e;" href="/blog/tags/Spring/">Spring</a>
-    
-        <a style="color: #24292e;" href="/blog/tags/%E6%AD%BB%E7%A3%95Spring/">死磕Spring</a>
-    
-</div>
-
-
-
-    <div style="text-align:center;width:100%">
-        <img src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/640-2.gif">
-    </div>
-
-
-
-
-<div>
-    <h4>相关推荐</h4>
-    <ul class="post-copyright">
-        
-        <li class="post-copyright-author">
-            <a href="/blog/2020/01/26/101fc769.html">4张图带你读懂Spring IOC的世界</a>
-        </li>
-        
-        <li class="post-copyright-author">
-            <a href="/blog/2020/01/25/86c712d3.html">IOC之BeanDefinition注册机：BeanDefinitionRegistry</a>
-        </li>
-        
-        <li class="post-copyright-author">
-            <a href="/blog/2020/01/17/c4a8e2a2.html">IOC之parentBeanFactory与依赖处理</a>
-        </li>
-        
-        <li class="post-copyright-author">
-            <a href="/blog/2020/01/16/c9c155de.html">IOC之从单例缓存中获取单例bean</a>
-        </li>
-        
-        <li class="post-copyright-author">
-            <a href="/blog/2020/01/26/90c034e1.html">IOC之分析bean的生命周期</a>
-        </li>
-        
-        <li class="post-copyright-author">
-            <a href="/blog/2020/01/18/13d2205c.html">IOC之分析各scope的bean创建</a>
-        </li>
-        
-    </ul>
-    <br><br>
-</div>
-
-
-
-<div>
-    <h4>版权声明</h4>
-    <blockquote>
-        <ul class="post-copyright">
-            <li class="post-copyright-author">
-                <strong>本文来源： </strong>
-                
-                <a href="http://cmsblogs.com/?p=2724" title="Java技术驿站-chenssy-【死磕 Spring】—– IoC之解析Bean：解析import标签" rel="external nofollow noopener noreferrer" target="_blank">Java技术驿站-chenssy-【死磕 Spring】—– IoC之解析Bean：解析import标签</a></li>
-            <li class="post-copyright-link">
-                <strong>本文链接：</strong>
-                <a href="https://www.cayzlh.com/2020/01/07/3f8e0ea3.html" title="/blog/IoC%E4%B9%8B%E8%A7%A3%E6%9E%90Bean%EF%BC%9A%E8%A7%A3%E6%9E%90import%E6%A0%87%E7%AD%BE">https://www.cayzlh.com/2020/01/07/3f8e0ea3.html</a>
-            </li>
-            <li class="post-copyright-license">
-                <strong>版权声明： </strong>
-                
-                    文章内容仅用作学习和分享，如有雷同，纯属拷贝。
-                
-            </li>
-        </ul>
-    </blockquote>
-</div>
-
-
-            
-            
-                <div class="comment">
-    <br><br><br>
-    
-</div>
-
-            
-        </div>
-        <div class="col-md-3 markdown-body">
-            <h4>文章目录</h4>
-            <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#import-%E6%A0%87%E7%AD%BE%E7%9A%84%E5%A4%84%E7%90%86"><span class="toc-text">import 标签的处理</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#importBeanDefinitionResource"><span class="toc-text">importBeanDefinitionResource</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%9B%B8%E5%AF%B9%E8%B7%AF%E5%BE%84"><span class="toc-text">相对路径</span></a></li></ol></li></ol>
-        </div>
-    </div>
-    
-</article>
-
-
-<script>
-    hljs.initHighlightingOnLoad();
-</script>
-</main>
-<footer class="container">
-    <div class="site-footer">
-        
-    <div class="card text-center">
-        <ul class="list-inline" style="margin-left: 0;">
-            
-                <li>
-                    <a target="_blank" href="https://github.com/cayzlh" rel="external nofollow noopener noreferrer">
-                          <span class="fa-stack fa-lg">
-                            <i class="fa fa-circle fa-stack-2x"></i>
-                            <i class="fa fa-github fa-stack-1x fa-inverse">
-                                
-                            </i>
-                          </span>
-                    </a>
-                </li>
-            
-                <li>
-                    <a target="_blank" href="https://telegram.me/Q2F5emxo" rel="external nofollow noopener noreferrer">
-                          <span class="fa-stack fa-lg">
-                            <i class="fa fa-circle fa-stack-2x"></i>
-                            <i class="fa fa-rocket fa-stack-1x fa-inverse">
-                                
-                            </i>
-                          </span>
-                    </a>
-                </li>
-            
-                <li>
-                    <a target="_blank" href="mailto:chenanyu@cayzlh.com">
-                          <span class="fa-stack fa-lg">
-                            <i class="fa fa-circle fa-stack-2x"></i>
-                            <i class="fa fa-envelope fa-stack-1x fa-inverse">
-                                
-                            </i>
-                          </span>
-                    </a>
-                </li>
-            
-        </ul>
-    </div>
-
-
-        <div class="site-footer-links mobile-hidden">
-            
-                
-                
-            
-        </div>
-
-        <div class="site-footer-links mobile-hidden">
-        
-            <span class="meta-info-index hvr-grow">
-                
-                    <a href="https://www.cayzlh.com">
-                        🐳Ant丶 &copy; 2020
-                    </a>
-                
-            </span>
-        
-        
-            <span class="meta-info-index hvr-grow">
-                <a target="_blank" rel="external nofollow noopener noreferrer" href="http://beian.miit.gov.cn">粤ICP备20058712号-1</a>
-            </span>
-        
-        </div>
-
-        
-
-        
-    </div>
-    
-
-    
-        <!-- Third-Party JS -->
-        <script type="text/javascript" src="/blog/js/thirdparty/geopattern.min.js"></script>
-        <!-- My JS -->
-        <script type="text/javascript" src="/blog/js/script.js"></script>
-    
-
-    
-        <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js">
-        </script>
-    
-</footer>
-</body>
-</html>
+</div></article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta">文章作者: </span><span class="post-copyright-info"><a href="mailto:undefined" rel="external nofollow noopener noreferrer" target="_blank">🐳Ant丶</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta">文章链接: </span><span class="post-copyright-info"><a href="https://www.cayzlh.com/2020/01/07/3f8e0ea3.html">https://www.cayzlh.com/2020/01/07/3f8e0ea3.html</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta">版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a target="_blank" rel="external nofollow noopener noreferrer" href="https://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来自 <a href="https://www.cayzlh.com">BLOG | CAYZLH</a>！</span></div></div><div class="post-meta__tag-list"><a class="post-meta__tags" href="/blog/tags/Spring/">Spring</a><a class="post-meta__tags" href="/blog/tags/%E6%AD%BB%E7%A3%95Spring/">死磕Spring</a></div><nav id="pagination"><div class="prev-post pull-left"><a href="/blog/2020/01/08/fb623179.html"><i class="fa fa-chevron-left">  </i><span>IOC之解析bean标签：开启解析进程</span></a></div><div class="next-post pull-right"><a href="/blog/2020/01/06/9de498cf.html"><span>IoC之注册BeanDefinitions</span><i class="fa fa-chevron-right"></i></a></div></nav></div></div><footer><div class="layout" id="footer"><div class="footer_custom_text">hitokoto</div><div class="copyright">🐳Ant丶 &copy;2019 - 2021</div><div class="icp"><a><span>粤ICP备20058712号</span></a></div><div class="busuanzi"><script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></div></footer><i class="fa fa-arrow-up" id="go-up" aria-hidden="true"></i><script src="https://cdn.jsdelivr.net/npm/animejs@latest/anime.min.js"></script><script src="https://cdn.jsdelivr.net/npm/jquery@latest/dist/jquery.min.js"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@latest/dist/jquery.fancybox.min.js"></script><script src="https://cdn.jsdelivr.net/npm/velocity-animate@latest/velocity.min.js"></script><script src="https://cdn.jsdelivr.net/npm/velocity-ui-pack@latest/velocity.ui.min.js"></script><script src="/blog/js/utils.js?version=1.9.0"></script><script src="/blog/js/fancybox.js?version=1.9.0"></script><script src="/blog/js/sidebar.js?version=1.9.0"></script><script src="/blog/js/copy.js?version=1.9.0"></script><script src="/blog/js/fireworks.js?version=1.9.0"></script><script src="/blog/js/transition.js?version=1.9.0"></script><script src="/blog/js/scroll.js?version=1.9.0"></script><script src="/blog/js/head.js?version=1.9.0"></script><script src="/blog/js/search/local-search.js"></script><script>if(/Android|webOS|iPhone|iPod|iPad|BlackBerry/i.test(navigator.userAgent)) {
+  $('#nav').addClass('is-mobile')
+  $('footer').addClass('is-mobile')
+  $('#top-container').addClass('is-mobile')
+}</script><div class="search-dialog" id="local-search"><div class="search-dialog__title" id="local-search-title">本地搜索</div><div id="local-input-panel"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="搜索文章"></div></div></div><hr><div id="local-search-results"><div id="local-hits"></div><div id="local-stats"><div class="local-search-stats__hr" id="hr"><span>Powered by</span> <a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/wzpan/hexo-generator-search" style="color:#49B1F5;">hexo-generator-search</a></div></div></div><span class="search-close-button"><i class="fa fa-times"></i></span></div><div class="search-mask"></div></body></html>

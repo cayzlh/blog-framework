@@ -1,244 +1,21 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
+<!DOCTYPE html><html lang="[&quot;zh-Hans&quot;,&quot;en&quot;,&quot;default&quot;]"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"><meta name="description" content="分析Spring的BeanPostProcessor"><meta name="keywords" content="Spring, IOC, BeanPostProcessor"><meta name="author" content="🐳Ant丶"><meta name="copyright" content="🐳Ant丶"><title>IOC之深入分析BeanPostProcessor | BLOG | CAYZLH</title><link rel="shortcut icon" href="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/logo/favicon.ico"><link rel="stylesheet" href="/blog/css/index.css?version=1.9.0"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/font-awesome@latest/css/font-awesome.min.css?version=1.9.0"><meta name="format-detection" content="telephone=no"><meta http-equiv="x-dns-prefetch-control" content="on"><link rel="dns-prefetch" href="https://cdn.jsdelivr.net"><link rel="dns-prefetch" href="https://www.google-analytics.com"><script>(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
 
-<head>
-    <meta charset="utf-8">
-    <meta name="keywords" content="Spring, IOC, BeanPostProcessor">
-    <meta name="description" content="Ant丶的网络日志, CAYZLH网络日志, CAYZLH, CAYZLH主页, Ant丶空间">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <meta name="renderer" content="webkit|ie-stand|ie-comp">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="format-detection" content="telephone=no">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <!-- Global site tag (gtag.js) - Google Analytics -->
-
-    <meta name="google-site-verification" content="VrcbMTVpFGlHkIERHBt753dAtXKF4qirjnDweuXSRJw">
-
-
-    <!-- Global site tag (gtag.js) - Google Analytics -->
-
-<script async src="https://www.googletagmanager.com/gtag/js?id=UA-129095667-1"></script>
-<script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag() {
-        dataLayer.push(arguments);
-    }
-
-    gtag('js', new Date());
-    gtag('config', 'UA-129095667-1');
-</script>
-
-
-    <title>IOC之深入分析BeanPostProcessor | BLOG | CAYZLH</title>
-
-    
-    <!-- Third-Party CSS -->
-    
-
-        <link rel="shortcut icon" href="/blog/image/favicon.ico">
-        <link rel="icon" type="image/png" href="/blog/image/favicon-192x192.png" sizes="192x192">
-        <link rel="apple-touch-icon" sizes="180x180" href="/blog/image/apple-touch-icon.png">
-
-        <link rel="stylesheet" href="/blog/css/thirdparty/bootstrap.min.css">
-        <link rel="stylesheet" href="/blog/css/thirdparty/octicons.css">
-        <link rel="stylesheet" href="/blog/css/thirdparty/hover-min.css">
-        <link rel="stylesheet" href="/blog/css/thirdparty/user-content.min.css">
-        <link rel="stylesheet" href="/blog/css/thirdparty/syntax.css">
-        <link rel="stylesheet" href="/blog/css/thirdparty/gitalk.css">
-
-        <!-- My CSS -->
-        <link rel="stylesheet" href="/blog/css/common.css">
-
-        <link rel="stylesheet" href="/blog/css/sidebar-post-nav.css">
-
-        <link rel="stylesheet" href="/blog/css/blog-page.css">
-        <!-- CSS set in page -->
-
-        
-        <link rel="stylesheet" href="/blog/css/sidebar-popular-repo.css">
-    
-
-    <!-- CSS set in layout -->
-    <link rel="stylesheet" type="text/css" href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css">
-
-    
-        <script type="text/javascript" src="/blog/js/thirdparty/jquery.min.js"></script>
-        <script type="text/javascript" src="/blog/js/thirdparty/bootstrap.min.js"></script>
-        <script type="text/javascript" src="/blog/js/lock.js"></script>
-    
-
-    
-        <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.css">
-        <script src="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js"></script>
-
-        <link rel="stylesheet" href="//imsun.github.io/gitment/style/default.css">
-        <script src="//imsun.github.io/gitment/dist/gitment.browser.js"></script>
-
-        <script src="//unpkg.com/valine/dist/Valine.min.js"></script>
-        <script src="//cdn.jsdelivr.net/npm/twikoo@1.2.0/dist/twikoo.all.min.js"></script>
-
-    
-
-    <link rel="stylesheet" href="//cdn.bootcss.com/highlight.js/9.2.0/styles/github.min.css">
-    <script src="//cdn.bootcss.com/highlight.js/9.2.0/highlight.min.js"></script>
-<meta name="generator" content="Hexo 5.4.0"><link rel="alternate" href="/blog/atom.xml" title="BLOG | CAYZLH" type="application/atom+xml">
-</head>
-
-<body>
-<header class="site-header">
-    <div class="site-header-topbar">
-        <div class="container">
-            <div class="topbar-menu">
-
-    
-        <div class="item">
-            <a href="https://www.cayzlh.com/" title="导航">
-                导航
-            </a>
-        </div>
-    
-        <div class="item">
-            <a href="/blog/categories/" title="分类">
-                分类
-            </a>
-        </div>
-    
-        <div class="item">
-            <a href="/blog/tags/" title="标签">
-                标签
-            </a>
-        </div>
-    
-        <div class="item">
-            <a href="/blog/links/" title="链接">
-                链接
-            </a>
-        </div>
-    
-        <div class="item">
-            <a href="/blog/about" title="关于">
-                关于
-            </a>
-        </div>
-    
-
-</div>
-        </div>
-    </div>
-    <div class="container">
-        <a id="site-header-brand" href="/blog/" title="BLOG | CAYZLH">
-            <span class="octicon octicon-watch"></span>
-            BLOG | CAYZLH
-        </a>
-
-        <nav class="site-header-nav" role="navigation">
-    
-        <div class=" site-header-nav-item hvr-underline-from-center">
-            <a href="/blog/" title="Home">
-                Home
-            </a>
-            
-        </div>
-    
-        <div class=" site-header-nav-item hvr-underline-from-center">
-            <a href="/blog/archives" title="Archives">
-                Archives
-            </a>
-            
-        </div>
-    
-        <div class=" site-header-nav-item hvr-underline-from-center">
-            <a href="/blog/" title="Learning">
-                Learning
-            </a>
-            
-                <ul class="submenu">
-                    
-
-                        <li>
-                            <a href="/blog/categories/%E4%B9%A6%E7%B1%8D/%E3%80%8A%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3Java%E8%99%9A%E6%8B%9F%E6%9C%BA%E3%80%8B/">
-                                <span>深入理解Java虚拟机</span>
-                            </a>
-                        </li>
-
-                    
-
-                        <li>
-                            <a href="/blog/categories/%E4%B9%A6%E7%B1%8D/%E3%80%8AMyBatis%E6%8A%80%E6%9C%AF%E5%86%85%E5%B9%95%E3%80%8B/">
-                                <span>MyBatis技术内幕</span>
-                            </a>
-                        </li>
-
-                    
-
-                        <li>
-                            <a href="/blog/categories/Java/Java%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/">
-                                <span>Java设计模式</span>
-                            </a>
-                        </li>
-
-                    
-                </ul>
-            
-        </div>
-    
-</nav>
-    </div>
-</header>
-
-<main class="content">
-    <!-- 标题部分 -->
-<section class="jumbotron geopattern" data-pattern-id="IOC之深入分析BeanPostProcessor">
-    <div class="container">
-        <div id="jumbotron-meta-info">
-            <h1>IOC之深入分析BeanPostProcessor</h1>
-            <span class="meta-info">
-                <a><span class="octicon octicon-calendar"></span> 2020-01-22</a>
-                
-                    <a><span class="octicon octicon-book"></span></a>
-                    
-                        <a href="/blog/categories/Spring/">Spring</a>
-                    
-                        <a href="/blog/categories/Spring/%E3%80%8ASpring%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E3%80%8B/">《Spring源码分析》</a>
-                    
-                
-                
-                    
-                
-            </span>
-        </div>
-
-    </div>
-</section>
-<script>
-    $(document).ready(function(){
-
-        $('.geopattern').each(function(){
-            $(this).geopattern($(this).data('pattern-id'));
-        });
-
-    });
-</script>
-<!-- 文章内容部分 -->
-<article class="post container " itemscope itemtype="http://schema.org/BlogPosting" id="openwrite-container">
-    <div class="row">
-        <div class="col-md-9 markdown-body">
-            <!-- 文章开始部分 -->
-            <!--<div style="text-align:center">-->
-<!--    <img style="display:inline-block" width="130" height="27"-->
-<!--         src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/640-3.gif"-->
-<!--         data-loaded="true">-->
-<!--    <img style="display:inline-block" width="41" height="35"-->
-<!--         src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/640-4.gif"-->
-<!--         data-loaded="true">-->
-<!--    <img style="display:inline-block"-->
-<!--         width="130" height="27"-->
-<!--         src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/640-5.gif"-->
-<!--         data-loaded="true">-->
-<!--</div>-->
-            <blockquote>
+ga('create', 'UA-129095667-1', 'auto');
+ga('send', 'pageview');</script><meta name="google-site-verification" content="VrcbMTVpFGlHkIERHBt753dAtXKF4qirjnDweuXSRJw"><meta http-equiv="Cache-Control" content="no-transform"><meta http-equiv="Cache-Control" content="no-siteapp"><script src="https://v1.hitokoto.cn/?encode=js&amp;charset=utf-8&amp;select=.footer_custom_text" defer></script><script>var GLOBAL_CONFIG = { 
+  root: '/blog/',
+  algolia: undefined,
+  localSearch: {"path":"search.xml","languages":{"hits_empty":"找不到您查询的内容:${query}"}},
+  copy: {
+    success: '复制成功',
+    error: '复制错误',
+    noSupport: '浏览器不支持'
+  },
+  hexoVersion: '5.4.0'
+} </script><meta name="generator" content="Hexo 5.4.0"><link rel="alternate" href="/blog/atom.xml" title="BLOG | CAYZLH" type="application/atom+xml">
+</head><body><i class="fa fa-arrow-right" id="toggle-sidebar" aria-hidden="true"></i><div id="sidebar" data-display="true"><div class="toggle-sidebar-info text-center"><span data-toggle="切换文章详情">切换站点概览</span><hr></div><div class="sidebar-toc"><div class="sidebar-toc__title">目录</div><div class="sidebar-toc__progress"><span class="progress-notice">你已经读了</span><span class="progress-num">0</span><span class="progress-percentage">%</span><div class="sidebar-toc__progress-bar"></div></div><div class="sidebar-toc__content"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#BeanPostProcessor-%E5%AE%9E%E4%BE%8B"><span class="toc-text">BeanPostProcessor 实例</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#BeanPostProcessor-%E5%9F%BA%E6%9C%AC%E5%8E%9F%E7%90%86"><span class="toc-text">BeanPostProcessor 基本原理</span></a></li></ol></div></div><div class="author-info hide"><div class="author-info__avatar text-center"><img src="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/image/IMG_4207.JPG"></div><div class="author-info__name text-center">🐳Ant丶</div><div class="author-info__description text-center">CODE IS POETRY</div><div class="follow-button"><a target="_blank" rel="external nofollow noopener noreferrer" href="https://telegram.me/Q2F5emxo">contact me</a></div><hr><div class="author-info-articles"><a class="author-info-articles__archives article-meta" href="/blog/archives"><span class="pull-left">文章</span><span class="pull-right">98</span></a><a class="author-info-articles__tags article-meta" href="/blog/tags"><span class="pull-left">标签</span><span class="pull-right">15</span></a><a class="author-info-articles__categories article-meta" href="/blog/categories"><span class="pull-left">分类</span><span class="pull-right">14</span></a><a class="author-info-articles__categories article-meta" href="/blog/categories/%E4%B9%A6%E7%B1%8D/%E3%80%8A%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3Java%E8%99%9A%E6%8B%9F%E6%9C%BA%E3%80%8B/"><span class="pull-left">《深入理解Java虚拟机》</span><span class="pull-right">√</span></a><a class="author-info-articles__categories article-meta" href="/blog/categories/%E4%B9%A6%E7%B1%8D/%E3%80%8AMyBatis%E6%8A%80%E6%9C%AF%E5%86%85%E5%B9%95%E3%80%8B/"><span class="pull-left">《MyBatis技术内幕》</span><span class="pull-right">√</span></a><a class="author-info-articles__categories article-meta" href="/blog/categories/Java/Java%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/"><span class="pull-left">Java设计模式</span><span class="pull-right">√</span></a></div></div></div><div id="content-outer"><div class="no-bg" id="top-container"><div id="page-header"><span class="pull-left"> <a id="site-name" href="/blog/">BLOG | CAYZLH</a></span><i class="fa fa-bars toggle-menu pull-right" aria-hidden="true"></i><span class="pull-right"><a class="site-page social-icon search"><i class="fa fa-search"></i><span> 搜索</span></a></span></div><div id="post-info"><div id="post-title">IOC之深入分析BeanPostProcessor</div><div id="post-meta"><time class="post-meta__date"><i class="fa fa-calendar" aria-hidden="true"></i> 2020-01-22</time><span class="post-meta__separator">|</span><i class="fa fa-inbox post-meta__icon" aria-hidden="true"></i><a class="post-meta__categories" href="/blog/categories/Spring/">Spring</a><i class="fa fa-angle-right" aria-hidden="true"></i><i class="fa fa-inbox post-meta__icon" aria-hidden="true"></i><a class="post-meta__categories" href="/blog/categories/Spring/%E3%80%8ASpring%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E3%80%8B/">《Spring源码分析》</a><div class="post-meta-wordcount"><span>字数总计: </span><span class="word-count">2.2k</span><span class="post-meta__separator">|</span><span>阅读时长: 8 分钟</span></div></div></div></div><div class="layout" id="content-inner"><article id="post"><div class="article-container" id="post-content"><blockquote>
 <p>本文作者：chenssy</p>
 <p>出处：<a target="_blank" rel="external nofollow noopener noreferrer" href="http://cmsblogs.com/?p=3338">http://cmsblogs.com/?p=3338</a></p>
 <p>在学习<code>Spring源码</code>的过程中发现的好站+好贴，感谢作者。Spring版本：<strong>Spring 5.0.6.RELEASE</strong></p>
@@ -249,35 +26,11 @@
 <p>BeanPostProcessor 的作用：在 Bean 完成实例化后，如果我们需要对其进行一些配置、增加一些自己的处理逻辑，那么请使用 BeanPostProcessor。</p>
 </blockquote>
 <h2 id="BeanPostProcessor-实例"><a href="#BeanPostProcessor-实例" class="headerlink" title="BeanPostProcessor 实例"></a>BeanPostProcessor 实例</h2><p>首先定义一个类，该类实现 BeanPostProcessor 接口，如下：</p>
-<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">BeanPostProcessorTest</span> <span class="token keyword">implements</span> <span class="token class-name">BeanPostProcessor</span><span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">BeanPostProcessorTest</span> <span class="keyword">implements</span> <span class="title">BeanPostProcessor</span></span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> Object <span class="title">postProcessBeforeInitialization</span><span class="params">(Object bean, String beanName)</span> <span class="keyword">throws</span> BeansException </span>&#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;Bean [&quot;</span> + beanName + <span class="string">&quot;] 开始初始化&quot;</span>);</span><br><span class="line">        <span class="comment">// 这里一定要返回 bean，不能返回 null</span></span><br><span class="line">        <span class="keyword">return</span> bean;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> Object <span class="title">postProcessAfterInitialization</span><span class="params">(Object bean, String beanName)</span> <span class="keyword">throws</span> BeansException </span>&#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;Bean [&quot;</span> + beanName + <span class="string">&quot;] 完成初始化&quot;</span>);</span><br><span class="line">        <span class="keyword">return</span> bean;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">display</span><span class="params">()</span></span>&#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;hello BeanPostProcessor!!!&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-    <span class="token annotation punctuation">@Override</span>
-    <span class="token keyword">public</span> Object <span class="token function">postProcessBeforeInitialization</span><span class="token punctuation">(</span>Object bean<span class="token punctuation">,</span> String beanName<span class="token punctuation">)</span> <span class="token keyword">throws</span> BeansException <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"Bean ["</span> <span class="token operator">+</span> beanName <span class="token operator">+</span> <span class="token string">"] 开始初始化"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token comment" spellcheck="true">// 这里一定要返回 bean，不能返回 null</span>
-        <span class="token keyword">return</span> bean<span class="token punctuation">;</span>
-    <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-
-    <span class="token annotation punctuation">@Override</span>
-    <span class="token keyword">public</span> Object <span class="token function">postProcessAfterInitialization</span><span class="token punctuation">(</span>Object bean<span class="token punctuation">,</span> String beanName<span class="token punctuation">)</span> <span class="token keyword">throws</span> BeansException <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"Bean ["</span> <span class="token operator">+</span> beanName <span class="token operator">+</span> <span class="token string">"] 完成初始化"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token keyword">return</span> bean<span class="token punctuation">;</span>
-    <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-
-    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">display</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"hello BeanPostProcessor!!!"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-<span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>测试方法如下：</p>
-<pre class="line-numbers language-java"><code class="language-java">ClassPathResource resource <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">ClassPathResource</span><span class="token punctuation">(</span><span class="token string">"spring.xml"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-DefaultListableBeanFactory factory <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">DefaultListableBeanFactory</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-XmlBeanDefinitionReader reader <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">XmlBeanDefinitionReader</span><span class="token punctuation">(</span>factory<span class="token punctuation">)</span><span class="token punctuation">;</span>
-reader<span class="token punctuation">.</span><span class="token function">loadBeanDefinitions</span><span class="token punctuation">(</span>resource<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">ClassPathResource resource = <span class="keyword">new</span> ClassPathResource(<span class="string">&quot;spring.xml&quot;</span>);</span><br><span class="line">DefaultListableBeanFactory factory = <span class="keyword">new</span> DefaultListableBeanFactory();</span><br><span class="line">XmlBeanDefinitionReader reader = <span class="keyword">new</span> XmlBeanDefinitionReader(factory);</span><br><span class="line">reader.loadBeanDefinitions(resource);</span><br><span class="line"></span><br><span class="line">BeanPostProcessorTest test = (BeanPostProcessorTest) factory.getBean(<span class="string">&quot;beanPostProcessorTest&quot;</span>);</span><br><span class="line">test.display();</span><br></pre></td></tr></table></figure>
 
-BeanPostProcessorTest test <span class="token operator">=</span> <span class="token punctuation">(</span>BeanPostProcessorTest<span class="token punctuation">)</span> factory<span class="token punctuation">.</span><span class="token function">getBean</span><span class="token punctuation">(</span><span class="token string">"beanPostProcessorTest"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-test<span class="token punctuation">.</span><span class="token function">display</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>运行结果：</p>
 <p><img src="https://gitee.com/cayzlh/img-repo/raw/master/2020/05/25/201808221005_JdCfC6.png" alt="201808221005"></p>
 <p>运行结果比较奇怪，为什么没有执行 <code>postProcessBeforeInitialization()</code> 和 <code>postProcessAfterInitialization()</code> 呢？</p>
@@ -287,47 +40,21 @@ test<span class="token punctuation">.</span><span class="token function">display
 <p><img src="https://gitee.com/cayzlh/img-repo/raw/master/2020/05/25/15349468564658_aWOjeh_jNYP3X.jpg" alt="img"></p>
 <p>这段代码是通过迭代 <code>getBeanPostProcessors()</code> 返回的结果集来调用 <code>postProcessBeforeInitialization()</code>，但是在这里我们看到该方法返回的结果集为空，所以肯定不会执行相应的 <code>postProcessBeforeInitialization()</code> 方法咯。怎么办？</p>
 <p>答案不言而喻：只需要 <code>getBeanPostProcessors()</code> 返回的结果集中存在至少一个元素即可，该方法定义如下：</p>
-<pre class="line-numbers language-java"><code class="language-java"> <span class="token keyword">public</span> List<span class="token operator">&lt;</span>BeanPostProcessor<span class="token operator">></span> <span class="token function">getBeanPostProcessors</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-  <span class="token keyword">return</span> <span class="token keyword">this</span><span class="token punctuation">.</span>beanPostProcessors<span class="token punctuation">;</span>
- <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> List&lt;BeanPostProcessor&gt; <span class="title">getBeanPostProcessors</span><span class="params">()</span> </span>&#123;</span><br><span class="line"> <span class="keyword">return</span> <span class="keyword">this</span>.beanPostProcessors;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 <p>返回的 beanPostProcessors 是一个 private 的 List ，也就是说只要该类中存在 <code>beanPostProcessors.add()</code> 的调用我们就找到了入口，在类 AbstractBeanFactory 中找到了如下代码：</p>
-<pre class="line-numbers language-java"><code class="language-java"> <span class="token annotation punctuation">@Override</span>
- <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">addBeanPostProcessor</span><span class="token punctuation">(</span>BeanPostProcessor beanPostProcessor<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-  Assert<span class="token punctuation">.</span><span class="token function">notNull</span><span class="token punctuation">(</span>beanPostProcessor<span class="token punctuation">,</span> <span class="token string">"BeanPostProcessor must not be null"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-  <span class="token keyword">this</span><span class="token punctuation">.</span>beanPostProcessors<span class="token punctuation">.</span><span class="token function">remove</span><span class="token punctuation">(</span>beanPostProcessor<span class="token punctuation">)</span><span class="token punctuation">;</span>
-  <span class="token keyword">this</span><span class="token punctuation">.</span>beanPostProcessors<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span>beanPostProcessor<span class="token punctuation">)</span><span class="token punctuation">;</span>
-  <span class="token keyword">if</span> <span class="token punctuation">(</span>beanPostProcessor <span class="token keyword">instanceof</span> <span class="token class-name">InstantiationAwareBeanPostProcessor</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-   <span class="token keyword">this</span><span class="token punctuation">.</span>hasInstantiationAwareBeanPostProcessors <span class="token operator">=</span> <span class="token boolean">true</span><span class="token punctuation">;</span>
-  <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-  <span class="token keyword">if</span> <span class="token punctuation">(</span>beanPostProcessor <span class="token keyword">instanceof</span> <span class="token class-name">DestructionAwareBeanPostProcessor</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-   <span class="token keyword">this</span><span class="token punctuation">.</span>hasDestructionAwareBeanPostProcessors <span class="token operator">=</span> <span class="token boolean">true</span><span class="token punctuation">;</span>
-  <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
- <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">addBeanPostProcessor</span><span class="params">(BeanPostProcessor beanPostProcessor)</span> </span>&#123;</span><br><span class="line"> Assert.notNull(beanPostProcessor, <span class="string">&quot;BeanPostProcessor must not be null&quot;</span>);</span><br><span class="line"> <span class="keyword">this</span>.beanPostProcessors.remove(beanPostProcessor);</span><br><span class="line"> <span class="keyword">this</span>.beanPostProcessors.add(beanPostProcessor);</span><br><span class="line"> <span class="keyword">if</span> (beanPostProcessor <span class="keyword">instanceof</span> InstantiationAwareBeanPostProcessor) &#123;</span><br><span class="line">  <span class="keyword">this</span>.hasInstantiationAwareBeanPostProcessors = <span class="keyword">true</span>;</span><br><span class="line"> &#125;</span><br><span class="line"> <span class="keyword">if</span> (beanPostProcessor <span class="keyword">instanceof</span> DestructionAwareBeanPostProcessor) &#123;</span><br><span class="line">  <span class="keyword">this</span>.hasDestructionAwareBeanPostProcessors = <span class="keyword">true</span>;</span><br><span class="line"> &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 <p>该方法是由 AbstractBeanFactory 的父类 ConfigurableBeanFactory 定义，它的核心意思就是将指定 BeanPostProcessor 注册到该 BeanFactory 创建的 bean 中，同时它是按照插入的顺序进行注册的，完全忽略 Ordered 接口所表达任何排序语义（在 BeanPostProcessor 中我们提供一个 Ordered 顺序，这个后面讲解）。</p>
 <p>到这里应该就比较熟悉了，其实只需要显示调用 <code>addBeanPostProcessor()</code> 就可以了，加入如下代码。</p>
-<pre class="line-numbers language-java"><code class="language-java">BeanPostProcessorTest beanPostProcessorTest <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">BeanPostProcessorTest</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-factory<span class="token punctuation">.</span><span class="token function">addBeanPostProcessor</span><span class="token punctuation">(</span>beanPostProcessorTest<span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">BeanPostProcessorTest beanPostProcessorTest = <span class="keyword">new</span> BeanPostProcessorTest();</span><br><span class="line">factory.addBeanPostProcessor(beanPostProcessorTest);</span><br></pre></td></tr></table></figure>
+
 <p>运行结果：</p>
 <p><img src="https://gitee.com/cayzlh/img-repo/raw/master/2020/05/25/15349479459608_naPbOK_jwAf6w.jpg" alt="img"></p>
 <p>其实还有一种更加简单的方法，这个我们后面再说，先看 BeanPostProcessor 的原理。</p>
 <h2 id="BeanPostProcessor-基本原理"><a href="#BeanPostProcessor-基本原理" class="headerlink" title="BeanPostProcessor 基本原理"></a>BeanPostProcessor 基本原理</h2><p>BeanPostProcessor 接口定义如下：</p>
-<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">interface</span> <span class="token class-name">BeanPostProcessor</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
- <span class="token annotation punctuation">@Nullable</span>
- <span class="token keyword">default</span> Object <span class="token function">postProcessBeforeInitialization</span><span class="token punctuation">(</span>Object bean<span class="token punctuation">,</span> String beanName<span class="token punctuation">)</span> 
-   <span class="token keyword">throws</span> BeansException <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-  <span class="token keyword">return</span> bean<span class="token punctuation">;</span>
- <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">BeanPostProcessor</span> </span>&#123;</span><br><span class="line"> <span class="meta">@Nullable</span></span><br><span class="line"> <span class="function"><span class="keyword">default</span> Object <span class="title">postProcessBeforeInitialization</span><span class="params">(Object bean, String beanName)</span> </span></span><br><span class="line"><span class="function">   <span class="keyword">throws</span> BeansException </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> bean;</span><br><span class="line"> &#125;</span><br><span class="line"></span><br><span class="line"> <span class="meta">@Nullable</span></span><br><span class="line"> <span class="function"><span class="keyword">default</span> Object <span class="title">postProcessAfterInitialization</span><span class="params">(Object bean, String beanName)</span></span></span><br><span class="line"><span class="function">   <span class="keyword">throws</span> BeansException </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> bean;</span><br><span class="line"> &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
- <span class="token annotation punctuation">@Nullable</span>
- <span class="token keyword">default</span> Object <span class="token function">postProcessAfterInitialization</span><span class="token punctuation">(</span>Object bean<span class="token punctuation">,</span> String beanName<span class="token punctuation">)</span>
-   <span class="token keyword">throws</span> BeansException <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-  <span class="token keyword">return</span> bean<span class="token punctuation">;</span>
- <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-<span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>BeanPostProcessor 可以理解为是 Spring 的一个工厂钩子（其实 Spring 提供一系列的钩子，如 Aware 、InitializingBean、DisposableBean），它是 Spring 提供的对象实例化阶段强有力的扩展点，允许 Spring 在实例化 bean 阶段对其进行定制化修改，比较常见的使用场景是处理标记接口实现类或者为当前对象提供代理实现（例如AOP）。</p>
 <p>一般普通的 BeanFactory 是不支持自动注册 BeanPostProcessor 的，需要我们手动调用 <code>addBeanPostProcessor()</code> 进行注册，注册后的 BeanPostProcessor 适用于所有该 BeanFactory 创建的 bean，但是 ApplicationContext 可以在其 bean 定义中自动检测所有的 BeanPostProcessor 并自动完成注册，同时将他们应用到随后创建的任何 bean 中。</p>
 <p><code>postProcessBeforeInitialization()</code> 和 <code>postProcessAfterInitialization()</code> 两个方法都接收一个 Object 类型的 bean，一个 String 类型的 beanName，其中 bean 是已经实例化了的 instanceBean，能拿到这个你是不是可以对它为所欲为了？ 这两个方法是初始化 bean 的前后置处理器，他们应用 <code>invokeInitMethods()</code> 前后。如下图：</p>
@@ -335,338 +62,26 @@ factory<span class="token punctuation">.</span><span class="token function">addB
 <p>代码层次上面已经贴出来，这里再贴一次：</p>
 <p><img src="https://gitee.com/cayzlh/img-repo/raw/master/2020/05/25/201808221006_MDs9T9-20200525100713002_HB4JRD.png" alt="201808221006"></p>
 <p>两者源码如下：</p>
-<pre class="line-numbers language-java"><code class="language-java"> <span class="token annotation punctuation">@Override</span>
- <span class="token keyword">public</span> Object <span class="token function">applyBeanPostProcessorsBeforeInitialization</span><span class="token punctuation">(</span>Object existingBean<span class="token punctuation">,</span> String beanName<span class="token punctuation">)</span>
-   <span class="token keyword">throws</span> BeansException <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> Object <span class="title">applyBeanPostProcessorsBeforeInitialization</span><span class="params">(Object existingBean, String beanName)</span></span></span><br><span class="line"><span class="function">  <span class="keyword">throws</span> BeansException </span>&#123;</span><br><span class="line"></span><br><span class="line"> Object result = existingBean;</span><br><span class="line"> <span class="keyword">for</span> (BeanPostProcessor beanProcessor : getBeanPostProcessors()) &#123;</span><br><span class="line">  Object current = beanProcessor.postProcessBeforeInitialization(result, beanName);</span><br><span class="line">  <span class="keyword">if</span> (current == <span class="keyword">null</span>) &#123;</span><br><span class="line">   <span class="keyword">return</span> result;</span><br><span class="line">  &#125;</span><br><span class="line">  result = current;</span><br><span class="line"> &#125;</span><br><span class="line"> <span class="keyword">return</span> result;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> Object <span class="title">applyBeanPostProcessorsAfterInitialization</span><span class="params">(Object existingBean, String beanName)</span></span></span><br><span class="line"><span class="function">  <span class="keyword">throws</span> BeansException </span>&#123;</span><br><span class="line"></span><br><span class="line"> Object result = existingBean;</span><br><span class="line"> <span class="keyword">for</span> (BeanPostProcessor beanProcessor : getBeanPostProcessors()) &#123;</span><br><span class="line">  Object current = beanProcessor.postProcessAfterInitialization(result, beanName);</span><br><span class="line">  <span class="keyword">if</span> (current == <span class="keyword">null</span>) &#123;</span><br><span class="line">   <span class="keyword">return</span> result;</span><br><span class="line">  &#125;</span><br><span class="line">  result = current;</span><br><span class="line"> &#125;</span><br><span class="line"> <span class="keyword">return</span> result;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-  Object result <span class="token operator">=</span> existingBean<span class="token punctuation">;</span>
-  <span class="token keyword">for</span> <span class="token punctuation">(</span>BeanPostProcessor beanProcessor <span class="token operator">:</span> <span class="token function">getBeanPostProcessors</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-   Object current <span class="token operator">=</span> beanProcessor<span class="token punctuation">.</span><span class="token function">postProcessBeforeInitialization</span><span class="token punctuation">(</span>result<span class="token punctuation">,</span> beanName<span class="token punctuation">)</span><span class="token punctuation">;</span>
-   <span class="token keyword">if</span> <span class="token punctuation">(</span>current <span class="token operator">==</span> null<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-    <span class="token keyword">return</span> result<span class="token punctuation">;</span>
-   <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-   result <span class="token operator">=</span> current<span class="token punctuation">;</span>
-  <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-  <span class="token keyword">return</span> result<span class="token punctuation">;</span>
- <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-
- <span class="token annotation punctuation">@Override</span>
- <span class="token keyword">public</span> Object <span class="token function">applyBeanPostProcessorsAfterInitialization</span><span class="token punctuation">(</span>Object existingBean<span class="token punctuation">,</span> String beanName<span class="token punctuation">)</span>
-   <span class="token keyword">throws</span> BeansException <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-
-  Object result <span class="token operator">=</span> existingBean<span class="token punctuation">;</span>
-  <span class="token keyword">for</span> <span class="token punctuation">(</span>BeanPostProcessor beanProcessor <span class="token operator">:</span> <span class="token function">getBeanPostProcessors</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-   Object current <span class="token operator">=</span> beanProcessor<span class="token punctuation">.</span><span class="token function">postProcessAfterInitialization</span><span class="token punctuation">(</span>result<span class="token punctuation">,</span> beanName<span class="token punctuation">)</span><span class="token punctuation">;</span>
-   <span class="token keyword">if</span> <span class="token punctuation">(</span>current <span class="token operator">==</span> null<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-    <span class="token keyword">return</span> result<span class="token punctuation">;</span>
-   <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-   result <span class="token operator">=</span> current<span class="token punctuation">;</span>
-  <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-  <span class="token keyword">return</span> result<span class="token punctuation">;</span>
- <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p><code>getBeanPostProcessors()</code> 返回的是 beanPostProcessors 集合，该集合里面存放就是我们自定义的 BeanPostProcessor，如果该集合中存在元素则调用相应的方法，否则就直接返回 bean 了。这也是为什么使用 BeanFactory 容器是无法输出自定义 BeanPostProcessor 里面的内容，因为在 <code>BeanFactory.getBean()</code> 的过程中根本就没有将我们自定义的 BeanPostProcessor 注入进来，所以要想 BeanFactory 容器 的 BeanPostProcessor 生效我们必须手动调用 <code>addBeanPostProcessor()</code> 将定义的 BeanPostProcessor 注册到相应的 BeanFactory 中。但是 ApplicationContext 不需要手动，因为 ApplicationContext 会自动检测并完成注册。</p>
 <p>ApplicationContext 实现自动注册的原因在于我们构造一个 ApplicationContext 实例对象的时候会调用 <code>registerBeanPostProcessors()</code> 方法将检测到的 BeanPostProcessor 注入到 ApplicationContext 容器中，同时应用到该容器创建的 bean 中。</p>
-<pre class="line-numbers language-java"><code class="language-java">    <span class="token comment" spellcheck="true">/**
-     * 实例化并调用已经注入的 BeanPostProcessor
-     * 必须在应用中 bean 实例化之前调用
-     */</span>
-<span class="token keyword">protected</span> <span class="token keyword">void</span> <span class="token function">registerBeanPostProcessors</span><span class="token punctuation">(</span>ConfigurableListableBeanFactory beanFactory<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-  PostProcessorRegistrationDelegate<span class="token punctuation">.</span><span class="token function">registerBeanPostProcessors</span><span class="token punctuation">(</span>beanFactory<span class="token punctuation">,</span> <span class="token keyword">this</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 实例化并调用已经注入的 BeanPostProcessor</span></span><br><span class="line"><span class="comment">     * 必须在应用中 bean 实例化之前调用</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title">registerBeanPostProcessors</span><span class="params">(ConfigurableListableBeanFactory beanFactory)</span> </span>&#123;</span><br><span class="line">  PostProcessorRegistrationDelegate.registerBeanPostProcessors(beanFactory, <span class="keyword">this</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">registerBeanPostProcessors</span><span class="params">(</span></span></span><br><span class="line"><span class="function"><span class="params">  ConfigurableListableBeanFactory beanFactory, AbstractApplicationContext applicationContext)</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 获取所有的 BeanPostProcessor 的 beanName</span></span><br><span class="line">  <span class="comment">// 这些 beanName 都已经全部加载到容器中去，但是没有实例化</span></span><br><span class="line">  String[] postProcessorNames = beanFactory.getBeanNamesForType(BeanPostProcessor.class, <span class="keyword">true</span>, <span class="keyword">false</span>);</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 记录所有的beanProcessor数量</span></span><br><span class="line">  <span class="keyword">int</span> beanProcessorTargetCount = beanFactory.getBeanPostProcessorCount() + <span class="number">1</span> + postProcessorNames.length;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 注册 BeanPostProcessorChecker，它主要是用于在 BeanPostProcessor 实例化期间记录日志</span></span><br><span class="line">  <span class="comment">// 当 Spring 中高配置的后置处理器还没有注册就已经开始了 bean 的实例化过程，这个时候便会打印 BeanPostProcessorChecker 中的内容</span></span><br><span class="line">  beanFactory.addBeanPostProcessor(<span class="keyword">new</span> PostProcessorRegistrationDelegate.BeanPostProcessorChecker(beanFactory, beanProcessorTargetCount));</span><br><span class="line"></span><br><span class="line">  <span class="comment">// PriorityOrdered 保证顺序</span></span><br><span class="line">  List&lt;BeanPostProcessor&gt; priorityOrderedPostProcessors = <span class="keyword">new</span> ArrayList&lt;&gt;();</span><br><span class="line">  <span class="comment">// MergedBeanDefinitionPostProcessor</span></span><br><span class="line">  List&lt;BeanPostProcessor&gt; internalPostProcessors = <span class="keyword">new</span> ArrayList&lt;&gt;();</span><br><span class="line">  <span class="comment">// 使用 Ordered 保证顺序</span></span><br><span class="line">  List&lt;String&gt; orderedPostProcessorNames = <span class="keyword">new</span> ArrayList&lt;&gt;();</span><br><span class="line">  <span class="comment">// 没有顺序</span></span><br><span class="line">  List&lt;String&gt; nonOrderedPostProcessorNames = <span class="keyword">new</span> ArrayList&lt;&gt;();</span><br><span class="line">  <span class="keyword">for</span> (String ppName : postProcessorNames) &#123;</span><br><span class="line">    <span class="comment">// PriorityOrdered</span></span><br><span class="line">    <span class="keyword">if</span> (beanFactory.isTypeMatch(ppName, PriorityOrdered.class)) &#123;</span><br><span class="line">      <span class="comment">// 调用 getBean 获取 bean 实例对象</span></span><br><span class="line">      BeanPostProcessor pp = beanFactory.getBean(ppName, BeanPostProcessor.class);</span><br><span class="line">      priorityOrderedPostProcessors.add(pp);</span><br><span class="line">      <span class="keyword">if</span> (pp <span class="keyword">instanceof</span> MergedBeanDefinitionPostProcessor) &#123;</span><br><span class="line">        internalPostProcessors.add(pp);</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// Ordered</span></span><br><span class="line">    <span class="keyword">else</span> <span class="keyword">if</span> (beanFactory.isTypeMatch(ppName, Ordered.class)) &#123;</span><br><span class="line">      orderedPostProcessorNames.add(ppName);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span> &#123;</span><br><span class="line">      <span class="comment">// 无序</span></span><br><span class="line">      nonOrderedPostProcessorNames.add(ppName);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 第一步注册所有实现了 PriorityOrdered 的BeanPostProcessor</span></span><br><span class="line">  <span class="comment">// 先排序</span></span><br><span class="line">  sortPostProcessors(priorityOrderedPostProcessors, beanFactory);</span><br><span class="line">  <span class="comment">// 后注册</span></span><br><span class="line">  registerBeanPostProcessors(beanFactory, priorityOrderedPostProcessors);</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 第二步注册所有实现了 Ordered 的 BeanPostProcessor</span></span><br><span class="line">  List&lt;BeanPostProcessor&gt; orderedPostProcessors = <span class="keyword">new</span> ArrayList&lt;&gt;();</span><br><span class="line">  <span class="keyword">for</span> (String ppName : orderedPostProcessorNames) &#123;</span><br><span class="line">    BeanPostProcessor pp = beanFactory.getBean(ppName, BeanPostProcessor.class);</span><br><span class="line">    orderedPostProcessors.add(pp);</span><br><span class="line">    <span class="keyword">if</span> (pp <span class="keyword">instanceof</span> MergedBeanDefinitionPostProcessor) &#123;</span><br><span class="line">      internalPostProcessors.add(pp);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  sortPostProcessors(orderedPostProcessors, beanFactory);</span><br><span class="line">  registerBeanPostProcessors(beanFactory, orderedPostProcessors);</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 第三步注册所有无序的 BeanPostProcessor</span></span><br><span class="line">  List&lt;BeanPostProcessor&gt; nonOrderedPostProcessors = <span class="keyword">new</span> ArrayList&lt;&gt;();</span><br><span class="line">  <span class="keyword">for</span> (String ppName : nonOrderedPostProcessorNames) &#123;</span><br><span class="line">    BeanPostProcessor pp = beanFactory.getBean(ppName, BeanPostProcessor.class);</span><br><span class="line">    nonOrderedPostProcessors.add(pp);</span><br><span class="line">    <span class="keyword">if</span> (pp <span class="keyword">instanceof</span> MergedBeanDefinitionPostProcessor) &#123;</span><br><span class="line">      internalPostProcessors.add(pp);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  registerBeanPostProcessors(beanFactory, nonOrderedPostProcessors);</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 最后，注册所有的 MergedBeanDefinitionPostProcessor 类型的 BeanPostProcessor</span></span><br><span class="line">  sortPostProcessors(internalPostProcessors, beanFactory);</span><br><span class="line">  registerBeanPostProcessors(beanFactory, internalPostProcessors);</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 加入ApplicationListenerDetector（探测器）</span></span><br><span class="line">  <span class="comment">// 重新注册 BeanPostProcessor 以检测内部 bean，因为 ApplicationListeners 将其移动到处理器链的末尾</span></span><br><span class="line">  beanFactory.addBeanPostProcessor(<span class="keyword">new</span> ApplicationListenerDetector(applicationContext));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">registerBeanPostProcessors</span><span class="token punctuation">(</span>
-  ConfigurableListableBeanFactory beanFactory<span class="token punctuation">,</span> AbstractApplicationContext applicationContext<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-
-  <span class="token comment" spellcheck="true">// 获取所有的 BeanPostProcessor 的 beanName</span>
-  <span class="token comment" spellcheck="true">// 这些 beanName 都已经全部加载到容器中去，但是没有实例化</span>
-  String<span class="token punctuation">[</span><span class="token punctuation">]</span> postProcessorNames <span class="token operator">=</span> beanFactory<span class="token punctuation">.</span><span class="token function">getBeanNamesForType</span><span class="token punctuation">(</span>BeanPostProcessor<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">,</span> <span class="token boolean">true</span><span class="token punctuation">,</span> <span class="token boolean">false</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-
-  <span class="token comment" spellcheck="true">// 记录所有的beanProcessor数量</span>
-  <span class="token keyword">int</span> beanProcessorTargetCount <span class="token operator">=</span> beanFactory<span class="token punctuation">.</span><span class="token function">getBeanPostProcessorCount</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">+</span> <span class="token number">1</span> <span class="token operator">+</span> postProcessorNames<span class="token punctuation">.</span>length<span class="token punctuation">;</span>
-
-  <span class="token comment" spellcheck="true">// 注册 BeanPostProcessorChecker，它主要是用于在 BeanPostProcessor 实例化期间记录日志</span>
-  <span class="token comment" spellcheck="true">// 当 Spring 中高配置的后置处理器还没有注册就已经开始了 bean 的实例化过程，这个时候便会打印 BeanPostProcessorChecker 中的内容</span>
-  beanFactory<span class="token punctuation">.</span><span class="token function">addBeanPostProcessor</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">PostProcessorRegistrationDelegate<span class="token punctuation">.</span>BeanPostProcessorChecker</span><span class="token punctuation">(</span>beanFactory<span class="token punctuation">,</span> beanProcessorTargetCount<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-
-  <span class="token comment" spellcheck="true">// PriorityOrdered 保证顺序</span>
-  List<span class="token operator">&lt;</span>BeanPostProcessor<span class="token operator">></span> priorityOrderedPostProcessors <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">ArrayList</span><span class="token operator">&lt;</span><span class="token operator">></span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-  <span class="token comment" spellcheck="true">// MergedBeanDefinitionPostProcessor</span>
-  List<span class="token operator">&lt;</span>BeanPostProcessor<span class="token operator">></span> internalPostProcessors <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">ArrayList</span><span class="token operator">&lt;</span><span class="token operator">></span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-  <span class="token comment" spellcheck="true">// 使用 Ordered 保证顺序</span>
-  List<span class="token operator">&lt;</span>String<span class="token operator">></span> orderedPostProcessorNames <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">ArrayList</span><span class="token operator">&lt;</span><span class="token operator">></span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-  <span class="token comment" spellcheck="true">// 没有顺序</span>
-  List<span class="token operator">&lt;</span>String<span class="token operator">></span> nonOrderedPostProcessorNames <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">ArrayList</span><span class="token operator">&lt;</span><span class="token operator">></span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-  <span class="token keyword">for</span> <span class="token punctuation">(</span>String ppName <span class="token operator">:</span> postProcessorNames<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-    <span class="token comment" spellcheck="true">// PriorityOrdered</span>
-    <span class="token keyword">if</span> <span class="token punctuation">(</span>beanFactory<span class="token punctuation">.</span><span class="token function">isTypeMatch</span><span class="token punctuation">(</span>ppName<span class="token punctuation">,</span> PriorityOrdered<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-      <span class="token comment" spellcheck="true">// 调用 getBean 获取 bean 实例对象</span>
-      BeanPostProcessor pp <span class="token operator">=</span> beanFactory<span class="token punctuation">.</span><span class="token function">getBean</span><span class="token punctuation">(</span>ppName<span class="token punctuation">,</span> BeanPostProcessor<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-      priorityOrderedPostProcessors<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span>pp<span class="token punctuation">)</span><span class="token punctuation">;</span>
-      <span class="token keyword">if</span> <span class="token punctuation">(</span>pp <span class="token keyword">instanceof</span> <span class="token class-name">MergedBeanDefinitionPostProcessor</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-        internalPostProcessors<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span>pp<span class="token punctuation">)</span><span class="token punctuation">;</span>
-      <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-    <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-    <span class="token comment" spellcheck="true">// Ordered</span>
-    <span class="token keyword">else</span> <span class="token keyword">if</span> <span class="token punctuation">(</span>beanFactory<span class="token punctuation">.</span><span class="token function">isTypeMatch</span><span class="token punctuation">(</span>ppName<span class="token punctuation">,</span> Ordered<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-      orderedPostProcessorNames<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span>ppName<span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-    <span class="token keyword">else</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-      <span class="token comment" spellcheck="true">// 无序</span>
-      nonOrderedPostProcessorNames<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span>ppName<span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-  <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-
-  <span class="token comment" spellcheck="true">// 第一步注册所有实现了 PriorityOrdered 的BeanPostProcessor</span>
-  <span class="token comment" spellcheck="true">// 先排序</span>
-  <span class="token function">sortPostProcessors</span><span class="token punctuation">(</span>priorityOrderedPostProcessors<span class="token punctuation">,</span> beanFactory<span class="token punctuation">)</span><span class="token punctuation">;</span>
-  <span class="token comment" spellcheck="true">// 后注册</span>
-  <span class="token function">registerBeanPostProcessors</span><span class="token punctuation">(</span>beanFactory<span class="token punctuation">,</span> priorityOrderedPostProcessors<span class="token punctuation">)</span><span class="token punctuation">;</span>
-
-  <span class="token comment" spellcheck="true">// 第二步注册所有实现了 Ordered 的 BeanPostProcessor</span>
-  List<span class="token operator">&lt;</span>BeanPostProcessor<span class="token operator">></span> orderedPostProcessors <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">ArrayList</span><span class="token operator">&lt;</span><span class="token operator">></span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-  <span class="token keyword">for</span> <span class="token punctuation">(</span>String ppName <span class="token operator">:</span> orderedPostProcessorNames<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-    BeanPostProcessor pp <span class="token operator">=</span> beanFactory<span class="token punctuation">.</span><span class="token function">getBean</span><span class="token punctuation">(</span>ppName<span class="token punctuation">,</span> BeanPostProcessor<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    orderedPostProcessors<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span>pp<span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token keyword">if</span> <span class="token punctuation">(</span>pp <span class="token keyword">instanceof</span> <span class="token class-name">MergedBeanDefinitionPostProcessor</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-      internalPostProcessors<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span>pp<span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-  <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-  <span class="token function">sortPostProcessors</span><span class="token punctuation">(</span>orderedPostProcessors<span class="token punctuation">,</span> beanFactory<span class="token punctuation">)</span><span class="token punctuation">;</span>
-  <span class="token function">registerBeanPostProcessors</span><span class="token punctuation">(</span>beanFactory<span class="token punctuation">,</span> orderedPostProcessors<span class="token punctuation">)</span><span class="token punctuation">;</span>
-
-  <span class="token comment" spellcheck="true">// 第三步注册所有无序的 BeanPostProcessor</span>
-  List<span class="token operator">&lt;</span>BeanPostProcessor<span class="token operator">></span> nonOrderedPostProcessors <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">ArrayList</span><span class="token operator">&lt;</span><span class="token operator">></span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-  <span class="token keyword">for</span> <span class="token punctuation">(</span>String ppName <span class="token operator">:</span> nonOrderedPostProcessorNames<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-    BeanPostProcessor pp <span class="token operator">=</span> beanFactory<span class="token punctuation">.</span><span class="token function">getBean</span><span class="token punctuation">(</span>ppName<span class="token punctuation">,</span> BeanPostProcessor<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    nonOrderedPostProcessors<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span>pp<span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token keyword">if</span> <span class="token punctuation">(</span>pp <span class="token keyword">instanceof</span> <span class="token class-name">MergedBeanDefinitionPostProcessor</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-      internalPostProcessors<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span>pp<span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-  <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-  <span class="token function">registerBeanPostProcessors</span><span class="token punctuation">(</span>beanFactory<span class="token punctuation">,</span> nonOrderedPostProcessors<span class="token punctuation">)</span><span class="token punctuation">;</span>
-
-  <span class="token comment" spellcheck="true">// 最后，注册所有的 MergedBeanDefinitionPostProcessor 类型的 BeanPostProcessor</span>
-  <span class="token function">sortPostProcessors</span><span class="token punctuation">(</span>internalPostProcessors<span class="token punctuation">,</span> beanFactory<span class="token punctuation">)</span><span class="token punctuation">;</span>
-  <span class="token function">registerBeanPostProcessors</span><span class="token punctuation">(</span>beanFactory<span class="token punctuation">,</span> internalPostProcessors<span class="token punctuation">)</span><span class="token punctuation">;</span>
-
-  <span class="token comment" spellcheck="true">// 加入ApplicationListenerDetector（探测器）</span>
-  <span class="token comment" spellcheck="true">// 重新注册 BeanPostProcessor 以检测内部 bean，因为 ApplicationListeners 将其移动到处理器链的末尾</span>
-  beanFactory<span class="token punctuation">.</span><span class="token function">addBeanPostProcessor</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">ApplicationListenerDetector</span><span class="token punctuation">(</span>applicationContext<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>方法首先 beanFactory 获取注册到该 BeanFactory 中所有 BeanPostProcessor 类型的 beanName，其实就是找所有实现了 BeanPostProcessor 接口的 bean ，然后迭代这些 bean，将其按照PriorityOrdered、Ordered、无序的顺序添加至相应的 List 集合中，最后依次调用 <code>sortPostProcessors()</code> 进行排序处理和 <code>registerBeanPostProcessors()</code> 完成注册。排序很简单，如果 beanFactory 为 DefaultListableBeanFactory 则返回 BeanFactory 所依赖的比较器，否则反正默认的比较器(OrderComparator)，然后调用 <code>sort()</code> 即可。如下：</p>
-<pre class="line-numbers language-java"><code class="language-java"> <span class="token keyword">private</span> <span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">sortPostProcessors</span><span class="token punctuation">(</span>List<span class="token operator">&lt;</span><span class="token operator">?</span><span class="token operator">></span> postProcessors<span class="token punctuation">,</span> ConfigurableListableBeanFactory beanFactory<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-  Comparator<span class="token operator">&lt;</span>Object<span class="token operator">></span> comparatorToUse <span class="token operator">=</span> null<span class="token punctuation">;</span>
-  <span class="token keyword">if</span> <span class="token punctuation">(</span>beanFactory <span class="token keyword">instanceof</span> <span class="token class-name">DefaultListableBeanFactory</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-   comparatorToUse <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>DefaultListableBeanFactory<span class="token punctuation">)</span> beanFactory<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getDependencyComparator</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-  <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-  <span class="token keyword">if</span> <span class="token punctuation">(</span>comparatorToUse <span class="token operator">==</span> null<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-   comparatorToUse <span class="token operator">=</span> OrderComparator<span class="token punctuation">.</span>INSTANCE<span class="token punctuation">;</span>
-  <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-  postProcessors<span class="token punctuation">.</span><span class="token function">sort</span><span class="token punctuation">(</span>comparatorToUse<span class="token punctuation">)</span><span class="token punctuation">;</span>
- <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>而对于注册同样是调用 <code>AbstractBeanFactory.addBeanPostProcessor()</code> 方法完成注册，如下：</p>
-<pre class="line-numbers language-java"><code class="language-java"> <span class="token keyword">private</span> <span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">registerBeanPostProcessors</span><span class="token punctuation">(</span>
-   ConfigurableListableBeanFactory beanFactory<span class="token punctuation">,</span> List<span class="token operator">&lt;</span>BeanPostProcessor<span class="token operator">></span> postProcessors<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">sortPostProcessors</span><span class="params">(List&lt;?&gt; postProcessors, ConfigurableListableBeanFactory beanFactory)</span> </span>&#123;</span><br><span class="line"> Comparator&lt;Object&gt; comparatorToUse = <span class="keyword">null</span>;</span><br><span class="line"> <span class="keyword">if</span> (beanFactory <span class="keyword">instanceof</span> DefaultListableBeanFactory) &#123;</span><br><span class="line">  comparatorToUse = ((DefaultListableBeanFactory) beanFactory).getDependencyComparator();</span><br><span class="line"> &#125;</span><br><span class="line"> <span class="keyword">if</span> (comparatorToUse == <span class="keyword">null</span>) &#123;</span><br><span class="line">  comparatorToUse = OrderComparator.INSTANCE;</span><br><span class="line"> &#125;</span><br><span class="line"> postProcessors.sort(comparatorToUse);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-  <span class="token keyword">for</span> <span class="token punctuation">(</span>BeanPostProcessor postProcessor <span class="token operator">:</span> postProcessors<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-   beanFactory<span class="token punctuation">.</span><span class="token function">addBeanPostProcessor</span><span class="token punctuation">(</span>postProcessor<span class="token punctuation">)</span><span class="token punctuation">;</span>
-  <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
- <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>而对于注册同样是调用 <code>AbstractBeanFactory.addBeanPostProcessor()</code> 方法完成注册，如下：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">registerBeanPostProcessors</span><span class="params">(</span></span></span><br><span class="line"><span class="function"><span class="params">  ConfigurableListableBeanFactory beanFactory, List&lt;BeanPostProcessor&gt; postProcessors)</span> </span>&#123;</span><br><span class="line"></span><br><span class="line"> <span class="keyword">for</span> (BeanPostProcessor postProcessor : postProcessors) &#123;</span><br><span class="line">  beanFactory.addBeanPostProcessor(postProcessor);</span><br><span class="line"> &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 <p>至此，BeanPostProcessor 已经分析完毕了，这里简单总结下：</p>
 <ol>
 <li>BeanPostProcessor 的作用域是容器级别的，它只和所在的容器相关 ，当 BeanPostProcessor 完成注册后，它会应用于所有跟它在同一个容器内的 bean。</li>
 <li>BeanFactory 和 ApplicationContext 对 BeanPostProcessor 的处理不同，ApplicationContext 会自动检测所有实现了 BeanPostProcessor 接口的 bean，并完成注册，但是使用 BeanFactory 容器时则需要手动调用 <code>addBeanPostProcessor()</code> 完成注册</li>
 <li>ApplicationContext 的 BeanPostProcessor 支持 Ordered，而 BeanFactory 的 BeanPostProcessor 是不支持的，原因在于ApplicationContext 会对 BeanPostProcessor 进行 Ordered 检测并完成排序，而 BeanFactory 中的 BeanPostProcessor 只跟注册的顺序有关。</li>
 </ol>
-
-            <!-- 文章结尾部分 -->
-            
-                
-<div style="text-align:center;width:100%">
-    <span class="octicon octicon-tag-add"></span>
-    
-        <a style="color: #24292e;" href="/blog/tags/Spring/">Spring</a>
-    
-        <a style="color: #24292e;" href="/blog/tags/%E8%BD%AC%E8%BD%BD/">转载</a>
-    
-</div>
-
-
-
-    <div style="text-align:center;width:100%">
-        <img src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/640-2.gif">
-    </div>
-
-
-
-
-<div>
-    <h4>相关推荐</h4>
-    <ul class="post-copyright">
-        
-        <li class="post-copyright-author">
-            <a href="/blog/2020/01/21/e8e94997.html">IOC之Bean的初始化</a>
-        </li>
-        
-        <li class="post-copyright-author">
-            <a href="/blog/2020/01/23/cd2eaad8.html">IOC之PropertyPlaceholderConfigurer的应用</a>
-        </li>
-        
-        <li class="post-copyright-author">
-            <a href="/blog/2020/01/24/25302edf.html">IOC之bean的实例化策略：InstantiationStrategy</a>
-        </li>
-        
-        <li class="post-copyright-author">
-            <a href="/blog/2020/01/24/fcc18cc7.html">IOC之分析BeanWrapper</a>
-        </li>
-        
-        <li class="post-copyright-author">
-            <a href="/blog/2020/01/19/1ad7c22b.html">IOC之开启Bean的实例化进程</a>
-        </li>
-        
-        <li class="post-copyright-author">
-            <a href="/blog/2020/01/21/7ee1f554.html">IOC之循环依赖</a>
-        </li>
-        
-    </ul>
-    <br><br>
-</div>
-
-
-
-<div>
-    <h4>版权声明</h4>
-    <blockquote>
-        <ul class="post-copyright">
-            <li class="post-copyright-author">
-                <strong>本文来源： </strong>
-                
-                <a href="http://cmsblogs.com/?p=3338" title="Java技术驿站 | chenssy |【死磕 Spring】| IOC之深入分析BeanPostProcessor" rel="external nofollow noopener noreferrer" target="_blank">Java技术驿站 | chenssy |【死磕 Spring】| IOC之深入分析BeanPostProcessor</a></li>
-            <li class="post-copyright-link">
-                <strong>本文链接：</strong>
-                <a href="https://www.cayzlh.com/2020/01/22/aa8c9efa.html" title="/blog/IOC%E4%B9%8B%E6%B7%B1%E5%85%A5%E5%88%86%E6%9E%90BeanPostProcessor">https://www.cayzlh.com/2020/01/22/aa8c9efa.html</a>
-            </li>
-            <li class="post-copyright-license">
-                <strong>版权声明： </strong>
-                
-                    文章内容仅用作学习和分享，如有雷同，纯属拷贝。
-                
-            </li>
-        </ul>
-    </blockquote>
-</div>
-
-
-            
-            
-                <div class="comment">
-    <br><br><br>
-    
-</div>
-
-            
-        </div>
-        <div class="col-md-3 markdown-body">
-            <h4>文章目录</h4>
-            <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#BeanPostProcessor-%E5%AE%9E%E4%BE%8B"><span class="toc-text">BeanPostProcessor 实例</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#BeanPostProcessor-%E5%9F%BA%E6%9C%AC%E5%8E%9F%E7%90%86"><span class="toc-text">BeanPostProcessor 基本原理</span></a></li></ol>
-        </div>
-    </div>
-    
-</article>
-
-
-<script>
-    hljs.initHighlightingOnLoad();
-</script>
-</main>
-<footer class="container">
-    <div class="site-footer">
-        
-    <div class="card text-center">
-        <ul class="list-inline" style="margin-left: 0;">
-            
-                <li>
-                    <a target="_blank" href="https://github.com/cayzlh" rel="external nofollow noopener noreferrer">
-                          <span class="fa-stack fa-lg">
-                            <i class="fa fa-circle fa-stack-2x"></i>
-                            <i class="fa fa-github fa-stack-1x fa-inverse">
-                                
-                            </i>
-                          </span>
-                    </a>
-                </li>
-            
-                <li>
-                    <a target="_blank" href="https://telegram.me/Q2F5emxo" rel="external nofollow noopener noreferrer">
-                          <span class="fa-stack fa-lg">
-                            <i class="fa fa-circle fa-stack-2x"></i>
-                            <i class="fa fa-rocket fa-stack-1x fa-inverse">
-                                
-                            </i>
-                          </span>
-                    </a>
-                </li>
-            
-                <li>
-                    <a target="_blank" href="mailto:chenanyu@cayzlh.com">
-                          <span class="fa-stack fa-lg">
-                            <i class="fa fa-circle fa-stack-2x"></i>
-                            <i class="fa fa-envelope fa-stack-1x fa-inverse">
-                                
-                            </i>
-                          </span>
-                    </a>
-                </li>
-            
-        </ul>
-    </div>
-
-
-        <div class="site-footer-links mobile-hidden">
-            
-                
-                
-            
-        </div>
-
-        <div class="site-footer-links mobile-hidden">
-        
-            <span class="meta-info-index hvr-grow">
-                
-                    <a href="https://www.cayzlh.com">
-                        🐳Ant丶 &copy; 2020
-                    </a>
-                
-            </span>
-        
-        
-            <span class="meta-info-index hvr-grow">
-                <a target="_blank" rel="external nofollow noopener noreferrer" href="http://beian.miit.gov.cn">粤ICP备20058712号-1</a>
-            </span>
-        
-        </div>
-
-        
-
-        
-    </div>
-    
-
-    
-        <!-- Third-Party JS -->
-        <script type="text/javascript" src="/blog/js/thirdparty/geopattern.min.js"></script>
-        <!-- My JS -->
-        <script type="text/javascript" src="/blog/js/script.js"></script>
-    
-
-    
-        <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js">
-        </script>
-    
-</footer>
-</body>
-</html>
+</div></article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta">文章作者: </span><span class="post-copyright-info"><a href="mailto:undefined" rel="external nofollow noopener noreferrer" target="_blank">🐳Ant丶</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta">文章链接: </span><span class="post-copyright-info"><a href="https://www.cayzlh.com/2020/01/22/aa8c9efa.html">https://www.cayzlh.com/2020/01/22/aa8c9efa.html</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta">版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a target="_blank" rel="external nofollow noopener noreferrer" href="https://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来自 <a href="https://www.cayzlh.com">BLOG | CAYZLH</a>！</span></div></div><div class="post-meta__tag-list"><a class="post-meta__tags" href="/blog/tags/Spring/">Spring</a><a class="post-meta__tags" href="/blog/tags/%E8%BD%AC%E8%BD%BD/">转载</a></div><nav id="pagination"><div class="prev-post pull-left"><a href="/blog/2020/01/23/3af7524a.html"><i class="fa fa-chevron-left">  </i><span>IOC之深入分析InitializingBean和init-method</span></a></div><div class="next-post pull-right"><a href="/blog/2020/01/22/26a31db5.html"><span>IOC之深入分析Aware接口</span><i class="fa fa-chevron-right"></i></a></div></nav></div></div><footer><div class="layout" id="footer"><div class="footer_custom_text">hitokoto</div><div class="copyright">🐳Ant丶 &copy;2019 - 2021</div><div class="icp"><a><span>粤ICP备20058712号</span></a></div><div class="busuanzi"><script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></div></footer><i class="fa fa-arrow-up" id="go-up" aria-hidden="true"></i><script src="https://cdn.jsdelivr.net/npm/animejs@latest/anime.min.js"></script><script src="https://cdn.jsdelivr.net/npm/jquery@latest/dist/jquery.min.js"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@latest/dist/jquery.fancybox.min.js"></script><script src="https://cdn.jsdelivr.net/npm/velocity-animate@latest/velocity.min.js"></script><script src="https://cdn.jsdelivr.net/npm/velocity-ui-pack@latest/velocity.ui.min.js"></script><script src="/blog/js/utils.js?version=1.9.0"></script><script src="/blog/js/fancybox.js?version=1.9.0"></script><script src="/blog/js/sidebar.js?version=1.9.0"></script><script src="/blog/js/copy.js?version=1.9.0"></script><script src="/blog/js/fireworks.js?version=1.9.0"></script><script src="/blog/js/transition.js?version=1.9.0"></script><script src="/blog/js/scroll.js?version=1.9.0"></script><script src="/blog/js/head.js?version=1.9.0"></script><script src="/blog/js/search/local-search.js"></script><script>if(/Android|webOS|iPhone|iPod|iPad|BlackBerry/i.test(navigator.userAgent)) {
+  $('#nav').addClass('is-mobile')
+  $('footer').addClass('is-mobile')
+  $('#top-container').addClass('is-mobile')
+}</script><div class="search-dialog" id="local-search"><div class="search-dialog__title" id="local-search-title">本地搜索</div><div id="local-input-panel"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="搜索文章"></div></div></div><hr><div id="local-search-results"><div id="local-hits"></div><div id="local-stats"><div class="local-search-stats__hr" id="hr"><span>Powered by</span> <a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/wzpan/hexo-generator-search" style="color:#49B1F5;">hexo-generator-search</a></div></div></div><span class="search-close-button"><i class="fa fa-times"></i></span></div><div class="search-mask"></div></body></html>

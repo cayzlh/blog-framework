@@ -1,244 +1,21 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
+<!DOCTYPE html><html lang="[&quot;zh-Hans&quot;,&quot;en&quot;,&quot;default&quot;]"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"><meta name="description" content="随着业务发展，系统拆分导致系统调用链路愈发复杂一个前端请求可能最终需要调用很多次后端服务才能完成，当整个请求变慢或不可用时，我们是无法得知该请求是由某个或某些后端服务引起的，这时就需要解决如何快读定位服务故障点，以对症下药。于是就有了分布式系统调用跟踪的诞生。"><meta name="keywords" content="分布式链路跟踪 Sleuth 与 Zipkin【Finchley 版】,Sleuth 与 Zipkin,Spring Cloud Sleuth,Spring Cloud"><meta name="author" content="🐳Ant丶"><meta name="copyright" content="🐳Ant丶"><title>SpringCloud（分布式链路跟踪） | BLOG | CAYZLH</title><link rel="shortcut icon" href="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/logo/favicon.ico"><link rel="stylesheet" href="/blog/css/index.css?version=1.9.0"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/font-awesome@latest/css/font-awesome.min.css?version=1.9.0"><meta name="format-detection" content="telephone=no"><meta http-equiv="x-dns-prefetch-control" content="on"><link rel="dns-prefetch" href="https://cdn.jsdelivr.net"><link rel="dns-prefetch" href="https://www.google-analytics.com"><script>(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
 
-<head>
-    <meta charset="utf-8">
-    <meta name="keywords" content="分布式链路跟踪 Sleuth 与 Zipkin【Finchley 版】,Sleuth 与 Zipkin,Spring Cloud Sleuth,Spring Cloud">
-    <meta name="description" content="Ant丶的网络日志, CAYZLH网络日志, CAYZLH, CAYZLH主页, Ant丶空间">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <meta name="renderer" content="webkit|ie-stand|ie-comp">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="format-detection" content="telephone=no">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <!-- Global site tag (gtag.js) - Google Analytics -->
-
-    <meta name="google-site-verification" content="VrcbMTVpFGlHkIERHBt753dAtXKF4qirjnDweuXSRJw">
-
-
-    <!-- Global site tag (gtag.js) - Google Analytics -->
-
-<script async src="https://www.googletagmanager.com/gtag/js?id=UA-129095667-1"></script>
-<script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag() {
-        dataLayer.push(arguments);
-    }
-
-    gtag('js', new Date());
-    gtag('config', 'UA-129095667-1');
-</script>
-
-
-    <title>SpringCloud（分布式链路跟踪） | BLOG | CAYZLH</title>
-
-    
-    <!-- Third-Party CSS -->
-    
-
-        <link rel="shortcut icon" href="/blog/image/favicon.ico">
-        <link rel="icon" type="image/png" href="/blog/image/favicon-192x192.png" sizes="192x192">
-        <link rel="apple-touch-icon" sizes="180x180" href="/blog/image/apple-touch-icon.png">
-
-        <link rel="stylesheet" href="/blog/css/thirdparty/bootstrap.min.css">
-        <link rel="stylesheet" href="/blog/css/thirdparty/octicons.css">
-        <link rel="stylesheet" href="/blog/css/thirdparty/hover-min.css">
-        <link rel="stylesheet" href="/blog/css/thirdparty/user-content.min.css">
-        <link rel="stylesheet" href="/blog/css/thirdparty/syntax.css">
-        <link rel="stylesheet" href="/blog/css/thirdparty/gitalk.css">
-
-        <!-- My CSS -->
-        <link rel="stylesheet" href="/blog/css/common.css">
-
-        <link rel="stylesheet" href="/blog/css/sidebar-post-nav.css">
-
-        <link rel="stylesheet" href="/blog/css/blog-page.css">
-        <!-- CSS set in page -->
-
-        
-        <link rel="stylesheet" href="/blog/css/sidebar-popular-repo.css">
-    
-
-    <!-- CSS set in layout -->
-    <link rel="stylesheet" type="text/css" href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css">
-
-    
-        <script type="text/javascript" src="/blog/js/thirdparty/jquery.min.js"></script>
-        <script type="text/javascript" src="/blog/js/thirdparty/bootstrap.min.js"></script>
-        <script type="text/javascript" src="/blog/js/lock.js"></script>
-    
-
-    
-        <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.css">
-        <script src="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js"></script>
-
-        <link rel="stylesheet" href="//imsun.github.io/gitment/style/default.css">
-        <script src="//imsun.github.io/gitment/dist/gitment.browser.js"></script>
-
-        <script src="//unpkg.com/valine/dist/Valine.min.js"></script>
-        <script src="//cdn.jsdelivr.net/npm/twikoo@1.2.0/dist/twikoo.all.min.js"></script>
-
-    
-
-    <link rel="stylesheet" href="//cdn.bootcss.com/highlight.js/9.2.0/styles/github.min.css">
-    <script src="//cdn.bootcss.com/highlight.js/9.2.0/highlight.min.js"></script>
-<meta name="generator" content="Hexo 5.4.0"><link rel="alternate" href="/blog/atom.xml" title="BLOG | CAYZLH" type="application/atom+xml">
-</head>
-
-<body>
-<header class="site-header">
-    <div class="site-header-topbar">
-        <div class="container">
-            <div class="topbar-menu">
-
-    
-        <div class="item">
-            <a href="https://www.cayzlh.com/" title="导航">
-                导航
-            </a>
-        </div>
-    
-        <div class="item">
-            <a href="/blog/categories/" title="分类">
-                分类
-            </a>
-        </div>
-    
-        <div class="item">
-            <a href="/blog/tags/" title="标签">
-                标签
-            </a>
-        </div>
-    
-        <div class="item">
-            <a href="/blog/links/" title="链接">
-                链接
-            </a>
-        </div>
-    
-        <div class="item">
-            <a href="/blog/about" title="关于">
-                关于
-            </a>
-        </div>
-    
-
-</div>
-        </div>
-    </div>
-    <div class="container">
-        <a id="site-header-brand" href="/blog/" title="BLOG | CAYZLH">
-            <span class="octicon octicon-watch"></span>
-            BLOG | CAYZLH
-        </a>
-
-        <nav class="site-header-nav" role="navigation">
-    
-        <div class=" site-header-nav-item hvr-underline-from-center">
-            <a href="/blog/" title="Home">
-                Home
-            </a>
-            
-        </div>
-    
-        <div class=" site-header-nav-item hvr-underline-from-center">
-            <a href="/blog/archives" title="Archives">
-                Archives
-            </a>
-            
-        </div>
-    
-        <div class=" site-header-nav-item hvr-underline-from-center">
-            <a href="/blog/" title="Learning">
-                Learning
-            </a>
-            
-                <ul class="submenu">
-                    
-
-                        <li>
-                            <a href="/blog/categories/%E4%B9%A6%E7%B1%8D/%E3%80%8A%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3Java%E8%99%9A%E6%8B%9F%E6%9C%BA%E3%80%8B/">
-                                <span>深入理解Java虚拟机</span>
-                            </a>
-                        </li>
-
-                    
-
-                        <li>
-                            <a href="/blog/categories/%E4%B9%A6%E7%B1%8D/%E3%80%8AMyBatis%E6%8A%80%E6%9C%AF%E5%86%85%E5%B9%95%E3%80%8B/">
-                                <span>MyBatis技术内幕</span>
-                            </a>
-                        </li>
-
-                    
-
-                        <li>
-                            <a href="/blog/categories/Java/Java%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/">
-                                <span>Java设计模式</span>
-                            </a>
-                        </li>
-
-                    
-                </ul>
-            
-        </div>
-    
-</nav>
-    </div>
-</header>
-
-<main class="content">
-    <!-- 标题部分 -->
-<section class="jumbotron geopattern" data-pattern-id="SpringCloud（分布式链路跟踪）">
-    <div class="container">
-        <div id="jumbotron-meta-info">
-            <h1>SpringCloud（分布式链路跟踪）</h1>
-            <span class="meta-info">
-                <a><span class="octicon octicon-calendar"></span> 2019-01-04</a>
-                
-                    <a><span class="octicon octicon-book"></span></a>
-                    
-                        <a href="/blog/categories/Spring/">Spring</a>
-                    
-                        <a href="/blog/categories/Spring/SpringCloud/">SpringCloud</a>
-                    
-                
-                
-                    
-                
-            </span>
-        </div>
-
-    </div>
-</section>
-<script>
-    $(document).ready(function(){
-
-        $('.geopattern').each(function(){
-            $(this).geopattern($(this).data('pattern-id'));
-        });
-
-    });
-</script>
-<!-- 文章内容部分 -->
-<article class="post container " itemscope itemtype="http://schema.org/BlogPosting" id="openwrite-container">
-    <div class="row">
-        <div class="col-md-9 markdown-body">
-            <!-- 文章开始部分 -->
-            <!--<div style="text-align:center">-->
-<!--    <img style="display:inline-block" width="130" height="27"-->
-<!--         src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/640-3.gif"-->
-<!--         data-loaded="true">-->
-<!--    <img style="display:inline-block" width="41" height="35"-->
-<!--         src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/640-4.gif"-->
-<!--         data-loaded="true">-->
-<!--    <img style="display:inline-block"-->
-<!--         width="130" height="27"-->
-<!--         src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/640-5.gif"-->
-<!--         data-loaded="true">-->
-<!--</div>-->
-            <h2 id="Spring-Cloud-Sleuth"><a href="#Spring-Cloud-Sleuth" class="headerlink" title="Spring Cloud Sleuth"></a>Spring Cloud Sleuth</h2><p>一般的，一个分布式服务跟踪系统主要由三部分构成：</p>
+ga('create', 'UA-129095667-1', 'auto');
+ga('send', 'pageview');</script><meta name="google-site-verification" content="VrcbMTVpFGlHkIERHBt753dAtXKF4qirjnDweuXSRJw"><meta http-equiv="Cache-Control" content="no-transform"><meta http-equiv="Cache-Control" content="no-siteapp"><script src="https://v1.hitokoto.cn/?encode=js&amp;charset=utf-8&amp;select=.footer_custom_text" defer></script><script>var GLOBAL_CONFIG = { 
+  root: '/blog/',
+  algolia: undefined,
+  localSearch: {"path":"search.xml","languages":{"hits_empty":"找不到您查询的内容:${query}"}},
+  copy: {
+    success: '复制成功',
+    error: '复制错误',
+    noSupport: '浏览器不支持'
+  },
+  hexoVersion: '5.4.0'
+} </script><meta name="generator" content="Hexo 5.4.0"><link rel="alternate" href="/blog/atom.xml" title="BLOG | CAYZLH" type="application/atom+xml">
+</head><body><i class="fa fa-arrow-right" id="toggle-sidebar" aria-hidden="true"></i><div id="sidebar" data-display="true"><div class="toggle-sidebar-info text-center"><span data-toggle="切换文章详情">切换站点概览</span><hr></div><div class="sidebar-toc"><div class="sidebar-toc__title">目录</div><div class="sidebar-toc__progress"><span class="progress-notice">你已经读了</span><span class="progress-num">0</span><span class="progress-percentage">%</span><div class="sidebar-toc__progress-bar"></div></div><div class="sidebar-toc__content"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#Spring-Cloud-Sleuth"><span class="toc-text">Spring Cloud Sleuth</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#ZipKin"><span class="toc-text">ZipKin</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AE%9E%E8%B7%B5"><span class="toc-text">实践</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%87%86%E5%A4%87%E5%B7%A5%E4%BD%9C"><span class="toc-text">准备工作</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Zipkin%E6%9C%8D%E5%8A%A1%E7%AB%AF"><span class="toc-text">Zipkin服务端</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BA%94%E7%94%A8"><span class="toc-text">微服务应用</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#pom%E9%85%8D%E7%BD%AE"><span class="toc-text">pom配置</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6"><span class="toc-text">配置文件</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%BC%96%E7%A0%81"><span class="toc-text">编码</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#trace-a"><span class="toc-text">trace-a</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#trace-b"><span class="toc-text">trace-b</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%AA%8C%E8%AF%81"><span class="toc-text">验证</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%B6%88%E6%81%AF%E6%80%BB%E7%BA%BF-RabbitMQ%E6%96%B9%E5%BC%8F"><span class="toc-text">消息总线-RabbitMQ方式</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8F%82%E8%80%83"><span class="toc-text">参考</span></a></li></ol></div></div><div class="author-info hide"><div class="author-info__avatar text-center"><img src="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/image/IMG_4207.JPG"></div><div class="author-info__name text-center">🐳Ant丶</div><div class="author-info__description text-center">CODE IS POETRY</div><div class="follow-button"><a target="_blank" rel="external nofollow noopener noreferrer" href="https://telegram.me/Q2F5emxo">contact me</a></div><hr><div class="author-info-articles"><a class="author-info-articles__archives article-meta" href="/blog/archives"><span class="pull-left">文章</span><span class="pull-right">98</span></a><a class="author-info-articles__tags article-meta" href="/blog/tags"><span class="pull-left">标签</span><span class="pull-right">15</span></a><a class="author-info-articles__categories article-meta" href="/blog/categories"><span class="pull-left">分类</span><span class="pull-right">14</span></a><a class="author-info-articles__categories article-meta" href="/blog/categories/%E4%B9%A6%E7%B1%8D/%E3%80%8A%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3Java%E8%99%9A%E6%8B%9F%E6%9C%BA%E3%80%8B/"><span class="pull-left">《深入理解Java虚拟机》</span><span class="pull-right">√</span></a><a class="author-info-articles__categories article-meta" href="/blog/categories/%E4%B9%A6%E7%B1%8D/%E3%80%8AMyBatis%E6%8A%80%E6%9C%AF%E5%86%85%E5%B9%95%E3%80%8B/"><span class="pull-left">《MyBatis技术内幕》</span><span class="pull-right">√</span></a><a class="author-info-articles__categories article-meta" href="/blog/categories/Java/Java%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/"><span class="pull-left">Java设计模式</span><span class="pull-right">√</span></a></div></div></div><div id="content-outer"><div class="no-bg" id="top-container"><div id="page-header"><span class="pull-left"> <a id="site-name" href="/blog/">BLOG | CAYZLH</a></span><i class="fa fa-bars toggle-menu pull-right" aria-hidden="true"></i><span class="pull-right"><a class="site-page social-icon search"><i class="fa fa-search"></i><span> 搜索</span></a></span></div><div id="post-info"><div id="post-title">SpringCloud（分布式链路跟踪）</div><div id="post-meta"><time class="post-meta__date"><i class="fa fa-calendar" aria-hidden="true"></i> 2019-01-04</time><span class="post-meta__separator">|</span><i class="fa fa-inbox post-meta__icon" aria-hidden="true"></i><a class="post-meta__categories" href="/blog/categories/Spring/">Spring</a><i class="fa fa-angle-right" aria-hidden="true"></i><i class="fa fa-inbox post-meta__icon" aria-hidden="true"></i><a class="post-meta__categories" href="/blog/categories/Spring/SpringCloud/">SpringCloud</a><div class="post-meta-wordcount"><span>字数总计: </span><span class="word-count">2k</span><span class="post-meta__separator">|</span><span>阅读时长: 7 分钟</span></div></div></div></div><div class="layout" id="content-inner"><article id="post"><div class="article-container" id="post-content"><h2 id="Spring-Cloud-Sleuth"><a href="#Spring-Cloud-Sleuth" class="headerlink" title="Spring Cloud Sleuth"></a>Spring Cloud Sleuth</h2><p>一般的，一个分布式服务跟踪系统主要由三部分构成：</p>
 <ul>
 <li>数据收集</li>
 <li>数据存储</li>
@@ -270,13 +47,9 @@
 <h4 id="Zipkin服务端"><a href="#Zipkin服务端" class="headerlink" title="Zipkin服务端"></a>Zipkin服务端</h4><p>使用<code>Docker</code>：</p>
 <ol>
 <li><p>pull image</p>
-<pre class="line-numbers language-shell"><code class="language-shell">docker pull openzipkin/zipkin
-<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-</li>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">docker pull openzipkin/zipkin</span><br></pre></td></tr></table></figure></li>
 <li><p>run container</p>
-<pre class="line-numbers language-shell"><code class="language-shell">docker run -d -p 9411:9411 openzipkin/zipkin
-<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-</li>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">docker run -d -p 9411:9411 openzipkin/zipkin</span><br></pre></td></tr></table></figure></li>
 </ol>
 <p>启动后，访问<a target="_blank" rel="external nofollow noopener noreferrer" href="http://localhost:9411/zipkin/">http://localhost:9411/zipkin/</a>就能看到如下界面：</p>
 <p><img src="https://gitee.com/cayzlh/img-repo/raw/master/uPic/3.png" alt="zipkin"></p>
@@ -284,115 +57,31 @@
 <p>服务端<code>OK</code>。</p>
 <h4 id="微服务应用"><a href="#微服务应用" class="headerlink" title="微服务应用"></a>微服务应用</h4><p>创建两个基本的<code>Spring Boot</code>工程，分别名为<code>trace-a</code>和<code>trace-b</code>。</p>
 <h3 id="pom配置"><a href="#pom配置" class="headerlink" title="pom配置"></a>pom配置</h3><p>两个工程的<code>pom</code>文件配置都引入以下依赖：</p>
-<pre class="line-numbers language-xml"><code class="language-xml"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>dependencies</span><span class="token punctuation">></span></span>
-    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>dependency</span><span class="token punctuation">></span></span>
-        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>groupId</span><span class="token punctuation">></span></span>org.springframework.boot<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>groupId</span><span class="token punctuation">></span></span>
-        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>artifactId</span><span class="token punctuation">></span></span>spring-boot-starter-webflux<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>artifactId</span><span class="token punctuation">></span></span>
-    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>dependency</span><span class="token punctuation">></span></span>
-    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>dependency</span><span class="token punctuation">></span></span>
-        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>groupId</span><span class="token punctuation">></span></span>org.springframework.cloud<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>groupId</span><span class="token punctuation">></span></span>
-        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>artifactId</span><span class="token punctuation">></span></span>spring-cloud-starter-netflix-eureka-client<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>artifactId</span><span class="token punctuation">></span></span>
-    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>dependency</span><span class="token punctuation">></span></span>
-    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>dependency</span><span class="token punctuation">></span></span>
-        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>groupId</span><span class="token punctuation">></span></span>org.springframework.cloud<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>groupId</span><span class="token punctuation">></span></span>
-        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>artifactId</span><span class="token punctuation">></span></span>spring-cloud-starter-sleuth<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>artifactId</span><span class="token punctuation">></span></span>
-    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>dependency</span><span class="token punctuation">></span></span>
-    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>dependency</span><span class="token punctuation">></span></span>
-        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>groupId</span><span class="token punctuation">></span></span>org.springframework.cloud<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>groupId</span><span class="token punctuation">></span></span>
-        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>artifactId</span><span class="token punctuation">></span></span>spring-cloud-starter-zipkin<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>artifactId</span><span class="token punctuation">></span></span>
-    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>dependency</span><span class="token punctuation">></span></span>
-<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>dependencies</span><span class="token punctuation">></span></span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<figure class="highlight xml"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">dependencies</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework.boot<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-boot-starter-webflux<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework.cloud<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-cloud-starter-netflix-eureka-client<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework.cloud<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-cloud-starter-sleuth<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework.cloud<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-cloud-starter-zipkin<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependencies</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
 <h3 id="配置文件"><a href="#配置文件" class="headerlink" title="配置文件"></a>配置文件</h3><p>两者的配置文件也一样（除了<code>spring. application.name</code>和<code>server.port</code>，自行修改）</p>
-<pre class="line-numbers language-yaml"><code class="language-yaml"><span class="token key atrule">spring</span><span class="token punctuation">:</span>
-  <span class="token key atrule">application</span><span class="token punctuation">:</span>
-    <span class="token key atrule">name</span><span class="token punctuation">:</span> trace<span class="token punctuation">-</span>a
-  <span class="token key atrule">sleuth</span><span class="token punctuation">:</span>
-    <span class="token key atrule">web</span><span class="token punctuation">:</span>
-      <span class="token key atrule">client</span><span class="token punctuation">:</span>
-        <span class="token key atrule">enabled</span><span class="token punctuation">:</span> <span class="token boolean important">true</span>
-    <span class="token key atrule">sampler</span><span class="token punctuation">:</span>
-      <span class="token key atrule">probability</span><span class="token punctuation">:</span> <span class="token number">1.0 </span><span class="token comment" spellcheck="true"># 将采样比例设置为 1.0，也就是全部都需要。默认是 0.1</span>
-  <span class="token key atrule">zipkin</span><span class="token punctuation">:</span>
-    <span class="token key atrule">base-url</span><span class="token punctuation">:</span> http<span class="token punctuation">:</span>//localhost<span class="token punctuation">:</span>9411/ <span class="token comment" spellcheck="true"># 指定了 Zipkin 服务器的地址</span>
-<span class="token key atrule">server</span><span class="token punctuation">:</span>
-  <span class="token key atrule">port</span><span class="token punctuation">:</span> <span class="token number">28092</span>
-<span class="token key atrule">eureka</span><span class="token punctuation">:</span>
-  <span class="token key atrule">client</span><span class="token punctuation">:</span>
-    <span class="token key atrule">service-url</span><span class="token punctuation">:</span>
-      <span class="token key atrule">defaultZone</span><span class="token punctuation">:</span> http<span class="token punctuation">:</span>//localhost<span class="token punctuation">:</span>28081/eureka/
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">spring:</span></span><br><span class="line">  <span class="attr">application:</span></span><br><span class="line">    <span class="attr">name:</span> <span class="string">trace-a</span></span><br><span class="line">  <span class="attr">sleuth:</span></span><br><span class="line">    <span class="attr">web:</span></span><br><span class="line">      <span class="attr">client:</span></span><br><span class="line">        <span class="attr">enabled:</span> <span class="literal">true</span></span><br><span class="line">    <span class="attr">sampler:</span></span><br><span class="line">      <span class="attr">probability:</span> <span class="number">1.0</span> <span class="comment"># 将采样比例设置为 1.0，也就是全部都需要。默认是 0.1</span></span><br><span class="line">  <span class="attr">zipkin:</span></span><br><span class="line">    <span class="attr">base-url:</span> <span class="string">http://localhost:9411/</span> <span class="comment"># 指定了 Zipkin 服务器的地址</span></span><br><span class="line"><span class="attr">server:</span></span><br><span class="line">  <span class="attr">port:</span> <span class="number">28092</span></span><br><span class="line"><span class="attr">eureka:</span></span><br><span class="line">  <span class="attr">client:</span></span><br><span class="line">    <span class="attr">service-url:</span></span><br><span class="line">      <span class="attr">defaultZone:</span> <span class="string">http://localhost:28081/eureka/</span></span><br></pre></td></tr></table></figure>
+
 <blockquote>
 <p>Spring Cloud Sleuth 有一个 Sampler 策略，可以通过这个实现类来控制采样算法。采样器不会阻碍 span 相关 id 的产生，但是会对导出以及附加事件标签的相关操作造成影响。 Sleuth 默认采样算法的实现是 Reservoir sampling，具体的实现类是 PercentageBasedSampler，默认的采样比例为: 0.1(即 10%)。不过我们可以通过<code>spring.sleuth.sampler.percentage</code>来设置，所设置的值介于 0.0 到 1.0 之间，1.0 则表示全部采集。</p>
 </blockquote>
 <h3 id="编码"><a href="#编码" class="headerlink" title="编码"></a>编码</h3><p>对<code>trace-a</code>和<code>trace-b</code>进行编码。</p>
 <h4 id="trace-a"><a href="#trace-a" class="headerlink" title="trace-a"></a>trace-a</h4><p>配置一个<code>WebClient</code> <strong>Bean</strong>：</p>
-<pre class="line-numbers language-java"><code class="language-java"><span class="token annotation punctuation">@SpringBootApplication</span>
-<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">TraceAApplication</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@SpringBootApplication</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">TraceAApplication</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">        SpringApplication.run(TraceAApplication.class, args);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Autowired</span></span><br><span class="line">    <span class="keyword">private</span> LoadBalancerExchangeFilterFunction lbFunction;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Bean</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> WebClient <span class="title">webClient</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> WebClient.builder()</span><br><span class="line">            .baseUrl(<span class="string">&quot;http://trace-b&quot;</span>)</span><br><span class="line">            .filter(lbFunction).build();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">main</span><span class="token punctuation">(</span>String<span class="token punctuation">[</span><span class="token punctuation">]</span> args<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-        SpringApplication<span class="token punctuation">.</span><span class="token function">run</span><span class="token punctuation">(</span>TraceAApplication<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">,</span> args<span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-
-    <span class="token annotation punctuation">@Autowired</span>
-    <span class="token keyword">private</span> LoadBalancerExchangeFilterFunction lbFunction<span class="token punctuation">;</span>
-
-    <span class="token annotation punctuation">@Bean</span>
-    <span class="token keyword">public</span> WebClient <span class="token function">webClient</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-        <span class="token keyword">return</span> WebClient<span class="token punctuation">.</span><span class="token function">builder</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
-            <span class="token punctuation">.</span><span class="token function">baseUrl</span><span class="token punctuation">(</span><span class="token string">"http://trace-b"</span><span class="token punctuation">)</span>
-            <span class="token punctuation">.</span><span class="token function">filter</span><span class="token punctuation">(</span>lbFunction<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">build</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-
-<span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>创建一个<code>TraceAController</code>：</p>
-<pre class="line-numbers language-java"><code class="language-java"><span class="token annotation punctuation">@RestController</span>
-<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">TraceAController</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@RestController</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">TraceAController</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Autowired</span></span><br><span class="line">    <span class="keyword">private</span> WebClient webClient;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@GetMapping(&quot;/trace-a&quot;)</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> Mono&lt;String&gt; <span class="title">trace</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;call trace-a.&quot;</span>);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> webClient.get().uri(<span class="string">&quot;/trace-b&quot;</span>)</span><br><span class="line">            .retrieve().bodyToMono(String.class);</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-    <span class="token annotation punctuation">@Autowired</span>
-    <span class="token keyword">private</span> WebClient webClient<span class="token punctuation">;</span>
-
-    <span class="token annotation punctuation">@GetMapping</span><span class="token punctuation">(</span><span class="token string">"/trace-a"</span><span class="token punctuation">)</span>
-    <span class="token keyword">public</span> Mono<span class="token operator">&lt;</span>String<span class="token operator">></span> <span class="token function">trace</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"call trace-a."</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-
-        <span class="token keyword">return</span> webClient<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">uri</span><span class="token punctuation">(</span><span class="token string">"/trace-b"</span><span class="token punctuation">)</span>
-            <span class="token punctuation">.</span><span class="token function">retrieve</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">bodyToMono</span><span class="token punctuation">(</span>String<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-
-    <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-
-<span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <h4 id="trace-b"><a href="#trace-b" class="headerlink" title="trace-b"></a>trace-b</h4><p><code>trace-b</code>的启动类如下，使用默认的代码，不需修改：</p>
-<pre class="line-numbers language-java"><code class="language-java"><span class="token annotation punctuation">@SpringBootApplication</span>
-<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">TraceBApplication</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@SpringBootApplication</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">TraceBApplication</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">        SpringApplication.run(TraceBApplication.class, args);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">main</span><span class="token punctuation">(</span>String<span class="token punctuation">[</span><span class="token punctuation">]</span> args<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-        SpringApplication<span class="token punctuation">.</span><span class="token function">run</span><span class="token punctuation">(</span>TraceBApplication<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">,</span> args<span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-
-<span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>创建一个<code>TraceBController</code>：</p>
-<pre class="line-numbers language-java"><code class="language-java"><span class="token annotation punctuation">@RestController</span>
-<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">TraceBController</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@RestController</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">TraceBController</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@GetMapping(&quot;/trace-b&quot;)</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> Mono&lt;String&gt; <span class="title">trace</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;call trace-b.&quot;</span>);</span><br><span class="line">        <span class="keyword">return</span> Mono.just(<span class="string">&quot;Trace.&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-    <span class="token annotation punctuation">@GetMapping</span><span class="token punctuation">(</span><span class="token string">"/trace-b"</span><span class="token punctuation">)</span>
-    <span class="token keyword">public</span> Mono<span class="token operator">&lt;</span>String<span class="token operator">></span> <span class="token function">trace</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"call trace-b."</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token keyword">return</span> Mono<span class="token punctuation">.</span><span class="token function">just</span><span class="token punctuation">(</span><span class="token string">"Trace."</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-
-<span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>至此，准备工作就完成了。*<code>Spring</code> 应用在监测到 <code>classpath</code> 中有 <code>Sleuth</code> 和 <code>Zipkin</code> 后，会自动在 <code>WebClient</code>（或 <code>RestTemplate</code>）的调用过程中向 <code>HTTP</code> 请求注入追踪信息，并向 <code>Zipkin Server</code> 发送这些信息。*</p>
 <h3 id="验证"><a href="#验证" class="headerlink" title="验证"></a>验证</h3><p>分别启动<code>服务注册中心</code>、<code>trace-a</code>和<code>trace-b</code>，访问<a target="_blank" rel="external nofollow noopener noreferrer" href="http://localhost:28092/trace-a">http://localhost:28092/trace-a</a>，可以得到返回值<code>Trace.</code>，同时在两个工程的控制台都能看到相关日志输出：</p>
-<pre class="line-numbers language-shell"><code class="language-shell"># trace-a工程控制台
-call trace-a.
-# trace-b工程控制台
-call trace-b.
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> trace-a工程控制台</span></span><br><span class="line">call trace-a.</span><br><span class="line"><span class="meta">#</span><span class="bash"> trace-b工程控制台</span></span><br><span class="line">call trace-b.</span><br></pre></td></tr></table></figure>
+
 <p>访问<a target="_blank" rel="external nofollow noopener noreferrer" href="http://localhost:9411/">http://localhost:9411</a>，点击<code>Find Traces</code>看到有一条记录：</p>
 <p><img src="https://gitee.com/cayzlh/img-repo/raw/master/uPic/a4.png" alt="zipkin"></p>
 <p>-</p>
@@ -402,226 +91,17 @@ call trace-b.
 <p><img src="https://gitee.com/cayzlh/img-repo/raw/master/uPic/a6.png" alt="zipkin"></p>
 <h3 id="消息总线-RabbitMQ方式"><a href="#消息总线-RabbitMQ方式" class="headerlink" title="消息总线-RabbitMQ方式"></a>消息总线-RabbitMQ方式</h3><p><code>Zipkin</code> 不再推荐我们来自定义 <code>Server</code> 端了，所以在最新版本的 <code>Spring Cloud</code> 依赖管理里已经找不到 <code>zipkin-server</code> 了。</p>
 <p>通过环境变量让<code>Zipkin</code>从<code>RabbitMQ</code>中读取信息：</p>
-<pre class="line-numbers language-shell"><code class="language-shell">RABBIT_ADDRESSES=localhost java -jar zipkin.jar
-<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">RABBIT_ADDRESSES=localhost java -jar zipkin.jar</span><br></pre></td></tr></table></figure>
+
 <p>关于 <code>Zipkin</code> 的 <code>Client</code> 端，也就是微服务应用，我们就在之前 <code>trace-a</code>、<code>trace-b</code> 的基础上修改，只要在他们的依赖里都引入<code>spring-cloud-stream-binder-rabbit</code>就好了，别的不用改。</p>
-<pre class="line-numbers language-xml"><code class="language-xml"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>dependency</span><span class="token punctuation">></span></span>
-    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>groupId</span><span class="token punctuation">></span></span>org.springframework.cloud<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>groupId</span><span class="token punctuation">></span></span>
-    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>artifactId</span><span class="token punctuation">></span></span>spring-cloud-stream-binder-rabbit<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>artifactId</span><span class="token punctuation">></span></span>
-<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>dependency</span><span class="token punctuation">></span></span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<figure class="highlight xml"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework.cloud<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-cloud-stream-binder-rabbit<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
 <h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ul>
 <li><a target="_blank" rel="external nofollow noopener noreferrer" href="https://windmt.com/2018/04/24/spring-cloud-12-sleuth-zipkin/">分布式链路跟踪 Sleuth 与 Zipkin【Finchley 版】</a></li>
 <li><a target="_blank" rel="external nofollow noopener noreferrer" href="http://www.ityouknow.com/springcloud/2018/02/02/spring-cloud-sleuth-zipkin.html">使用Spring Cloud Sleuth和Zipkin进行分布式链路跟踪</a></li>
 </ul>
-
-            <!-- 文章结尾部分 -->
-            
-                
-<div style="text-align:center;width:100%">
-    <span class="octicon octicon-tag-add"></span>
-    
-        <a style="color: #24292e;" href="/blog/tags/Spring/">Spring</a>
-    
-        <a style="color: #24292e;" href="/blog/tags/SpringCloud/">SpringCloud</a>
-    
-        <a style="color: #24292e;" href="/blog/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/">微服务</a>
-    
-</div>
-
-
-
-    <div style="text-align:center;width:100%">
-        <img src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/640-2.gif">
-    </div>
-
-
-
-
-<div>
-    <h4>相关推荐</h4>
-    <ul class="post-copyright">
-        
-        <li class="post-copyright-author">
-            <a href="/blog/2018/12/02/60e9e95d.html">Spring Cloud中的名词解释</a>
-        </li>
-        
-        <li class="post-copyright-author">
-            <a href="/blog/2018/12/30/5e7c1be9.html">SpringCloud（Git版配置中心）</a>
-        </li>
-        
-        <li class="post-copyright-author">
-            <a href="/blog/2018/12/23/c10f5abe.html">SpringCloud（Hystrix熔断监控面板）</a>
-        </li>
-        
-        <li class="post-copyright-author">
-            <a href="/blog/2018/12/29/9090e9d4.html">SpringCloud（Hystrix监控数据聚合Turbine）</a>
-        </li>
-        
-        <li class="post-copyright-author">
-            <a href="/blog/2018/12/20/b6f15c0c.html">SpringCloud（服务提供与发现Eureka）</a>
-        </li>
-        
-        <li class="post-copyright-author">
-            <a href="/blog/2018/12/16/b21e91d6.html">SpringCloud（注册中心Eureka）</a>
-        </li>
-        
-    </ul>
-    <br><br>
-</div>
-
-
-
-<div>
-    <h4>版权声明</h4>
-    <blockquote>
-        <ul class="post-copyright">
-            <li class="post-copyright-author">
-                <strong>本文来源： </strong>
-                
-                <a href="https://www.cayzlh.com/blog" title="🐳Ant丶" rel="noopener external nofollow noreferrer" target="_blank">🐳Ant丶</a></li>
-            <li class="post-copyright-link">
-                <strong>本文链接：</strong>
-                <a href="https://www.cayzlh.com/2019/01/04/a773bf3d.html" title="/blog/SpringCloud%EF%BC%88%E5%88%86%E5%B8%83%E5%BC%8F%E9%93%BE%E8%B7%AF%E8%B7%9F%E8%B8%AA%EF%BC%89">https://www.cayzlh.com/2019/01/04/a773bf3d.html</a>
-            </li>
-            <li class="post-copyright-license">
-                <strong>版权声明： </strong>
-                
-                    文章内容仅用作学习和分享，如有雷同，纯属拷贝。
-                
-            </li>
-        </ul>
-    </blockquote>
-</div>
-
-
-            
-            
-                <div class="comment">
-    <br><br><br>
-    
-        
-
-        
-
-        
-
-        
-                <h4>留言区</h4>
-                <div id="tcomment"></div>
-                <script src="https://cdn.jsdelivr.net/npm/twikoo@1.2.0/dist/twikoo.all.min.js"></script>
-                <script>
-                twikoo.init({
-                        envId: 'cayzlh-7g0jcpd31a34ccaf',
-                        el: '#tcomment',
-                        region: 'ap-guangzhou', // 环境地域，默认为 ap-shanghai，如果您的环境地域不是上海，需传此参数
-                        // path: 'window.location.pathname', // 用于区分不同文章的自定义 js 路径，如果您的文章路径不是 location.pathname，需传此参数
-                })
-                </script>
-        
-
-    
-</div>
-
-            
-        </div>
-        <div class="col-md-3 markdown-body">
-            <h4>文章目录</h4>
-            <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#Spring-Cloud-Sleuth"><span class="toc-text">Spring Cloud Sleuth</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#ZipKin"><span class="toc-text">ZipKin</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AE%9E%E8%B7%B5"><span class="toc-text">实践</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%87%86%E5%A4%87%E5%B7%A5%E4%BD%9C"><span class="toc-text">准备工作</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Zipkin%E6%9C%8D%E5%8A%A1%E7%AB%AF"><span class="toc-text">Zipkin服务端</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BA%94%E7%94%A8"><span class="toc-text">微服务应用</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#pom%E9%85%8D%E7%BD%AE"><span class="toc-text">pom配置</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6"><span class="toc-text">配置文件</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%BC%96%E7%A0%81"><span class="toc-text">编码</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#trace-a"><span class="toc-text">trace-a</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#trace-b"><span class="toc-text">trace-b</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%AA%8C%E8%AF%81"><span class="toc-text">验证</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%B6%88%E6%81%AF%E6%80%BB%E7%BA%BF-RabbitMQ%E6%96%B9%E5%BC%8F"><span class="toc-text">消息总线-RabbitMQ方式</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8F%82%E8%80%83"><span class="toc-text">参考</span></a></li></ol>
-        </div>
-    </div>
-    
-</article>
-
-
-<script>
-    hljs.initHighlightingOnLoad();
-</script>
-</main>
-<footer class="container">
-    <div class="site-footer">
-        
-    <div class="card text-center">
-        <ul class="list-inline" style="margin-left: 0;">
-            
-                <li>
-                    <a target="_blank" href="https://github.com/cayzlh" rel="external nofollow noopener noreferrer">
-                          <span class="fa-stack fa-lg">
-                            <i class="fa fa-circle fa-stack-2x"></i>
-                            <i class="fa fa-github fa-stack-1x fa-inverse">
-                                
-                            </i>
-                          </span>
-                    </a>
-                </li>
-            
-                <li>
-                    <a target="_blank" href="https://telegram.me/Q2F5emxo" rel="external nofollow noopener noreferrer">
-                          <span class="fa-stack fa-lg">
-                            <i class="fa fa-circle fa-stack-2x"></i>
-                            <i class="fa fa-rocket fa-stack-1x fa-inverse">
-                                
-                            </i>
-                          </span>
-                    </a>
-                </li>
-            
-                <li>
-                    <a target="_blank" href="mailto:chenanyu@cayzlh.com">
-                          <span class="fa-stack fa-lg">
-                            <i class="fa fa-circle fa-stack-2x"></i>
-                            <i class="fa fa-envelope fa-stack-1x fa-inverse">
-                                
-                            </i>
-                          </span>
-                    </a>
-                </li>
-            
-        </ul>
-    </div>
-
-
-        <div class="site-footer-links mobile-hidden">
-            
-                
-                
-            
-        </div>
-
-        <div class="site-footer-links mobile-hidden">
-        
-            <span class="meta-info-index hvr-grow">
-                
-                    <a href="https://www.cayzlh.com">
-                        🐳Ant丶 &copy; 2020
-                    </a>
-                
-            </span>
-        
-        
-            <span class="meta-info-index hvr-grow">
-                <a target="_blank" rel="external nofollow noopener noreferrer" href="http://beian.miit.gov.cn">粤ICP备20058712号-1</a>
-            </span>
-        
-        </div>
-
-        
-
-        
-    </div>
-    
-
-    
-        <!-- Third-Party JS -->
-        <script type="text/javascript" src="/blog/js/thirdparty/geopattern.min.js"></script>
-        <!-- My JS -->
-        <script type="text/javascript" src="/blog/js/script.js"></script>
-    
-
-    
-        <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js">
-        </script>
-    
-</footer>
-</body>
-</html>
+</div></article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta">文章作者: </span><span class="post-copyright-info"><a href="mailto:undefined" rel="external nofollow noopener noreferrer" target="_blank">🐳Ant丶</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta">文章链接: </span><span class="post-copyright-info"><a href="https://www.cayzlh.com/2019/01/04/a773bf3d.html">https://www.cayzlh.com/2019/01/04/a773bf3d.html</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta">版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a target="_blank" rel="external nofollow noopener noreferrer" href="https://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来自 <a href="https://www.cayzlh.com">BLOG | CAYZLH</a>！</span></div></div><div class="post-meta__tag-list"><a class="post-meta__tags" href="/blog/tags/Spring/">Spring</a><a class="post-meta__tags" href="/blog/tags/SpringCloud/">SpringCloud</a><a class="post-meta__tags" href="/blog/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/">微服务</a></div><nav id="pagination"><div class="prev-post pull-left"><a href="/blog/2019/01/22/1abc3648.html"><i class="fa fa-chevron-left">  </i><span>JDK8特性一览</span></a></div><div class="next-post pull-right"><a href="/blog/2019/01/03/d3f1148e.html"><span>SpringCloud（服务网关zuul）</span><i class="fa fa-chevron-right"></i></a></div></nav></div></div><footer><div class="layout" id="footer"><div class="footer_custom_text">hitokoto</div><div class="copyright">🐳Ant丶 &copy;2019 - 2021</div><div class="icp"><a><span>粤ICP备20058712号</span></a></div><div class="busuanzi"><script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></div></footer><i class="fa fa-arrow-up" id="go-up" aria-hidden="true"></i><script src="https://cdn.jsdelivr.net/npm/animejs@latest/anime.min.js"></script><script src="https://cdn.jsdelivr.net/npm/jquery@latest/dist/jquery.min.js"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@latest/dist/jquery.fancybox.min.js"></script><script src="https://cdn.jsdelivr.net/npm/velocity-animate@latest/velocity.min.js"></script><script src="https://cdn.jsdelivr.net/npm/velocity-ui-pack@latest/velocity.ui.min.js"></script><script src="/blog/js/utils.js?version=1.9.0"></script><script src="/blog/js/fancybox.js?version=1.9.0"></script><script src="/blog/js/sidebar.js?version=1.9.0"></script><script src="/blog/js/copy.js?version=1.9.0"></script><script src="/blog/js/fireworks.js?version=1.9.0"></script><script src="/blog/js/transition.js?version=1.9.0"></script><script src="/blog/js/scroll.js?version=1.9.0"></script><script src="/blog/js/head.js?version=1.9.0"></script><script src="/blog/js/search/local-search.js"></script><script>if(/Android|webOS|iPhone|iPod|iPad|BlackBerry/i.test(navigator.userAgent)) {
+  $('#nav').addClass('is-mobile')
+  $('footer').addClass('is-mobile')
+  $('#top-container').addClass('is-mobile')
+}</script><div class="search-dialog" id="local-search"><div class="search-dialog__title" id="local-search-title">本地搜索</div><div id="local-input-panel"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="搜索文章"></div></div></div><hr><div id="local-search-results"><div id="local-hits"></div><div id="local-stats"><div class="local-search-stats__hr" id="hr"><span>Powered by</span> <a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/wzpan/hexo-generator-search" style="color:#49B1F5;">hexo-generator-search</a></div></div></div><span class="search-close-button"><i class="fa fa-times"></i></span></div><div class="search-mask"></div></body></html>

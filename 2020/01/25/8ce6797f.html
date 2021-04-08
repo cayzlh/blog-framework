@@ -1,244 +1,21 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
+<!DOCTYPE html><html lang="[&quot;zh-Hans&quot;,&quot;en&quot;,&quot;default&quot;]"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"><meta name="description" content="分析一下Spring的环境属性：PropertySource、Environment、Profile"><meta name="keywords" content="Spring, IOC, Spring的环境&amp;属性, PropertySource、Environment、Profile"><meta name="author" content="🐳Ant丶"><meta name="copyright" content="🐳Ant丶"><title>Spring的环境&amp;属性：PropertySource、Environment、Profile | BLOG | CAYZLH</title><link rel="shortcut icon" href="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/logo/favicon.ico"><link rel="stylesheet" href="/blog/css/index.css?version=1.9.0"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/font-awesome@latest/css/font-awesome.min.css?version=1.9.0"><meta name="format-detection" content="telephone=no"><meta http-equiv="x-dns-prefetch-control" content="on"><link rel="dns-prefetch" href="https://cdn.jsdelivr.net"><link rel="dns-prefetch" href="https://www.google-analytics.com"><script>(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
 
-<head>
-    <meta charset="utf-8">
-    <meta name="keywords" content="Spring, IOC, Spring的环境&amp;属性, PropertySource、Environment、Profile">
-    <meta name="description" content="Ant丶的网络日志, CAYZLH网络日志, CAYZLH, CAYZLH主页, Ant丶空间">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <meta name="renderer" content="webkit|ie-stand|ie-comp">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="format-detection" content="telephone=no">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <!-- Global site tag (gtag.js) - Google Analytics -->
-
-    <meta name="google-site-verification" content="VrcbMTVpFGlHkIERHBt753dAtXKF4qirjnDweuXSRJw">
-
-
-    <!-- Global site tag (gtag.js) - Google Analytics -->
-
-<script async src="https://www.googletagmanager.com/gtag/js?id=UA-129095667-1"></script>
-<script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag() {
-        dataLayer.push(arguments);
-    }
-
-    gtag('js', new Date());
-    gtag('config', 'UA-129095667-1');
-</script>
-
-
-    <title>Spring的环境&amp;属性：PropertySource、Environment、Profile | BLOG | CAYZLH</title>
-
-    
-    <!-- Third-Party CSS -->
-    
-
-        <link rel="shortcut icon" href="/blog/image/favicon.ico">
-        <link rel="icon" type="image/png" href="/blog/image/favicon-192x192.png" sizes="192x192">
-        <link rel="apple-touch-icon" sizes="180x180" href="/blog/image/apple-touch-icon.png">
-
-        <link rel="stylesheet" href="/blog/css/thirdparty/bootstrap.min.css">
-        <link rel="stylesheet" href="/blog/css/thirdparty/octicons.css">
-        <link rel="stylesheet" href="/blog/css/thirdparty/hover-min.css">
-        <link rel="stylesheet" href="/blog/css/thirdparty/user-content.min.css">
-        <link rel="stylesheet" href="/blog/css/thirdparty/syntax.css">
-        <link rel="stylesheet" href="/blog/css/thirdparty/gitalk.css">
-
-        <!-- My CSS -->
-        <link rel="stylesheet" href="/blog/css/common.css">
-
-        <link rel="stylesheet" href="/blog/css/sidebar-post-nav.css">
-
-        <link rel="stylesheet" href="/blog/css/blog-page.css">
-        <!-- CSS set in page -->
-
-        
-        <link rel="stylesheet" href="/blog/css/sidebar-popular-repo.css">
-    
-
-    <!-- CSS set in layout -->
-    <link rel="stylesheet" type="text/css" href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css">
-
-    
-        <script type="text/javascript" src="/blog/js/thirdparty/jquery.min.js"></script>
-        <script type="text/javascript" src="/blog/js/thirdparty/bootstrap.min.js"></script>
-        <script type="text/javascript" src="/blog/js/lock.js"></script>
-    
-
-    
-        <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.css">
-        <script src="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js"></script>
-
-        <link rel="stylesheet" href="//imsun.github.io/gitment/style/default.css">
-        <script src="//imsun.github.io/gitment/dist/gitment.browser.js"></script>
-
-        <script src="//unpkg.com/valine/dist/Valine.min.js"></script>
-        <script src="//cdn.jsdelivr.net/npm/twikoo@1.2.0/dist/twikoo.all.min.js"></script>
-
-    
-
-    <link rel="stylesheet" href="//cdn.bootcss.com/highlight.js/9.2.0/styles/github.min.css">
-    <script src="//cdn.bootcss.com/highlight.js/9.2.0/highlight.min.js"></script>
-<meta name="generator" content="Hexo 5.4.0"><link rel="alternate" href="/blog/atom.xml" title="BLOG | CAYZLH" type="application/atom+xml">
-</head>
-
-<body>
-<header class="site-header">
-    <div class="site-header-topbar">
-        <div class="container">
-            <div class="topbar-menu">
-
-    
-        <div class="item">
-            <a href="https://www.cayzlh.com/" title="导航">
-                导航
-            </a>
-        </div>
-    
-        <div class="item">
-            <a href="/blog/categories/" title="分类">
-                分类
-            </a>
-        </div>
-    
-        <div class="item">
-            <a href="/blog/tags/" title="标签">
-                标签
-            </a>
-        </div>
-    
-        <div class="item">
-            <a href="/blog/links/" title="链接">
-                链接
-            </a>
-        </div>
-    
-        <div class="item">
-            <a href="/blog/about" title="关于">
-                关于
-            </a>
-        </div>
-    
-
-</div>
-        </div>
-    </div>
-    <div class="container">
-        <a id="site-header-brand" href="/blog/" title="BLOG | CAYZLH">
-            <span class="octicon octicon-watch"></span>
-            BLOG | CAYZLH
-        </a>
-
-        <nav class="site-header-nav" role="navigation">
-    
-        <div class=" site-header-nav-item hvr-underline-from-center">
-            <a href="/blog/" title="Home">
-                Home
-            </a>
-            
-        </div>
-    
-        <div class=" site-header-nav-item hvr-underline-from-center">
-            <a href="/blog/archives" title="Archives">
-                Archives
-            </a>
-            
-        </div>
-    
-        <div class=" site-header-nav-item hvr-underline-from-center">
-            <a href="/blog/" title="Learning">
-                Learning
-            </a>
-            
-                <ul class="submenu">
-                    
-
-                        <li>
-                            <a href="/blog/categories/%E4%B9%A6%E7%B1%8D/%E3%80%8A%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3Java%E8%99%9A%E6%8B%9F%E6%9C%BA%E3%80%8B/">
-                                <span>深入理解Java虚拟机</span>
-                            </a>
-                        </li>
-
-                    
-
-                        <li>
-                            <a href="/blog/categories/%E4%B9%A6%E7%B1%8D/%E3%80%8AMyBatis%E6%8A%80%E6%9C%AF%E5%86%85%E5%B9%95%E3%80%8B/">
-                                <span>MyBatis技术内幕</span>
-                            </a>
-                        </li>
-
-                    
-
-                        <li>
-                            <a href="/blog/categories/Java/Java%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/">
-                                <span>Java设计模式</span>
-                            </a>
-                        </li>
-
-                    
-                </ul>
-            
-        </div>
-    
-</nav>
-    </div>
-</header>
-
-<main class="content">
-    <!-- 标题部分 -->
-<section class="jumbotron geopattern" data-pattern-id="Spring的环境&属性：PropertySource、Environment、Profile">
-    <div class="container">
-        <div id="jumbotron-meta-info">
-            <h1>Spring的环境&amp;属性：PropertySource、Environment、Profile</h1>
-            <span class="meta-info">
-                <a><span class="octicon octicon-calendar"></span> 2020-01-25</a>
-                
-                    <a><span class="octicon octicon-book"></span></a>
-                    
-                        <a href="/blog/categories/Spring/">Spring</a>
-                    
-                        <a href="/blog/categories/Spring/%E3%80%8ASpring%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E3%80%8B/">《Spring源码分析》</a>
-                    
-                
-                
-                    
-                
-            </span>
-        </div>
-
-    </div>
-</section>
-<script>
-    $(document).ready(function(){
-
-        $('.geopattern').each(function(){
-            $(this).geopattern($(this).data('pattern-id'));
-        });
-
-    });
-</script>
-<!-- 文章内容部分 -->
-<article class="post container " itemscope itemtype="http://schema.org/BlogPosting" id="openwrite-container">
-    <div class="row">
-        <div class="col-md-9 markdown-body">
-            <!-- 文章开始部分 -->
-            <!--<div style="text-align:center">-->
-<!--    <img style="display:inline-block" width="130" height="27"-->
-<!--         src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/640-3.gif"-->
-<!--         data-loaded="true">-->
-<!--    <img style="display:inline-block" width="41" height="35"-->
-<!--         src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/640-4.gif"-->
-<!--         data-loaded="true">-->
-<!--    <img style="display:inline-block"-->
-<!--         width="130" height="27"-->
-<!--         src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/640-5.gif"-->
-<!--         data-loaded="true">-->
-<!--</div>-->
-            <blockquote>
+ga('create', 'UA-129095667-1', 'auto');
+ga('send', 'pageview');</script><meta name="google-site-verification" content="VrcbMTVpFGlHkIERHBt753dAtXKF4qirjnDweuXSRJw"><meta http-equiv="Cache-Control" content="no-transform"><meta http-equiv="Cache-Control" content="no-siteapp"><script src="https://v1.hitokoto.cn/?encode=js&amp;charset=utf-8&amp;select=.footer_custom_text" defer></script><script>var GLOBAL_CONFIG = { 
+  root: '/blog/',
+  algolia: undefined,
+  localSearch: {"path":"search.xml","languages":{"hits_empty":"找不到您查询的内容:${query}"}},
+  copy: {
+    success: '复制成功',
+    error: '复制错误',
+    noSupport: '浏览器不支持'
+  },
+  hexoVersion: '5.4.0'
+} </script><meta name="generator" content="Hexo 5.4.0"><link rel="alternate" href="/blog/atom.xml" title="BLOG | CAYZLH" type="application/atom+xml">
+</head><body><i class="fa fa-arrow-right" id="toggle-sidebar" aria-hidden="true"></i><div id="sidebar" data-display="true"><div class="toggle-sidebar-info text-center"><span data-toggle="切换文章详情">切换站点概览</span><hr></div><div class="sidebar-toc"><div class="sidebar-toc__title">目录</div><div class="sidebar-toc__progress"><span class="progress-notice">你已经读了</span><span class="progress-num">0</span><span class="progress-percentage">%</span><div class="sidebar-toc__progress-bar"></div></div><div class="sidebar-toc__content"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%A6%82%E6%8B%AC"><span class="toc-text">概括</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Properties"><span class="toc-text">Properties</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#PropertyResolver"><span class="toc-text">PropertyResolver</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#ConfigurablePropertyResolver"><span class="toc-text">ConfigurablePropertyResolver</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#AbstractPropertyResolver"><span class="toc-text">AbstractPropertyResolver</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#PropertySourcesPropertyResolver"><span class="toc-text">PropertySourcesPropertyResolver</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Environment"><span class="toc-text">Environment</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#ConfigurableEnvironment"><span class="toc-text">ConfigurableEnvironment</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#AbstractEnvironment"><span class="toc-text">AbstractEnvironment</span></a></li></ol></li></ol></div></div><div class="author-info hide"><div class="author-info__avatar text-center"><img src="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/image/IMG_4207.JPG"></div><div class="author-info__name text-center">🐳Ant丶</div><div class="author-info__description text-center">CODE IS POETRY</div><div class="follow-button"><a target="_blank" rel="external nofollow noopener noreferrer" href="https://telegram.me/Q2F5emxo">contact me</a></div><hr><div class="author-info-articles"><a class="author-info-articles__archives article-meta" href="/blog/archives"><span class="pull-left">文章</span><span class="pull-right">98</span></a><a class="author-info-articles__tags article-meta" href="/blog/tags"><span class="pull-left">标签</span><span class="pull-right">15</span></a><a class="author-info-articles__categories article-meta" href="/blog/categories"><span class="pull-left">分类</span><span class="pull-right">14</span></a><a class="author-info-articles__categories article-meta" href="/blog/categories/%E4%B9%A6%E7%B1%8D/%E3%80%8A%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3Java%E8%99%9A%E6%8B%9F%E6%9C%BA%E3%80%8B/"><span class="pull-left">《深入理解Java虚拟机》</span><span class="pull-right">√</span></a><a class="author-info-articles__categories article-meta" href="/blog/categories/%E4%B9%A6%E7%B1%8D/%E3%80%8AMyBatis%E6%8A%80%E6%9C%AF%E5%86%85%E5%B9%95%E3%80%8B/"><span class="pull-left">《MyBatis技术内幕》</span><span class="pull-right">√</span></a><a class="author-info-articles__categories article-meta" href="/blog/categories/Java/Java%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/"><span class="pull-left">Java设计模式</span><span class="pull-right">√</span></a></div></div></div><div id="content-outer"><div class="no-bg" id="top-container"><div id="page-header"><span class="pull-left"> <a id="site-name" href="/blog/">BLOG | CAYZLH</a></span><i class="fa fa-bars toggle-menu pull-right" aria-hidden="true"></i><span class="pull-right"><a class="site-page social-icon search"><i class="fa fa-search"></i><span> 搜索</span></a></span></div><div id="post-info"><div id="post-title">Spring的环境&amp;属性：PropertySource、Environment、Profile</div><div id="post-meta"><time class="post-meta__date"><i class="fa fa-calendar" aria-hidden="true"></i> 2020-01-25</time><span class="post-meta__separator">|</span><i class="fa fa-inbox post-meta__icon" aria-hidden="true"></i><a class="post-meta__categories" href="/blog/categories/Spring/">Spring</a><i class="fa fa-angle-right" aria-hidden="true"></i><i class="fa fa-inbox post-meta__icon" aria-hidden="true"></i><a class="post-meta__categories" href="/blog/categories/Spring/%E3%80%8ASpring%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E3%80%8B/">《Spring源码分析》</a><div class="post-meta-wordcount"><span>字数总计: </span><span class="word-count">4k</span><span class="post-meta__separator">|</span><span>阅读时长: 16 分钟</span></div></div></div></div><div class="layout" id="content-inner"><article id="post"><div class="article-container" id="post-content"><blockquote>
 <p>本文作者：chenssy</p>
 <p>出处：<a target="_blank" rel="external nofollow noopener noreferrer" href="http://cmsblogs.com/?p=4032">http://cmsblogs.com/?p=4032</a></p>
 <p>在学习<code>Spring源码</code>的过程中发现的好站+好贴，原创不易感谢作者。</p>
@@ -259,45 +36,11 @@
 <h2 id="Properties"><a href="#Properties" class="headerlink" title="Properties"></a>Properties</h2><h3 id="PropertyResolver"><a href="#PropertyResolver" class="headerlink" title="PropertyResolver"></a>PropertyResolver</h3><blockquote>
 <p>属性解析器，用于解析任何基础源的属性的接口</p>
 </blockquote>
-<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">interface</span> <span class="token class-name">PropertyResolver</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">PropertyResolver</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 是否包含某个属性</span></span><br><span class="line">    <span class="function"><span class="keyword">boolean</span> <span class="title">containsProperty</span><span class="params">(String key)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 获取属性值 如果找不到返回null</span></span><br><span class="line">    <span class="meta">@Nullable</span></span><br><span class="line">    <span class="function">String <span class="title">getProperty</span><span class="params">(String key)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 获取属性值，如果找不到返回默认值  </span></span><br><span class="line">    <span class="function">String <span class="title">getProperty</span><span class="params">(String key, String defaultValue)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 获取指定类型的属性值，找不到返回null</span></span><br><span class="line">    <span class="meta">@Nullable</span></span><br><span class="line">    &lt;T&gt; <span class="function">T <span class="title">getProperty</span><span class="params">(String key, Class&lt;T&gt; targetType)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 获取指定类型的属性值，找不到返回默认值</span></span><br><span class="line">    &lt;T&gt; <span class="function">T <span class="title">getProperty</span><span class="params">(String key, Class&lt;T&gt; targetType, T defaultValue)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 获取属性值，找不到抛出异常IllegalStateException</span></span><br><span class="line">    <span class="function">String <span class="title">getRequiredProperty</span><span class="params">(String key)</span> <span class="keyword">throws</span> IllegalStateException</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 获取指定类型的属性值，找不到抛出异常IllegalStateException</span></span><br><span class="line">    &lt;T&gt; <span class="function">T <span class="title">getRequiredProperty</span><span class="params">(String key, Class&lt;T&gt; targetType)</span> <span class="keyword">throws</span> IllegalStateException</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 替换文本中的占位符（$&#123;key&#125;）到属性值，找不到不解析</span></span><br><span class="line">    <span class="function">String <span class="title">resolvePlaceholders</span><span class="params">(String text)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 替换文本中的占位符（$&#123;key&#125;）到属性值，找不到抛出异常IllegalArgumentException</span></span><br><span class="line">    <span class="function">String <span class="title">resolveRequiredPlaceholders</span><span class="params">(String text)</span> <span class="keyword">throws</span> IllegalArgumentException</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-    <span class="token comment" spellcheck="true">// 是否包含某个属性</span>
-    <span class="token keyword">boolean</span> <span class="token function">containsProperty</span><span class="token punctuation">(</span>String key<span class="token punctuation">)</span><span class="token punctuation">;</span>
-
-    <span class="token comment" spellcheck="true">// 获取属性值 如果找不到返回null</span>
-    <span class="token annotation punctuation">@Nullable</span>
-    String <span class="token function">getProperty</span><span class="token punctuation">(</span>String key<span class="token punctuation">)</span><span class="token punctuation">;</span>
-
-    <span class="token comment" spellcheck="true">// 获取属性值，如果找不到返回默认值  </span>
-    String <span class="token function">getProperty</span><span class="token punctuation">(</span>String key<span class="token punctuation">,</span> String defaultValue<span class="token punctuation">)</span><span class="token punctuation">;</span>
-
-    <span class="token comment" spellcheck="true">// 获取指定类型的属性值，找不到返回null</span>
-    <span class="token annotation punctuation">@Nullable</span>
-    <span class="token operator">&lt;</span>T<span class="token operator">></span> T <span class="token function">getProperty</span><span class="token punctuation">(</span>String key<span class="token punctuation">,</span> Class<span class="token operator">&lt;</span>T<span class="token operator">></span> targetType<span class="token punctuation">)</span><span class="token punctuation">;</span>
-
-    <span class="token comment" spellcheck="true">// 获取指定类型的属性值，找不到返回默认值</span>
-    <span class="token operator">&lt;</span>T<span class="token operator">></span> T <span class="token function">getProperty</span><span class="token punctuation">(</span>String key<span class="token punctuation">,</span> Class<span class="token operator">&lt;</span>T<span class="token operator">></span> targetType<span class="token punctuation">,</span> T defaultValue<span class="token punctuation">)</span><span class="token punctuation">;</span>
-
-    <span class="token comment" spellcheck="true">// 获取属性值，找不到抛出异常IllegalStateException</span>
-    String <span class="token function">getRequiredProperty</span><span class="token punctuation">(</span>String key<span class="token punctuation">)</span> <span class="token keyword">throws</span> IllegalStateException<span class="token punctuation">;</span>
-
-    <span class="token comment" spellcheck="true">// 获取指定类型的属性值，找不到抛出异常IllegalStateException</span>
-    <span class="token operator">&lt;</span>T<span class="token operator">></span> T <span class="token function">getRequiredProperty</span><span class="token punctuation">(</span>String key<span class="token punctuation">,</span> Class<span class="token operator">&lt;</span>T<span class="token operator">></span> targetType<span class="token punctuation">)</span> <span class="token keyword">throws</span> IllegalStateException<span class="token punctuation">;</span>
-
-    <span class="token comment" spellcheck="true">// 替换文本中的占位符（$&amp;#123;key&amp;#125;）到属性值，找不到不解析</span>
-    String <span class="token function">resolvePlaceholders</span><span class="token punctuation">(</span>String text<span class="token punctuation">)</span><span class="token punctuation">;</span>
-
-    <span class="token comment" spellcheck="true">// 替换文本中的占位符（$&amp;#123;key&amp;#125;）到属性值，找不到抛出异常IllegalArgumentException</span>
-    String <span class="token function">resolveRequiredPlaceholders</span><span class="token punctuation">(</span>String text<span class="token punctuation">)</span> <span class="token keyword">throws</span> IllegalArgumentException<span class="token punctuation">;</span>
-<span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>从 API 上面我们就知道属性解析器 PropertyResolver 的作用了。下面是一个简单的运用。</p>
-<pre class="line-numbers language-java"><code class="language-java">PropertyResolver propertyResolver <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">PropertySourcesPropertyResolver</span><span class="token punctuation">(</span>propertySources<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">PropertyResolver propertyResolver = <span class="keyword">new</span> PropertySourcesPropertyResolver(propertySources);</span><br><span class="line"></span><br><span class="line">System.out.println(propertyResolver.getProperty(<span class="string">&quot;name&quot;</span>));</span><br><span class="line">System.out.println(propertyResolver.getProperty(<span class="string">&quot;name&quot;</span>, <span class="string">&quot;chenssy&quot;</span>));</span><br><span class="line">System.out.println(propertyResolver.resolvePlaceholders(<span class="string">&quot;my name is  $&#123;name&#125;&quot;</span>));</span><br></pre></td></tr></table></figure>
 
-System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>propertyResolver<span class="token punctuation">.</span><span class="token function">getProperty</span><span class="token punctuation">(</span><span class="token string">"name"</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>propertyResolver<span class="token punctuation">.</span><span class="token function">getProperty</span><span class="token punctuation">(</span><span class="token string">"name"</span><span class="token punctuation">,</span> <span class="token string">"chenssy"</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>propertyResolver<span class="token punctuation">.</span><span class="token function">resolvePlaceholders</span><span class="token punctuation">(</span><span class="token string">"my name is  $&amp;#123;name&amp;#125;"</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>下图是 PropertyResolver 体系结构图：</p>
 <p><img src="https://gitee.com/cayzlh/img-repo/raw/master/2020/05/27/201810241001_UC9RsT_5WoqUp.png" alt="201810241001"></p>
 <ul>
@@ -309,35 +52,8 @@ System<span class="token punctuation">.</span>out<span class="token punctuation"
 <p>提供属性类型转换的功能</p>
 </blockquote>
 <p>通俗点说就是 ConfigurablePropertyResolver 提供属性值类型转换所需要的 ConversionService。</p>
-<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">interface</span> <span class="token class-name">ConfigurablePropertyResolver</span> <span class="token keyword">extends</span> <span class="token class-name">PropertyResolver</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">ConfigurablePropertyResolver</span> <span class="keyword">extends</span> <span class="title">PropertyResolver</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 返回执行类型转换时使用的 ConfigurableConversionService</span></span><br><span class="line">    <span class="function">ConfigurableConversionService <span class="title">getConversionService</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 设置 ConfigurableConversionService</span></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">setConversionService</span><span class="params">(ConfigurableConversionService conversionService)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 设置占位符前缀</span></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">setPlaceholderPrefix</span><span class="params">(String placeholderPrefix)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 设置占位符后缀</span></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">setPlaceholderSuffix</span><span class="params">(String placeholderSuffix)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 设置占位符与默认值之间的分隔符</span></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">setValueSeparator</span><span class="params">(<span class="meta">@Nullable</span> String valueSeparator)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 设置当遇到嵌套在给定属性值内的不可解析的占位符时是否抛出异常</span></span><br><span class="line">    <span class="comment">// 当属性值包含不可解析的占位符时，getProperty(String)及其变体的实现必须检查此处设置的值以确定正确的行为。</span></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">setIgnoreUnresolvableNestedPlaceholders</span><span class="params">(<span class="keyword">boolean</span> ignoreUnresolvableNestedPlaceholders)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 指定必须存在哪些属性，以便由validateRequiredProperties（）验证</span></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">setRequiredProperties</span><span class="params">(String... requiredProperties)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 验证setRequiredProperties指定的每个属性是否存在并解析为非null值</span></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">validateRequiredProperties</span><span class="params">()</span> <span class="keyword">throws</span> MissingRequiredPropertiesException</span>;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-    <span class="token comment" spellcheck="true">// 返回执行类型转换时使用的 ConfigurableConversionService</span>
-    ConfigurableConversionService <span class="token function">getConversionService</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-
-    <span class="token comment" spellcheck="true">// 设置 ConfigurableConversionService</span>
-    <span class="token keyword">void</span> <span class="token function">setConversionService</span><span class="token punctuation">(</span>ConfigurableConversionService conversionService<span class="token punctuation">)</span><span class="token punctuation">;</span>
-
-    <span class="token comment" spellcheck="true">// 设置占位符前缀</span>
-    <span class="token keyword">void</span> <span class="token function">setPlaceholderPrefix</span><span class="token punctuation">(</span>String placeholderPrefix<span class="token punctuation">)</span><span class="token punctuation">;</span>
-
-    <span class="token comment" spellcheck="true">// 设置占位符后缀</span>
-    <span class="token keyword">void</span> <span class="token function">setPlaceholderSuffix</span><span class="token punctuation">(</span>String placeholderSuffix<span class="token punctuation">)</span><span class="token punctuation">;</span>
-
-    <span class="token comment" spellcheck="true">// 设置占位符与默认值之间的分隔符</span>
-    <span class="token keyword">void</span> <span class="token function">setValueSeparator</span><span class="token punctuation">(</span><span class="token annotation punctuation">@Nullable</span> String valueSeparator<span class="token punctuation">)</span><span class="token punctuation">;</span>
-
-    <span class="token comment" spellcheck="true">// 设置当遇到嵌套在给定属性值内的不可解析的占位符时是否抛出异常</span>
-    <span class="token comment" spellcheck="true">// 当属性值包含不可解析的占位符时，getProperty(String)及其变体的实现必须检查此处设置的值以确定正确的行为。</span>
-    <span class="token keyword">void</span> <span class="token function">setIgnoreUnresolvableNestedPlaceholders</span><span class="token punctuation">(</span><span class="token keyword">boolean</span> ignoreUnresolvableNestedPlaceholders<span class="token punctuation">)</span><span class="token punctuation">;</span>
-
-    <span class="token comment" spellcheck="true">// 指定必须存在哪些属性，以便由validateRequiredProperties（）验证</span>
-    <span class="token keyword">void</span> <span class="token function">setRequiredProperties</span><span class="token punctuation">(</span>String<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span> requiredProperties<span class="token punctuation">)</span><span class="token punctuation">;</span>
-
-    <span class="token comment" spellcheck="true">// 验证setRequiredProperties指定的每个属性是否存在并解析为非null值</span>
-    <span class="token keyword">void</span> <span class="token function">validateRequiredProperties</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">throws</span> MissingRequiredPropertiesException<span class="token punctuation">;</span>
-
-<span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>从 ConfigurablePropertyResolver 所提供的方法来看，除了访问和设置 ConversionService 外，主要还提供了一些解析规则之类的方法。</p>
 <p>就 Properties 体系而言，PropertyResolver 定义了访问 Properties 属性值的方法，而 ConfigurablePropertyResolver 则定义了解析 Properties 一些相关的规则和值进行类型转换所需要的 Service。</p>
 <p>该体系有两个实现者：<code>AbstractPropertyResolver</code> 和 <code>PropertySourcesPropertyResolver</code>，其中 <code>AbstractPropertyResolver</code> 为实现的抽象基类，<code>PropertySourcesPropertyResolver</code> 为真正的实现者。</p>
@@ -345,97 +61,20 @@ System<span class="token punctuation">.</span>out<span class="token punctuation"
 <p>解析属性文件的抽象基类</p>
 </blockquote>
 <p>AbstractPropertyResolver 作为基类它仅仅只是设置了一些解析属性文件所需要配置或者转换器，如 <code>setConversionService()</code>、<code>setPlaceholderPrefix()</code>、<code>setValueSeparator()</code>，其实这些方法的实现都比较简单都是设置或者获取 AbstractPropertyResolver 所提供的属性，如下：</p>
-<pre class="line-numbers language-java"><code class="language-java"><span class="token comment" spellcheck="true">// 类型转换去</span>
-<span class="token keyword">private</span> <span class="token keyword">volatile</span> ConfigurableConversionService conversionService<span class="token punctuation">;</span>
-<span class="token comment" spellcheck="true">// 占位符</span>
-<span class="token keyword">private</span> PropertyPlaceholderHelper nonStrictHelper<span class="token punctuation">;</span>
-<span class="token comment" spellcheck="true">//</span>
-<span class="token keyword">private</span> PropertyPlaceholderHelper strictHelper<span class="token punctuation">;</span>
-<span class="token comment" spellcheck="true">// 设置是否抛出异常</span>
-<span class="token keyword">private</span> <span class="token keyword">boolean</span> ignoreUnresolvableNestedPlaceholders <span class="token operator">=</span> <span class="token boolean">false</span><span class="token punctuation">;</span>
-<span class="token comment" spellcheck="true">// 占位符前缀</span>
-<span class="token keyword">private</span> String placeholderPrefix <span class="token operator">=</span> SystemPropertyUtils<span class="token punctuation">.</span>PLACEHOLDER_PREFIX<span class="token punctuation">;</span>
-<span class="token comment" spellcheck="true">// 占位符后缀</span>
-<span class="token keyword">private</span> String placeholderSuffix <span class="token operator">=</span> SystemPropertyUtils<span class="token punctuation">.</span>PLACEHOLDER_SUFFIX<span class="token punctuation">;</span>
-<span class="token comment" spellcheck="true">// 与默认值的分割</span>
-<span class="token keyword">private</span> String valueSeparator <span class="token operator">=</span> SystemPropertyUtils<span class="token punctuation">.</span>VALUE_SEPARATOR<span class="token punctuation">;</span>
-<span class="token comment" spellcheck="true">// 必须要有的字段值</span>
-<span class="token keyword">private</span> <span class="token keyword">final</span> Set<span class="token operator">&lt;</span>String<span class="token operator">></span> requiredProperties <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">LinkedHashSet</span><span class="token operator">&lt;</span><span class="token operator">></span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="comment">// 类型转换去</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">volatile</span> ConfigurableConversionService conversionService;</span><br><span class="line"><span class="comment">// 占位符</span></span><br><span class="line"><span class="keyword">private</span> PropertyPlaceholderHelper nonStrictHelper;</span><br><span class="line"><span class="comment">//</span></span><br><span class="line"><span class="keyword">private</span> PropertyPlaceholderHelper strictHelper;</span><br><span class="line"><span class="comment">// 设置是否抛出异常</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">boolean</span> ignoreUnresolvableNestedPlaceholders = <span class="keyword">false</span>;</span><br><span class="line"><span class="comment">// 占位符前缀</span></span><br><span class="line"><span class="keyword">private</span> String placeholderPrefix = SystemPropertyUtils.PLACEHOLDER_PREFIX;</span><br><span class="line"><span class="comment">// 占位符后缀</span></span><br><span class="line"><span class="keyword">private</span> String placeholderSuffix = SystemPropertyUtils.PLACEHOLDER_SUFFIX;</span><br><span class="line"><span class="comment">// 与默认值的分割</span></span><br><span class="line"><span class="keyword">private</span> String valueSeparator = SystemPropertyUtils.VALUE_SEPARATOR;</span><br><span class="line"><span class="comment">// 必须要有的字段值</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> Set&lt;String&gt; requiredProperties = <span class="keyword">new</span> LinkedHashSet&lt;&gt;();</span><br></pre></td></tr></table></figure>
+
 <p>这些属性都是 ConfigurablePropertyResolver 接口所提供方法需要的属性，他所提供的方法都是设置和读取这些值，如下几个方法：</p>
-<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> ConfigurableConversionService <span class="token function">getConversionService</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-  <span class="token comment" spellcheck="true">// 需要提供独立的DefaultConversionService，而不是PropertySourcesPropertyResolver 使用的共享DefaultConversionService。</span>
-  ConfigurableConversionService cs <span class="token operator">=</span> <span class="token keyword">this</span><span class="token punctuation">.</span>conversionService<span class="token punctuation">;</span>
-  <span class="token keyword">if</span> <span class="token punctuation">(</span>cs <span class="token operator">==</span> null<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-    <span class="token keyword">synchronized</span> <span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-      cs <span class="token operator">=</span> <span class="token keyword">this</span><span class="token punctuation">.</span>conversionService<span class="token punctuation">;</span>
-      <span class="token keyword">if</span> <span class="token punctuation">(</span>cs <span class="token operator">==</span> null<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-        cs <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">DefaultConversionService</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token keyword">this</span><span class="token punctuation">.</span>conversionService <span class="token operator">=</span> cs<span class="token punctuation">;</span>
-      <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-    <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-  <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-  <span class="token keyword">return</span> cs<span class="token punctuation">;</span>
-<span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> ConfigurableConversionService <span class="title">getConversionService</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="comment">// 需要提供独立的DefaultConversionService，而不是PropertySourcesPropertyResolver 使用的共享DefaultConversionService。</span></span><br><span class="line">  ConfigurableConversionService cs = <span class="keyword">this</span>.conversionService;</span><br><span class="line">  <span class="keyword">if</span> (cs == <span class="keyword">null</span>) &#123;</span><br><span class="line">    <span class="keyword">synchronized</span> (<span class="keyword">this</span>) &#123;</span><br><span class="line">      cs = <span class="keyword">this</span>.conversionService;</span><br><span class="line">      <span class="keyword">if</span> (cs == <span class="keyword">null</span>) &#123;</span><br><span class="line">        cs = <span class="keyword">new</span> DefaultConversionService();</span><br><span class="line">        <span class="keyword">this</span>.conversionService = cs;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> cs;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">setConversionService</span><span class="params">(ConfigurableConversionService conversionService)</span> </span>&#123;</span><br><span class="line">  Assert.notNull(conversionService, <span class="string">&quot;ConversionService must not be null&quot;</span>);</span><br><span class="line">  <span class="keyword">this</span>.conversionService = conversionService;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">setPlaceholderPrefix</span><span class="params">(String placeholderPrefix)</span> </span>&#123;</span><br><span class="line">  Assert.notNull(placeholderPrefix, <span class="string">&quot;&#x27;placeholderPrefix&#x27; must not be null&quot;</span>);</span><br><span class="line">  <span class="keyword">this</span>.placeholderPrefix = placeholderPrefix;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">setPlaceholderSuffix</span><span class="params">(String placeholderSuffix)</span> </span>&#123;</span><br><span class="line">  Assert.notNull(placeholderSuffix, <span class="string">&quot;&#x27;placeholderSuffix&#x27; must not be null&quot;</span>);</span><br><span class="line">  <span class="keyword">this</span>.placeholderSuffix = placeholderSuffix;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<span class="token annotation punctuation">@Override</span>
-<span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">setConversionService</span><span class="token punctuation">(</span>ConfigurableConversionService conversionService<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-  Assert<span class="token punctuation">.</span><span class="token function">notNull</span><span class="token punctuation">(</span>conversionService<span class="token punctuation">,</span> <span class="token string">"ConversionService must not be null"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-  <span class="token keyword">this</span><span class="token punctuation">.</span>conversionService <span class="token operator">=</span> conversionService<span class="token punctuation">;</span>
-<span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-
-<span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">setPlaceholderPrefix</span><span class="token punctuation">(</span>String placeholderPrefix<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-  Assert<span class="token punctuation">.</span><span class="token function">notNull</span><span class="token punctuation">(</span>placeholderPrefix<span class="token punctuation">,</span> <span class="token string">"'placeholderPrefix' must not be null"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-  <span class="token keyword">this</span><span class="token punctuation">.</span>placeholderPrefix <span class="token operator">=</span> placeholderPrefix<span class="token punctuation">;</span>
-<span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-
-<span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">setPlaceholderSuffix</span><span class="token punctuation">(</span>String placeholderSuffix<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-  Assert<span class="token punctuation">.</span><span class="token function">notNull</span><span class="token punctuation">(</span>placeholderSuffix<span class="token punctuation">,</span> <span class="token string">"'placeholderSuffix' must not be null"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-  <span class="token keyword">this</span><span class="token punctuation">.</span>placeholderSuffix <span class="token operator">=</span> placeholderSuffix<span class="token punctuation">;</span>
-<span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>而对属性的访问则委托给子类 PropertySourcesPropertyResolver 实现。</p>
-<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> String <span class="token function">getProperty</span><span class="token punctuation">(</span>String key<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-  <span class="token keyword">return</span> <span class="token function">getProperty</span><span class="token punctuation">(</span>key<span class="token punctuation">,</span> String<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> String <span class="title">getProperty</span><span class="params">(String key)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> getProperty(key, String.class);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">public</span> String <span class="title">getProperty</span><span class="params">(String key, String defaultValue)</span> </span>&#123;</span><br><span class="line">  String value = getProperty(key);</span><br><span class="line">  <span class="keyword">return</span> (value != <span class="keyword">null</span> ? value : defaultValue);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> &lt;T&gt; <span class="function">T <span class="title">getProperty</span><span class="params">(String key, Class&lt;T&gt; targetType, T defaultValue)</span> </span>&#123;</span><br><span class="line">  T value = getProperty(key, targetType);</span><br><span class="line">  <span class="keyword">return</span> (value != <span class="keyword">null</span> ? value : defaultValue);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">public</span> String <span class="title">getRequiredProperty</span><span class="params">(String key)</span> <span class="keyword">throws</span> IllegalStateException </span>&#123;</span><br><span class="line">  String value = getProperty(key);</span><br><span class="line">  <span class="keyword">if</span> (value == <span class="keyword">null</span>) &#123;</span><br><span class="line">    <span class="keyword">throw</span> <span class="keyword">new</span> IllegalStateException(<span class="string">&quot;Required key &#x27;&quot;</span> + key + <span class="string">&quot;&#x27; not found&quot;</span>);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> value;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> &lt;T&gt; <span class="function">T <span class="title">getRequiredProperty</span><span class="params">(String key, Class&lt;T&gt; valueType)</span> <span class="keyword">throws</span> IllegalStateException </span>&#123;</span><br><span class="line">  T value = getProperty(key, valueType);</span><br><span class="line">  <span class="keyword">if</span> (value == <span class="keyword">null</span>) &#123;</span><br><span class="line">    <span class="keyword">throw</span> <span class="keyword">new</span> IllegalStateException(<span class="string">&quot;Required key &#x27;&quot;</span> + key + <span class="string">&quot;&#x27; not found&quot;</span>);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> value;</span><br></pre></td></tr></table></figure>
 
-<span class="token keyword">public</span> String <span class="token function">getProperty</span><span class="token punctuation">(</span>String key<span class="token punctuation">,</span> String defaultValue<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-  String value <span class="token operator">=</span> <span class="token function">getProperty</span><span class="token punctuation">(</span>key<span class="token punctuation">)</span><span class="token punctuation">;</span>
-  <span class="token keyword">return</span> <span class="token punctuation">(</span>value <span class="token operator">!=</span> null <span class="token operator">?</span> value <span class="token operator">:</span> defaultValue<span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-
-<span class="token keyword">public</span> <span class="token operator">&lt;</span>T<span class="token operator">></span> T <span class="token function">getProperty</span><span class="token punctuation">(</span>String key<span class="token punctuation">,</span> Class<span class="token operator">&lt;</span>T<span class="token operator">></span> targetType<span class="token punctuation">,</span> T defaultValue<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-  T value <span class="token operator">=</span> <span class="token function">getProperty</span><span class="token punctuation">(</span>key<span class="token punctuation">,</span> targetType<span class="token punctuation">)</span><span class="token punctuation">;</span>
-  <span class="token keyword">return</span> <span class="token punctuation">(</span>value <span class="token operator">!=</span> null <span class="token operator">?</span> value <span class="token operator">:</span> defaultValue<span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-
-<span class="token keyword">public</span> String <span class="token function">getRequiredProperty</span><span class="token punctuation">(</span>String key<span class="token punctuation">)</span> <span class="token keyword">throws</span> IllegalStateException <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-  String value <span class="token operator">=</span> <span class="token function">getProperty</span><span class="token punctuation">(</span>key<span class="token punctuation">)</span><span class="token punctuation">;</span>
-  <span class="token keyword">if</span> <span class="token punctuation">(</span>value <span class="token operator">==</span> null<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-    <span class="token keyword">throw</span> <span class="token keyword">new</span> <span class="token class-name">IllegalStateException</span><span class="token punctuation">(</span><span class="token string">"Required key '"</span> <span class="token operator">+</span> key <span class="token operator">+</span> <span class="token string">"' not found"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-  <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-  <span class="token keyword">return</span> value<span class="token punctuation">;</span>
-<span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-
-<span class="token keyword">public</span> <span class="token operator">&lt;</span>T<span class="token operator">></span> T <span class="token function">getRequiredProperty</span><span class="token punctuation">(</span>String key<span class="token punctuation">,</span> Class<span class="token operator">&lt;</span>T<span class="token operator">></span> valueType<span class="token punctuation">)</span> <span class="token keyword">throws</span> IllegalStateException <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-  T value <span class="token operator">=</span> <span class="token function">getProperty</span><span class="token punctuation">(</span>key<span class="token punctuation">,</span> valueType<span class="token punctuation">)</span><span class="token punctuation">;</span>
-  <span class="token keyword">if</span> <span class="token punctuation">(</span>value <span class="token operator">==</span> null<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-    <span class="token keyword">throw</span> <span class="token keyword">new</span> <span class="token class-name">IllegalStateException</span><span class="token punctuation">(</span><span class="token string">"Required key '"</span> <span class="token operator">+</span> key <span class="token operator">+</span> <span class="token string">"' not found"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-  <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-  <span class="token keyword">return</span> value<span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <h3 id="PropertySourcesPropertyResolver"><a href="#PropertySourcesPropertyResolver" class="headerlink" title="PropertySourcesPropertyResolver"></a>PropertySourcesPropertyResolver</h3><blockquote>
 <p>PropertyResolver 的实现者，他对一组 PropertySources 提供属性解析服务</p>
 </blockquote>
 <p>它仅有一个成员变量：PropertySources。该成员变量内部存储着一组 PropertySource，表示 key-value 键值对的源的抽象基类，即一个 PropertySource 对象则是一个 key-value 键值对。如下：</p>
-<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">abstract</span> <span class="token keyword">class</span> <span class="token class-name">PropertySource</span><span class="token operator">&lt;</span>T<span class="token operator">></span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-    <span class="token keyword">protected</span> <span class="token keyword">final</span> Log logger <span class="token operator">=</span> LogFactory<span class="token punctuation">.</span><span class="token function">getLog</span><span class="token punctuation">(</span><span class="token function">getClass</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token keyword">protected</span> <span class="token keyword">final</span> String name<span class="token punctuation">;</span>
-    <span class="token keyword">protected</span> <span class="token keyword">final</span> T source<span class="token punctuation">;</span>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="class"><span class="keyword">class</span> <span class="title">PropertySource</span>&lt;<span class="title">T</span>&gt; </span>&#123;</span><br><span class="line">    <span class="keyword">protected</span> <span class="keyword">final</span> Log logger = LogFactory.getLog(getClass());</span><br><span class="line">    <span class="keyword">protected</span> <span class="keyword">final</span> String name;</span><br><span class="line">    <span class="keyword">protected</span> <span class="keyword">final</span> T source;</span><br><span class="line"></span><br><span class="line">   <span class="comment">//......</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-   <span class="token comment" spellcheck="true">//......</span>
-<span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>对外公开的 <code>getProperty()</code> 都是委托给 <code>getProperty(String key, Class&lt;T&gt; targetValueType, boolean resolveNestedPlaceholders)</code> 实现，他有三个参数，分别表示为：</p>
 <ul>
 <li>key：获取的 key</li>
@@ -443,46 +82,20 @@ System<span class="token punctuation">.</span>out<span class="token punctuation"
 <li>resolveNestedPlaceholders：是否解决嵌套占位符</li>
 </ul>
 <p>源码如下：</p>
-<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">protected</span> <span class="token operator">&lt;</span>T<span class="token operator">></span> T <span class="token function">getProperty</span><span class="token punctuation">(</span>String key<span class="token punctuation">,</span> Class<span class="token operator">&lt;</span>T<span class="token operator">></span> targetValueType<span class="token punctuation">,</span> <span class="token keyword">boolean</span> resolveNestedPlaceholders<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-  <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>propertySources <span class="token operator">!=</span> null<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-    <span class="token keyword">for</span> <span class="token punctuation">(</span>PropertySource<span class="token operator">&lt;</span><span class="token operator">?</span><span class="token operator">></span> propertySource <span class="token operator">:</span> <span class="token keyword">this</span><span class="token punctuation">.</span>propertySources<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-      <span class="token keyword">if</span> <span class="token punctuation">(</span>logger<span class="token punctuation">.</span><span class="token function">isTraceEnabled</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-        logger<span class="token punctuation">.</span><span class="token function">trace</span><span class="token punctuation">(</span><span class="token string">"Searching for key '"</span> <span class="token operator">+</span> key <span class="token operator">+</span> <span class="token string">"' in PropertySource '"</span> <span class="token operator">+</span>
-                     propertySource<span class="token punctuation">.</span><span class="token function">getName</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">+</span> <span class="token string">"'"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-      <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-      Object value <span class="token operator">=</span> propertySource<span class="token punctuation">.</span><span class="token function">getProperty</span><span class="token punctuation">(</span>key<span class="token punctuation">)</span><span class="token punctuation">;</span>
-      <span class="token keyword">if</span> <span class="token punctuation">(</span>value <span class="token operator">!=</span> null<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-        <span class="token keyword">if</span> <span class="token punctuation">(</span>resolveNestedPlaceholders <span class="token operator">&amp;&amp;</span> value <span class="token keyword">instanceof</span> <span class="token class-name">String</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-          value <span class="token operator">=</span> <span class="token function">resolveNestedPlaceholders</span><span class="token punctuation">(</span><span class="token punctuation">(</span>String<span class="token punctuation">)</span> value<span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-        <span class="token function">logKeyFound</span><span class="token punctuation">(</span>key<span class="token punctuation">,</span> propertySource<span class="token punctuation">,</span> value<span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token keyword">return</span> <span class="token function">convertValueIfNecessary</span><span class="token punctuation">(</span>value<span class="token punctuation">,</span> targetValueType<span class="token punctuation">)</span><span class="token punctuation">;</span>
-      <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-    <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-  <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-  <span class="token keyword">if</span> <span class="token punctuation">(</span>logger<span class="token punctuation">.</span><span class="token function">isDebugEnabled</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-    logger<span class="token punctuation">.</span><span class="token function">debug</span><span class="token punctuation">(</span><span class="token string">"Could not find key '"</span> <span class="token operator">+</span> key <span class="token operator">+</span> <span class="token string">"' in any property source"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-  <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-  <span class="token keyword">return</span> null<span class="token punctuation">;</span>
-<span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">protected</span> &lt;T&gt; <span class="function">T <span class="title">getProperty</span><span class="params">(String key, Class&lt;T&gt; targetValueType, <span class="keyword">boolean</span> resolveNestedPlaceholders)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (<span class="keyword">this</span>.propertySources != <span class="keyword">null</span>) &#123;</span><br><span class="line">    <span class="keyword">for</span> (PropertySource&lt;?&gt; propertySource : <span class="keyword">this</span>.propertySources) &#123;</span><br><span class="line">      <span class="keyword">if</span> (logger.isTraceEnabled()) &#123;</span><br><span class="line">        logger.trace(<span class="string">&quot;Searching for key &#x27;&quot;</span> + key + <span class="string">&quot;&#x27; in PropertySource &#x27;&quot;</span> +</span><br><span class="line">                     propertySource.getName() + <span class="string">&quot;&#x27;&quot;</span>);</span><br><span class="line">      &#125;</span><br><span class="line">      Object value = propertySource.getProperty(key);</span><br><span class="line">      <span class="keyword">if</span> (value != <span class="keyword">null</span>) &#123;</span><br><span class="line">        <span class="keyword">if</span> (resolveNestedPlaceholders &amp;&amp; value <span class="keyword">instanceof</span> String) &#123;</span><br><span class="line">          value = resolveNestedPlaceholders((String) value);</span><br><span class="line">        &#125;</span><br><span class="line">        logKeyFound(key, propertySource, value);</span><br><span class="line">        <span class="keyword">return</span> convertValueIfNecessary(value, targetValueType);</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">if</span> (logger.isDebugEnabled()) &#123;</span><br><span class="line">    logger.debug(<span class="string">&quot;Could not find key &#x27;&quot;</span> + key + <span class="string">&quot;&#x27; in any property source&quot;</span>);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 <p>首先从 propertySource 中获取指定 key 的 value 值，然后判断是否需要进行嵌套占位符解析，如果需要则调用 <code>resolveNestedPlaceholders()</code> 进行嵌套占位符解析，然后调用 <code>convertValueIfNecessary()</code> 进行类型转换。</p>
 <p><strong>resolveNestedPlaceholders()</strong></p>
 <p>该方法用于解析给定字符串中的占位符，同时根据 ignoreUnresolvableNestedPlaceholders 的值，来确定是否对不可解析的占位符的处理方法：是忽略还是抛出异常（该值由 <code>setIgnoreUnresolvableNestedPlaceholders()</code> 设置）。</p>
-<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">protected</span> String <span class="token function">resolveNestedPlaceholders</span><span class="token punctuation">(</span>String value<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-  <span class="token keyword">return</span> <span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>ignoreUnresolvableNestedPlaceholders <span class="token operator">?</span>
-          <span class="token function">resolvePlaceholders</span><span class="token punctuation">(</span>value<span class="token punctuation">)</span> <span class="token operator">:</span> <span class="token function">resolveRequiredPlaceholders</span><span class="token punctuation">(</span>value<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> String <span class="title">resolveNestedPlaceholders</span><span class="params">(String value)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> (<span class="keyword">this</span>.ignoreUnresolvableNestedPlaceholders ?</span><br><span class="line">          resolvePlaceholders(value) : resolveRequiredPlaceholders(value));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 <p>如果 this.ignoreUnresolvableNestedPlaceholders 为 true，则调用 <code>resolvePlaceholders()</code> ，否则调用 <code>resolveRequiredPlaceholders()</code>但是无论是哪个方法，最终都会到 <code>doResolvePlaceholders()</code>，该方法接收两个参数：</p>
 <ul>
 <li>String 类型的 text：待解析的字符串</li>
 <li>PropertyPlaceholderHelper 类型的 helper：用于解析占位符的工具类。</li>
 </ul>
-<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">private</span> String <span class="token function">doResolvePlaceholders</span><span class="token punctuation">(</span>String text<span class="token punctuation">,</span> PropertyPlaceholderHelper helper<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-  <span class="token keyword">return</span> helper<span class="token punctuation">.</span><span class="token function">replacePlaceholders</span><span class="token punctuation">(</span>text<span class="token punctuation">,</span> <span class="token keyword">this</span><span class="token operator">:</span><span class="token operator">:</span>getPropertyAsRawString<span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> String <span class="title">doResolvePlaceholders</span><span class="params">(String text, PropertyPlaceholderHelper helper)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> helper.replacePlaceholders(text, <span class="keyword">this</span>::getPropertyAsRawString);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 <p>PropertyPlaceholderHelper 是用于处理包含占位符值的字符串，构造该实例需要四个参数：</p>
 <ul>
 <li>placeholderPrefix：占位符前缀</li>
@@ -491,115 +104,20 @@ System<span class="token punctuation">.</span>out<span class="token punctuation"
 <li>ignoreUnresolvablePlaceholders：指示是否忽略不可解析的占位符（true）或抛出异常（false）</li>
 </ul>
 <p>构造函数如下：</p>
-<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token function">PropertyPlaceholderHelper</span><span class="token punctuation">(</span>String placeholderPrefix<span class="token punctuation">,</span> String placeholderSuffix<span class="token punctuation">,</span>
-                                 <span class="token annotation punctuation">@Nullable</span> String valueSeparator<span class="token punctuation">,</span> <span class="token keyword">boolean</span> ignoreUnresolvablePlaceholders<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="title">PropertyPlaceholderHelper</span><span class="params">(String placeholderPrefix, String placeholderSuffix,</span></span></span><br><span class="line"><span class="function"><span class="params">                                 <span class="meta">@Nullable</span> String valueSeparator, <span class="keyword">boolean</span> ignoreUnresolvablePlaceholders)</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">  Assert.notNull(placeholderPrefix, <span class="string">&quot;&#x27;placeholderPrefix&#x27; must not be null&quot;</span>);</span><br><span class="line">  Assert.notNull(placeholderSuffix, <span class="string">&quot;&#x27;placeholderSuffix&#x27; must not be null&quot;</span>);</span><br><span class="line">  <span class="keyword">this</span>.placeholderPrefix = placeholderPrefix;</span><br><span class="line">  <span class="keyword">this</span>.placeholderSuffix = placeholderSuffix;</span><br><span class="line">  String simplePrefixForSuffix = wellKnownSimplePrefixes.get(<span class="keyword">this</span>.placeholderSuffix);</span><br><span class="line">  <span class="keyword">if</span> (simplePrefixForSuffix != <span class="keyword">null</span> &amp;&amp; <span class="keyword">this</span>.placeholderPrefix.endsWith(simplePrefixForSuffix)) &#123;</span><br><span class="line">    <span class="keyword">this</span>.simplePrefix = simplePrefixForSuffix;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="keyword">this</span>.simplePrefix = <span class="keyword">this</span>.placeholderPrefix;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">this</span>.valueSeparator = valueSeparator;</span><br><span class="line">  <span class="keyword">this</span>.ignoreUnresolvablePlaceholders = ignoreUnresolvablePlaceholders;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-  Assert<span class="token punctuation">.</span><span class="token function">notNull</span><span class="token punctuation">(</span>placeholderPrefix<span class="token punctuation">,</span> <span class="token string">"'placeholderPrefix' must not be null"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-  Assert<span class="token punctuation">.</span><span class="token function">notNull</span><span class="token punctuation">(</span>placeholderSuffix<span class="token punctuation">,</span> <span class="token string">"'placeholderSuffix' must not be null"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-  <span class="token keyword">this</span><span class="token punctuation">.</span>placeholderPrefix <span class="token operator">=</span> placeholderPrefix<span class="token punctuation">;</span>
-  <span class="token keyword">this</span><span class="token punctuation">.</span>placeholderSuffix <span class="token operator">=</span> placeholderSuffix<span class="token punctuation">;</span>
-  String simplePrefixForSuffix <span class="token operator">=</span> wellKnownSimplePrefixes<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>placeholderSuffix<span class="token punctuation">)</span><span class="token punctuation">;</span>
-  <span class="token keyword">if</span> <span class="token punctuation">(</span>simplePrefixForSuffix <span class="token operator">!=</span> null <span class="token operator">&amp;&amp;</span> <span class="token keyword">this</span><span class="token punctuation">.</span>placeholderPrefix<span class="token punctuation">.</span><span class="token function">endsWith</span><span class="token punctuation">(</span>simplePrefixForSuffix<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-    <span class="token keyword">this</span><span class="token punctuation">.</span>simplePrefix <span class="token operator">=</span> simplePrefixForSuffix<span class="token punctuation">;</span>
-  <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-  <span class="token keyword">else</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-    <span class="token keyword">this</span><span class="token punctuation">.</span>simplePrefix <span class="token operator">=</span> <span class="token keyword">this</span><span class="token punctuation">.</span>placeholderPrefix<span class="token punctuation">;</span>
-  <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-  <span class="token keyword">this</span><span class="token punctuation">.</span>valueSeparator <span class="token operator">=</span> valueSeparator<span class="token punctuation">;</span>
-  <span class="token keyword">this</span><span class="token punctuation">.</span>ignoreUnresolvablePlaceholders <span class="token operator">=</span> ignoreUnresolvablePlaceholders<span class="token punctuation">;</span>
-<span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>就 PropertySourcesPropertyResolver 而言，其父类 AbstractPropertyResolver 已经对上述四个值做了定义：placeholderPrefix 为 <code>$&#123;</code>，placeholderSuffix 为 <code>&#125;</code>，valueSeparator 为 <code>:</code>，ignoreUnresolvablePlaceholders 默认为 false，当然我们也可以使用相应的 setter 方法自定义。</p>
 <p>调用 PropertyPlaceholderHelper 的 <code>replacePlaceholders()</code> 对占位符进行处理，该方法接收两个参数，一个是待解析的字符串 value ，一个是 PlaceholderResolver 类型的 placeholderResolver，他是定义占位符解析的策略类。如下：</p>
-<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> String <span class="token function">replacePlaceholders</span><span class="token punctuation">(</span>String value<span class="token punctuation">,</span> PlaceholderResolver placeholderResolver<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-  Assert<span class="token punctuation">.</span><span class="token function">notNull</span><span class="token punctuation">(</span>value<span class="token punctuation">,</span> <span class="token string">"'value' must not be null"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-  <span class="token keyword">return</span> <span class="token function">parseStringValue</span><span class="token punctuation">(</span>value<span class="token punctuation">,</span> placeholderResolver<span class="token punctuation">,</span> <span class="token keyword">new</span> <span class="token class-name">HashSet</span><span class="token operator">&lt;</span><span class="token operator">></span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> String <span class="title">replacePlaceholders</span><span class="params">(String value, PlaceholderResolver placeholderResolver)</span> </span>&#123;</span><br><span class="line">  Assert.notNull(value, <span class="string">&quot;&#x27;value&#x27; must not be null&quot;</span>);</span><br><span class="line">  <span class="keyword">return</span> parseStringValue(value, placeholderResolver, <span class="keyword">new</span> HashSet&lt;&gt;());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 <p>内部委托给 <code>parseStringValue()</code> 实现：</p>
-<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">protected</span> String <span class="token function">parseStringValue</span><span class="token punctuation">(</span>
-  String value<span class="token punctuation">,</span> PlaceholderResolver placeholderResolver<span class="token punctuation">,</span> Set<span class="token operator">&lt;</span>String<span class="token operator">></span> visitedPlaceholders<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> String <span class="title">parseStringValue</span><span class="params">(</span></span></span><br><span class="line"><span class="function"><span class="params">  String value, PlaceholderResolver placeholderResolver, Set&lt;String&gt; visitedPlaceholders)</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">  StringBuilder result = <span class="keyword">new</span> StringBuilder(value);</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 检索前缀，$&#123;</span></span><br><span class="line">  <span class="keyword">int</span> startIndex = value.indexOf(<span class="keyword">this</span>.placeholderPrefix);</span><br><span class="line">  <span class="keyword">while</span> (startIndex != -<span class="number">1</span>) &#123;</span><br><span class="line">    <span class="comment">// 检索后缀 ,&#125;</span></span><br><span class="line">    <span class="keyword">int</span> endIndex = findPlaceholderEndIndex(result, startIndex);</span><br><span class="line">    <span class="keyword">if</span> (endIndex != -<span class="number">1</span>) &#123;</span><br><span class="line">      <span class="comment">// 前缀和后缀之间的字符串</span></span><br><span class="line">      String placeholder = result.substring(startIndex + <span class="keyword">this</span>.placeholderPrefix.length(), endIndex);</span><br><span class="line">      String originalPlaceholder = placeholder;</span><br><span class="line">      <span class="comment">// 循环占位符</span></span><br><span class="line">      <span class="comment">// 判断该占位符是否已经处理了</span></span><br><span class="line">      <span class="keyword">if</span> (!visitedPlaceholders.add(originalPlaceholder)) &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> IllegalArgumentException(</span><br><span class="line">          <span class="string">&quot;Circular placeholder reference &#x27;&quot;</span> + originalPlaceholder + <span class="string">&quot;&#x27; in property definitions&quot;</span>);</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="comment">// 递归调用，解析占位符</span></span><br><span class="line">      placeholder = parseStringValue(placeholder, placeholderResolver, visitedPlaceholders);</span><br><span class="line">      <span class="comment">// 获取值</span></span><br><span class="line">      String propVal = placeholderResolver.resolvePlaceholder(placeholder);</span><br><span class="line">      <span class="comment">// propval 为空，则提取默认值</span></span><br><span class="line">      <span class="keyword">if</span> (propVal == <span class="keyword">null</span> &amp;&amp; <span class="keyword">this</span>.valueSeparator != <span class="keyword">null</span>) &#123;</span><br><span class="line">        <span class="keyword">int</span> separatorIndex = placeholder.indexOf(<span class="keyword">this</span>.valueSeparator);</span><br><span class="line">        <span class="keyword">if</span> (separatorIndex != -<span class="number">1</span>) &#123;</span><br><span class="line">          String actualPlaceholder = placeholder.substring(<span class="number">0</span>, separatorIndex);</span><br><span class="line">          String defaultValue = placeholder.substring(separatorIndex + <span class="keyword">this</span>.valueSeparator.length());</span><br><span class="line">          propVal = placeholderResolver.resolvePlaceholder(actualPlaceholder);</span><br><span class="line">          <span class="keyword">if</span> (propVal == <span class="keyword">null</span>) &#123;</span><br><span class="line">            propVal = defaultValue;</span><br><span class="line">          &#125;</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">if</span> (propVal != <span class="keyword">null</span>) &#123;</span><br><span class="line">        <span class="comment">// 递归调用，解析先前解析的占位符值中包含的占位符</span></span><br><span class="line">        propVal = parseStringValue(propVal, placeholderResolver, visitedPlaceholders);</span><br><span class="line">        result.replace(startIndex, endIndex + <span class="keyword">this</span>.placeholderSuffix.length(), propVal);</span><br><span class="line">        <span class="keyword">if</span> (logger.isTraceEnabled()) &#123;</span><br><span class="line">          logger.trace(<span class="string">&quot;Resolved placeholder &#x27;&quot;</span> + placeholder + <span class="string">&quot;&#x27;&quot;</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        startIndex = result.indexOf(<span class="keyword">this</span>.placeholderPrefix, startIndex + propVal.length());</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">else</span> <span class="keyword">if</span> (<span class="keyword">this</span>.ignoreUnresolvablePlaceholders) &#123;</span><br><span class="line">        <span class="comment">// Proceed with unprocessed value.</span></span><br><span class="line">        startIndex = result.indexOf(<span class="keyword">this</span>.placeholderPrefix, endIndex + <span class="keyword">this</span>.placeholderSuffix.length());</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> IllegalArgumentException(<span class="string">&quot;Could not resolve placeholder &#x27;&quot;</span> +</span><br><span class="line">                                           placeholder + <span class="string">&quot;&#x27;&quot;</span> + <span class="string">&quot; in value \&quot;&quot;</span> + value + <span class="string">&quot;\&quot;&quot;</span>);</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="comment">//</span></span><br><span class="line">      visitedPlaceholders.remove(originalPlaceholder);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span> &#123;</span><br><span class="line">      startIndex = -<span class="number">1</span>;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> result.toString();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-  StringBuilder result <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">StringBuilder</span><span class="token punctuation">(</span>value<span class="token punctuation">)</span><span class="token punctuation">;</span>
-
-  <span class="token comment" spellcheck="true">// 检索前缀，$&amp;#123;</span>
-  <span class="token keyword">int</span> startIndex <span class="token operator">=</span> value<span class="token punctuation">.</span><span class="token function">indexOf</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>placeholderPrefix<span class="token punctuation">)</span><span class="token punctuation">;</span>
-  <span class="token keyword">while</span> <span class="token punctuation">(</span>startIndex <span class="token operator">!=</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-    <span class="token comment" spellcheck="true">// 检索后缀 ,&amp;#125;</span>
-    <span class="token keyword">int</span> endIndex <span class="token operator">=</span> <span class="token function">findPlaceholderEndIndex</span><span class="token punctuation">(</span>result<span class="token punctuation">,</span> startIndex<span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token keyword">if</span> <span class="token punctuation">(</span>endIndex <span class="token operator">!=</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-      <span class="token comment" spellcheck="true">// 前缀和后缀之间的字符串</span>
-      String placeholder <span class="token operator">=</span> result<span class="token punctuation">.</span><span class="token function">substring</span><span class="token punctuation">(</span>startIndex <span class="token operator">+</span> <span class="token keyword">this</span><span class="token punctuation">.</span>placeholderPrefix<span class="token punctuation">.</span><span class="token function">length</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> endIndex<span class="token punctuation">)</span><span class="token punctuation">;</span>
-      String originalPlaceholder <span class="token operator">=</span> placeholder<span class="token punctuation">;</span>
-      <span class="token comment" spellcheck="true">// 循环占位符</span>
-      <span class="token comment" spellcheck="true">// 判断该占位符是否已经处理了</span>
-      <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>visitedPlaceholders<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span>originalPlaceholder<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-        <span class="token keyword">throw</span> <span class="token keyword">new</span> <span class="token class-name">IllegalArgumentException</span><span class="token punctuation">(</span>
-          <span class="token string">"Circular placeholder reference '"</span> <span class="token operator">+</span> originalPlaceholder <span class="token operator">+</span> <span class="token string">"' in property definitions"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-      <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-      <span class="token comment" spellcheck="true">// 递归调用，解析占位符</span>
-      placeholder <span class="token operator">=</span> <span class="token function">parseStringValue</span><span class="token punctuation">(</span>placeholder<span class="token punctuation">,</span> placeholderResolver<span class="token punctuation">,</span> visitedPlaceholders<span class="token punctuation">)</span><span class="token punctuation">;</span>
-      <span class="token comment" spellcheck="true">// 获取值</span>
-      String propVal <span class="token operator">=</span> placeholderResolver<span class="token punctuation">.</span><span class="token function">resolvePlaceholder</span><span class="token punctuation">(</span>placeholder<span class="token punctuation">)</span><span class="token punctuation">;</span>
-      <span class="token comment" spellcheck="true">// propval 为空，则提取默认值</span>
-      <span class="token keyword">if</span> <span class="token punctuation">(</span>propVal <span class="token operator">==</span> null <span class="token operator">&amp;&amp;</span> <span class="token keyword">this</span><span class="token punctuation">.</span>valueSeparator <span class="token operator">!=</span> null<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-        <span class="token keyword">int</span> separatorIndex <span class="token operator">=</span> placeholder<span class="token punctuation">.</span><span class="token function">indexOf</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>valueSeparator<span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token keyword">if</span> <span class="token punctuation">(</span>separatorIndex <span class="token operator">!=</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-          String actualPlaceholder <span class="token operator">=</span> placeholder<span class="token punctuation">.</span><span class="token function">substring</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">,</span> separatorIndex<span class="token punctuation">)</span><span class="token punctuation">;</span>
-          String defaultValue <span class="token operator">=</span> placeholder<span class="token punctuation">.</span><span class="token function">substring</span><span class="token punctuation">(</span>separatorIndex <span class="token operator">+</span> <span class="token keyword">this</span><span class="token punctuation">.</span>valueSeparator<span class="token punctuation">.</span><span class="token function">length</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-          propVal <span class="token operator">=</span> placeholderResolver<span class="token punctuation">.</span><span class="token function">resolvePlaceholder</span><span class="token punctuation">(</span>actualPlaceholder<span class="token punctuation">)</span><span class="token punctuation">;</span>
-          <span class="token keyword">if</span> <span class="token punctuation">(</span>propVal <span class="token operator">==</span> null<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-            propVal <span class="token operator">=</span> defaultValue<span class="token punctuation">;</span>
-          <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-        <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-      <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-      <span class="token keyword">if</span> <span class="token punctuation">(</span>propVal <span class="token operator">!=</span> null<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-        <span class="token comment" spellcheck="true">// 递归调用，解析先前解析的占位符值中包含的占位符</span>
-        propVal <span class="token operator">=</span> <span class="token function">parseStringValue</span><span class="token punctuation">(</span>propVal<span class="token punctuation">,</span> placeholderResolver<span class="token punctuation">,</span> visitedPlaceholders<span class="token punctuation">)</span><span class="token punctuation">;</span>
-        result<span class="token punctuation">.</span><span class="token function">replace</span><span class="token punctuation">(</span>startIndex<span class="token punctuation">,</span> endIndex <span class="token operator">+</span> <span class="token keyword">this</span><span class="token punctuation">.</span>placeholderSuffix<span class="token punctuation">.</span><span class="token function">length</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> propVal<span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token keyword">if</span> <span class="token punctuation">(</span>logger<span class="token punctuation">.</span><span class="token function">isTraceEnabled</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-          logger<span class="token punctuation">.</span><span class="token function">trace</span><span class="token punctuation">(</span><span class="token string">"Resolved placeholder '"</span> <span class="token operator">+</span> placeholder <span class="token operator">+</span> <span class="token string">"'"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-        startIndex <span class="token operator">=</span> result<span class="token punctuation">.</span><span class="token function">indexOf</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>placeholderPrefix<span class="token punctuation">,</span> startIndex <span class="token operator">+</span> propVal<span class="token punctuation">.</span><span class="token function">length</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-      <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-      <span class="token keyword">else</span> <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>ignoreUnresolvablePlaceholders<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-        <span class="token comment" spellcheck="true">// Proceed with unprocessed value.</span>
-        startIndex <span class="token operator">=</span> result<span class="token punctuation">.</span><span class="token function">indexOf</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>placeholderPrefix<span class="token punctuation">,</span> endIndex <span class="token operator">+</span> <span class="token keyword">this</span><span class="token punctuation">.</span>placeholderSuffix<span class="token punctuation">.</span><span class="token function">length</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-      <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-      <span class="token keyword">else</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-        <span class="token keyword">throw</span> <span class="token keyword">new</span> <span class="token class-name">IllegalArgumentException</span><span class="token punctuation">(</span><span class="token string">"Could not resolve placeholder '"</span> <span class="token operator">+</span>
-                                           placeholder <span class="token operator">+</span> <span class="token string">"'"</span> <span class="token operator">+</span> <span class="token string">" in value \""</span> <span class="token operator">+</span> value <span class="token operator">+</span> <span class="token string">"\""</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-      <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-      <span class="token comment" spellcheck="true">//</span>
-      visitedPlaceholders<span class="token punctuation">.</span><span class="token function">remove</span><span class="token punctuation">(</span>originalPlaceholder<span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-    <span class="token keyword">else</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-      startIndex <span class="token operator">=</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">;</span>
-    <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-  <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-
-  <span class="token keyword">return</span> result<span class="token punctuation">.</span><span class="token function">toString</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>其实就是获取占位符 <code>$&#123;&#125;</code> 中间的值，这里面会涉及到一个递归的过程，因为可能会存在这种情况 <code>$&#123;$&#123;name&#125;&#125;</code>。</p>
 <p><strong>convertValueIfNecessary()</strong></p>
 <p>该方法是不是感觉到非常的熟悉，该方法就是完成类型转换的。如下：</p>
-<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">protected</span> <span class="token operator">&lt;</span>T<span class="token operator">></span> T <span class="token function">convertValueIfNecessary</span><span class="token punctuation">(</span>Object value<span class="token punctuation">,</span> <span class="token annotation punctuation">@Nullable</span> Class<span class="token operator">&lt;</span>T<span class="token operator">></span> targetType<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-  <span class="token keyword">if</span> <span class="token punctuation">(</span>targetType <span class="token operator">==</span> null<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-    <span class="token keyword">return</span> <span class="token punctuation">(</span>T<span class="token punctuation">)</span> value<span class="token punctuation">;</span>
-  <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-  ConversionService conversionServiceToUse <span class="token operator">=</span> <span class="token keyword">this</span><span class="token punctuation">.</span>conversionService<span class="token punctuation">;</span>
-  <span class="token keyword">if</span> <span class="token punctuation">(</span>conversionServiceToUse <span class="token operator">==</span> null<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-    <span class="token comment" spellcheck="true">// Avoid initialization of shared DefaultConversionService if</span>
-    <span class="token comment" spellcheck="true">// no standard type conversion is needed in the first place...</span>
-    <span class="token keyword">if</span> <span class="token punctuation">(</span>ClassUtils<span class="token punctuation">.</span><span class="token function">isAssignableValue</span><span class="token punctuation">(</span>targetType<span class="token punctuation">,</span> value<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-      <span class="token keyword">return</span> <span class="token punctuation">(</span>T<span class="token punctuation">)</span> value<span class="token punctuation">;</span>
-    <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-    conversionServiceToUse <span class="token operator">=</span> DefaultConversionService<span class="token punctuation">.</span><span class="token function">getSharedInstance</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-  <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-  <span class="token keyword">return</span> conversionServiceToUse<span class="token punctuation">.</span><span class="token function">convert</span><span class="token punctuation">(</span>value<span class="token punctuation">,</span> targetType<span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">protected</span> &lt;T&gt; <span class="function">T <span class="title">convertValueIfNecessary</span><span class="params">(Object value, <span class="meta">@Nullable</span> Class&lt;T&gt; targetType)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (targetType == <span class="keyword">null</span>) &#123;</span><br><span class="line">    <span class="keyword">return</span> (T) value;</span><br><span class="line">  &#125;</span><br><span class="line">  ConversionService conversionServiceToUse = <span class="keyword">this</span>.conversionService;</span><br><span class="line">  <span class="keyword">if</span> (conversionServiceToUse == <span class="keyword">null</span>) &#123;</span><br><span class="line">    <span class="comment">// Avoid initialization of shared DefaultConversionService if</span></span><br><span class="line">    <span class="comment">// no standard type conversion is needed in the first place...</span></span><br><span class="line">    <span class="keyword">if</span> (ClassUtils.isAssignableValue(targetType, value)) &#123;</span><br><span class="line">      <span class="keyword">return</span> (T) value;</span><br><span class="line">    &#125;</span><br><span class="line">    conversionServiceToUse = DefaultConversionService.getSharedInstance();</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> conversionServiceToUse.convert(value, targetType);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 <p>首先获取类型转换服务 conversionService ，若为空，则判断是否可以通过反射来设置，如果可以则直接强转返回，否则构造一个 DefaultConversionService 实例，最后调用其 <code>convert()</code> 完成类型转换，后续就是 Spring 类型转换体系的事情了，如果对其不了解，可以参考小编这篇博客：<a href="/2020/01/24/683bb448.html">IOC 之深入分析 Bean 的类型转换体系</a></p>
 <h2 id="Environment"><a href="#Environment" class="headerlink" title="Environment"></a>Environment</h2><blockquote>
 <p>表示当前应用程序正在运行的环境</p>
@@ -610,16 +128,8 @@ System<span class="token punctuation">.</span>out<span class="token punctuation"
 <li>profile 则表示当前的运行环境，对于应用程序中的 properties 而言，并不是所有的都会加载到系统中，只有其属性与 profile 一直才会被激活加载，</li>
 </ul>
 <p>所以 Environment 对象的作用是确定哪些配置文件（如果有）当前处于活动状态，以及默认情况下哪些配置文件（如果有）应处于活动状态。properties 在几乎所有应用程序中都发挥着重要作用，并且有多种来源：属性文件，JVM 系统属性，系统环境变量，JNDI，servlet 上下文参数，ad-hoc 属性对象，映射等。同时它继承 PropertyResolver 接口，所以与属性相关的 Environment 对象其主要是为用户提供方便的服务接口，用于配置属性源和从中属性源中解析属性。</p>
-<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">interface</span> <span class="token class-name">Environment</span> <span class="token keyword">extends</span> <span class="token class-name">PropertyResolver</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-    <span class="token comment" spellcheck="true">// 返回此环境下激活的配置文件集</span>
-    String<span class="token punctuation">[</span><span class="token punctuation">]</span> <span class="token function">getActiveProfiles</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">Environment</span> <span class="keyword">extends</span> <span class="title">PropertyResolver</span> </span>&#123;</span><br><span class="line">    <span class="comment">// 返回此环境下激活的配置文件集</span></span><br><span class="line">    String[] getActiveProfiles();</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 如果未设置激活配置文件，则返回默认的激活的配置文件集</span></span><br><span class="line">    String[] getDefaultProfiles();</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">boolean</span> <span class="title">acceptsProfiles</span><span class="params">(String... profiles)</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-    <span class="token comment" spellcheck="true">// 如果未设置激活配置文件，则返回默认的激活的配置文件集</span>
-    String<span class="token punctuation">[</span><span class="token punctuation">]</span> <span class="token function">getDefaultProfiles</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-
-    <span class="token keyword">boolean</span> <span class="token function">acceptsProfiles</span><span class="token punctuation">(</span>String<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span> profiles<span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>Environment 体系结构图如下：</p>
 <p><img src="https://gitee.com/cayzlh/img-repo/raw/master/2020/05/27/15403714670613_02ZL9z_ul8OAy.jpg" alt="img"></p>
 <ul>
@@ -635,272 +145,33 @@ System<span class="token punctuation">.</span>out<span class="token punctuation"
 <p>提供设置激活的 profile 和默认的 profile 的功能以及操作 Properties 的工具</p>
 </blockquote>
 <p>该类除了继承 Environment 接口外还继承了 ConfigurablePropertyResolver 接口，所以它即具备了设置 profile 的功能也具备了操作 Properties 的功能。同时还允许客户端通过它设置和验证所需要的属性，自定义转换服务等功能。如下：</p>
-<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">interface</span> <span class="token class-name">ConfigurableEnvironment</span> <span class="token keyword">extends</span> <span class="token class-name">Environment</span><span class="token punctuation">,</span> ConfigurablePropertyResolver <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-    <span class="token comment" spellcheck="true">// 指定该环境下的 profile 集</span>
-    <span class="token keyword">void</span> <span class="token function">setActiveProfiles</span><span class="token punctuation">(</span>String<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span> profiles<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">ConfigurableEnvironment</span> <span class="keyword">extends</span> <span class="title">Environment</span>, <span class="title">ConfigurablePropertyResolver</span> </span>&#123;</span><br><span class="line">    <span class="comment">// 指定该环境下的 profile 集</span></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">setActiveProfiles</span><span class="params">(String... profiles)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 增加此环境的 profile</span></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">addActiveProfile</span><span class="params">(String profile)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 设置默认的 profile</span></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">setDefaultProfiles</span><span class="params">(String... profiles)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 返回此环境的 PropertySources</span></span><br><span class="line">    <span class="function">MutablePropertySources <span class="title">getPropertySources</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line">   <span class="comment">// 尝试返回 System.getenv() 的值，若失败则返回通过 System.getenv(string) 的来访问各个键的映射</span></span><br><span class="line">    <span class="function">Map&lt;String, Object&gt; <span class="title">getSystemEnvironment</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 尝试返回 System.getProperties() 的值，若失败则返回通过 System.getProperties(string) 的来访问各个键的映射</span></span><br><span class="line">    <span class="function">Map&lt;String, Object&gt; <span class="title">getSystemProperties</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">merge</span><span class="params">(ConfigurableEnvironment parent)</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-    <span class="token comment" spellcheck="true">// 增加此环境的 profile</span>
-    <span class="token keyword">void</span> <span class="token function">addActiveProfile</span><span class="token punctuation">(</span>String profile<span class="token punctuation">)</span><span class="token punctuation">;</span>
-
-    <span class="token comment" spellcheck="true">// 设置默认的 profile</span>
-    <span class="token keyword">void</span> <span class="token function">setDefaultProfiles</span><span class="token punctuation">(</span>String<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span> profiles<span class="token punctuation">)</span><span class="token punctuation">;</span>
-
-    <span class="token comment" spellcheck="true">// 返回此环境的 PropertySources</span>
-    MutablePropertySources <span class="token function">getPropertySources</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-
-   <span class="token comment" spellcheck="true">// 尝试返回 System.getenv() 的值，若失败则返回通过 System.getenv(string) 的来访问各个键的映射</span>
-    Map<span class="token operator">&lt;</span>String<span class="token punctuation">,</span> Object<span class="token operator">></span> <span class="token function">getSystemEnvironment</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-
-    <span class="token comment" spellcheck="true">// 尝试返回 System.getProperties() 的值，若失败则返回通过 System.getProperties(string) 的来访问各个键的映射</span>
-    Map<span class="token operator">&lt;</span>String<span class="token punctuation">,</span> Object<span class="token operator">></span> <span class="token function">getSystemProperties</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-
-    <span class="token keyword">void</span> <span class="token function">merge</span><span class="token punctuation">(</span>ConfigurableEnvironment parent<span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <h3 id="AbstractEnvironment"><a href="#AbstractEnvironment" class="headerlink" title="AbstractEnvironment"></a>AbstractEnvironment</h3><blockquote>
 <p>Environment 的基础实现</p>
 </blockquote>
 <p>允许通过设置 ACTIVE_PROFILES_PROPERTY_NAME 和DEFAULT_PROFILES_PROPERTY_NAME 属性指定活动和默认配置文件。子类的主要区别在于它们默认添加的 PropertySource 对象。而 AbstractEnvironment 则没有添加任何内容。子类应该通过受保护的 <code>customizePropertySources(MutablePropertySources)</code> 钩子提供属性源，而客户端应该使用<code>ConfigurableEnvironment.getPropertySources()</code>进行自定义并对MutablePropertySources API进行操作。</p>
 <p>在 AbstractEnvironment 有两对变量，这两对变量维护着激活和默认配置 profile。如下：</p>
-<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">final</span> String ACTIVE_PROFILES_PROPERTY_NAME <span class="token operator">=</span> <span class="token string">"spring.profiles.active"</span><span class="token punctuation">;</span>
-<span class="token keyword">private</span> <span class="token keyword">final</span> Set<span class="token operator">&lt;</span>String<span class="token operator">></span> activeProfiles <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">LinkedHashSet</span><span class="token operator">&lt;</span><span class="token operator">></span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">final</span> String ACTIVE_PROFILES_PROPERTY_NAME = <span class="string">&quot;spring.profiles.active&quot;</span>;</span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> Set&lt;String&gt; activeProfiles = <span class="keyword">new</span> LinkedHashSet&lt;&gt;();</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">final</span> String DEFAULT_PROFILES_PROPERTY_NAME = <span class="string">&quot;spring.profiles.default&quot;</span>;</span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> Set&lt;String&gt; defaultProfiles = <span class="keyword">new</span> LinkedHashSet&lt;&gt;(getReservedDefaultProfiles());</span><br></pre></td></tr></table></figure>
 
-<span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">final</span> String DEFAULT_PROFILES_PROPERTY_NAME <span class="token operator">=</span> <span class="token string">"spring.profiles.default"</span><span class="token punctuation">;</span>
-<span class="token keyword">private</span> <span class="token keyword">final</span> Set<span class="token operator">&lt;</span>String<span class="token operator">></span> defaultProfiles <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">LinkedHashSet</span><span class="token operator">&lt;</span><span class="token operator">></span><span class="token punctuation">(</span><span class="token function">getReservedDefaultProfiles</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>由于实现方法较多，这里只关注两个方法：<code>setActiveProfiles()</code> 和 <code>getActiveProfiles()</code>。</p>
 <p><strong>setActiveProfiles()</strong></p>
-<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">setActiveProfiles</span><span class="token punctuation">(</span>String<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span> profiles<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-  Assert<span class="token punctuation">.</span><span class="token function">notNull</span><span class="token punctuation">(</span>profiles<span class="token punctuation">,</span> <span class="token string">"Profile array must not be null"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-  <span class="token keyword">if</span> <span class="token punctuation">(</span>logger<span class="token punctuation">.</span><span class="token function">isDebugEnabled</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-    logger<span class="token punctuation">.</span><span class="token function">debug</span><span class="token punctuation">(</span><span class="token string">"Activating profiles "</span> <span class="token operator">+</span> Arrays<span class="token punctuation">.</span><span class="token function">asList</span><span class="token punctuation">(</span>profiles<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-  <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-  <span class="token keyword">synchronized</span> <span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>activeProfiles<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-    <span class="token keyword">this</span><span class="token punctuation">.</span>activeProfiles<span class="token punctuation">.</span><span class="token function">clear</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token keyword">for</span> <span class="token punctuation">(</span>String profile <span class="token operator">:</span> profiles<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-      <span class="token function">validateProfile</span><span class="token punctuation">(</span>profile<span class="token punctuation">)</span><span class="token punctuation">;</span>
-      <span class="token keyword">this</span><span class="token punctuation">.</span>activeProfiles<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span>profile<span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-  <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-<span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">setActiveProfiles</span><span class="params">(String... profiles)</span> </span>&#123;</span><br><span class="line">  Assert.notNull(profiles, <span class="string">&quot;Profile array must not be null&quot;</span>);</span><br><span class="line">  <span class="keyword">if</span> (logger.isDebugEnabled()) &#123;</span><br><span class="line">    logger.debug(<span class="string">&quot;Activating profiles &quot;</span> + Arrays.asList(profiles));</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">synchronized</span> (<span class="keyword">this</span>.activeProfiles) &#123;</span><br><span class="line">    <span class="keyword">this</span>.activeProfiles.clear();</span><br><span class="line">    <span class="keyword">for</span> (String profile : profiles) &#123;</span><br><span class="line">      validateProfile(profile);</span><br><span class="line">      <span class="keyword">this</span>.activeProfiles.add(profile);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 <p>该方法其实就是操作 activeProfiles 集合，在每次设置之前都会将该集合清空重新添加，添加之前调用 <code>validateProfile()</code> 对添加的 profile 进行校验，如下：</p>
-<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">protected</span> <span class="token keyword">void</span> <span class="token function">validateProfile</span><span class="token punctuation">(</span>String profile<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-  <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>StringUtils<span class="token punctuation">.</span><span class="token function">hasText</span><span class="token punctuation">(</span>profile<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-    <span class="token keyword">throw</span> <span class="token keyword">new</span> <span class="token class-name">IllegalArgumentException</span><span class="token punctuation">(</span><span class="token string">"Invalid profile ["</span> <span class="token operator">+</span> profile <span class="token operator">+</span> <span class="token string">"]: must contain text"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-  <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-  <span class="token keyword">if</span> <span class="token punctuation">(</span>profile<span class="token punctuation">.</span><span class="token function">charAt</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token string">'!'</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-    <span class="token keyword">throw</span> <span class="token keyword">new</span> <span class="token class-name">IllegalArgumentException</span><span class="token punctuation">(</span><span class="token string">"Invalid profile ["</span> <span class="token operator">+</span> profile <span class="token operator">+</span> <span class="token string">"]: must not begin with ! operator"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-  <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-<span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title">validateProfile</span><span class="params">(String profile)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (!StringUtils.hasText(profile)) &#123;</span><br><span class="line">    <span class="keyword">throw</span> <span class="keyword">new</span> IllegalArgumentException(<span class="string">&quot;Invalid profile [&quot;</span> + profile + <span class="string">&quot;]: must contain text&quot;</span>);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">if</span> (profile.charAt(<span class="number">0</span>) == <span class="string">&#x27;!&#x27;</span>) &#123;</span><br><span class="line">    <span class="keyword">throw</span> <span class="keyword">new</span> IllegalArgumentException(<span class="string">&quot;Invalid profile [&quot;</span> + profile + <span class="string">&quot;]: must not begin with ! operator&quot;</span>);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 <p>这个校验过程比较弱，子类可以提供更加严格的校验规则。</p>
 <p><strong>getActiveProfiles()</strong></p>
 <p>从 <code>getActiveProfiles()</code> 中我们可以猜出这个方法实现的逻辑：获取 activeProfiles 集合即可。</p>
-<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> String<span class="token punctuation">[</span><span class="token punctuation">]</span> <span class="token function">getActiveProfiles</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-  <span class="token keyword">return</span> StringUtils<span class="token punctuation">.</span><span class="token function">toStringArray</span><span class="token punctuation">(</span><span class="token function">doGetActiveProfiles</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> String[] getActiveProfiles() &#123;</span><br><span class="line">  <span class="keyword">return</span> StringUtils.toStringArray(doGetActiveProfiles());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 <p>委托给 <code>doGetActiveProfiles()</code> 实现：</p>
-<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">protected</span> Set<span class="token operator">&lt;</span>String<span class="token operator">></span> <span class="token function">doGetActiveProfiles</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-  <span class="token keyword">synchronized</span> <span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>activeProfiles<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>activeProfiles<span class="token punctuation">.</span><span class="token function">isEmpty</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-      String profiles <span class="token operator">=</span> <span class="token function">getProperty</span><span class="token punctuation">(</span>ACTIVE_PROFILES_PROPERTY_NAME<span class="token punctuation">)</span><span class="token punctuation">;</span>
-      <span class="token keyword">if</span> <span class="token punctuation">(</span>StringUtils<span class="token punctuation">.</span><span class="token function">hasText</span><span class="token punctuation">(</span>profiles<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-        <span class="token function">setActiveProfiles</span><span class="token punctuation">(</span>StringUtils<span class="token punctuation">.</span><span class="token function">commaDelimitedListToStringArray</span><span class="token punctuation">(</span>
-          StringUtils<span class="token punctuation">.</span><span class="token function">trimAllWhitespace</span><span class="token punctuation">(</span>profiles<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-      <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-    <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-    <span class="token keyword">return</span> <span class="token keyword">this</span><span class="token punctuation">.</span>activeProfiles<span class="token punctuation">;</span>
-  <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-<span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> Set&lt;String&gt; <span class="title">doGetActiveProfiles</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="keyword">synchronized</span> (<span class="keyword">this</span>.activeProfiles) &#123;</span><br><span class="line">    <span class="keyword">if</span> (<span class="keyword">this</span>.activeProfiles.isEmpty()) &#123;</span><br><span class="line">      String profiles = getProperty(ACTIVE_PROFILES_PROPERTY_NAME);</span><br><span class="line">      <span class="keyword">if</span> (StringUtils.hasText(profiles)) &#123;</span><br><span class="line">        setActiveProfiles(StringUtils.commaDelimitedListToStringArray(</span><br><span class="line">          StringUtils.trimAllWhitespace(profiles)));</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">this</span>.activeProfiles;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 <p>如果 activeProfiles 为空，则从 Properties 中获取 spring.profiles.active 配置，如果不为空，则调用 <code>setActiveProfiles()</code> 设置 profile，最后返回。</p>
-
-            <!-- 文章结尾部分 -->
-            
-                
-<div style="text-align:center;width:100%">
-    <span class="octicon octicon-tag-add"></span>
-    
-        <a style="color: #24292e;" href="/blog/tags/Spring/">Spring</a>
-    
-        <a style="color: #24292e;" href="/blog/tags/%E6%AD%BB%E7%A3%95Spring/">死磕Spring</a>
-    
-</div>
-
-
-
-    <div style="text-align:center;width:100%">
-        <img src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/640-2.gif">
-    </div>
-
-
-
-
-<div>
-    <h4>相关推荐</h4>
-    <ul class="post-copyright">
-        
-        <li class="post-copyright-author">
-            <a href="/blog/2020/01/26/101fc769.html">4张图带你读懂Spring IOC的世界</a>
-        </li>
-        
-        <li class="post-copyright-author">
-            <a href="/blog/2020/01/25/86c712d3.html">IOC之BeanDefinition注册机：BeanDefinitionRegistry</a>
-        </li>
-        
-        <li class="post-copyright-author">
-            <a href="/blog/2020/01/17/c4a8e2a2.html">IOC之parentBeanFactory与依赖处理</a>
-        </li>
-        
-        <li class="post-copyright-author">
-            <a href="/blog/2020/01/16/c9c155de.html">IOC之从单例缓存中获取单例bean</a>
-        </li>
-        
-        <li class="post-copyright-author">
-            <a href="/blog/2020/01/26/90c034e1.html">IOC之分析bean的生命周期</a>
-        </li>
-        
-        <li class="post-copyright-author">
-            <a href="/blog/2020/01/18/13d2205c.html">IOC之分析各scope的bean创建</a>
-        </li>
-        
-    </ul>
-    <br><br>
-</div>
-
-
-
-<div>
-    <h4>版权声明</h4>
-    <blockquote>
-        <ul class="post-copyright">
-            <li class="post-copyright-author">
-                <strong>本文来源： </strong>
-                
-                <a href="http://cmsblogs.com/?p=4032" title="Java技术驿站-chenssy-【死磕 Spring】—– Spring的环境&属性：PropertySource、Environment、Profile" rel="external nofollow noopener noreferrer" target="_blank">Java技术驿站-chenssy-【死磕 Spring】—– Spring的环境&amp;属性：PropertySource、Environment、Profile</a></li>
-            <li class="post-copyright-link">
-                <strong>本文链接：</strong>
-                <a href="https://www.cayzlh.com/2020/01/25/8ce6797f.html" title="/blog/Spring%E7%9A%84%E7%8E%AF%E5%A2%83&%E5%B1%9E%E6%80%A7%EF%BC%9APropertySource%E3%80%81Environment%E3%80%81Profile">https://www.cayzlh.com/2020/01/25/8ce6797f.html</a>
-            </li>
-            <li class="post-copyright-license">
-                <strong>版权声明： </strong>
-                
-                    文章内容仅用作学习和分享，如有雷同，纯属拷贝。
-                
-            </li>
-        </ul>
-    </blockquote>
-</div>
-
-
-            
-            
-                <div class="comment">
-    <br><br><br>
-    
-</div>
-
-            
-        </div>
-        <div class="col-md-3 markdown-body">
-            <h4>文章目录</h4>
-            <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%A6%82%E6%8B%AC"><span class="toc-text">概括</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Properties"><span class="toc-text">Properties</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#PropertyResolver"><span class="toc-text">PropertyResolver</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#ConfigurablePropertyResolver"><span class="toc-text">ConfigurablePropertyResolver</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#AbstractPropertyResolver"><span class="toc-text">AbstractPropertyResolver</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#PropertySourcesPropertyResolver"><span class="toc-text">PropertySourcesPropertyResolver</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Environment"><span class="toc-text">Environment</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#ConfigurableEnvironment"><span class="toc-text">ConfigurableEnvironment</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#AbstractEnvironment"><span class="toc-text">AbstractEnvironment</span></a></li></ol></li></ol>
-        </div>
-    </div>
-    
-</article>
-
-
-<script>
-    hljs.initHighlightingOnLoad();
-</script>
-</main>
-<footer class="container">
-    <div class="site-footer">
-        
-    <div class="card text-center">
-        <ul class="list-inline" style="margin-left: 0;">
-            
-                <li>
-                    <a target="_blank" href="https://github.com/cayzlh" rel="external nofollow noopener noreferrer">
-                          <span class="fa-stack fa-lg">
-                            <i class="fa fa-circle fa-stack-2x"></i>
-                            <i class="fa fa-github fa-stack-1x fa-inverse">
-                                
-                            </i>
-                          </span>
-                    </a>
-                </li>
-            
-                <li>
-                    <a target="_blank" href="https://telegram.me/Q2F5emxo" rel="external nofollow noopener noreferrer">
-                          <span class="fa-stack fa-lg">
-                            <i class="fa fa-circle fa-stack-2x"></i>
-                            <i class="fa fa-rocket fa-stack-1x fa-inverse">
-                                
-                            </i>
-                          </span>
-                    </a>
-                </li>
-            
-                <li>
-                    <a target="_blank" href="mailto:chenanyu@cayzlh.com">
-                          <span class="fa-stack fa-lg">
-                            <i class="fa fa-circle fa-stack-2x"></i>
-                            <i class="fa fa-envelope fa-stack-1x fa-inverse">
-                                
-                            </i>
-                          </span>
-                    </a>
-                </li>
-            
-        </ul>
-    </div>
-
-
-        <div class="site-footer-links mobile-hidden">
-            
-                
-                
-            
-        </div>
-
-        <div class="site-footer-links mobile-hidden">
-        
-            <span class="meta-info-index hvr-grow">
-                
-                    <a href="https://www.cayzlh.com">
-                        🐳Ant丶 &copy; 2020
-                    </a>
-                
-            </span>
-        
-        
-            <span class="meta-info-index hvr-grow">
-                <a target="_blank" rel="external nofollow noopener noreferrer" href="http://beian.miit.gov.cn">粤ICP备20058712号-1</a>
-            </span>
-        
-        </div>
-
-        
-
-        
-    </div>
-    
-
-    
-        <!-- Third-Party JS -->
-        <script type="text/javascript" src="/blog/js/thirdparty/geopattern.min.js"></script>
-        <!-- My JS -->
-        <script type="text/javascript" src="/blog/js/script.js"></script>
-    
-
-    
-        <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js">
-        </script>
-    
-</footer>
-</body>
-</html>
+</div></article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta">文章作者: </span><span class="post-copyright-info"><a href="mailto:undefined" rel="external nofollow noopener noreferrer" target="_blank">🐳Ant丶</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta">文章链接: </span><span class="post-copyright-info"><a href="https://www.cayzlh.com/2020/01/25/8ce6797f.html">https://www.cayzlh.com/2020/01/25/8ce6797f.html</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta">版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a target="_blank" rel="external nofollow noopener noreferrer" href="https://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来自 <a href="https://www.cayzlh.com">BLOG | CAYZLH</a>！</span></div></div><div class="post-meta__tag-list"><a class="post-meta__tags" href="/blog/tags/Spring/">Spring</a><a class="post-meta__tags" href="/blog/tags/%E6%AD%BB%E7%A3%95Spring/">死磕Spring</a></div><nav id="pagination"><div class="prev-post pull-left"><a href="/blog/2020/01/26/90c034e1.html"><i class="fa fa-chevron-left">  </i><span>IOC之分析bean的生命周期</span></a></div><div class="next-post pull-right"><a href="/blog/2020/01/25/86c712d3.html"><span>IOC之BeanDefinition注册机：BeanDefinitionRegistry</span><i class="fa fa-chevron-right"></i></a></div></nav></div></div><footer><div class="layout" id="footer"><div class="footer_custom_text">hitokoto</div><div class="copyright">🐳Ant丶 &copy;2019 - 2021</div><div class="icp"><a><span>粤ICP备20058712号</span></a></div><div class="busuanzi"><script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></div></footer><i class="fa fa-arrow-up" id="go-up" aria-hidden="true"></i><script src="https://cdn.jsdelivr.net/npm/animejs@latest/anime.min.js"></script><script src="https://cdn.jsdelivr.net/npm/jquery@latest/dist/jquery.min.js"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@latest/dist/jquery.fancybox.min.js"></script><script src="https://cdn.jsdelivr.net/npm/velocity-animate@latest/velocity.min.js"></script><script src="https://cdn.jsdelivr.net/npm/velocity-ui-pack@latest/velocity.ui.min.js"></script><script src="/blog/js/utils.js?version=1.9.0"></script><script src="/blog/js/fancybox.js?version=1.9.0"></script><script src="/blog/js/sidebar.js?version=1.9.0"></script><script src="/blog/js/copy.js?version=1.9.0"></script><script src="/blog/js/fireworks.js?version=1.9.0"></script><script src="/blog/js/transition.js?version=1.9.0"></script><script src="/blog/js/scroll.js?version=1.9.0"></script><script src="/blog/js/head.js?version=1.9.0"></script><script src="/blog/js/search/local-search.js"></script><script>if(/Android|webOS|iPhone|iPod|iPad|BlackBerry/i.test(navigator.userAgent)) {
+  $('#nav').addClass('is-mobile')
+  $('footer').addClass('is-mobile')
+  $('#top-container').addClass('is-mobile')
+}</script><div class="search-dialog" id="local-search"><div class="search-dialog__title" id="local-search-title">本地搜索</div><div id="local-input-panel"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="搜索文章"></div></div></div><hr><div id="local-search-results"><div id="local-hits"></div><div id="local-stats"><div class="local-search-stats__hr" id="hr"><span>Powered by</span> <a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/wzpan/hexo-generator-search" style="color:#49B1F5;">hexo-generator-search</a></div></div></div><span class="search-close-button"><i class="fa fa-times"></i></span></div><div class="search-mask"></div></body></html>

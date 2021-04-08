@@ -1,244 +1,21 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
+<!DOCTYPE html><html lang="[&quot;zh-Hans&quot;,&quot;en&quot;,&quot;default&quot;]"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"><meta name="description" content="总结一下 IoC BeanDefinition 装载的整个过程"><meta name="keywords" content="Spring, Bean, IOC"><meta name="author" content="🐳Ant丶"><meta name="copyright" content="🐳Ant丶"><title>IoC之装载BeanDefinitions总结 | BLOG | CAYZLH</title><link rel="shortcut icon" href="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/logo/favicon.ico"><link rel="stylesheet" href="/blog/css/index.css?version=1.9.0"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/font-awesome@latest/css/font-awesome.min.css?version=1.9.0"><meta name="format-detection" content="telephone=no"><meta http-equiv="x-dns-prefetch-control" content="on"><link rel="dns-prefetch" href="https://cdn.jsdelivr.net"><link rel="dns-prefetch" href="https://www.google-analytics.com"><script>(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
 
-<head>
-    <meta charset="utf-8">
-    <meta name="keywords" content="Spring, Bean, IOC">
-    <meta name="description" content="Ant丶的网络日志, CAYZLH网络日志, CAYZLH, CAYZLH主页, Ant丶空间">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <meta name="renderer" content="webkit|ie-stand|ie-comp">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="format-detection" content="telephone=no">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <!-- Global site tag (gtag.js) - Google Analytics -->
-
-    <meta name="google-site-verification" content="VrcbMTVpFGlHkIERHBt753dAtXKF4qirjnDweuXSRJw">
-
-
-    <!-- Global site tag (gtag.js) - Google Analytics -->
-
-<script async src="https://www.googletagmanager.com/gtag/js?id=UA-129095667-1"></script>
-<script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag() {
-        dataLayer.push(arguments);
-    }
-
-    gtag('js', new Date());
-    gtag('config', 'UA-129095667-1');
-</script>
-
-
-    <title>IoC之装载BeanDefinitions总结 | BLOG | CAYZLH</title>
-
-    
-    <!-- Third-Party CSS -->
-    
-
-        <link rel="shortcut icon" href="/blog/image/favicon.ico">
-        <link rel="icon" type="image/png" href="/blog/image/favicon-192x192.png" sizes="192x192">
-        <link rel="apple-touch-icon" sizes="180x180" href="/blog/image/apple-touch-icon.png">
-
-        <link rel="stylesheet" href="/blog/css/thirdparty/bootstrap.min.css">
-        <link rel="stylesheet" href="/blog/css/thirdparty/octicons.css">
-        <link rel="stylesheet" href="/blog/css/thirdparty/hover-min.css">
-        <link rel="stylesheet" href="/blog/css/thirdparty/user-content.min.css">
-        <link rel="stylesheet" href="/blog/css/thirdparty/syntax.css">
-        <link rel="stylesheet" href="/blog/css/thirdparty/gitalk.css">
-
-        <!-- My CSS -->
-        <link rel="stylesheet" href="/blog/css/common.css">
-
-        <link rel="stylesheet" href="/blog/css/sidebar-post-nav.css">
-
-        <link rel="stylesheet" href="/blog/css/blog-page.css">
-        <!-- CSS set in page -->
-
-        
-        <link rel="stylesheet" href="/blog/css/sidebar-popular-repo.css">
-    
-
-    <!-- CSS set in layout -->
-    <link rel="stylesheet" type="text/css" href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css">
-
-    
-        <script type="text/javascript" src="/blog/js/thirdparty/jquery.min.js"></script>
-        <script type="text/javascript" src="/blog/js/thirdparty/bootstrap.min.js"></script>
-        <script type="text/javascript" src="/blog/js/lock.js"></script>
-    
-
-    
-        <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.css">
-        <script src="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js"></script>
-
-        <link rel="stylesheet" href="//imsun.github.io/gitment/style/default.css">
-        <script src="//imsun.github.io/gitment/dist/gitment.browser.js"></script>
-
-        <script src="//unpkg.com/valine/dist/Valine.min.js"></script>
-        <script src="//cdn.jsdelivr.net/npm/twikoo@1.2.0/dist/twikoo.all.min.js"></script>
-
-    
-
-    <link rel="stylesheet" href="//cdn.bootcss.com/highlight.js/9.2.0/styles/github.min.css">
-    <script src="//cdn.bootcss.com/highlight.js/9.2.0/highlight.min.js"></script>
-<meta name="generator" content="Hexo 5.4.0"><link rel="alternate" href="/blog/atom.xml" title="BLOG | CAYZLH" type="application/atom+xml">
-</head>
-
-<body>
-<header class="site-header">
-    <div class="site-header-topbar">
-        <div class="container">
-            <div class="topbar-menu">
-
-    
-        <div class="item">
-            <a href="https://www.cayzlh.com/" title="导航">
-                导航
-            </a>
-        </div>
-    
-        <div class="item">
-            <a href="/blog/categories/" title="分类">
-                分类
-            </a>
-        </div>
-    
-        <div class="item">
-            <a href="/blog/tags/" title="标签">
-                标签
-            </a>
-        </div>
-    
-        <div class="item">
-            <a href="/blog/links/" title="链接">
-                链接
-            </a>
-        </div>
-    
-        <div class="item">
-            <a href="/blog/about" title="关于">
-                关于
-            </a>
-        </div>
-    
-
-</div>
-        </div>
-    </div>
-    <div class="container">
-        <a id="site-header-brand" href="/blog/" title="BLOG | CAYZLH">
-            <span class="octicon octicon-watch"></span>
-            BLOG | CAYZLH
-        </a>
-
-        <nav class="site-header-nav" role="navigation">
-    
-        <div class=" site-header-nav-item hvr-underline-from-center">
-            <a href="/blog/" title="Home">
-                Home
-            </a>
-            
-        </div>
-    
-        <div class=" site-header-nav-item hvr-underline-from-center">
-            <a href="/blog/archives" title="Archives">
-                Archives
-            </a>
-            
-        </div>
-    
-        <div class=" site-header-nav-item hvr-underline-from-center">
-            <a href="/blog/" title="Learning">
-                Learning
-            </a>
-            
-                <ul class="submenu">
-                    
-
-                        <li>
-                            <a href="/blog/categories/%E4%B9%A6%E7%B1%8D/%E3%80%8A%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3Java%E8%99%9A%E6%8B%9F%E6%9C%BA%E3%80%8B/">
-                                <span>深入理解Java虚拟机</span>
-                            </a>
-                        </li>
-
-                    
-
-                        <li>
-                            <a href="/blog/categories/%E4%B9%A6%E7%B1%8D/%E3%80%8AMyBatis%E6%8A%80%E6%9C%AF%E5%86%85%E5%B9%95%E3%80%8B/">
-                                <span>MyBatis技术内幕</span>
-                            </a>
-                        </li>
-
-                    
-
-                        <li>
-                            <a href="/blog/categories/Java/Java%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/">
-                                <span>Java设计模式</span>
-                            </a>
-                        </li>
-
-                    
-                </ul>
-            
-        </div>
-    
-</nav>
-    </div>
-</header>
-
-<main class="content">
-    <!-- 标题部分 -->
-<section class="jumbotron geopattern" data-pattern-id="IoC之装载BeanDefinitions总结">
-    <div class="container">
-        <div id="jumbotron-meta-info">
-            <h1>IoC之装载BeanDefinitions总结</h1>
-            <span class="meta-info">
-                <a><span class="octicon octicon-calendar"></span> 2020-01-14</a>
-                
-                    <a><span class="octicon octicon-book"></span></a>
-                    
-                        <a href="/blog/categories/Spring/">Spring</a>
-                    
-                        <a href="/blog/categories/Spring/%E3%80%8ASpring%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E3%80%8B/">《Spring源码分析》</a>
-                    
-                
-                
-                    
-                
-            </span>
-        </div>
-
-    </div>
-</section>
-<script>
-    $(document).ready(function(){
-
-        $('.geopattern').each(function(){
-            $(this).geopattern($(this).data('pattern-id'));
-        });
-
-    });
-</script>
-<!-- 文章内容部分 -->
-<article class="post container " itemscope itemtype="http://schema.org/BlogPosting" id="openwrite-container">
-    <div class="row">
-        <div class="col-md-9 markdown-body">
-            <!-- 文章开始部分 -->
-            <!--<div style="text-align:center">-->
-<!--    <img style="display:inline-block" width="130" height="27"-->
-<!--         src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/640-3.gif"-->
-<!--         data-loaded="true">-->
-<!--    <img style="display:inline-block" width="41" height="35"-->
-<!--         src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/640-4.gif"-->
-<!--         data-loaded="true">-->
-<!--    <img style="display:inline-block"-->
-<!--         width="130" height="27"-->
-<!--         src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/640-5.gif"-->
-<!--         data-loaded="true">-->
-<!--</div>-->
-            <blockquote>
+ga('create', 'UA-129095667-1', 'auto');
+ga('send', 'pageview');</script><meta name="google-site-verification" content="VrcbMTVpFGlHkIERHBt753dAtXKF4qirjnDweuXSRJw"><meta http-equiv="Cache-Control" content="no-transform"><meta http-equiv="Cache-Control" content="no-siteapp"><script src="https://v1.hitokoto.cn/?encode=js&amp;charset=utf-8&amp;select=.footer_custom_text" defer></script><script>var GLOBAL_CONFIG = { 
+  root: '/blog/',
+  algolia: undefined,
+  localSearch: {"path":"search.xml","languages":{"hits_empty":"找不到您查询的内容:${query}"}},
+  copy: {
+    success: '复制成功',
+    error: '复制错误',
+    noSupport: '浏览器不支持'
+  },
+  hexoVersion: '5.4.0'
+} </script><meta name="generator" content="Hexo 5.4.0"><link rel="alternate" href="/blog/atom.xml" title="BLOG | CAYZLH" type="application/atom+xml">
+</head><body><i class="fa fa-arrow-right" id="toggle-sidebar" aria-hidden="true"></i><div id="sidebar" data-display="true"><div class="toggle-sidebar-info text-center"><span data-toggle="切换文章详情">切换站点概览</span><hr></div><div class="sidebar-toc"><div class="sidebar-toc__title">目录</div><div class="sidebar-toc__progress"><span class="progress-notice">你已经读了</span><span class="progress-num">0</span><span class="progress-percentage">%</span><div class="sidebar-toc__progress-bar"></div></div><div class="sidebar-toc__content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-Resource-%E5%AE%9A%E4%BD%8D"><span class="toc-text">1. Resource 定位</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-BeanDefinition-%E7%9A%84%E8%BD%BD%E5%85%A5%E5%92%8C%E8%A7%A3%E6%9E%90"><span class="toc-text">2. BeanDefinition 的载入和解析</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-%E8%BD%AC%E6%8D%A2%E4%B8%BA-Document-%E5%AF%B9%E8%B1%A1"><span class="toc-text">2.1 转换为 Document 对象</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-%E6%B3%A8%E5%86%8C-BeanDefinition-%E6%B5%81%E7%A8%8B"><span class="toc-text">2.2 注册 BeanDefinition 流程</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-1-%E5%AF%B9-Document-%E5%AF%B9%E8%B1%A1%E7%9A%84%E8%A7%A3%E6%9E%90"><span class="toc-text">2.2.1 对 Document 对象的解析</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#2-2-1-1-%E9%BB%98%E8%AE%A4%E6%A0%87%E7%AD%BE%E8%A7%A3%E6%9E%90"><span class="toc-text">2.2.1.1 默认标签解析</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2-2-1-2-%E8%87%AA%E5%AE%9A%E4%B9%89%E6%A0%87%E7%AD%BE%E8%A7%A3%E6%9E%90"><span class="toc-text">2.2.1.2 自定义标签解析</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-2-%E6%B3%A8%E5%86%8C-BeanDefinition"><span class="toc-text">2.2.2 注册 BeanDefinition</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-%E5%B0%8F%E7%BB%93"><span class="toc-text">3. 小结</span></a></li></ol></div></div><div class="author-info hide"><div class="author-info__avatar text-center"><img src="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/image/IMG_4207.JPG"></div><div class="author-info__name text-center">🐳Ant丶</div><div class="author-info__description text-center">CODE IS POETRY</div><div class="follow-button"><a target="_blank" rel="external nofollow noopener noreferrer" href="https://telegram.me/Q2F5emxo">contact me</a></div><hr><div class="author-info-articles"><a class="author-info-articles__archives article-meta" href="/blog/archives"><span class="pull-left">文章</span><span class="pull-right">98</span></a><a class="author-info-articles__tags article-meta" href="/blog/tags"><span class="pull-left">标签</span><span class="pull-right">15</span></a><a class="author-info-articles__categories article-meta" href="/blog/categories"><span class="pull-left">分类</span><span class="pull-right">14</span></a><a class="author-info-articles__categories article-meta" href="/blog/categories/%E4%B9%A6%E7%B1%8D/%E3%80%8A%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3Java%E8%99%9A%E6%8B%9F%E6%9C%BA%E3%80%8B/"><span class="pull-left">《深入理解Java虚拟机》</span><span class="pull-right">√</span></a><a class="author-info-articles__categories article-meta" href="/blog/categories/%E4%B9%A6%E7%B1%8D/%E3%80%8AMyBatis%E6%8A%80%E6%9C%AF%E5%86%85%E5%B9%95%E3%80%8B/"><span class="pull-left">《MyBatis技术内幕》</span><span class="pull-right">√</span></a><a class="author-info-articles__categories article-meta" href="/blog/categories/Java/Java%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/"><span class="pull-left">Java设计模式</span><span class="pull-right">√</span></a></div></div></div><div id="content-outer"><div class="no-bg" id="top-container"><div id="page-header"><span class="pull-left"> <a id="site-name" href="/blog/">BLOG | CAYZLH</a></span><i class="fa fa-bars toggle-menu pull-right" aria-hidden="true"></i><span class="pull-right"><a class="site-page social-icon search"><i class="fa fa-search"></i><span> 搜索</span></a></span></div><div id="post-info"><div id="post-title">IoC之装载BeanDefinitions总结</div><div id="post-meta"><time class="post-meta__date"><i class="fa fa-calendar" aria-hidden="true"></i> 2020-01-14</time><span class="post-meta__separator">|</span><i class="fa fa-inbox post-meta__icon" aria-hidden="true"></i><a class="post-meta__categories" href="/blog/categories/Spring/">Spring</a><i class="fa fa-angle-right" aria-hidden="true"></i><i class="fa fa-inbox post-meta__icon" aria-hidden="true"></i><a class="post-meta__categories" href="/blog/categories/Spring/%E3%80%8ASpring%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E3%80%8B/">《Spring源码分析》</a><div class="post-meta-wordcount"><span>字数总计: </span><span class="word-count">3k</span><span class="post-meta__separator">|</span><span>阅读时长: 11 分钟</span></div></div></div></div><div class="layout" id="content-inner"><article id="post"><div class="article-container" id="post-content"><blockquote>
 <p>本文作者：chenssy</p>
 <p>出处：<a target="_blank" rel="external nofollow noopener noreferrer" href="http://cmsblogs.com/?p=todo">http://cmsblogs.com/?p=todo</a></p>
 <p>在学习<code>Spring源码</code>的过程中发现的好站+好贴，感谢作者。Spring版本：<strong>Spring 5.0.6.RELEASE</strong></p>
@@ -272,11 +49,8 @@
 </li>
 </ul>
 <p>在博客 <a href="/2020/01/03/a6d994a0.html">《 IoC 之加载 BeanDefinition》</a> 中提供过一段代码，这里我们同样也以这段代码作为我们研究 <code>IoC</code> 初始化过程的开端，如下：</p>
-<pre class="line-numbers language-java"><code class="language-java">ClassPathResource resource <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">ClassPathResource</span><span class="token punctuation">(</span><span class="token string">"bean.xml"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-DefaultListableBeanFactory factory <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">DefaultListableBeanFactory</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-XmlBeanDefinitionReader reader <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">XmlBeanDefinitionReader</span><span class="token punctuation">(</span>factory<span class="token punctuation">)</span><span class="token punctuation">;</span>
-reader<span class="token punctuation">.</span><span class="token function">loadBeanDefinitions</span><span class="token punctuation">(</span>resource<span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">ClassPathResource resource = <span class="keyword">new</span> ClassPathResource(<span class="string">&quot;bean.xml&quot;</span>);</span><br><span class="line">DefaultListableBeanFactory factory = <span class="keyword">new</span> DefaultListableBeanFactory();</span><br><span class="line">XmlBeanDefinitionReader reader = <span class="keyword">new</span> XmlBeanDefinitionReader(factory);</span><br><span class="line">reader.loadBeanDefinitions(resource);</span><br></pre></td></tr></table></figure>
+
 <p>刚刚开始的时候可能对上面这几行代码不知道什么意思，现在应该就一目了然了：</p>
 <ul>
 <li><p><code>ClassPathResource resource = new ClassPathResource(&quot;bean.xml&quot;);</code> ： 根据 <code>Xml</code> 配置文件创建 <code>Resource</code> 资源对象。</p>
@@ -300,87 +74,29 @@ reader<span class="token punctuation">.</span><span class="token function">loadB
 </ul>
 <p>Resource 资源的定位需要 Resource 和 ResourceLoader 两个接口互相配合，在上面那段代码中 <code>new ClassPathResource(&quot;bean.xml&quot;)</code> 为我们定义了资源，那么 <code>ResourceLoader</code> 则是在什么时候初始化的呢？</p>
 <p>看 <code>XmlBeanDefinitionReader</code> 构造方法：</p>
-<pre class="line-numbers language-java"><code class="language-java"><span class="token comment" spellcheck="true">// XmlBeanDefinitionReader.java</span>
-<span class="token keyword">public</span> <span class="token function">XmlBeanDefinitionReader</span><span class="token punctuation">(</span>BeanDefinitionRegistry registry<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-  <span class="token keyword">super</span><span class="token punctuation">(</span>registry<span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="comment">// XmlBeanDefinitionReader.java</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="title">XmlBeanDefinitionReader</span><span class="params">(BeanDefinitionRegistry registry)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">super</span>(registry);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 <ul>
 <li><p>直接调用父类 <code>AbstractBeanDefinitionReader</code> 构造方法，代码如下：</p>
-<pre class="line-numbers language-java"><code class="language-java"><span class="token comment" spellcheck="true">// AbstractBeanDefinitionReader.java</span>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="comment">// AbstractBeanDefinitionReader.java</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">protected</span> <span class="title">AbstractBeanDefinitionReader</span><span class="params">(BeanDefinitionRegistry registry)</span> </span>&#123;</span><br><span class="line">	Assert.notNull(registry, <span class="string">&quot;BeanDefinitionRegistry must not be null&quot;</span>);</span><br><span class="line">	<span class="keyword">this</span>.registry = registry;</span><br><span class="line">	<span class="comment">// Determine ResourceLoader to use.</span></span><br><span class="line">	<span class="keyword">if</span> (<span class="keyword">this</span>.registry <span class="keyword">instanceof</span> ResourceLoader) &#123;</span><br><span class="line">		<span class="keyword">this</span>.resourceLoader = (ResourceLoader) <span class="keyword">this</span>.registry;</span><br><span class="line">	&#125;	<span class="keyword">else</span> &#123;</span><br><span class="line">		<span class="keyword">this</span>.resourceLoader = <span class="keyword">new</span> PathMatchingResourcePatternResolver();</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// Inherit Environment if possible</span></span><br><span class="line">	<span class="keyword">if</span> (<span class="keyword">this</span>.registry <span class="keyword">instanceof</span> EnvironmentCapable) &#123;</span><br><span class="line">		<span class="keyword">this</span>.environment = ((EnvironmentCapable) <span class="keyword">this</span>.registry).getEnvironment();</span><br><span class="line">	&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">		<span class="keyword">this</span>.environment = <span class="keyword">new</span> StandardEnvironment();</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<span class="token keyword">protected</span> <span class="token function">AbstractBeanDefinitionReader</span><span class="token punctuation">(</span>BeanDefinitionRegistry registry<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-    Assert<span class="token punctuation">.</span><span class="token function">notNull</span><span class="token punctuation">(</span>registry<span class="token punctuation">,</span> <span class="token string">"BeanDefinitionRegistry must not be null"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token keyword">this</span><span class="token punctuation">.</span>registry <span class="token operator">=</span> registry<span class="token punctuation">;</span>
-    <span class="token comment" spellcheck="true">// Determine ResourceLoader to use.</span>
-    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>registry <span class="token keyword">instanceof</span> <span class="token class-name">ResourceLoader</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-        <span class="token keyword">this</span><span class="token punctuation">.</span>resourceLoader <span class="token operator">=</span> <span class="token punctuation">(</span>ResourceLoader<span class="token punctuation">)</span> <span class="token keyword">this</span><span class="token punctuation">.</span>registry<span class="token punctuation">;</span>
-    <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>    <span class="token keyword">else</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-        <span class="token keyword">this</span><span class="token punctuation">.</span>resourceLoader <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">PathMatchingResourcePatternResolver</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-
-    <span class="token comment" spellcheck="true">// Inherit Environment if possible</span>
-    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>registry <span class="token keyword">instanceof</span> <span class="token class-name">EnvironmentCapable</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-        <span class="token keyword">this</span><span class="token punctuation">.</span>environment <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>EnvironmentCapable<span class="token punctuation">)</span> <span class="token keyword">this</span><span class="token punctuation">.</span>registry<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getEnvironment</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span> <span class="token keyword">else</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-        <span class="token keyword">this</span><span class="token punctuation">.</span>environment <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">StandardEnvironment</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-<span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <ul>
 <li>核心在于设置 <code>resourceLoader</code> 这段，如果设置了 <code>ResourceLoader</code> 则用设置的，否则使用 <code>PathMatchingResourcePatternResolver</code> ，该类是一个集大成者的 <code>ResourceLoader</code>。</li>
 </ul>
 </li>
 </ul>
 <h1 id="2-BeanDefinition-的载入和解析"><a href="#2-BeanDefinition-的载入和解析" class="headerlink" title="2. BeanDefinition 的载入和解析"></a>2. BeanDefinition 的载入和解析</h1><p><code>reader.loadBeanDefinitions(resource);</code> 代码段，开启 <code>BeanDefinition</code> 的解析过程。如下：</p>
-<pre class="line-numbers language-java"><code class="language-java"><span class="token comment" spellcheck="true">// XmlBeanDefinitionReader.java</span>
-<span class="token annotation punctuation">@Override</span>
-<span class="token keyword">public</span> <span class="token keyword">int</span> <span class="token function">loadBeanDefinitions</span><span class="token punctuation">(</span>Resource resource<span class="token punctuation">)</span> <span class="token keyword">throws</span> BeanDefinitionStoreException <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-    <span class="token keyword">return</span> <span class="token function">loadBeanDefinitions</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">EncodedResource</span><span class="token punctuation">(</span>resource<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="comment">// XmlBeanDefinitionReader.java</span></span><br><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">loadBeanDefinitions</span><span class="params">(Resource resource)</span> <span class="keyword">throws</span> BeanDefinitionStoreException </span>&#123;</span><br><span class="line">	<span class="keyword">return</span> loadBeanDefinitions(<span class="keyword">new</span> EncodedResource(resource));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 <ul>
 <li><p>在这个方法会将资源 <code>resource</code> 包装成一个 <code>EncodedResource</code> 实例对象，然后调用 <code>#loadBeanDefinitions(EncodedResource encodedResource)</code> 方法。</p>
 <p>而将 <code>Resource</code> 封装成 <code>EncodedResource</code> 主要是为了对 <code>Resource</code> 进行编码，保证内容读取的正确性。代码如下：</p>
-<pre class="line-numbers language-java"><code class="language-java"><span class="token comment" spellcheck="true">// XmlBeanDefinitionReader.java</span>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">  <span class="comment">// XmlBeanDefinitionReader.java</span></span><br><span class="line">  </span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">loadBeanDefinitions</span><span class="params">(EncodedResource encodedResource)</span> <span class="keyword">throws</span> BeanDefinitionStoreException </span>&#123;</span><br><span class="line">  	<span class="comment">// ... 省略一些代码</span></span><br><span class="line">  	<span class="keyword">try</span> &#123;</span><br><span class="line">  		<span class="comment">// 将资源文件转为 InputStream 的 IO 流</span></span><br><span class="line">  		InputStream inputStream = encodedResource.getResource().getInputStream();</span><br><span class="line">  		<span class="keyword">try</span> &#123;</span><br><span class="line">  			<span class="comment">// 从 InputStream 中得到 XML 的解析源</span></span><br><span class="line">  			InputSource inputSource = <span class="keyword">new</span> InputSource(inputStream);</span><br><span class="line">  			<span class="keyword">if</span> (encodedResource.getEncoding() != <span class="keyword">null</span>) &#123;</span><br><span class="line">  				inputSource.setEncoding(encodedResource.getEncoding());</span><br><span class="line">  			&#125;</span><br><span class="line">  			<span class="comment">// ... 具体的读取过程</span></span><br><span class="line">  			<span class="keyword">return</span> doLoadBeanDefinitions(inputSource, encodedResource.getResource());</span><br><span class="line">  		&#125;</span><br><span class="line">  		<span class="keyword">finally</span> &#123;</span><br><span class="line">  			inputStream.close();</span><br><span class="line">  		&#125;</span><br><span class="line">  	&#125;</span><br><span class="line">  	<span class="comment">// 省略一些代码</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<span class="token keyword">public</span> <span class="token keyword">int</span> <span class="token function">loadBeanDefinitions</span><span class="token punctuation">(</span>EncodedResource encodedResource<span class="token punctuation">)</span> <span class="token keyword">throws</span> BeanDefinitionStoreException <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-    <span class="token comment" spellcheck="true">// ... 省略一些代码</span>
-    <span class="token keyword">try</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-        <span class="token comment" spellcheck="true">// 将资源文件转为 InputStream 的 IO 流</span>
-        InputStream inputStream <span class="token operator">=</span> encodedResource<span class="token punctuation">.</span><span class="token function">getResource</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getInputStream</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token keyword">try</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-            <span class="token comment" spellcheck="true">// 从 InputStream 中得到 XML 的解析源</span>
-            InputSource inputSource <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">InputSource</span><span class="token punctuation">(</span>inputStream<span class="token punctuation">)</span><span class="token punctuation">;</span>
-            <span class="token keyword">if</span> <span class="token punctuation">(</span>encodedResource<span class="token punctuation">.</span><span class="token function">getEncoding</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">!=</span> null<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-                inputSource<span class="token punctuation">.</span><span class="token function">setEncoding</span><span class="token punctuation">(</span>encodedResource<span class="token punctuation">.</span><span class="token function">getEncoding</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-            <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-            <span class="token comment" spellcheck="true">// ... 具体的读取过程</span>
-            <span class="token keyword">return</span> <span class="token function">doLoadBeanDefinitions</span><span class="token punctuation">(</span>inputSource<span class="token punctuation">,</span> encodedResource<span class="token punctuation">.</span><span class="token function">getResource</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-        <span class="token keyword">finally</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-            inputStream<span class="token punctuation">.</span><span class="token function">close</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-    <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-    <span class="token comment" spellcheck="true">// 省略一些代码</span>
-<span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <ul>
 <li><p>从 <code>encodedResource</code> 源中获取 <code>xml</code> 的解析源，然后调用 <code>#doLoadBeanDefinitions(InputSource inputSource, Resource resource)</code> 方法，执行具体的解析过程。</p>
-<pre class="line-numbers language-java"><code class="language-java"><span class="token comment" spellcheck="true">// XmlBeanDefinitionReader.java</span>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">  <span class="comment">// XmlBeanDefinitionReader.java</span></span><br><span class="line">  </span><br><span class="line">  <span class="function"><span class="keyword">protected</span> <span class="keyword">int</span> <span class="title">doLoadBeanDefinitions</span><span class="params">(InputSource inputSource, Resource resource)</span></span></span><br><span class="line"><span class="function">  			<span class="keyword">throws</span> BeanDefinitionStoreException </span>&#123;</span><br><span class="line">  	<span class="keyword">try</span> &#123;</span><br><span class="line">  		<span class="comment">// 获取 XML Document 实例</span></span><br><span class="line">  		Document doc = doLoadDocument(inputSource, resource);</span><br><span class="line">  		<span class="comment">// 根据 Document 实例，注册 Bean 信息</span></span><br><span class="line">  		<span class="keyword">int</span> count = registerBeanDefinitions(doc, resource);</span><br><span class="line">  		<span class="keyword">return</span> count;</span><br><span class="line">  	&#125;</span><br><span class="line">  	<span class="comment">// ... 省略一堆配置</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<span class="token keyword">protected</span> <span class="token keyword">int</span> <span class="token function">doLoadBeanDefinitions</span><span class="token punctuation">(</span>InputSource inputSource<span class="token punctuation">,</span> Resource resource<span class="token punctuation">)</span>
-            <span class="token keyword">throws</span> BeanDefinitionStoreException <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-    <span class="token keyword">try</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-        <span class="token comment" spellcheck="true">// 获取 XML Document 实例</span>
-        Document doc <span class="token operator">=</span> <span class="token function">doLoadDocument</span><span class="token punctuation">(</span>inputSource<span class="token punctuation">,</span> resource<span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token comment" spellcheck="true">// 根据 Document 实例，注册 Bean 信息</span>
-        <span class="token keyword">int</span> count <span class="token operator">=</span> <span class="token function">registerBeanDefinitions</span><span class="token punctuation">(</span>doc<span class="token punctuation">,</span> resource<span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token keyword">return</span> count<span class="token punctuation">;</span>
-    <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-    <span class="token comment" spellcheck="true">// ... 省略一堆配置</span>
-<span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <ul>
 <li>在该方法中主要做两件事：</li>
 <li>1、根据 <code>xml</code> 解析源获取相应的 <code>Document</code> 对象。</li>
@@ -391,13 +107,8 @@ reader<span class="token punctuation">.</span><span class="token function">loadB
 </li>
 </ul>
 <h2 id="2-1-转换为-Document-对象"><a href="#2-1-转换为-Document-对象" class="headerlink" title="2.1 转换为 Document 对象"></a>2.1 转换为 Document 对象</h2><p>调用 <code>#doLoadDocument(InputSource inputSource, Resource resource)</code> 方法，会将 <code>Bean</code> 定义的资源转换为 <code>Document</code> 对象。代码如下：</p>
-<pre class="line-numbers language-java"><code class="language-java"><span class="token comment" spellcheck="true">// XmlBeanDefinitionReader.java</span>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="comment">// XmlBeanDefinitionReader.java</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">protected</span> Document <span class="title">doLoadDocument</span><span class="params">(InputSource inputSource, Resource resource)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">	<span class="keyword">return</span> <span class="keyword">this</span>.documentLoader.loadDocument(inputSource, getEntityResolver(), <span class="keyword">this</span>.errorHandler,</span><br><span class="line">			getValidationModeForResource(resource), isNamespaceAware());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<span class="token keyword">protected</span> Document <span class="token function">doLoadDocument</span><span class="token punctuation">(</span>InputSource inputSource<span class="token punctuation">,</span> Resource resource<span class="token punctuation">)</span> <span class="token keyword">throws</span> Exception <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-    <span class="token keyword">return</span> <span class="token keyword">this</span><span class="token punctuation">.</span>documentLoader<span class="token punctuation">.</span><span class="token function">loadDocument</span><span class="token punctuation">(</span>inputSource<span class="token punctuation">,</span> <span class="token function">getEntityResolver</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token keyword">this</span><span class="token punctuation">.</span>errorHandler<span class="token punctuation">,</span>
-            <span class="token function">getValidationModeForResource</span><span class="token punctuation">(</span>resource<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token function">isNamespaceAware</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>该方法接受五个参数：</p>
 <ul>
 <li><p><code>inputSource</code> ：加载 <code>Document</code> 的 <code>Resource</code> 源。</p>
@@ -418,100 +129,28 @@ reader<span class="token punctuation">.</span><span class="token function">loadB
 </ul>
 <hr>
 <p><code>#loadDocument(InputSource inputSource, EntityResolver entityResolver, ErrorHandler errorHandler, int validationMode, boolean namespaceAware)</code> 方法，在类 DefaultDocumentLoader 中提供了实现。代码如下：</p>
-<pre class="line-numbers language-java"><code class="language-java"><span class="token comment" spellcheck="true">// DefaultDocumentLoader.java</span>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="comment">// DefaultDocumentLoader.java</span></span><br><span class="line"></span><br><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> Document <span class="title">loadDocument</span><span class="params">(InputSource inputSource, EntityResolver entityResolver,</span></span></span><br><span class="line"><span class="function"><span class="params">		ErrorHandler errorHandler, <span class="keyword">int</span> validationMode, <span class="keyword">boolean</span> namespaceAware)</span> </span></span><br><span class="line"><span class="function">  <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">	<span class="comment">// 创建 DocumentBuilderFactory</span></span><br><span class="line">	DocumentBuilderFactory factory = createDocumentBuilderFactory(validationMode, namespaceAware);</span><br><span class="line">	<span class="comment">// 创建 DocumentBuilder</span></span><br><span class="line">	DocumentBuilder builder = </span><br><span class="line">    createDocumentBuilder(factory, entityResolver, errorHandler);</span><br><span class="line">	<span class="comment">// 解析 XML InputSource 返回 Document 对象</span></span><br><span class="line">	<span class="keyword">return</span> builder.parse(inputSource);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<span class="token annotation punctuation">@Override</span>
-<span class="token keyword">public</span> Document <span class="token function">loadDocument</span><span class="token punctuation">(</span>InputSource inputSource<span class="token punctuation">,</span> EntityResolver entityResolver<span class="token punctuation">,</span>
-        ErrorHandler errorHandler<span class="token punctuation">,</span> <span class="token keyword">int</span> validationMode<span class="token punctuation">,</span> <span class="token keyword">boolean</span> namespaceAware<span class="token punctuation">)</span> 
-  <span class="token keyword">throws</span> Exception <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-    <span class="token comment" spellcheck="true">// 创建 DocumentBuilderFactory</span>
-    DocumentBuilderFactory factory <span class="token operator">=</span> <span class="token function">createDocumentBuilderFactory</span><span class="token punctuation">(</span>validationMode<span class="token punctuation">,</span> namespaceAware<span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token comment" spellcheck="true">// 创建 DocumentBuilder</span>
-    DocumentBuilder builder <span class="token operator">=</span> 
-    <span class="token function">createDocumentBuilder</span><span class="token punctuation">(</span>factory<span class="token punctuation">,</span> entityResolver<span class="token punctuation">,</span> errorHandler<span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token comment" spellcheck="true">// 解析 XML InputSource 返回 Document 对象</span>
-    <span class="token keyword">return</span> builder<span class="token punctuation">.</span><span class="token function">parse</span><span class="token punctuation">(</span>inputSource<span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <h2 id="2-2-注册-BeanDefinition-流程"><a href="#2-2-注册-BeanDefinition-流程" class="headerlink" title="2.2 注册 BeanDefinition 流程"></a>2.2 注册 BeanDefinition 流程</h2><p>这到这里，就已经将定义的 <code>Bean</code> 资源文件，载入并转换为 <code>Document</code> 对象了。</p>
 <p>那么，下一步就是如何将其解析为 <code>SpringIoC</code> 管理的 <code>BeanDefinition</code> 对象，并将其注册到容器中。</p>
 <p>这个过程由方法 <code>#registerBeanDefinitions(Document doc, Resource resource)</code> 方法来实现。代码如下：</p>
-<pre class="line-numbers language-java"><code class="language-java"><span class="token comment" spellcheck="true">// XmlBeanDefinitionReader.java</span>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="comment">// XmlBeanDefinitionReader.java</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">registerBeanDefinitions</span><span class="params">(Document doc, Resource resource)</span> <span class="keyword">throws</span> BeanDefinitionStoreException </span>&#123;</span><br><span class="line">	<span class="comment">// 创建 BeanDefinitionDocumentReader 对象</span></span><br><span class="line">	BeanDefinitionDocumentReader documentReader = createBeanDefinitionDocumentReader();</span><br><span class="line">	<span class="comment">// 获取已注册的 BeanDefinition 数量</span></span><br><span class="line">	<span class="keyword">int</span> countBefore = getRegistry().getBeanDefinitionCount();</span><br><span class="line">	<span class="comment">// 创建 XmlReaderContext 对象</span></span><br><span class="line">	<span class="comment">// 注册 BeanDefinition</span></span><br><span class="line">	documentReader.registerBeanDefinitions(doc, createReaderContext(resource));</span><br><span class="line">	<span class="comment">// 计算新注册的 BeanDefinition 数量</span></span><br><span class="line">	<span class="keyword">return</span> getRegistry().getBeanDefinitionCount() - countBefore;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<span class="token keyword">public</span> <span class="token keyword">int</span> <span class="token function">registerBeanDefinitions</span><span class="token punctuation">(</span>Document doc<span class="token punctuation">,</span> Resource resource<span class="token punctuation">)</span> <span class="token keyword">throws</span> BeanDefinitionStoreException <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-    <span class="token comment" spellcheck="true">// 创建 BeanDefinitionDocumentReader 对象</span>
-    BeanDefinitionDocumentReader documentReader <span class="token operator">=</span> <span class="token function">createBeanDefinitionDocumentReader</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token comment" spellcheck="true">// 获取已注册的 BeanDefinition 数量</span>
-    <span class="token keyword">int</span> countBefore <span class="token operator">=</span> <span class="token function">getRegistry</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getBeanDefinitionCount</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token comment" spellcheck="true">// 创建 XmlReaderContext 对象</span>
-    <span class="token comment" spellcheck="true">// 注册 BeanDefinition</span>
-    documentReader<span class="token punctuation">.</span><span class="token function">registerBeanDefinitions</span><span class="token punctuation">(</span>doc<span class="token punctuation">,</span> <span class="token function">createReaderContext</span><span class="token punctuation">(</span>resource<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token comment" spellcheck="true">// 计算新注册的 BeanDefinition 数量</span>
-    <span class="token keyword">return</span> <span class="token function">getRegistry</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getBeanDefinitionCount</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">-</span> countBefore<span class="token punctuation">;</span>
-<span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <ul>
 <li><p>首先，创建 <code>BeanDefinition</code> 的解析器 <code>BeanDefinitionDocumentReader</code> 。</p>
 </li>
 <li><p>然后，调用该 <code>BeanDefinitionDocumentReader</code> 的 <code>#registerBeanDefinitions(Document doc, XmlReaderContext readerContext)</code> 方法，开启解析过程，这里使用的是委派模式，具体的实现由子类 <code>DefaultBeanDefinitionDocumentReader</code> 完成。代码如下：</p>
-<pre class="line-numbers language-java"><code class="language-java"><span class="token comment" spellcheck="true">// DefaultBeanDefinitionDocumentReader.java</span>
-
-<span class="token annotation punctuation">@Override</span>
-<span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">registerBeanDefinitions</span><span class="token punctuation">(</span>Document doc<span class="token punctuation">,</span> XmlReaderContext readerContext<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-    <span class="token keyword">this</span><span class="token punctuation">.</span>readerContext <span class="token operator">=</span> readerContext<span class="token punctuation">;</span>
-    <span class="token comment" spellcheck="true">// 获得 XML Document Root Element</span>
-    <span class="token comment" spellcheck="true">// 执行注册 BeanDefinition</span>
-    <span class="token function">doRegisterBeanDefinitions</span><span class="token punctuation">(</span>doc<span class="token punctuation">.</span><span class="token function">getDocumentElement</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-</li>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="comment">// DefaultBeanDefinitionDocumentReader.java</span></span><br><span class="line"></span><br><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">registerBeanDefinitions</span><span class="params">(Document doc, XmlReaderContext readerContext)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">this</span>.readerContext = readerContext;</span><br><span class="line">    <span class="comment">// 获得 XML Document Root Element</span></span><br><span class="line">    <span class="comment">// 执行注册 BeanDefinition</span></span><br><span class="line">    doRegisterBeanDefinitions(doc.getDocumentElement());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
 </ul>
 <h3 id="2-2-1-对-Document-对象的解析"><a href="#2-2-1-对-Document-对象的解析" class="headerlink" title="2.2.1 对 Document 对象的解析"></a>2.2.1 对 Document 对象的解析</h3><p>从 <code>Document</code> 对象中获取根元素 <code>root</code>，然后调用 ``#doRegisterBeanDefinitions(Element root)` 方法，开启真正的解析过程。代码如下：</p>
-<pre class="line-numbers language-java"><code class="language-java"><span class="token comment" spellcheck="true">// DefaultBeanDefinitionDocumentReader.java</span>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="comment">// DefaultBeanDefinitionDocumentReader.java</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title">doRegisterBeanDefinitions</span><span class="params">(Element root)</span> </span>&#123;</span><br><span class="line">    <span class="comment">// ... 省略部分代码（非核心）</span></span><br><span class="line">    <span class="keyword">this</span>.delegate = createDelegate(getReaderContext(), root, parent);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 解析前处理</span></span><br><span class="line">    preProcessXml(root);</span><br><span class="line">    <span class="comment">// 解析</span></span><br><span class="line">    parseBeanDefinitions(root, <span class="keyword">this</span>.delegate);</span><br><span class="line">    <span class="comment">// 解析后处理</span></span><br><span class="line">    postProcessXml(root);</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<span class="token keyword">protected</span> <span class="token keyword">void</span> <span class="token function">doRegisterBeanDefinitions</span><span class="token punctuation">(</span>Element root<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-    <span class="token comment" spellcheck="true">// ... 省略部分代码（非核心）</span>
-    <span class="token keyword">this</span><span class="token punctuation">.</span>delegate <span class="token operator">=</span> <span class="token function">createDelegate</span><span class="token punctuation">(</span><span class="token function">getReaderContext</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> root<span class="token punctuation">,</span> parent<span class="token punctuation">)</span><span class="token punctuation">;</span>
-
-    <span class="token comment" spellcheck="true">// 解析前处理</span>
-    <span class="token function">preProcessXml</span><span class="token punctuation">(</span>root<span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token comment" spellcheck="true">// 解析</span>
-    <span class="token function">parseBeanDefinitions</span><span class="token punctuation">(</span>root<span class="token punctuation">,</span> <span class="token keyword">this</span><span class="token punctuation">.</span>delegate<span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token comment" spellcheck="true">// 解析后处理</span>
-    <span class="token function">postProcessXml</span><span class="token punctuation">(</span>root<span class="token punctuation">)</span><span class="token punctuation">;</span>
-
-<span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <ul>
 <li><p><code>#preProcessXml(Element root)</code>、<code>#postProcessXml(Element root)</code> 为前置、后置增强处理，目前 Spring 中都是空实现。</p>
 </li>
 <li><p><code>#parseBeanDefinitions(Element root, BeanDefinitionParserDelegate delegate)</code> 是对根元素 root 的解析注册过程。代码如下：</p>
-<pre class="line-numbers language-java"><code class="language-java"><span class="token comment" spellcheck="true">// DefaultBeanDefinitionDocumentReader.java</span>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="comment">// DefaultBeanDefinitionDocumentReader.java</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title">parseBeanDefinitions</span><span class="params">(Element root, BeanDefinitionParserDelegate delegate)</span> </span>&#123;</span><br><span class="line">    <span class="comment">// 如果根节点使用默认命名空间，执行默认解析</span></span><br><span class="line">    <span class="keyword">if</span> (delegate.isDefaultNamespace(root)) &#123;</span><br><span class="line">        <span class="comment">// 遍历子节点</span></span><br><span class="line">        NodeList nl = root.getChildNodes();</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; nl.getLength(); i++) &#123;</span><br><span class="line">            Node node = nl.item(i);</span><br><span class="line">            <span class="keyword">if</span> (node <span class="keyword">instanceof</span> Element) &#123;</span><br><span class="line">                Element ele = (Element) node;</span><br><span class="line">                <span class="comment">// 如果该节点使用默认命名空间，执行默认解析</span></span><br><span class="line">                <span class="keyword">if</span> (delegate.isDefaultNamespace(ele)) &#123;</span><br><span class="line">                    parseDefaultElement(ele, delegate);</span><br><span class="line">                <span class="comment">// 如果该节点非默认命名空间，执行自定义解析</span></span><br><span class="line">                &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                    delegate.parseCustomElement(ele);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    <span class="comment">// 如果根节点非默认命名空间，执行自定义解析</span></span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        delegate.parseCustomElement(root);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<span class="token keyword">protected</span> <span class="token keyword">void</span> <span class="token function">parseBeanDefinitions</span><span class="token punctuation">(</span>Element root<span class="token punctuation">,</span> BeanDefinitionParserDelegate delegate<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-    <span class="token comment" spellcheck="true">// 如果根节点使用默认命名空间，执行默认解析</span>
-    <span class="token keyword">if</span> <span class="token punctuation">(</span>delegate<span class="token punctuation">.</span><span class="token function">isDefaultNamespace</span><span class="token punctuation">(</span>root<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-        <span class="token comment" spellcheck="true">// 遍历子节点</span>
-        NodeList nl <span class="token operator">=</span> root<span class="token punctuation">.</span><span class="token function">getChildNodes</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> nl<span class="token punctuation">.</span><span class="token function">getLength</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> i<span class="token operator">++</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-            Node node <span class="token operator">=</span> nl<span class="token punctuation">.</span><span class="token function">item</span><span class="token punctuation">(</span>i<span class="token punctuation">)</span><span class="token punctuation">;</span>
-            <span class="token keyword">if</span> <span class="token punctuation">(</span>node <span class="token keyword">instanceof</span> <span class="token class-name">Element</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-                Element ele <span class="token operator">=</span> <span class="token punctuation">(</span>Element<span class="token punctuation">)</span> node<span class="token punctuation">;</span>
-                <span class="token comment" spellcheck="true">// 如果该节点使用默认命名空间，执行默认解析</span>
-                <span class="token keyword">if</span> <span class="token punctuation">(</span>delegate<span class="token punctuation">.</span><span class="token function">isDefaultNamespace</span><span class="token punctuation">(</span>ele<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-                    <span class="token function">parseDefaultElement</span><span class="token punctuation">(</span>ele<span class="token punctuation">,</span> delegate<span class="token punctuation">)</span><span class="token punctuation">;</span>
-                <span class="token comment" spellcheck="true">// 如果该节点非默认命名空间，执行自定义解析</span>
-                <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span> <span class="token keyword">else</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-                    delegate<span class="token punctuation">.</span><span class="token function">parseCustomElement</span><span class="token punctuation">(</span>ele<span class="token punctuation">)</span><span class="token punctuation">;</span>
-                <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-            <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-        <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-    <span class="token comment" spellcheck="true">// 如果根节点非默认命名空间，执行自定义解析</span>
-    <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span> <span class="token keyword">else</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-        delegate<span class="token punctuation">.</span><span class="token function">parseCustomElement</span><span class="token punctuation">(</span>root<span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-<span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <ul>
 <li>迭代 root 元素的所有子节点，对其进行判断：<ul>
 <li>若节点为默认命名空间，则调用 <code>#parseDefaultElement(Element ele, BeanDefinitionParserDelegate delegate)</code> 方法，开启默认标签的解析注册过程。</li>
@@ -522,112 +161,22 @@ reader<span class="token punctuation">.</span><span class="token function">loadB
 </li>
 </ul>
 <h4 id="2-2-1-1-默认标签解析"><a href="#2-2-1-1-默认标签解析" class="headerlink" title="2.2.1.1 默认标签解析"></a>2.2.1.1 默认标签解析</h4><p>若定义的元素节点使用的是 <code>Spring</code> 默认命名空间，则调用 <code>#parseDefaultElement(Element ele, BeanDefinitionParserDelegate delegate)</code> 方法，进行默认标签解析。代码如下：</p>
-<pre class="line-numbers language-java"><code class="language-java"><span class="token comment" spellcheck="true">// DefaultBeanDefinitionDocumentReader.java</span>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="comment">// DefaultBeanDefinitionDocumentReader.java</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">parseDefaultElement</span><span class="params">(Element ele, BeanDefinitionParserDelegate delegate)</span> </span>&#123;</span><br><span class="line">	<span class="keyword">if</span> (delegate.nodeNameEquals(ele, IMPORT_ELEMENT)) &#123; <span class="comment">// import</span></span><br><span class="line">		importBeanDefinitionResource(ele);</span><br><span class="line">	&#125; <span class="keyword">else</span> <span class="keyword">if</span> (delegate.nodeNameEquals(ele, ALIAS_ELEMENT)) &#123; <span class="comment">// alias</span></span><br><span class="line">		processAliasRegistration(ele);</span><br><span class="line">	&#125; <span class="keyword">else</span> <span class="keyword">if</span> (delegate.nodeNameEquals(ele, BEAN_ELEMENT)) &#123; <span class="comment">// bean</span></span><br><span class="line">		processBeanDefinition(ele, delegate);</span><br><span class="line">	&#125; <span class="keyword">else</span> <span class="keyword">if</span> (delegate.nodeNameEquals(ele, NESTED_BEANS_ELEMENT)) &#123; <span class="comment">// beans</span></span><br><span class="line">		<span class="comment">// recurse</span></span><br><span class="line">		doRegisterBeanDefinitions(ele);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<span class="token keyword">private</span> <span class="token keyword">void</span> <span class="token function">parseDefaultElement</span><span class="token punctuation">(</span>Element ele<span class="token punctuation">,</span> BeanDefinitionParserDelegate delegate<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-    <span class="token keyword">if</span> <span class="token punctuation">(</span>delegate<span class="token punctuation">.</span><span class="token function">nodeNameEquals</span><span class="token punctuation">(</span>ele<span class="token punctuation">,</span> IMPORT_ELEMENT<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span> <span class="token comment" spellcheck="true">// import</span>
-        <span class="token function">importBeanDefinitionResource</span><span class="token punctuation">(</span>ele<span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span> <span class="token keyword">else</span> <span class="token keyword">if</span> <span class="token punctuation">(</span>delegate<span class="token punctuation">.</span><span class="token function">nodeNameEquals</span><span class="token punctuation">(</span>ele<span class="token punctuation">,</span> ALIAS_ELEMENT<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span> <span class="token comment" spellcheck="true">// alias</span>
-        <span class="token function">processAliasRegistration</span><span class="token punctuation">(</span>ele<span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span> <span class="token keyword">else</span> <span class="token keyword">if</span> <span class="token punctuation">(</span>delegate<span class="token punctuation">.</span><span class="token function">nodeNameEquals</span><span class="token punctuation">(</span>ele<span class="token punctuation">,</span> BEAN_ELEMENT<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span> <span class="token comment" spellcheck="true">// bean</span>
-        <span class="token function">processBeanDefinition</span><span class="token punctuation">(</span>ele<span class="token punctuation">,</span> delegate<span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span> <span class="token keyword">else</span> <span class="token keyword">if</span> <span class="token punctuation">(</span>delegate<span class="token punctuation">.</span><span class="token function">nodeNameEquals</span><span class="token punctuation">(</span>ele<span class="token punctuation">,</span> NESTED_BEANS_ELEMENT<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span> <span class="token comment" spellcheck="true">// beans</span>
-        <span class="token comment" spellcheck="true">// recurse</span>
-        <span class="token function">doRegisterBeanDefinitions</span><span class="token punctuation">(</span>ele<span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-<span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>对四大标签：<code>import</code>、<code>alias</code>、<code>bean</code>、<code>beans</code>进行解析。<strong>其中 <code>bean</code> 标签的解析为核心工作</strong>。</p>
 <h4 id="2-2-1-2-自定义标签解析"><a href="#2-2-1-2-自定义标签解析" class="headerlink" title="2.2.1.2 自定义标签解析"></a>2.2.1.2 自定义标签解析</h4><p>对于默认标签则由 <code>parseCustomElement(Element ele)</code> 方法，负责解析。代码如下：</p>
-<pre class="line-numbers language-java"><code class="language-java"><span class="token comment" spellcheck="true">// BeanDefinitionParserDelegate.java</span>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="comment">// BeanDefinitionParserDelegate.java</span></span><br><span class="line"></span><br><span class="line"><span class="meta">@Nullable</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> BeanDefinition <span class="title">parseCustomElement</span><span class="params">(Element ele)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> parseCustomElement(ele, <span class="keyword">null</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="meta">@Nullable</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> BeanDefinition <span class="title">parseCustomElement</span><span class="params">(Element ele, </span></span></span><br><span class="line"><span class="function"><span class="params">                                         <span class="meta">@Nullable</span> BeanDefinition containingBd)</span> </span>&#123;</span><br><span class="line">    <span class="comment">// 获取 namespaceUri</span></span><br><span class="line">    String namespaceUri = getNamespaceURI(ele);</span><br><span class="line">    <span class="keyword">if</span> (namespaceUri == <span class="keyword">null</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 根据 namespaceUri 获取相应的 Handler</span></span><br><span class="line">    NamespaceHandler handler = <span class="keyword">this</span>.readerContext.getNamespaceHandlerResolver().resolve(namespaceUri);</span><br><span class="line">    <span class="keyword">if</span> (handler == <span class="keyword">null</span>) &#123;</span><br><span class="line">        error(<span class="string">&quot;Unable to locate Spring NamespaceHandler for XML schema namespace [&quot;</span> + namespaceUri + <span class="string">&quot;]&quot;</span>, ele);</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 调用自定义的 Handler 处理</span></span><br><span class="line">    <span class="keyword">return</span> handler.parse(ele, <span class="keyword">new</span> ParserContext(<span class="keyword">this</span>.readerContext, <span class="keyword">this</span>, containingBd));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<span class="token annotation punctuation">@Nullable</span>
-<span class="token keyword">public</span> BeanDefinition <span class="token function">parseCustomElement</span><span class="token punctuation">(</span>Element ele<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-    <span class="token keyword">return</span> <span class="token function">parseCustomElement</span><span class="token punctuation">(</span>ele<span class="token punctuation">,</span> null<span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-
-<span class="token annotation punctuation">@Nullable</span>
-<span class="token keyword">public</span> BeanDefinition <span class="token function">parseCustomElement</span><span class="token punctuation">(</span>Element ele<span class="token punctuation">,</span> 
-                                         <span class="token annotation punctuation">@Nullable</span> BeanDefinition containingBd<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-    <span class="token comment" spellcheck="true">// 获取 namespaceUri</span>
-    String namespaceUri <span class="token operator">=</span> <span class="token function">getNamespaceURI</span><span class="token punctuation">(</span>ele<span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token keyword">if</span> <span class="token punctuation">(</span>namespaceUri <span class="token operator">==</span> null<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-        <span class="token keyword">return</span> null<span class="token punctuation">;</span>
-    <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-    <span class="token comment" spellcheck="true">// 根据 namespaceUri 获取相应的 Handler</span>
-    NamespaceHandler handler <span class="token operator">=</span> <span class="token keyword">this</span><span class="token punctuation">.</span>readerContext<span class="token punctuation">.</span><span class="token function">getNamespaceHandlerResolver</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">resolve</span><span class="token punctuation">(</span>namespaceUri<span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token keyword">if</span> <span class="token punctuation">(</span>handler <span class="token operator">==</span> null<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-        <span class="token function">error</span><span class="token punctuation">(</span><span class="token string">"Unable to locate Spring NamespaceHandler for XML schema namespace ["</span> <span class="token operator">+</span> namespaceUri <span class="token operator">+</span> <span class="token string">"]"</span><span class="token punctuation">,</span> ele<span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token keyword">return</span> null<span class="token punctuation">;</span>
-    <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-    <span class="token comment" spellcheck="true">// 调用自定义的 Handler 处理</span>
-    <span class="token keyword">return</span> handler<span class="token punctuation">.</span><span class="token function">parse</span><span class="token punctuation">(</span>ele<span class="token punctuation">,</span> <span class="token keyword">new</span> <span class="token class-name">ParserContext</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>readerContext<span class="token punctuation">,</span> <span class="token keyword">this</span><span class="token punctuation">,</span> containingBd<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>获取节点的 <code>namespaceUri</code>，然后根据该 <code>namespaceUri</code> 获取相对应的 <code>NamespaceHandler</code>，最后调用 <code>NamespaceHandler</code> 的 <code>#parse(Element element, ParserContext parserContext)</code> 方法，<code>即完成自定义标签的解析和注入</code>。</p>
 <h3 id="2-2-2-注册-BeanDefinition"><a href="#2-2-2-注册-BeanDefinition" class="headerlink" title="2.2.2 注册 BeanDefinition"></a>2.2.2 注册 BeanDefinition</h3><p>经过上面的解析，则将 <code>Document</code> 对象里面的 <code>Bean</code> 标签解析成了一个个的 <code>BeanDefinition</code> ，下一步则是将这些 <code>BeanDefinition</code> 注册到 <code>IoC</code> 容器中。动作的触发是在解析 <code>Bean</code> 标签完成后，代码如下：</p>
-<pre class="line-numbers language-java"><code class="language-java"><span class="token comment" spellcheck="true">// DefaultBeanDefinitionDocumentReader.java</span>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="comment">// DefaultBeanDefinitionDocumentReader.java</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title">processBeanDefinition</span><span class="params">(Element ele, </span></span></span><br><span class="line"><span class="function"><span class="params">                                     BeanDefinitionParserDelegate delegate)</span> </span>&#123;</span><br><span class="line">    <span class="comment">// 进行 bean 元素解析。</span></span><br><span class="line">    <span class="comment">// 如果解析成功，则返回 BeanDefinitionHolder 对象。</span></span><br><span class="line">    <span class="comment">// 而 BeanDefinitionHolder 为 name 和 alias 的 BeanDefinition 对象</span></span><br><span class="line">    <span class="comment">// 如果解析失败，则返回 null 。</span></span><br><span class="line">    BeanDefinitionHolder bdHolder = delegate.parseBeanDefinitionElement(ele);</span><br><span class="line">    <span class="keyword">if</span> (bdHolder != <span class="keyword">null</span>) &#123;</span><br><span class="line">        <span class="comment">// 进行自定义标签处理</span></span><br><span class="line">        bdHolder = delegate.decorateBeanDefinitionIfRequired(ele, bdHolder);</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="comment">// 进行 BeanDefinition 的注册</span></span><br><span class="line">            <span class="comment">// Register the final decorated instance.</span></span><br><span class="line">            BeanDefinitionReaderUtils.registerBeanDefinition(bdHolder, </span><br><span class="line">                                                     getReaderContext().getRegistry());</span><br><span class="line">        &#125; <span class="keyword">catch</span> (BeanDefinitionStoreException ex) &#123;</span><br><span class="line">            getReaderContext().error(<span class="string">&quot;Failed to register bean definition with name &#x27;&quot;</span> +</span><br><span class="line">                    bdHolder.getBeanName() + <span class="string">&quot;&#x27;&quot;</span>, ele, ex);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// 发出响应事件，通知相关的监听器，已完成该 Bean 标签的解析。</span></span><br><span class="line">        <span class="comment">// Send registration event.</span></span><br><span class="line">        getReaderContext().fireComponentRegistered(</span><br><span class="line">          <span class="keyword">new</span> BeanComponentDefinition(bdHolder));</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<span class="token keyword">protected</span> <span class="token keyword">void</span> <span class="token function">processBeanDefinition</span><span class="token punctuation">(</span>Element ele<span class="token punctuation">,</span> 
-                                     BeanDefinitionParserDelegate delegate<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-    <span class="token comment" spellcheck="true">// 进行 bean 元素解析。</span>
-    <span class="token comment" spellcheck="true">// 如果解析成功，则返回 BeanDefinitionHolder 对象。</span>
-    <span class="token comment" spellcheck="true">// 而 BeanDefinitionHolder 为 name 和 alias 的 BeanDefinition 对象</span>
-    <span class="token comment" spellcheck="true">// 如果解析失败，则返回 null 。</span>
-    BeanDefinitionHolder bdHolder <span class="token operator">=</span> delegate<span class="token punctuation">.</span><span class="token function">parseBeanDefinitionElement</span><span class="token punctuation">(</span>ele<span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token keyword">if</span> <span class="token punctuation">(</span>bdHolder <span class="token operator">!=</span> null<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-        <span class="token comment" spellcheck="true">// 进行自定义标签处理</span>
-        bdHolder <span class="token operator">=</span> delegate<span class="token punctuation">.</span><span class="token function">decorateBeanDefinitionIfRequired</span><span class="token punctuation">(</span>ele<span class="token punctuation">,</span> bdHolder<span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token keyword">try</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-            <span class="token comment" spellcheck="true">// 进行 BeanDefinition 的注册</span>
-            <span class="token comment" spellcheck="true">// Register the final decorated instance.</span>
-            BeanDefinitionReaderUtils<span class="token punctuation">.</span><span class="token function">registerBeanDefinition</span><span class="token punctuation">(</span>bdHolder<span class="token punctuation">,</span> 
-                                                     <span class="token function">getReaderContext</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getRegistry</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">BeanDefinitionStoreException</span> ex<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-            <span class="token function">getReaderContext</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">error</span><span class="token punctuation">(</span><span class="token string">"Failed to register bean definition with name '"</span> <span class="token operator">+</span>
-                    bdHolder<span class="token punctuation">.</span><span class="token function">getBeanName</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">+</span> <span class="token string">"'"</span><span class="token punctuation">,</span> ele<span class="token punctuation">,</span> ex<span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-        <span class="token comment" spellcheck="true">// 发出响应事件，通知相关的监听器，已完成该 Bean 标签的解析。</span>
-        <span class="token comment" spellcheck="true">// Send registration event.</span>
-        <span class="token function">getReaderContext</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">fireComponentRegistered</span><span class="token punctuation">(</span>
-          <span class="token keyword">new</span> <span class="token class-name">BeanComponentDefinition</span><span class="token punctuation">(</span>bdHolder<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-<span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <ul>
 <li><p>调用 <code>BeanDefinitionReaderUtils.registerBeanDefinition()</code> 方法，来注册。</p>
 <p>其实，这里面也是调用 <code>BeanDefinitionRegistry</code> 的 <code>#registerBeanDefinition(String beanName, BeanDefinition beanDefinition)</code> 方法，来注册 <code>BeanDefinition</code> 。</p>
 <p>不过，最终的实现是在 <code>DefaultListableBeanFactory</code> 中实现，代码如下：</p>
-<pre class="line-numbers language-java"><code class="language-java"><span class="token comment" spellcheck="true">// DefaultListableBeanFactory.java</span>
-<span class="token annotation punctuation">@Override</span>
-<span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">registerBeanDefinition</span><span class="token punctuation">(</span>String beanName<span class="token punctuation">,</span> BeanDefinition beanDefinition<span class="token punctuation">)</span>
-        <span class="token keyword">throws</span> BeanDefinitionStoreException <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-    <span class="token comment" spellcheck="true">// ...省略校验相关的代码</span>
-    <span class="token comment" spellcheck="true">// 从缓存中获取指定 beanName 的 BeanDefinition</span>
-    BeanDefinition existingDefinition <span class="token operator">=</span> <span class="token keyword">this</span><span class="token punctuation">.</span>beanDefinitionMap<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span>beanName<span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token comment" spellcheck="true">// 如果已经存在</span>
-    <span class="token keyword">if</span> <span class="token punctuation">(</span>existingDefinition <span class="token operator">!=</span> null<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-        <span class="token comment" spellcheck="true">// 如果存在但是不允许覆盖，抛出异常</span>
-        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span><span class="token function">isAllowBeanDefinitionOverriding</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-             <span class="token keyword">throw</span> <span class="token keyword">new</span> <span class="token class-name">BeanDefinitionOverrideException</span><span class="token punctuation">(</span>beanName<span class="token punctuation">,</span> 
-                                              beanDefinition<span class="token punctuation">,</span>existingDefinition<span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span> <span class="token keyword">else</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-           <span class="token comment" spellcheck="true">// ...省略 logger 打印日志相关的代码</span>
-        <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-        <span class="token comment" spellcheck="true">// 【重点】允许覆盖，直接覆盖原有的 BeanDefinition 到 beanDefinitionMap 中。</span>
-        <span class="token keyword">this</span><span class="token punctuation">.</span>beanDefinitionMap<span class="token punctuation">.</span><span class="token function">put</span><span class="token punctuation">(</span>beanName<span class="token punctuation">,</span> beanDefinition<span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token comment" spellcheck="true">// 如果未存在</span>
-    <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span> <span class="token keyword">else</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-        <span class="token comment" spellcheck="true">// ... 省略非核心的代码</span>
-        <span class="token comment" spellcheck="true">// 【重点】添加到 BeanDefinition 到 beanDefinitionMap 中。</span>
-        <span class="token keyword">this</span><span class="token punctuation">.</span>beanDefinitionMap<span class="token punctuation">.</span><span class="token function">put</span><span class="token punctuation">(</span>beanName<span class="token punctuation">,</span> beanDefinition<span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-    <span class="token comment" spellcheck="true">// 重新设置 beanName 对应的缓存</span>
-  <span class="token keyword">if</span> <span class="token punctuation">(</span>existingDefinition <span class="token operator">!=</span> null <span class="token operator">||</span> <span class="token function">containsSingleton</span><span class="token punctuation">(</span>beanName<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-        <span class="token function">resetBeanDefinition</span><span class="token punctuation">(</span>beanName<span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-<span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="comment">// DefaultListableBeanFactory.java</span></span><br><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">registerBeanDefinition</span><span class="params">(String beanName, BeanDefinition beanDefinition)</span></span></span><br><span class="line"><span class="function">        <span class="keyword">throws</span> BeanDefinitionStoreException </span>&#123;</span><br><span class="line">    <span class="comment">// ...省略校验相关的代码</span></span><br><span class="line">    <span class="comment">// 从缓存中获取指定 beanName 的 BeanDefinition</span></span><br><span class="line">    BeanDefinition existingDefinition = <span class="keyword">this</span>.beanDefinitionMap.get(beanName);</span><br><span class="line">    <span class="comment">// 如果已经存在</span></span><br><span class="line">    <span class="keyword">if</span> (existingDefinition != <span class="keyword">null</span>) &#123;</span><br><span class="line">        <span class="comment">// 如果存在但是不允许覆盖，抛出异常</span></span><br><span class="line">        <span class="keyword">if</span> (!isAllowBeanDefinitionOverriding()) &#123;</span><br><span class="line">             <span class="keyword">throw</span> <span class="keyword">new</span> BeanDefinitionOverrideException(beanName, </span><br><span class="line">                                              beanDefinition,existingDefinition);</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">           <span class="comment">// ...省略 logger 打印日志相关的代码</span></span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// 【重点】允许覆盖，直接覆盖原有的 BeanDefinition 到 beanDefinitionMap 中。</span></span><br><span class="line">        <span class="keyword">this</span>.beanDefinitionMap.put(beanName, beanDefinition);</span><br><span class="line">    <span class="comment">// 如果未存在</span></span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="comment">// ... 省略非核心的代码</span></span><br><span class="line">        <span class="comment">// 【重点】添加到 BeanDefinition 到 beanDefinitionMap 中。</span></span><br><span class="line">        <span class="keyword">this</span>.beanDefinitionMap.put(beanName, beanDefinition);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 重新设置 beanName 对应的缓存</span></span><br><span class="line">  <span class="keyword">if</span> (existingDefinition != <span class="keyword">null</span> || containsSingleton(beanName)) &#123;</span><br><span class="line">        resetBeanDefinition(beanName);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 <ul>
 <li>这段代码最核心的部分是这句 <code>this.beanDefinitionMap.put(beanName, beanDefinition)</code> 代码段。所以，注册过程也不是那么的高大上，就是利用一个 Map 的集合对象来存放：<code>key</code> 是 <code>beanName</code>，<code>value</code> 是 <code>BeanDefinition</code> 对象。</li>
 </ul>
@@ -636,191 +185,8 @@ reader<span class="token punctuation">.</span><span class="token function">loadB
 <h1 id="3-小结"><a href="#3-小结" class="headerlink" title="3. 小结"></a>3. 小结</h1><p>至此，整个 <code>IoC</code> 的初始化过程就已经完成了，从 <code>Bean</code> 资源的定位，转换为 <code>Document</code> 对象，接着对其进行解析，最后注册到 <code>IoC</code> 容器中，都已经完美地完成了。</p>
 <p>现在 <code>IoC</code> 容器中已经建立了整个 <code>Bean</code> 的配置信息，这些 <code>Bean</code> 可以被检索、使用、维护，他们是控制反转的基础，是后面注入 <code>Bean</code> 的依赖。最后用一张流程图来结束这篇总结之文。</p>
 <p><img src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/vRTCJi.jpg" alt="vRTCJi"></p>
-
-            <!-- 文章结尾部分 -->
-            
-                
-<div style="text-align:center;width:100%">
-    <span class="octicon octicon-tag-add"></span>
-    
-        <a style="color: #24292e;" href="/blog/tags/Spring/">Spring</a>
-    
-        <a style="color: #24292e;" href="/blog/tags/%E6%AD%BB%E7%A3%95Spring/">死磕Spring</a>
-    
-</div>
-
-
-
-    <div style="text-align:center;width:100%">
-        <img src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/640-2.gif">
-    </div>
-
-
-
-
-<div>
-    <h4>相关推荐</h4>
-    <ul class="post-copyright">
-        
-        <li class="post-copyright-author">
-            <a href="/blog/2020/01/26/101fc769.html">4张图带你读懂Spring IOC的世界</a>
-        </li>
-        
-        <li class="post-copyright-author">
-            <a href="/blog/2020/01/25/86c712d3.html">IOC之BeanDefinition注册机：BeanDefinitionRegistry</a>
-        </li>
-        
-        <li class="post-copyright-author">
-            <a href="/blog/2020/01/17/c4a8e2a2.html">IOC之parentBeanFactory与依赖处理</a>
-        </li>
-        
-        <li class="post-copyright-author">
-            <a href="/blog/2020/01/16/c9c155de.html">IOC之从单例缓存中获取单例bean</a>
-        </li>
-        
-        <li class="post-copyright-author">
-            <a href="/blog/2020/01/26/90c034e1.html">IOC之分析bean的生命周期</a>
-        </li>
-        
-        <li class="post-copyright-author">
-            <a href="/blog/2020/01/18/13d2205c.html">IOC之分析各scope的bean创建</a>
-        </li>
-        
-    </ul>
-    <br><br>
-</div>
-
-
-
-<div>
-    <h4>版权声明</h4>
-    <blockquote>
-        <ul class="post-copyright">
-            <li class="post-copyright-author">
-                <strong>本文来源： </strong>
-                
-                <a href="http://cmsblogs.com/?p=todo" title="Java技术驿站-chenssy-【死磕 Spring】—– IoC之装载BeanDefinitions总结" rel="external nofollow noopener noreferrer" target="_blank">Java技术驿站-chenssy-【死磕 Spring】—– IoC之装载BeanDefinitions总结</a></li>
-            <li class="post-copyright-link">
-                <strong>本文链接：</strong>
-                <a href="https://www.cayzlh.com/2020/01/14/af13201.html" title="/blog/IoC%E4%B9%8B%E8%A3%85%E8%BD%BDBeanDefinitions%E6%80%BB%E7%BB%93">https://www.cayzlh.com/2020/01/14/af13201.html</a>
-            </li>
-            <li class="post-copyright-license">
-                <strong>版权声明： </strong>
-                
-                    文章内容仅用作学习和分享，如有雷同，纯属拷贝。
-                
-            </li>
-        </ul>
-    </blockquote>
-</div>
-
-
-            
-            
-                <div class="comment">
-    <br><br><br>
-    
-</div>
-
-            
-        </div>
-        <div class="col-md-3 markdown-body">
-            <h4>文章目录</h4>
-            <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-Resource-%E5%AE%9A%E4%BD%8D"><span class="toc-text">1. Resource 定位</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-BeanDefinition-%E7%9A%84%E8%BD%BD%E5%85%A5%E5%92%8C%E8%A7%A3%E6%9E%90"><span class="toc-text">2. BeanDefinition 的载入和解析</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-%E8%BD%AC%E6%8D%A2%E4%B8%BA-Document-%E5%AF%B9%E8%B1%A1"><span class="toc-text">2.1 转换为 Document 对象</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-%E6%B3%A8%E5%86%8C-BeanDefinition-%E6%B5%81%E7%A8%8B"><span class="toc-text">2.2 注册 BeanDefinition 流程</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-1-%E5%AF%B9-Document-%E5%AF%B9%E8%B1%A1%E7%9A%84%E8%A7%A3%E6%9E%90"><span class="toc-text">2.2.1 对 Document 对象的解析</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#2-2-1-1-%E9%BB%98%E8%AE%A4%E6%A0%87%E7%AD%BE%E8%A7%A3%E6%9E%90"><span class="toc-text">2.2.1.1 默认标签解析</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2-2-1-2-%E8%87%AA%E5%AE%9A%E4%B9%89%E6%A0%87%E7%AD%BE%E8%A7%A3%E6%9E%90"><span class="toc-text">2.2.1.2 自定义标签解析</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-2-%E6%B3%A8%E5%86%8C-BeanDefinition"><span class="toc-text">2.2.2 注册 BeanDefinition</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-%E5%B0%8F%E7%BB%93"><span class="toc-text">3. 小结</span></a></li></ol>
-        </div>
-    </div>
-    
-</article>
-
-
-<script>
-    hljs.initHighlightingOnLoad();
-</script>
-</main>
-<footer class="container">
-    <div class="site-footer">
-        
-    <div class="card text-center">
-        <ul class="list-inline" style="margin-left: 0;">
-            
-                <li>
-                    <a target="_blank" href="https://github.com/cayzlh" rel="external nofollow noopener noreferrer">
-                          <span class="fa-stack fa-lg">
-                            <i class="fa fa-circle fa-stack-2x"></i>
-                            <i class="fa fa-github fa-stack-1x fa-inverse">
-                                
-                            </i>
-                          </span>
-                    </a>
-                </li>
-            
-                <li>
-                    <a target="_blank" href="https://telegram.me/Q2F5emxo" rel="external nofollow noopener noreferrer">
-                          <span class="fa-stack fa-lg">
-                            <i class="fa fa-circle fa-stack-2x"></i>
-                            <i class="fa fa-rocket fa-stack-1x fa-inverse">
-                                
-                            </i>
-                          </span>
-                    </a>
-                </li>
-            
-                <li>
-                    <a target="_blank" href="mailto:chenanyu@cayzlh.com">
-                          <span class="fa-stack fa-lg">
-                            <i class="fa fa-circle fa-stack-2x"></i>
-                            <i class="fa fa-envelope fa-stack-1x fa-inverse">
-                                
-                            </i>
-                          </span>
-                    </a>
-                </li>
-            
-        </ul>
-    </div>
-
-
-        <div class="site-footer-links mobile-hidden">
-            
-                
-                
-            
-        </div>
-
-        <div class="site-footer-links mobile-hidden">
-        
-            <span class="meta-info-index hvr-grow">
-                
-                    <a href="https://www.cayzlh.com">
-                        🐳Ant丶 &copy; 2020
-                    </a>
-                
-            </span>
-        
-        
-            <span class="meta-info-index hvr-grow">
-                <a target="_blank" rel="external nofollow noopener noreferrer" href="http://beian.miit.gov.cn">粤ICP备20058712号-1</a>
-            </span>
-        
-        </div>
-
-        
-
-        
-    </div>
-    
-
-    
-        <!-- Third-Party JS -->
-        <script type="text/javascript" src="/blog/js/thirdparty/geopattern.min.js"></script>
-        <!-- My JS -->
-        <script type="text/javascript" src="/blog/js/script.js"></script>
-    
-
-    
-        <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js">
-        </script>
-    
-</footer>
-</body>
-</html>
+</div></article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta">文章作者: </span><span class="post-copyright-info"><a href="mailto:undefined" rel="external nofollow noopener noreferrer" target="_blank">🐳Ant丶</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta">文章链接: </span><span class="post-copyright-info"><a href="https://www.cayzlh.com/2020/01/14/af13201.html">https://www.cayzlh.com/2020/01/14/af13201.html</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta">版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a target="_blank" rel="external nofollow noopener noreferrer" href="https://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来自 <a href="https://www.cayzlh.com">BLOG | CAYZLH</a>！</span></div></div><div class="post-meta__tag-list"><a class="post-meta__tags" href="/blog/tags/Spring/">Spring</a><a class="post-meta__tags" href="/blog/tags/%E6%AD%BB%E7%A3%95Spring/">死磕Spring</a></div><nav id="pagination"><div class="prev-post pull-left"><a href="/blog/2020/01/15/27d87789.html"><i class="fa fa-chevron-left">  </i><span>IOC之开启bean的加载</span></a></div><div class="next-post pull-right"><a href="/blog/2020/01/13/a9bec556.html"><span>IoC之注册解析的BeanDefinitions</span><i class="fa fa-chevron-right"></i></a></div></nav></div></div><footer><div class="layout" id="footer"><div class="footer_custom_text">hitokoto</div><div class="copyright">🐳Ant丶 &copy;2019 - 2021</div><div class="icp"><a><span>粤ICP备20058712号</span></a></div><div class="busuanzi"><script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></div></footer><i class="fa fa-arrow-up" id="go-up" aria-hidden="true"></i><script src="https://cdn.jsdelivr.net/npm/animejs@latest/anime.min.js"></script><script src="https://cdn.jsdelivr.net/npm/jquery@latest/dist/jquery.min.js"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@latest/dist/jquery.fancybox.min.js"></script><script src="https://cdn.jsdelivr.net/npm/velocity-animate@latest/velocity.min.js"></script><script src="https://cdn.jsdelivr.net/npm/velocity-ui-pack@latest/velocity.ui.min.js"></script><script src="/blog/js/utils.js?version=1.9.0"></script><script src="/blog/js/fancybox.js?version=1.9.0"></script><script src="/blog/js/sidebar.js?version=1.9.0"></script><script src="/blog/js/copy.js?version=1.9.0"></script><script src="/blog/js/fireworks.js?version=1.9.0"></script><script src="/blog/js/transition.js?version=1.9.0"></script><script src="/blog/js/scroll.js?version=1.9.0"></script><script src="/blog/js/head.js?version=1.9.0"></script><script src="/blog/js/search/local-search.js"></script><script>if(/Android|webOS|iPhone|iPod|iPad|BlackBerry/i.test(navigator.userAgent)) {
+  $('#nav').addClass('is-mobile')
+  $('footer').addClass('is-mobile')
+  $('#top-container').addClass('is-mobile')
+}</script><div class="search-dialog" id="local-search"><div class="search-dialog__title" id="local-search-title">本地搜索</div><div id="local-input-panel"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="搜索文章"></div></div></div><hr><div id="local-search-results"><div id="local-hits"></div><div id="local-stats"><div class="local-search-stats__hr" id="hr"><span>Powered by</span> <a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/wzpan/hexo-generator-search" style="color:#49B1F5;">hexo-generator-search</a></div></div></div><span class="search-close-button"><i class="fa fa-times"></i></span></div><div class="search-mask"></div></body></html>

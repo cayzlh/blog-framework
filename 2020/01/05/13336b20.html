@@ -1,252 +1,24 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
+<!DOCTYPE html><html lang="[&quot;zh-Hans&quot;,&quot;en&quot;,&quot;default&quot;]"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"><meta name="description" content="分析IOC获取Document对象的源码"><meta name="keywords" content="IOC之获取Document对象, Spring, IoC"><meta name="author" content="🐳Ant丶"><meta name="copyright" content="🐳Ant丶"><title>IOC之获取Document对象 | BLOG | CAYZLH</title><link rel="shortcut icon" href="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/logo/favicon.ico"><link rel="stylesheet" href="/blog/css/index.css?version=1.9.0"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/font-awesome@latest/css/font-awesome.min.css?version=1.9.0"><meta name="format-detection" content="telephone=no"><meta http-equiv="x-dns-prefetch-control" content="on"><link rel="dns-prefetch" href="https://cdn.jsdelivr.net"><link rel="dns-prefetch" href="https://www.google-analytics.com"><script>(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
 
-<head>
-    <meta charset="utf-8">
-    <meta name="keywords" content="IOC之获取Document对象, Spring, IoC">
-    <meta name="description" content="Ant丶的网络日志, CAYZLH网络日志, CAYZLH, CAYZLH主页, Ant丶空间">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <meta name="renderer" content="webkit|ie-stand|ie-comp">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="format-detection" content="telephone=no">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <!-- Global site tag (gtag.js) - Google Analytics -->
-
-    <meta name="google-site-verification" content="VrcbMTVpFGlHkIERHBt753dAtXKF4qirjnDweuXSRJw">
-
-
-    <!-- Global site tag (gtag.js) - Google Analytics -->
-
-<script async src="https://www.googletagmanager.com/gtag/js?id=UA-129095667-1"></script>
-<script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag() {
-        dataLayer.push(arguments);
-    }
-
-    gtag('js', new Date());
-    gtag('config', 'UA-129095667-1');
-</script>
-
-
-    <title>IOC之获取Document对象 | BLOG | CAYZLH</title>
-
-    
-    <!-- Third-Party CSS -->
-    
-
-        <link rel="shortcut icon" href="/blog/image/favicon.ico">
-        <link rel="icon" type="image/png" href="/blog/image/favicon-192x192.png" sizes="192x192">
-        <link rel="apple-touch-icon" sizes="180x180" href="/blog/image/apple-touch-icon.png">
-
-        <link rel="stylesheet" href="/blog/css/thirdparty/bootstrap.min.css">
-        <link rel="stylesheet" href="/blog/css/thirdparty/octicons.css">
-        <link rel="stylesheet" href="/blog/css/thirdparty/hover-min.css">
-        <link rel="stylesheet" href="/blog/css/thirdparty/user-content.min.css">
-        <link rel="stylesheet" href="/blog/css/thirdparty/syntax.css">
-        <link rel="stylesheet" href="/blog/css/thirdparty/gitalk.css">
-
-        <!-- My CSS -->
-        <link rel="stylesheet" href="/blog/css/common.css">
-
-        <link rel="stylesheet" href="/blog/css/sidebar-post-nav.css">
-
-        <link rel="stylesheet" href="/blog/css/blog-page.css">
-        <!-- CSS set in page -->
-
-        
-        <link rel="stylesheet" href="/blog/css/sidebar-popular-repo.css">
-    
-
-    <!-- CSS set in layout -->
-    <link rel="stylesheet" type="text/css" href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css">
-
-    
-        <script type="text/javascript" src="/blog/js/thirdparty/jquery.min.js"></script>
-        <script type="text/javascript" src="/blog/js/thirdparty/bootstrap.min.js"></script>
-        <script type="text/javascript" src="/blog/js/lock.js"></script>
-    
-
-    
-        <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.css">
-        <script src="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js"></script>
-
-        <link rel="stylesheet" href="//imsun.github.io/gitment/style/default.css">
-        <script src="//imsun.github.io/gitment/dist/gitment.browser.js"></script>
-
-        <script src="//unpkg.com/valine/dist/Valine.min.js"></script>
-        <script src="//cdn.jsdelivr.net/npm/twikoo@1.2.0/dist/twikoo.all.min.js"></script>
-
-    
-
-    <link rel="stylesheet" href="//cdn.bootcss.com/highlight.js/9.2.0/styles/github.min.css">
-    <script src="//cdn.bootcss.com/highlight.js/9.2.0/highlight.min.js"></script>
-<meta name="generator" content="Hexo 5.4.0"><link rel="alternate" href="/blog/atom.xml" title="BLOG | CAYZLH" type="application/atom+xml">
-</head>
-
-<body>
-<header class="site-header">
-    <div class="site-header-topbar">
-        <div class="container">
-            <div class="topbar-menu">
-
-    
-        <div class="item">
-            <a href="https://www.cayzlh.com/" title="导航">
-                导航
-            </a>
-        </div>
-    
-        <div class="item">
-            <a href="/blog/categories/" title="分类">
-                分类
-            </a>
-        </div>
-    
-        <div class="item">
-            <a href="/blog/tags/" title="标签">
-                标签
-            </a>
-        </div>
-    
-        <div class="item">
-            <a href="/blog/links/" title="链接">
-                链接
-            </a>
-        </div>
-    
-        <div class="item">
-            <a href="/blog/about" title="关于">
-                关于
-            </a>
-        </div>
-    
-
-</div>
-        </div>
-    </div>
-    <div class="container">
-        <a id="site-header-brand" href="/blog/" title="BLOG | CAYZLH">
-            <span class="octicon octicon-watch"></span>
-            BLOG | CAYZLH
-        </a>
-
-        <nav class="site-header-nav" role="navigation">
-    
-        <div class=" site-header-nav-item hvr-underline-from-center">
-            <a href="/blog/" title="Home">
-                Home
-            </a>
-            
-        </div>
-    
-        <div class=" site-header-nav-item hvr-underline-from-center">
-            <a href="/blog/archives" title="Archives">
-                Archives
-            </a>
-            
-        </div>
-    
-        <div class=" site-header-nav-item hvr-underline-from-center">
-            <a href="/blog/" title="Learning">
-                Learning
-            </a>
-            
-                <ul class="submenu">
-                    
-
-                        <li>
-                            <a href="/blog/categories/%E4%B9%A6%E7%B1%8D/%E3%80%8A%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3Java%E8%99%9A%E6%8B%9F%E6%9C%BA%E3%80%8B/">
-                                <span>深入理解Java虚拟机</span>
-                            </a>
-                        </li>
-
-                    
-
-                        <li>
-                            <a href="/blog/categories/%E4%B9%A6%E7%B1%8D/%E3%80%8AMyBatis%E6%8A%80%E6%9C%AF%E5%86%85%E5%B9%95%E3%80%8B/">
-                                <span>MyBatis技术内幕</span>
-                            </a>
-                        </li>
-
-                    
-
-                        <li>
-                            <a href="/blog/categories/Java/Java%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/">
-                                <span>Java设计模式</span>
-                            </a>
-                        </li>
-
-                    
-                </ul>
-            
-        </div>
-    
-</nav>
-    </div>
-</header>
-
-<main class="content">
-    <!-- 标题部分 -->
-<section class="jumbotron geopattern" data-pattern-id="IOC之获取Document对象">
-    <div class="container">
-        <div id="jumbotron-meta-info">
-            <h1>IOC之获取Document对象</h1>
-            <span class="meta-info">
-                <a><span class="octicon octicon-calendar"></span> 2020-01-05</a>
-                
-                    <a><span class="octicon octicon-book"></span></a>
-                    
-                        <a href="/blog/categories/Spring/">Spring</a>
-                    
-                        <a href="/blog/categories/Spring/%E3%80%8ASpring%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E3%80%8B/">《Spring源码分析》</a>
-                    
-                
-                
-                    
-                
-            </span>
-        </div>
-
-    </div>
-</section>
-<script>
-    $(document).ready(function(){
-
-        $('.geopattern').each(function(){
-            $(this).geopattern($(this).data('pattern-id'));
-        });
-
-    });
-</script>
-<!-- 文章内容部分 -->
-<article class="post container " itemscope itemtype="http://schema.org/BlogPosting" id="openwrite-container">
-    <div class="row">
-        <div class="col-md-9 markdown-body">
-            <!-- 文章开始部分 -->
-            <!--<div style="text-align:center">-->
-<!--    <img style="display:inline-block" width="130" height="27"-->
-<!--         src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/640-3.gif"-->
-<!--         data-loaded="true">-->
-<!--    <img style="display:inline-block" width="41" height="35"-->
-<!--         src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/640-4.gif"-->
-<!--         data-loaded="true">-->
-<!--    <img style="display:inline-block"-->
-<!--         width="130" height="27"-->
-<!--         src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/640-5.gif"-->
-<!--         data-loaded="true">-->
-<!--</div>-->
-            <p>在 <code>XmlBeanDefinitionReader.doLoadDocument()</code> 方法中做了两件事情，一是调用 <code>getValidationModeForResource()</code> 获取 <code>XML</code> 的验证模式，二是调用 <code>DocumentLoader.loadDocument()</code> 获取 <code>Document</code> 对象。上篇博客已经分析了获取 <code>XML</code> 验证模式（<a href="/2020/01/04/4e0696ee.html">IOC 之 获取验证模型</a>），这篇我们分析获取 <code>Document</code> 对象。 </p>
+ga('create', 'UA-129095667-1', 'auto');
+ga('send', 'pageview');</script><meta name="google-site-verification" content="VrcbMTVpFGlHkIERHBt753dAtXKF4qirjnDweuXSRJw"><meta http-equiv="Cache-Control" content="no-transform"><meta http-equiv="Cache-Control" content="no-siteapp"><script src="https://v1.hitokoto.cn/?encode=js&amp;charset=utf-8&amp;select=.footer_custom_text" defer></script><script>var GLOBAL_CONFIG = { 
+  root: '/blog/',
+  algolia: undefined,
+  localSearch: {"path":"search.xml","languages":{"hits_empty":"找不到您查询的内容:${query}"}},
+  copy: {
+    success: '复制成功',
+    error: '复制错误',
+    noSupport: '浏览器不支持'
+  },
+  hexoVersion: '5.4.0'
+} </script><meta name="generator" content="Hexo 5.4.0"><link rel="alternate" href="/blog/atom.xml" title="BLOG | CAYZLH" type="application/atom+xml">
+</head><body><i class="fa fa-arrow-right" id="toggle-sidebar" aria-hidden="true"></i><div id="sidebar" data-display="true"><div class="toggle-sidebar-info text-center"><span data-toggle="切换文章详情">切换站点概览</span><hr></div><div class="sidebar-toc"><div class="sidebar-toc__title">目录</div><div class="sidebar-toc__progress"><span class="progress-notice">你已经读了</span><span class="progress-num">0</span><span class="progress-percentage">%</span><div class="sidebar-toc__progress-bar"></div></div><div class="sidebar-toc__content"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#DocumentLoader"><span class="toc-text">DocumentLoader</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#EntityResolver"><span class="toc-text">EntityResolver</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%B6%89%E5%8F%8A%E5%AD%90%E7%B1%BB"><span class="toc-text">涉及子类</span></a></li></ol></li></ol></div></div><div class="author-info hide"><div class="author-info__avatar text-center"><img src="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/image/IMG_4207.JPG"></div><div class="author-info__name text-center">🐳Ant丶</div><div class="author-info__description text-center">CODE IS POETRY</div><div class="follow-button"><a target="_blank" rel="external nofollow noopener noreferrer" href="https://telegram.me/Q2F5emxo">contact me</a></div><hr><div class="author-info-articles"><a class="author-info-articles__archives article-meta" href="/blog/archives"><span class="pull-left">文章</span><span class="pull-right">98</span></a><a class="author-info-articles__tags article-meta" href="/blog/tags"><span class="pull-left">标签</span><span class="pull-right">15</span></a><a class="author-info-articles__categories article-meta" href="/blog/categories"><span class="pull-left">分类</span><span class="pull-right">14</span></a><a class="author-info-articles__categories article-meta" href="/blog/categories/%E4%B9%A6%E7%B1%8D/%E3%80%8A%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3Java%E8%99%9A%E6%8B%9F%E6%9C%BA%E3%80%8B/"><span class="pull-left">《深入理解Java虚拟机》</span><span class="pull-right">√</span></a><a class="author-info-articles__categories article-meta" href="/blog/categories/%E4%B9%A6%E7%B1%8D/%E3%80%8AMyBatis%E6%8A%80%E6%9C%AF%E5%86%85%E5%B9%95%E3%80%8B/"><span class="pull-left">《MyBatis技术内幕》</span><span class="pull-right">√</span></a><a class="author-info-articles__categories article-meta" href="/blog/categories/Java/Java%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/"><span class="pull-left">Java设计模式</span><span class="pull-right">√</span></a></div></div></div><div id="content-outer"><div class="no-bg" id="top-container"><div id="page-header"><span class="pull-left"> <a id="site-name" href="/blog/">BLOG | CAYZLH</a></span><i class="fa fa-bars toggle-menu pull-right" aria-hidden="true"></i><span class="pull-right"><a class="site-page social-icon search"><i class="fa fa-search"></i><span> 搜索</span></a></span></div><div id="post-info"><div id="post-title">IOC之获取Document对象</div><div id="post-meta"><time class="post-meta__date"><i class="fa fa-calendar" aria-hidden="true"></i> 2020-01-05</time><span class="post-meta__separator">|</span><i class="fa fa-inbox post-meta__icon" aria-hidden="true"></i><a class="post-meta__categories" href="/blog/categories/Spring/">Spring</a><i class="fa fa-angle-right" aria-hidden="true"></i><i class="fa fa-inbox post-meta__icon" aria-hidden="true"></i><a class="post-meta__categories" href="/blog/categories/Spring/%E3%80%8ASpring%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E3%80%8B/">《Spring源码分析》</a><div class="post-meta-wordcount"><span>字数总计: </span><span class="word-count">1.5k</span><span class="post-meta__separator">|</span><span>阅读时长: 6 分钟</span></div></div></div></div><div class="layout" id="content-inner"><article id="post"><div class="article-container" id="post-content"><p>在 <code>XmlBeanDefinitionReader.doLoadDocument()</code> 方法中做了两件事情，一是调用 <code>getValidationModeForResource()</code> 获取 <code>XML</code> 的验证模式，二是调用 <code>DocumentLoader.loadDocument()</code> 获取 <code>Document</code> 对象。上篇博客已经分析了获取 <code>XML</code> 验证模式（<a href="/2020/01/04/4e0696ee.html">IOC 之 获取验证模型</a>），这篇我们分析获取 <code>Document</code> 对象。 </p>
 <h2 id="DocumentLoader"><a href="#DocumentLoader" class="headerlink" title="DocumentLoader"></a>DocumentLoader</h2><p>获取 <code>Document</code> 的策略由接口 <code>DocumentLoader</code> 定义，如下：</p>
-<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">interface</span> <span class="token class-name">DocumentLoader</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-    Document <span class="token function">loadDocument</span><span class="token punctuation">(</span>
-            InputSource inputSource<span class="token punctuation">,</span> EntityResolver entityResolver<span class="token punctuation">,</span>
-            ErrorHandler errorHandler<span class="token punctuation">,</span> <span class="token keyword">int</span> validationMode<span class="token punctuation">,</span> <span class="token keyword">boolean</span> namespaceAware<span class="token punctuation">)</span>
-            <span class="token keyword">throws</span> Exception<span class="token punctuation">;</span>
-<span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">DocumentLoader</span> </span>&#123;</span><br><span class="line">    <span class="function">Document <span class="title">loadDocument</span><span class="params">(</span></span></span><br><span class="line"><span class="function"><span class="params">            InputSource inputSource, EntityResolver entityResolver,</span></span></span><br><span class="line"><span class="function"><span class="params">            ErrorHandler errorHandler, <span class="keyword">int</span> validationMode, <span class="keyword">boolean</span> namespaceAware)</span></span></span><br><span class="line"><span class="function">            <span class="keyword">throws</span> Exception</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 <p><code>DocumentLoader</code> 中只有一个方法</p>
 <p><code>loadDocument()</code> ，该方法接收五个参数： </p>
 <ol>
@@ -257,42 +29,16 @@
 <li><strong>namespaceAware</strong>：命名空间支持。</li>
 </ol>
 <p>如果要提供对 <code>XML</code> 名称空间的支持，则为<code>true</code> 该方法由 <code>DocumentLoader</code> 的默认实现类 <code>DefaultDocumentLoader</code> 实现，如下：</p>
-<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> Document <span class="token function">loadDocument</span><span class="token punctuation">(</span>InputSource inputSource<span class="token punctuation">,</span> 
-                             EntityResolver entityResolver<span class="token punctuation">,</span>
-                             ErrorHandler errorHandler<span class="token punctuation">,</span> 
-                             <span class="token keyword">int</span> validationMode<span class="token punctuation">,</span> 
-                             <span class="token keyword">boolean</span> namespaceAware<span class="token punctuation">)</span> <span class="token keyword">throws</span> Exception <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> Document <span class="title">loadDocument</span><span class="params">(InputSource inputSource, </span></span></span><br><span class="line"><span class="function"><span class="params">                             EntityResolver entityResolver,</span></span></span><br><span class="line"><span class="function"><span class="params">                             ErrorHandler errorHandler, </span></span></span><br><span class="line"><span class="function"><span class="params">                             <span class="keyword">int</span> validationMode, </span></span></span><br><span class="line"><span class="function"><span class="params">                             <span class="keyword">boolean</span> namespaceAware)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line"></span><br><span class="line">  DocumentBuilderFactory factory = </span><br><span class="line">    createDocumentBuilderFactory(validationMode, namespaceAware);</span><br><span class="line">  <span class="keyword">if</span> (logger.isDebugEnabled()) &#123;</span><br><span class="line">    logger.debug(<span class="string">&quot;Using JAXP provider [&quot;</span> </span><br><span class="line">                 + factory.getClass().getName() + <span class="string">&quot;]&quot;</span>);</span><br><span class="line">  &#125;</span><br><span class="line">  DocumentBuilder builder = </span><br><span class="line">    createDocumentBuilder(factory, entityResolver, errorHandler);</span><br><span class="line">  <span class="keyword">return</span> builder.parse(inputSource);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-  DocumentBuilderFactory factory <span class="token operator">=</span> 
-    <span class="token function">createDocumentBuilderFactory</span><span class="token punctuation">(</span>validationMode<span class="token punctuation">,</span> namespaceAware<span class="token punctuation">)</span><span class="token punctuation">;</span>
-  <span class="token keyword">if</span> <span class="token punctuation">(</span>logger<span class="token punctuation">.</span><span class="token function">isDebugEnabled</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-    logger<span class="token punctuation">.</span><span class="token function">debug</span><span class="token punctuation">(</span><span class="token string">"Using JAXP provider ["</span> 
-                 <span class="token operator">+</span> factory<span class="token punctuation">.</span><span class="token function">getClass</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getName</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">+</span> <span class="token string">"]"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-  <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-  DocumentBuilder builder <span class="token operator">=</span> 
-    <span class="token function">createDocumentBuilder</span><span class="token punctuation">(</span>factory<span class="token punctuation">,</span> entityResolver<span class="token punctuation">,</span> errorHandler<span class="token punctuation">)</span><span class="token punctuation">;</span>
-  <span class="token keyword">return</span> builder<span class="token punctuation">.</span><span class="token function">parse</span><span class="token punctuation">(</span>inputSource<span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>首先调用</p>
 <p><code>createDocumentBuilderFactory()</code> 创建 <code>DocumentBuilderFactory</code> ，再通过该 <code>factory</code> 创建 <code>DocumentBuilder</code>，最后解析 <code>InputSource</code> 返回 <code>Document</code> 对象。</p>
 <h2 id="EntityResolver"><a href="#EntityResolver" class="headerlink" title="EntityResolver"></a>EntityResolver</h2><p><code>loadDocument()</code> 获取 <code>Document</code> 对象时，有一个参数 <code>entityResolver</code> ，该参数是通过 <code>getEntityResolver()</code> 获取的。</p>
 <blockquote>
 <p><code>getEntityResolver()</code> 返回指定的解析器，如果没有指定，则构造一个未指定的默认解析器。</p>
 </blockquote>
-<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">protected</span> EntityResolver <span class="token function">getEntityResolver</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-  <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>entityResolver <span class="token operator">==</span> null<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-    ResourceLoader resourceLoader <span class="token operator">=</span> <span class="token function">getResourceLoader</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token keyword">if</span> <span class="token punctuation">(</span>resourceLoader <span class="token operator">!=</span> null<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-      <span class="token keyword">this</span><span class="token punctuation">.</span>entityResolver <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">ResourceEntityResolver</span><span class="token punctuation">(</span>resourceLoader<span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-    <span class="token keyword">else</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-      <span class="token keyword">this</span><span class="token punctuation">.</span>entityResolver <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">DelegatingEntityResolver</span><span class="token punctuation">(</span><span class="token function">getBeanClassLoader</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-  <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-  <span class="token keyword">return</span> <span class="token keyword">this</span><span class="token punctuation">.</span>entityResolver<span class="token punctuation">;</span>
-<span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> EntityResolver <span class="title">getEntityResolver</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (<span class="keyword">this</span>.entityResolver == <span class="keyword">null</span>) &#123;</span><br><span class="line">    ResourceLoader resourceLoader = getResourceLoader();</span><br><span class="line">    <span class="keyword">if</span> (resourceLoader != <span class="keyword">null</span>) &#123;</span><br><span class="line">      <span class="keyword">this</span>.entityResolver = <span class="keyword">new</span> ResourceEntityResolver(resourceLoader);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span> &#123;</span><br><span class="line">      <span class="keyword">this</span>.entityResolver = <span class="keyword">new</span> DelegatingEntityResolver(getBeanClassLoader());</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> <span class="keyword">this</span>.entityResolver;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 <ul>
 <li>如果 ResourceLoader 不为 <strong>null</strong>，则根据指定的 ResourceLoader 创建一个 ResourceEntityResolver。</li>
 <li>如果 ResourceLoader 为<strong>null</strong>，则创建 一个 DelegatingEntityResolver，该 Resolver 委托给默认的 BeansDtdResolver 和 PluggableSchemaResolver 。</li>
@@ -307,18 +53,8 @@
 <blockquote>
 <p>If a SAX application needs to implement customized handling for external entities, it must implement this interface and register an instance with the SAX driver using the setEntityResolver method.<br>就是说：如果 SAX 应用程序需要实现自定义处理外部实体，则必须实现此接口并使用 <code>setEntityResolver()</code> 向 SAX 驱动器注册一个实例。 如下：</p>
 </blockquote>
-<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">MyResolver</span> <span class="token keyword">implements</span> <span class="token class-name">EntityResolver</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-  <span class="token keyword">public</span> InputSource <span class="token function">resolveEntity</span> <span class="token punctuation">(</span>String publicId<span class="token punctuation">,</span> String systemId<span class="token punctuation">)</span><span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-    <span class="token keyword">if</span> <span class="token punctuation">(</span>systemId<span class="token punctuation">.</span><span class="token function">equals</span><span class="token punctuation">(</span><span class="token string">"http://www.myhost.com/today"</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-      MyReader reader <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">MyReader</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-      <span class="token keyword">return</span> <span class="token keyword">new</span> <span class="token class-name">InputSource</span><span class="token punctuation">(</span>reader<span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span> <span class="token keyword">else</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-      <span class="token comment" spellcheck="true">// use the default behaviour</span>
-      <span class="token keyword">return</span> null<span class="token punctuation">;</span>
-    <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-  <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-<span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">MyResolver</span> <span class="keyword">implements</span> <span class="title">EntityResolver</span> </span>&#123;</span><br><span class="line">  <span class="function"><span class="keyword">public</span> InputSource <span class="title">resolveEntity</span> <span class="params">(String publicId, String systemId)</span></span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (systemId.equals(<span class="string">&quot;http://www.myhost.com/today&quot;</span>))&#123;</span><br><span class="line">      MyReader reader = <span class="keyword">new</span> MyReader();</span><br><span class="line">      <span class="keyword">return</span> <span class="keyword">new</span> InputSource(reader);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      <span class="comment">// use the default behaviour</span></span><br><span class="line">      <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 <p>我们首先将</p>
 <p><code>spring-student.xml</code> 文件中的 XSD 声明的地址改掉，如下：</p>
 <p> <img src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/MdkyLc.jpg" alt="MdkyLc"></p>
@@ -328,11 +64,8 @@
 <blockquote>
 <p>EntityResolver 的作用就是应用本身可以提供一个如何寻找验证文件的方法，即自定义实现。 接口声明如下：</p>
 </blockquote>
-<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">interface</span> <span class="token class-name">EntityResolver</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-    <span class="token keyword">public</span> <span class="token keyword">abstract</span> InputSource <span class="token function">resolveEntity</span> <span class="token punctuation">(</span>String publicId<span class="token punctuation">,</span>String systemId<span class="token punctuation">)</span>
-        <span class="token keyword">throws</span> SAXException<span class="token punctuation">,</span> IOException<span class="token punctuation">;</span>
-<span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">EntityResolver</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">abstract</span> InputSource <span class="title">resolveEntity</span> <span class="params">(String publicId,String systemId)</span></span></span><br><span class="line"><span class="function">        <span class="keyword">throws</span> SAXException, IOException</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 <p>接口方法接收两个参数 publicId 和 systemId，并返回 InputSource 对象。两个参数声明如下：</p>
 <ul>
 <li><p>publicId：被引用的外部实体的公共标识符，如果没有提供，则返回null</p>
@@ -354,286 +87,19 @@
 </li>
 </ul>
 <p><img src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/7nooAW.jpg" alt="7nooAW"><a target="_blank" rel="external nofollow noopener noreferrer" href="https://gitee.com/chenssy/blog-home/raw/master/image/201811/spring-201806071003.png"><img src="https://gitee.com/chenssy/blog-home/raw/master/image/201811/spring-201806071003.png" alt="spring-201806071003"></a>我们知道在 Spring 中使用 DelegatingEntityResolver 为 EntityResolver 的实现类，<code>resolveEntity()</code> 实现如下：</p>
-<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> InputSource <span class="token function">resolveEntity</span><span class="token punctuation">(</span>String publicId<span class="token punctuation">,</span> 
-                                 <span class="token annotation punctuation">@Nullable</span> String systemId<span class="token punctuation">)</span> 
-  <span class="token keyword">throws</span> SAXException<span class="token punctuation">,</span> IOException <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-  <span class="token keyword">if</span> <span class="token punctuation">(</span>systemId <span class="token operator">!=</span> null<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-    <span class="token keyword">if</span> <span class="token punctuation">(</span>systemId<span class="token punctuation">.</span><span class="token function">endsWith</span><span class="token punctuation">(</span>DTD_SUFFIX<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-      <span class="token keyword">return</span> <span class="token keyword">this</span><span class="token punctuation">.</span>dtdResolver<span class="token punctuation">.</span><span class="token function">resolveEntity</span><span class="token punctuation">(</span>publicId<span class="token punctuation">,</span> systemId<span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-    <span class="token keyword">else</span> <span class="token keyword">if</span> <span class="token punctuation">(</span>systemId<span class="token punctuation">.</span><span class="token function">endsWith</span><span class="token punctuation">(</span>XSD_SUFFIX<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-      <span class="token keyword">return</span> <span class="token keyword">this</span><span class="token punctuation">.</span>schemaResolver<span class="token punctuation">.</span><span class="token function">resolveEntity</span><span class="token punctuation">(</span>publicId<span class="token punctuation">,</span> systemId<span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-  <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-  <span class="token keyword">return</span> null<span class="token punctuation">;</span>
-<span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> InputSource <span class="title">resolveEntity</span><span class="params">(String publicId, </span></span></span><br><span class="line"><span class="function"><span class="params">                                 <span class="meta">@Nullable</span> String systemId)</span> </span></span><br><span class="line"><span class="function">  <span class="keyword">throws</span> SAXException, IOException </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (systemId != <span class="keyword">null</span>) &#123;</span><br><span class="line">    <span class="keyword">if</span> (systemId.endsWith(DTD_SUFFIX)) &#123;</span><br><span class="line">      <span class="keyword">return</span> <span class="keyword">this</span>.dtdResolver.resolveEntity(publicId, systemId);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span> <span class="keyword">if</span> (systemId.endsWith(XSD_SUFFIX)) &#123;</span><br><span class="line">      <span class="keyword">return</span> <span class="keyword">this</span>.schemaResolver.resolveEntity(publicId, systemId);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 <p>不同的验证模式使用不同的解析器解析，如果是 DTD 验证模式则使用 BeansDtdResolver 来进行解析，如果是 XSD 则使用 PluggableSchemaResolver 来进行解析。 BeansDtdResolver 的解析过程如下:</p>
-<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> InputSource <span class="token function">resolveEntity</span><span class="token punctuation">(</span>String publicId<span class="token punctuation">,</span>
-                                 <span class="token annotation punctuation">@Nullable</span> String systemId<span class="token punctuation">)</span> 
-  <span class="token keyword">throws</span> IOException <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-  <span class="token keyword">if</span> <span class="token punctuation">(</span>logger<span class="token punctuation">.</span><span class="token function">isTraceEnabled</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-    logger<span class="token punctuation">.</span><span class="token function">trace</span><span class="token punctuation">(</span><span class="token string">"Trying to resolve XML entity with public ID ["</span> 
-                 <span class="token operator">+</span> publicId <span class="token operator">+</span>
-                 <span class="token string">"] and system ID ["</span> 
-                 <span class="token operator">+</span> systemId <span class="token operator">+</span> <span class="token string">"]"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-  <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-  <span class="token keyword">if</span> <span class="token punctuation">(</span>systemId <span class="token operator">!=</span> null <span class="token operator">&amp;&amp;</span> systemId<span class="token punctuation">.</span><span class="token function">endsWith</span><span class="token punctuation">(</span>DTD_EXTENSION<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-    <span class="token keyword">int</span> lastPathSeparator <span class="token operator">=</span> systemId<span class="token punctuation">.</span><span class="token function">lastIndexOf</span><span class="token punctuation">(</span><span class="token string">'/'</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token keyword">int</span> dtdNameStart <span class="token operator">=</span> systemId<span class="token punctuation">.</span><span class="token function">indexOf</span><span class="token punctuation">(</span>DTD_NAME<span class="token punctuation">,</span> lastPathSeparator<span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token keyword">if</span> <span class="token punctuation">(</span>dtdNameStart <span class="token operator">!=</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-      String dtdFile <span class="token operator">=</span> DTD_NAME <span class="token operator">+</span> DTD_EXTENSION<span class="token punctuation">;</span>
-      <span class="token keyword">if</span> <span class="token punctuation">(</span>logger<span class="token punctuation">.</span><span class="token function">isTraceEnabled</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-        logger<span class="token punctuation">.</span><span class="token function">trace</span><span class="token punctuation">(</span><span class="token string">"Trying to locate ["</span> <span class="token operator">+</span> dtdFile <span class="token operator">+</span> <span class="token string">"] in Spring jar on classpath"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-      <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-      <span class="token keyword">try</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-        Resource resource <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">ClassPathResource</span><span class="token punctuation">(</span>dtdFile<span class="token punctuation">,</span> <span class="token function">getClass</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        InputSource source <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">InputSource</span><span class="token punctuation">(</span>resource<span class="token punctuation">.</span><span class="token function">getInputStream</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        source<span class="token punctuation">.</span><span class="token function">setPublicId</span><span class="token punctuation">(</span>publicId<span class="token punctuation">)</span><span class="token punctuation">;</span>
-        source<span class="token punctuation">.</span><span class="token function">setSystemId</span><span class="token punctuation">(</span>systemId<span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token keyword">if</span> <span class="token punctuation">(</span>logger<span class="token punctuation">.</span><span class="token function">isDebugEnabled</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-          logger<span class="token punctuation">.</span><span class="token function">debug</span><span class="token punctuation">(</span><span class="token string">"Found beans DTD ["</span> <span class="token operator">+</span> systemId <span class="token operator">+</span> <span class="token string">"] in classpath: "</span> <span class="token operator">+</span> dtdFile<span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-        <span class="token keyword">return</span> source<span class="token punctuation">;</span>
-      <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-      <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">IOException</span> ex<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-        <span class="token keyword">if</span> <span class="token punctuation">(</span>logger<span class="token punctuation">.</span><span class="token function">isDebugEnabled</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-          logger<span class="token punctuation">.</span><span class="token function">debug</span><span class="token punctuation">(</span><span class="token string">"Could not resolve beans DTD ["</span> 
-                       <span class="token operator">+</span> systemId <span class="token operator">+</span> <span class="token string">"]: not found in classpath"</span><span class="token punctuation">,</span> ex<span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-      <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-    <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-  <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-  or wherever<span class="token punctuation">.</span>
-    <span class="token keyword">return</span> null<span class="token punctuation">;</span>
-<span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> InputSource <span class="title">resolveEntity</span><span class="params">(String publicId,</span></span></span><br><span class="line"><span class="function"><span class="params">                                 <span class="meta">@Nullable</span> String systemId)</span> </span></span><br><span class="line"><span class="function">  <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (logger.isTraceEnabled()) &#123;</span><br><span class="line">    logger.trace(<span class="string">&quot;Trying to resolve XML entity with public ID [&quot;</span> </span><br><span class="line">                 + publicId +</span><br><span class="line">                 <span class="string">&quot;] and system ID [&quot;</span> </span><br><span class="line">                 + systemId + <span class="string">&quot;]&quot;</span>);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">if</span> (systemId != <span class="keyword">null</span> &amp;&amp; systemId.endsWith(DTD_EXTENSION)) &#123;</span><br><span class="line">    <span class="keyword">int</span> lastPathSeparator = systemId.lastIndexOf(<span class="string">&#x27;/&#x27;</span>);</span><br><span class="line">    <span class="keyword">int</span> dtdNameStart = systemId.indexOf(DTD_NAME, lastPathSeparator);</span><br><span class="line">    <span class="keyword">if</span> (dtdNameStart != -<span class="number">1</span>) &#123;</span><br><span class="line">      String dtdFile = DTD_NAME + DTD_EXTENSION;</span><br><span class="line">      <span class="keyword">if</span> (logger.isTraceEnabled()) &#123;</span><br><span class="line">        logger.trace(<span class="string">&quot;Trying to locate [&quot;</span> + dtdFile + <span class="string">&quot;] in Spring jar on classpath&quot;</span>);</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">try</span> &#123;</span><br><span class="line">        Resource resource = <span class="keyword">new</span> ClassPathResource(dtdFile, getClass());</span><br><span class="line">        InputSource source = <span class="keyword">new</span> InputSource(resource.getInputStream());</span><br><span class="line">        source.setPublicId(publicId);</span><br><span class="line">        source.setSystemId(systemId);</span><br><span class="line">        <span class="keyword">if</span> (logger.isDebugEnabled()) &#123;</span><br><span class="line">          logger.debug(<span class="string">&quot;Found beans DTD [&quot;</span> + systemId + <span class="string">&quot;] in classpath: &quot;</span> + dtdFile);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> source;</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">catch</span> (IOException ex) &#123;</span><br><span class="line">        <span class="keyword">if</span> (logger.isDebugEnabled()) &#123;</span><br><span class="line">          logger.debug(<span class="string">&quot;Could not resolve beans DTD [&quot;</span> </span><br><span class="line">                       + systemId + <span class="string">&quot;]: not found in classpath&quot;</span>, ex);</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  or wherever.</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 <p>从上面的代码中我们可以看到加载 DTD 类型的</p>
 <p><code>BeansDtdResolver.resolveEntity()</code> 只是对 systemId 进行了简单的校验（从最后一个 / 开始，内容中是否包含 <code>spring-beans</code>），然后构造一个 InputSource 并设置 publicId、systemId，然后返回。 PluggableSchemaResolver 的解析过程如下:</p>
-<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> InputSource <span class="token function">resolveEntity</span><span class="token punctuation">(</span>String publicId<span class="token punctuation">,</span> 
-                                 <span class="token annotation punctuation">@Nullable</span> String systemId<span class="token punctuation">)</span> 
-  <span class="token keyword">throws</span> IOException <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-  <span class="token keyword">if</span> <span class="token punctuation">(</span>logger<span class="token punctuation">.</span><span class="token function">isTraceEnabled</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-    logger<span class="token punctuation">.</span><span class="token function">trace</span><span class="token punctuation">(</span><span class="token string">"Trying to resolve XML entity with public id ["</span> 
-                 <span class="token operator">+</span> publicId <span class="token operator">+</span>
-                 <span class="token string">"] and system id ["</span> 
-                 <span class="token operator">+</span> systemId <span class="token operator">+</span> <span class="token string">"]"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-  <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> InputSource <span class="title">resolveEntity</span><span class="params">(String publicId, </span></span></span><br><span class="line"><span class="function"><span class="params">                                 <span class="meta">@Nullable</span> String systemId)</span> </span></span><br><span class="line"><span class="function">  <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (logger.isTraceEnabled()) &#123;</span><br><span class="line">    logger.trace(<span class="string">&quot;Trying to resolve XML entity with public id [&quot;</span> </span><br><span class="line">                 + publicId +</span><br><span class="line">                 <span class="string">&quot;] and system id [&quot;</span> </span><br><span class="line">                 + systemId + <span class="string">&quot;]&quot;</span>);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> (systemId != <span class="keyword">null</span>) &#123;</span><br><span class="line">    String resourceLocation = getSchemaMappings().get(systemId);</span><br><span class="line">    <span class="keyword">if</span> (resourceLocation != <span class="keyword">null</span>) &#123;</span><br><span class="line">      Resource resource = <span class="keyword">new</span> ClassPathResource(resourceLocation, </span><br><span class="line">                                                <span class="keyword">this</span>.classLoader);</span><br><span class="line">      <span class="keyword">try</span> &#123;</span><br><span class="line">        InputSource source = <span class="keyword">new</span> InputSource(resource.getInputStream());</span><br><span class="line">        source.setPublicId(publicId);</span><br><span class="line">        source.setSystemId(systemId);</span><br><span class="line">        <span class="keyword">if</span> (logger.isDebugEnabled()) &#123;</span><br><span class="line">          logger.debug(<span class="string">&quot;Found XML schema [&quot;</span> </span><br><span class="line">                       + systemId + <span class="string">&quot;] in classpath: &quot;</span> </span><br><span class="line">                       + resourceLocation);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> source;</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">catch</span> (FileNotFoundException ex) &#123;</span><br><span class="line">        <span class="keyword">if</span> (logger.isDebugEnabled()) &#123;</span><br><span class="line">          logger.debug(<span class="string">&quot;Couldn&#x27;t find XML schema [&quot;</span></span><br><span class="line">                       + systemId + <span class="string">&quot;]: &quot;</span> + resource, ex);</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-  <span class="token keyword">if</span> <span class="token punctuation">(</span>systemId <span class="token operator">!=</span> null<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-    String resourceLocation <span class="token operator">=</span> <span class="token function">getSchemaMappings</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span>systemId<span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token keyword">if</span> <span class="token punctuation">(</span>resourceLocation <span class="token operator">!=</span> null<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-      Resource resource <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">ClassPathResource</span><span class="token punctuation">(</span>resourceLocation<span class="token punctuation">,</span> 
-                                                <span class="token keyword">this</span><span class="token punctuation">.</span>classLoader<span class="token punctuation">)</span><span class="token punctuation">;</span>
-      <span class="token keyword">try</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-        InputSource source <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">InputSource</span><span class="token punctuation">(</span>resource<span class="token punctuation">.</span><span class="token function">getInputStream</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        source<span class="token punctuation">.</span><span class="token function">setPublicId</span><span class="token punctuation">(</span>publicId<span class="token punctuation">)</span><span class="token punctuation">;</span>
-        source<span class="token punctuation">.</span><span class="token function">setSystemId</span><span class="token punctuation">(</span>systemId<span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token keyword">if</span> <span class="token punctuation">(</span>logger<span class="token punctuation">.</span><span class="token function">isDebugEnabled</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-          logger<span class="token punctuation">.</span><span class="token function">debug</span><span class="token punctuation">(</span><span class="token string">"Found XML schema ["</span> 
-                       <span class="token operator">+</span> systemId <span class="token operator">+</span> <span class="token string">"] in classpath: "</span> 
-                       <span class="token operator">+</span> resourceLocation<span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-        <span class="token keyword">return</span> source<span class="token punctuation">;</span>
-      <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-      <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">FileNotFoundException</span> ex<span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-        <span class="token keyword">if</span> <span class="token punctuation">(</span>logger<span class="token punctuation">.</span><span class="token function">isDebugEnabled</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span>#<span class="token number">123</span><span class="token punctuation">;</span>
-          logger<span class="token punctuation">.</span><span class="token function">debug</span><span class="token punctuation">(</span><span class="token string">"Couldn't find XML schema ["</span>
-                       <span class="token operator">+</span> systemId <span class="token operator">+</span> <span class="token string">"]: "</span> <span class="token operator">+</span> resource<span class="token punctuation">,</span> ex<span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-      <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-    <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-  <span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-  <span class="token keyword">return</span> null<span class="token punctuation">;</span>
-<span class="token operator">&amp;</span>#<span class="token number">125</span><span class="token punctuation">;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>首先调用 getSchemaMappings() 获取一个映射表(systemId 与其在本地的对照关系)，然后根据传入的 systemId 获取该 systemId 在本地的路径 resourceLocation，最后根据 resourceLocation 构造 InputSource 对象。 映射表如下（部分）:</p>
 <p><img src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/c1mMOc.jpg" alt="c1mMOc"></p>
-
-            <!-- 文章结尾部分 -->
-            
-                
-<div style="text-align:center;width:100%">
-    <span class="octicon octicon-tag-add"></span>
-    
-        <a style="color: #24292e;" href="/blog/tags/Spring/">Spring</a>
-    
-        <a style="color: #24292e;" href="/blog/tags/%E6%AD%BB%E7%A3%95Spring/">死磕Spring</a>
-    
-</div>
-
-
-
-    <div style="text-align:center;width:100%">
-        <img src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/640-2.gif">
-    </div>
-
-
-
-
-<div>
-    <h4>相关推荐</h4>
-    <ul class="post-copyright">
-        
-        <li class="post-copyright-author">
-            <a href="/blog/2020/01/26/101fc769.html">4张图带你读懂Spring IOC的世界</a>
-        </li>
-        
-        <li class="post-copyright-author">
-            <a href="/blog/2020/01/25/86c712d3.html">IOC之BeanDefinition注册机：BeanDefinitionRegistry</a>
-        </li>
-        
-        <li class="post-copyright-author">
-            <a href="/blog/2020/01/17/c4a8e2a2.html">IOC之parentBeanFactory与依赖处理</a>
-        </li>
-        
-        <li class="post-copyright-author">
-            <a href="/blog/2020/01/16/c9c155de.html">IOC之从单例缓存中获取单例bean</a>
-        </li>
-        
-        <li class="post-copyright-author">
-            <a href="/blog/2020/01/26/90c034e1.html">IOC之分析bean的生命周期</a>
-        </li>
-        
-        <li class="post-copyright-author">
-            <a href="/blog/2020/01/18/13d2205c.html">IOC之分析各scope的bean创建</a>
-        </li>
-        
-    </ul>
-    <br><br>
-</div>
-
-
-
-<div>
-    <h4>版权声明</h4>
-    <blockquote>
-        <ul class="post-copyright">
-            <li class="post-copyright-author">
-                <strong>本文来源： </strong>
-                
-                <a href="http://cmsblogs.com/?p=2695" title="Java技术驿站-chenssy-【死磕 Spring】—– IOC之获取Document对象" rel="external nofollow noopener noreferrer" target="_blank">Java技术驿站-chenssy-【死磕 Spring】—– IOC之获取Document对象</a></li>
-            <li class="post-copyright-link">
-                <strong>本文链接：</strong>
-                <a href="https://www.cayzlh.com/2020/01/05/13336b20.html" title="/blog/IOC%E4%B9%8B%E8%8E%B7%E5%8F%96Document%E5%AF%B9%E8%B1%A1">https://www.cayzlh.com/2020/01/05/13336b20.html</a>
-            </li>
-            <li class="post-copyright-license">
-                <strong>版权声明： </strong>
-                
-                    文章内容仅用作学习和分享，如有雷同，纯属拷贝。
-                
-            </li>
-        </ul>
-    </blockquote>
-</div>
-
-
-            
-            
-                <div class="comment">
-    <br><br><br>
-    
-</div>
-
-            
-        </div>
-        <div class="col-md-3 markdown-body">
-            <h4>文章目录</h4>
-            <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#DocumentLoader"><span class="toc-text">DocumentLoader</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#EntityResolver"><span class="toc-text">EntityResolver</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%B6%89%E5%8F%8A%E5%AD%90%E7%B1%BB"><span class="toc-text">涉及子类</span></a></li></ol></li></ol>
-        </div>
-    </div>
-    
-</article>
-
-
-<script>
-    hljs.initHighlightingOnLoad();
-</script>
-</main>
-<footer class="container">
-    <div class="site-footer">
-        
-    <div class="card text-center">
-        <ul class="list-inline" style="margin-left: 0;">
-            
-                <li>
-                    <a target="_blank" href="https://github.com/cayzlh" rel="external nofollow noopener noreferrer">
-                          <span class="fa-stack fa-lg">
-                            <i class="fa fa-circle fa-stack-2x"></i>
-                            <i class="fa fa-github fa-stack-1x fa-inverse">
-                                
-                            </i>
-                          </span>
-                    </a>
-                </li>
-            
-                <li>
-                    <a target="_blank" href="https://telegram.me/Q2F5emxo" rel="external nofollow noopener noreferrer">
-                          <span class="fa-stack fa-lg">
-                            <i class="fa fa-circle fa-stack-2x"></i>
-                            <i class="fa fa-rocket fa-stack-1x fa-inverse">
-                                
-                            </i>
-                          </span>
-                    </a>
-                </li>
-            
-                <li>
-                    <a target="_blank" href="mailto:chenanyu@cayzlh.com">
-                          <span class="fa-stack fa-lg">
-                            <i class="fa fa-circle fa-stack-2x"></i>
-                            <i class="fa fa-envelope fa-stack-1x fa-inverse">
-                                
-                            </i>
-                          </span>
-                    </a>
-                </li>
-            
-        </ul>
-    </div>
-
-
-        <div class="site-footer-links mobile-hidden">
-            
-                
-                
-            
-        </div>
-
-        <div class="site-footer-links mobile-hidden">
-        
-            <span class="meta-info-index hvr-grow">
-                
-                    <a href="https://www.cayzlh.com">
-                        🐳Ant丶 &copy; 2020
-                    </a>
-                
-            </span>
-        
-        
-            <span class="meta-info-index hvr-grow">
-                <a target="_blank" rel="external nofollow noopener noreferrer" href="http://beian.miit.gov.cn">粤ICP备20058712号-1</a>
-            </span>
-        
-        </div>
-
-        
-
-        
-    </div>
-    
-
-    
-        <!-- Third-Party JS -->
-        <script type="text/javascript" src="/blog/js/thirdparty/geopattern.min.js"></script>
-        <!-- My JS -->
-        <script type="text/javascript" src="/blog/js/script.js"></script>
-    
-
-    
-        <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js">
-        </script>
-    
-</footer>
-</body>
-</html>
+</div></article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta">文章作者: </span><span class="post-copyright-info"><a href="mailto:undefined" rel="external nofollow noopener noreferrer" target="_blank">🐳Ant丶</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta">文章链接: </span><span class="post-copyright-info"><a href="https://www.cayzlh.com/2020/01/05/13336b20.html">https://www.cayzlh.com/2020/01/05/13336b20.html</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta">版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a target="_blank" rel="external nofollow noopener noreferrer" href="https://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来自 <a href="https://www.cayzlh.com">BLOG | CAYZLH</a>！</span></div></div><div class="post-meta__tag-list"><a class="post-meta__tags" href="/blog/tags/Spring/">Spring</a><a class="post-meta__tags" href="/blog/tags/%E6%AD%BB%E7%A3%95Spring/">死磕Spring</a></div><nav id="pagination"><div class="prev-post pull-left"><a href="/blog/2020/01/06/9de498cf.html"><i class="fa fa-chevron-left">  </i><span>IoC之注册BeanDefinitions</span></a></div><div class="next-post pull-right"><a href="/blog/2020/01/04/4e0696ee.html"><span>IOC之获取验证模型</span><i class="fa fa-chevron-right"></i></a></div></nav></div></div><footer><div class="layout" id="footer"><div class="footer_custom_text">hitokoto</div><div class="copyright">🐳Ant丶 &copy;2019 - 2021</div><div class="icp"><a><span>粤ICP备20058712号</span></a></div><div class="busuanzi"><script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></div></footer><i class="fa fa-arrow-up" id="go-up" aria-hidden="true"></i><script src="https://cdn.jsdelivr.net/npm/animejs@latest/anime.min.js"></script><script src="https://cdn.jsdelivr.net/npm/jquery@latest/dist/jquery.min.js"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@latest/dist/jquery.fancybox.min.js"></script><script src="https://cdn.jsdelivr.net/npm/velocity-animate@latest/velocity.min.js"></script><script src="https://cdn.jsdelivr.net/npm/velocity-ui-pack@latest/velocity.ui.min.js"></script><script src="/blog/js/utils.js?version=1.9.0"></script><script src="/blog/js/fancybox.js?version=1.9.0"></script><script src="/blog/js/sidebar.js?version=1.9.0"></script><script src="/blog/js/copy.js?version=1.9.0"></script><script src="/blog/js/fireworks.js?version=1.9.0"></script><script src="/blog/js/transition.js?version=1.9.0"></script><script src="/blog/js/scroll.js?version=1.9.0"></script><script src="/blog/js/head.js?version=1.9.0"></script><script src="/blog/js/search/local-search.js"></script><script>if(/Android|webOS|iPhone|iPod|iPad|BlackBerry/i.test(navigator.userAgent)) {
+  $('#nav').addClass('is-mobile')
+  $('footer').addClass('is-mobile')
+  $('#top-container').addClass('is-mobile')
+}</script><div class="search-dialog" id="local-search"><div class="search-dialog__title" id="local-search-title">本地搜索</div><div id="local-input-panel"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="搜索文章"></div></div></div><hr><div id="local-search-results"><div id="local-hits"></div><div id="local-stats"><div class="local-search-stats__hr" id="hr"><span>Powered by</span> <a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/wzpan/hexo-generator-search" style="color:#49B1F5;">hexo-generator-search</a></div></div></div><span class="search-close-button"><i class="fa fa-times"></i></span></div><div class="search-mask"></div></body></html>
