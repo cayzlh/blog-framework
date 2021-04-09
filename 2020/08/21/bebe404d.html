@@ -1,22 +1,125 @@
-<!DOCTYPE html><html lang="[&quot;zh-Hans&quot;,&quot;en&quot;,&quot;default&quot;]"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"><meta name="description" content="核心处理层以基础支持层为基础，实现了MyBatis的核心功能。"><meta name="keywords" content="MyBatis, MyBatis技术内幕"><meta name="author" content="🐳Ant丶"><meta name="copyright" content="🐳Ant丶"><title>核心处理层-SqlNode&amp;SqlSource | BLOG | CAYZLH</title><link rel="shortcut icon" href="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/logo/favicon.ico"><link rel="stylesheet" href="/blog/css/index.css?version=1.9.0"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/font-awesome@latest/css/font-awesome.min.css?version=1.9.0"><meta name="format-detection" content="telephone=no"><meta http-equiv="x-dns-prefetch-control" content="on"><link rel="dns-prefetch" href="https://cdn.jsdelivr.net"><link rel="dns-prefetch" href="https://www.google-analytics.com"><script>(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-})(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+<!DOCTYPE html>
+<html lang="zh-Hans">
 
-ga('create', 'UA-129095667-1', 'auto');
-ga('send', 'pageview');</script><meta name="google-site-verification" content="VrcbMTVpFGlHkIERHBt753dAtXKF4qirjnDweuXSRJw"><meta http-equiv="Cache-Control" content="no-transform"><meta http-equiv="Cache-Control" content="no-siteapp"><script src="https://v1.hitokoto.cn/?encode=js&amp;charset=utf-8&amp;select=.footer_custom_text" defer></script><script>var GLOBAL_CONFIG = { 
-  root: '/blog/',
-  algolia: undefined,
-  localSearch: {"path":"search.xml","languages":{"hits_empty":"找不到您查询的内容:${query}"}},
-  copy: {
-    success: '复制成功',
-    error: '复制错误',
-    noSupport: '浏览器不支持'
-  },
-  hexoVersion: '5.4.0'
-} </script><meta name="generator" content="Hexo 5.4.0"><link rel="alternate" href="/blog/atom.xml" title="BLOG | CAYZLH" type="application/atom+xml">
-</head><body><i class="fa fa-arrow-right" id="toggle-sidebar" aria-hidden="true"></i><div id="sidebar" data-display="true"><div class="toggle-sidebar-info text-center"><span data-toggle="切换文章详情">切换站点概览</span><hr></div><div class="sidebar-toc"><div class="sidebar-toc__title">目录</div><div class="sidebar-toc__progress"><span class="progress-notice">你已经读了</span><span class="progress-num">0</span><span class="progress-percentage">%</span><div class="sidebar-toc__progress-bar"></div></div><div class="sidebar-toc__content"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%BB%84%E5%90%88%E6%A8%A1%E5%BC%8F"><span class="toc-text">组合模式</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#OGNL%E8%A1%A8%E8%BE%BE%E5%BC%8F"><span class="toc-text">OGNL表达式</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#DynamicContext"><span class="toc-text">DynamicContext</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#SqlNode"><span class="toc-text">SqlNode</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#SqlSourceBuilder"><span class="toc-text">SqlSourceBuilder</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#DynamicSqlSource"><span class="toc-text">DynamicSqlSource</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#RawSqISource"><span class="toc-text">RawSqISource</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8F%82%E8%80%83"><span class="toc-text">参考</span></a></li></ol></div></div><div class="author-info hide"><div class="author-info__avatar text-center"><img src="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/image/IMG_4207.JPG"></div><div class="author-info__name text-center">🐳Ant丶</div><div class="author-info__description text-center">CODE IS POETRY</div><div class="follow-button"><a target="_blank" rel="external nofollow noopener noreferrer" href="https://telegram.me/Q2F5emxo">contact me</a></div><hr><div class="author-info-articles"><a class="author-info-articles__archives article-meta" href="/blog/archives"><span class="pull-left">文章</span><span class="pull-right">98</span></a><!--if site.tags.length--><!--  a(href=url_for(config.tag_dir)).author-info-articles__tags.article-meta--><!--    span.pull-left= _p('sidebar.tags')--><!--    span.pull-right= site.tags.length--><!--if site.categories.length--><!--  a(href=url_for(config.category_dir)).author-info-articles__categories.article-meta--><!--    span.pull-left= _p('sidebar.categories')--><!--    span.pull-right= site.categories.length--><a class="author-info-articles__categories article-meta" href="/blog/categories/%E4%B9%A6%E7%B1%8D/%E3%80%8A%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3Java%E8%99%9A%E6%8B%9F%E6%9C%BA%E3%80%8B/"><span class="pull-left">《深入理解Java虚拟机》</span><span class="pull-right">♾️</span></a><a class="author-info-articles__categories article-meta" href="/blog/categories/%E4%B9%A6%E7%B1%8D/%E3%80%8AMyBatis%E6%8A%80%E6%9C%AF%E5%86%85%E5%B9%95%E3%80%8B/"><span class="pull-left">《MyBatis技术内幕》</span><span class="pull-right">♾️</span></a><a class="author-info-articles__categories article-meta" href="/blog/categories/Java/Java%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/"><span class="pull-left">Java设计模式</span><span class="pull-right">♾️</span></a></div></div></div><div id="content-outer"><div class="no-bg" id="top-container"><div id="page-header"><span class="pull-left"> <a id="site-name" href="/blog/">BLOG | CAYZLH</a></span><i class="fa fa-bars toggle-menu pull-right" aria-hidden="true"></i><span class="pull-right"><a class="site-page social-icon search"><i class="fa fa-search"></i><span> 搜索</span></a></span></div><div id="post-info"><div id="post-title">核心处理层-SqlNode&amp;SqlSource</div><div id="post-meta"><time class="post-meta__date"><i class="fa fa-calendar" aria-hidden="true"></i> 2020-08-21</time><span class="post-meta__separator">|</span><i class="fa fa-inbox post-meta__icon" aria-hidden="true"></i><a class="post-meta__categories" href="/blog/categories/%E4%B9%A6%E7%B1%8D/">书籍</a><i class="fa fa-angle-right" aria-hidden="true"></i><i class="fa fa-inbox post-meta__icon" aria-hidden="true"></i><a class="post-meta__categories" href="/blog/categories/%E4%B9%A6%E7%B1%8D/%E3%80%8AMyBatis%E6%8A%80%E6%9C%AF%E5%86%85%E5%B9%95%E3%80%8B/">《MyBatis技术内幕》</a><div class="post-meta-wordcount"><span>字数总计: </span><span class="word-count">4.9k</span><span class="post-meta__separator">|</span><span>阅读时长: 19 分钟</span></div></div></div></div><div class="layout" id="content-inner"><article id="post"><div class="article-container" id="post-content"><p>核心处理层以基础支持层为基础，实现了<code>MyBatis</code>的核心功能。这个部分将从<code>MyBatis</code>的初始化、动态<code>SQL</code>语句的解析、结果集的映射、参数解析以及<code>SQL</code>语句的执行等几个方面分析<code>MyBatis</code>的核心处理层，了解<code>MyBatis</code>的核心原理。</p>
-<p><img src="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/22/image-20200622175512211_aegXOG.png" alt="image-20200622175512211"></p>
+<head>
+  <meta name="generator" content="Hexo 5.4.0">
+  <meta charset="utf-8">
+  
+
+  <meta http-equiv="x-dns-prefetch-control" content="on">
+  <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+
+  <meta name="renderer" content="webkit">
+  <meta name="force-rendering" content="webkit">
+  <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+  <meta name="HandheldFriendly" content="True">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <title>核心处理层-SqlNode&SqlSource - BLOG | CAYZLH</title>
+
+  
+    <meta name="description" content="核心处理层以基础支持层为基础，实现了MyBatis的核心功能。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="核心处理层-SqlNode&amp;SqlSource">
+<meta property="og:url" content="https://www.cayzlh.com/2020/08/21/bebe404d.html">
+<meta property="og:site_name" content="BLOG | CAYZLH">
+<meta property="og:description" content="核心处理层以基础支持层为基础，实现了MyBatis的核心功能。">
+<meta property="og:locale">
+<meta property="og:image" content="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/22/image-20200622175512211_aegXOG.png">
+<meta property="og:image" content="https://gitee.com/cayzlh/img-repo/raw/master/2020/08/17323715982615571598261557744.png">
+<meta property="og:image" content="https://gitee.com/cayzlh/img-repo/raw/master/2020/08/17400415982620041598262004554.png">
+<meta property="og:image" content="https://gitee.com/cayzlh/img-repo/raw/master/2020/08/16395615983447961598344796478.png">
+<meta property="og:image" content="https://gitee.com/cayzlh/img-repo/raw/master/2020/08/10441615985826561598582656771.png">
+<meta property="article:published_time" content="2020-08-21T08:43:42.000Z">
+<meta property="article:modified_time" content="2021-02-20T15:30:20.516Z">
+<meta property="article:author" content="🐳Ant丶">
+<meta property="article:tag" content="MyBatis">
+<meta property="article:tag" content="《MyBatis技术内幕》">
+<meta property="article:tag" content="核心处理层">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/22/image-20200622175512211_aegXOG.png">
+  
+  
+
+  <!-- feed -->
+  
+    <link rel="alternate" href="/blog/atom.xml" title="BLOG | CAYZLH" type="application/atom+xml">
+  
+
+  
+    
+<link rel="stylesheet" href="/blog/css/main.css">
+
+  
+
+  
+</head>
+
+<body>
+  
+
+
+  <div class="l_body" id="start">
+    <aside class="l_left">
+    
+
+<header class="header">
+  <div class="logo-wrap">
+  
+  
+    <a class="title" href="/blog/">
+      BLOG | CAYZLH
+    </a>
+  
+</div>
+
+  <nav class="menu dis-select"><a class="nav-item active" href="/blog/">Blog</a></nav>
+</header>
+
+<div class="widgets">
+  
+    
+      
+      
+<div class="widget-wrap" id="toc"><div class="widget-header h4 dis-select"><span class="name">TOC</span></div><div class="widget-body fs14 post"><div class="doc-tree active"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%BB%84%E5%90%88%E6%A8%A1%E5%BC%8F"><span class="toc-text">组合模式</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#OGNL%E8%A1%A8%E8%BE%BE%E5%BC%8F"><span class="toc-text">OGNL表达式</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#DynamicContext"><span class="toc-text">DynamicContext</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#SqlNode"><span class="toc-text">SqlNode</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#SqlSourceBuilder"><span class="toc-text">SqlSourceBuilder</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#DynamicSqlSource"><span class="toc-text">DynamicSqlSource</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#RawSqISource"><span class="toc-text">RawSqISource</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8F%82%E8%80%83"><span class="toc-text">参考</span></a></li></ol></div></div></div>
+
+    
+  
+</div>
+
+
+    </aside>
+    <div class="l_main">
+      
+
+      
+
+
+  <div class="bread-nav fs12">
+  
+    
+    <div id="breadcrumb">
+      <a class="cap breadcrumb" href="/">Home</a>
+      <span class="sep"></span>
+      <a class="cap breadcrumb" href="/">Blog</a>
+      
+        <span class="sep"></span>
+        <a class="cap breadcrumb-link" href="/blog/categories/%E4%B9%A6%E7%B1%8D/">书籍</a> <span class="sep"></span> <a class="cap breadcrumb-link" href="/blog/categories/%E4%B9%A6%E7%B1%8D/%E3%80%8AMyBatis%E6%8A%80%E6%9C%AF%E5%86%85%E5%B9%95%E3%80%8B/">《MyBatis技术内幕》</a>
+      
+    </div>
+    <div id="post-meta">
+      Posted on&nbsp;<time datetime="2020-08-21T08:43:42.000Z">2020-08-21</time>
+    </div>
+  
+  </div>
+
+
+<article class="content md post">
+<h1 class="article-title"><span>核心处理层-SqlNode&SqlSource</span></h1>
+<p>核心处理层以基础支持层为基础，实现了<code>MyBatis</code>的核心功能。这个部分将从<code>MyBatis</code>的初始化、动态<code>SQL</code>语句的解析、结果集的映射、参数解析以及<code>SQL</code>语句的执行等几个方面分析<code>MyBatis</code>的核心处理层，了解<code>MyBatis</code>的核心原理。</p>
+<p><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/22/image-20200622175512211_aegXOG.png" alt="image-20200622175512211"></p>
 <blockquote>
 <p>本篇介绍SqINode&amp;SqISource</p>
 </blockquote>
@@ -25,7 +128,7 @@ ga('send', 'pageview');</script><meta name="google-site-verification" content="V
 <figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">SqlSource</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">  <span class="function">BoundSql <span class="title">getBoundSql</span><span class="params">(Object parameterObject)</span></span>;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <p><code>SqlSource</code>接口的实现类图：</p>
-<p><img src="https://gitee.com/cayzlh/img-repo/raw/master/2020/08/17323715982615571598261557744.png" alt="image-20200824173236987"></p>
+<p><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://gitee.com/cayzlh/img-repo/raw/master/2020/08/17323715982615571598261557744.png" alt="image-20200824173236987"></p>
 <ul>
 <li><code>DynamicSqlSource</code>负责处理动态<code>SQL</code>语句，<code>RawSqlSource</code>负责处理静态语句，两者最终都会将处理后的<code>SQL</code>语句封装成<code>StaticSqlSource</code>返回。</li>
 <li><code>DynamicSqlSource</code>与<code>StaticSqlSource</code>的主要区别：<ul>
@@ -35,7 +138,7 @@ ga('send', 'pageview');</script><meta name="google-site-verification" content="V
 </li>
 </ul>
 <h2 id="组合模式"><a href="#组合模式" class="headerlink" title="组合模式"></a>组合模式</h2><p>组合模式是将对象组合成树形结构，以表示<code>部分-整体</code>的层次结构(一般是树形结构)，用户可以像处理一个简单对象一样来处理一个复杂对象，从而使得调用者无须了解复杂元素的内部结构。</p>
-<p><img src="https://gitee.com/cayzlh/img-repo/raw/master/2020/08/17400415982620041598262004554.png" alt="image-20200824174003381"></p>
+<p><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://gitee.com/cayzlh/img-repo/raw/master/2020/08/17400415982620041598262004554.png" alt="image-20200824174003381"></p>
 <p>组合模式中的各模式如下：</p>
 <ul>
 <li><p><strong>抽象组件(<code>Component</code>)</strong></p>
@@ -95,7 +198,7 @@ ga('send', 'pageview');</script><meta name="google-site-verification" content="V
 <figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">SqlNode</span> </span>&#123;</span><br><span class="line">  <span class="comment">// apply()是SqlNode接口中定义的唯一方法，该方法会根据用户传入的实参，参数解析该SqlNode所</span></span><br><span class="line">  <span class="comment">// 记录的动态SQL节点，并调用DynamicContext.appendSql()方法将解析后的SQL片段追加到</span></span><br><span class="line">  <span class="comment">// DynamicContext.sqlBuilder中保存</span></span><br><span class="line">  <span class="comment">// 当SQL节点下的所有SqlNode完成解析后，我们就可以从DynamicContext中获取一条动态生成的、</span></span><br><span class="line">  <span class="comment">// 完整的SQL语句</span></span><br><span class="line">  <span class="function"><span class="keyword">boolean</span> <span class="title">apply</span><span class="params">(DynamicContext context)</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <p><code>SqlNode</code>接口有多个实现类，每个实现类对应一个动态<code>SQL</code>节点。按照组合模式的角色来划分，<code>SqlNode</code>扮演了抽象组件的角色，<code>MixedSqlNode</code>扮演了树枝节点的角色，<code>TextSqlNode</code>节点扮演了树叶节点的角色等等。</p>
-<p><img src="https://gitee.com/cayzlh/img-repo/raw/master/2020/08/16395615983447961598344796478.png" alt="image-20200825163955175"></p>
+<p><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://gitee.com/cayzlh/img-repo/raw/master/2020/08/16395615983447961598344796478.png" alt="image-20200825163955175"></p>
 <p><strong>1、StaticTextSqINode&amp;MixedSqINode</strong></p>
 <p><code>StaticTextSqINode</code>中使用<code>text</code>字段(<code>String</code>类型)记录了对应的非动态<code>SQL</code>语句节点，其<code>apply()</code>方法直接将<code>text</code>字段追加到<code>DynamicContext.sqlBuilder</code>字段中。</p>
 <p><code>MixedSqINode</code>中使用<code>contents</code>字段(<code>List&lt;SqlNode&gt;</code>类型)记录其子节点对应的<code>SqlNode</code>对象集合，其<code>apply()</code>方法会循环调用<code>contents</code>集合中所有<code>SqlNode</code>对象的<code>apply()</code>方法。</p>
@@ -158,7 +261,7 @@ ga('send', 'pageview');</script><meta name="google-site-verification" content="V
 <p><code>DynamicSqlSource.getBoundSql()</code>方法：</p>
 <figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> BoundSql <span class="title">getBoundSql</span><span class="params">(Object parameterObject)</span> </span>&#123;</span><br><span class="line">  <span class="comment">// 创建DynamicContext对象</span></span><br><span class="line">  DynamicContext context = <span class="keyword">new</span> DynamicContext(configuration, parameterObject);</span><br><span class="line">  </span><br><span class="line">  <span class="comment">// 通过调用rootSqlNode.apply()方法调用整个树形结构中全部SqlNode.apply()方法。</span></span><br><span class="line">  <span class="comment">// 每个SqlNode的apply()方法都将解析得到的SQL语句片段追加到context中，</span></span><br><span class="line">  <span class="comment">// 最终通过context.getSql()得到完整的SQL语句</span></span><br><span class="line">  rootSqlNode.apply(context);</span><br><span class="line">  SqlSourceBuilder sqlSourceParser = <span class="keyword">new</span> SqlSourceBuilder(configuration);</span><br><span class="line">  Class&lt;?&gt; parameterType = parameterObject == <span class="keyword">null</span> ? </span><br><span class="line">    Object.class : parameterObject.getClass();</span><br><span class="line">  SqlSource sqlSource = sqlSourceParser.parse(context.getSql(), </span><br><span class="line">                                              parameterType, context.getBindings());</span><br><span class="line">  </span><br><span class="line">  <span class="comment">// 创建BoundSql对象，并将DynamicContext.bindings中的参数信息复制到其</span></span><br><span class="line">  BoundSql boundSql = sqlSource.getBoundSql(parameterObject);</span><br><span class="line">  <span class="keyword">for</span> (Map.Entry&lt;String, Object&gt; entry : context.getBindings().entrySet()) &#123;</span><br><span class="line">    boundSql.setAdditionalParameter(entry.getKey(), entry.getValue());</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> boundSql;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<p><img src="https://gitee.com/cayzlh/img-repo/raw/master/2020/08/10441615985826561598582656771.png" alt="image-20200828104415997"></p>
+<p><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://gitee.com/cayzlh/img-repo/raw/master/2020/08/10441615985826561598582656771.png" alt="image-20200828104415997"></p>
 <h2 id="RawSqISource"><a href="#RawSqISource" class="headerlink" title="RawSqISource"></a>RawSqISource</h2><p><code>RawSqISource</code>是<code>SqlSource</code>的另一个实现，其逻辑与<code>DynamicSqlSource</code>类似，但是执行时机不一样，处理的<code>SQL</code>语句类型也不一样。</p>
 <p>前面介绍<code>XMLScriptBuilder.parseDynamicTags()</code>方法时提到过，如果节点只包含<code>#&#123;&#125;</code>占位符，而不包含动态<code>SQL</code>节点或未解析的<code>$&#123;&#125;</code>占位符的话，则不是动态<code>SQL</code>语句，会创建相应的<code>StaticTextSqlNode</code>对象。</p>
 <p>在<code>XMLScriptBuilder.parseScriptNode()</code>方法中会判断整个<code>SQL</code>节点是否为动态的，如果不是动态的<code>SQL</code>节点，则创建相应的<code>RawSqlSource</code>对象。</p>
@@ -173,8 +276,180 @@ ga('send', 'pageview');</script><meta name="google-site-verification" content="V
 <li><p>部分图片来源——<strong>《MyBatis技术内幕》</strong></p>
 </li>
 </ul>
-</div></article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta">文章作者: </span><span class="post-copyright-info"><a href="mailto:undefined" rel="external nofollow noopener noreferrer" target="_blank">🐳Ant丶</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta">文章链接: </span><span class="post-copyright-info"><a href="https://www.cayzlh.com/2020/08/21/bebe404d.html">https://www.cayzlh.com/2020/08/21/bebe404d.html</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta">版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a target="_blank" rel="external nofollow noopener noreferrer" href="https://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来自 <a href="https://www.cayzlh.com">BLOG | CAYZLH</a>！</span></div></div><div class="post-meta__tag-list"><a class="post-meta__tags" href="/blog/tags/MyBatis/">MyBatis</a><a class="post-meta__tags" href="/blog/tags/%E3%80%8AMyBatis%E6%8A%80%E6%9C%AF%E5%86%85%E5%B9%95%E3%80%8B/">《MyBatis技术内幕》</a><a class="post-meta__tags" href="/blog/tags/%E6%A0%B8%E5%BF%83%E5%A4%84%E7%90%86%E5%B1%82/">核心处理层</a></div><nav id="pagination"><div class="prev-post pull-left"><a href="/blog/2021/01/05/d2d07489.html"><i class="fa fa-chevron-left">  </i><span>《Elasticsearch权威指南》-基础入门</span></a></div><div class="next-post pull-right"><a href="/blog/2020/06/22/c499e157.html"><span>核心处理层-MyBatis初始化</span><i class="fa fa-chevron-right"></i></a></div></nav></div></div><footer><div class="layout" id="footer"><div class="footer_custom_text">hitokoto</div><div class="copyright">🐳Ant丶 &copy;2019 - 2021</div><div class="icp"><a><span>粤ICP备20058712号</span></a></div><div class="busuanzi"><script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></div></footer><i class="fa fa-arrow-up" id="go-up" aria-hidden="true"></i><script src="https://cdn.jsdelivr.net/npm/animejs@latest/anime.min.js"></script><script src="https://cdn.jsdelivr.net/npm/jquery@latest/dist/jquery.min.js"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@latest/dist/jquery.fancybox.min.js"></script><script src="https://cdn.jsdelivr.net/npm/velocity-animate@latest/velocity.min.js"></script><script src="https://cdn.jsdelivr.net/npm/velocity-ui-pack@latest/velocity.ui.min.js"></script><script src="/blog/js/utils.js?version=1.9.0"></script><script src="/blog/js/fancybox.js?version=1.9.0"></script><script src="/blog/js/sidebar.js?version=1.9.0"></script><script src="/blog/js/copy.js?version=1.9.0"></script><script src="/blog/js/fireworks.js?version=1.9.0"></script><script src="/blog/js/transition.js?version=1.9.0"></script><script src="/blog/js/scroll.js?version=1.9.0"></script><script src="/blog/js/head.js?version=1.9.0"></script><script src="/blog/js/search/local-search.js"></script><script>if(/Android|webOS|iPhone|iPod|iPad|BlackBerry/i.test(navigator.userAgent)) {
-  $('#nav').addClass('is-mobile')
-  $('footer').addClass('is-mobile')
-  $('#top-container').addClass('is-mobile')
-}</script><div class="search-dialog" id="local-search"><div class="search-dialog__title" id="local-search-title">本地搜索</div><div id="local-input-panel"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="搜索文章"></div></div></div><hr><div id="local-search-results"><div id="local-hits"></div><div id="local-stats"><div class="local-search-stats__hr" id="hr"><span>Powered by</span> <a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/wzpan/hexo-generator-search" style="color:#49B1F5;">hexo-generator-search</a></div></div></div><span class="search-close-button"><i class="fa fa-times"></i></span></div><div class="search-mask"></div></body></html>
+
+
+<div class="article-footer fs14"><section id="license"><div class="header"><span>License</span></div><div class="body"><p>本文采用 <a target="_blank" rel="external nofollow noopener noreferrer" href="https://creativecommons.org/licenses/by-nc-sa/4.0/">署名-非商业性使用-相同方式共享 4.0 国际</a> 许可协议，转载请注明出处。</p>
+</div></section></div>
+
+</article>
+
+<div class="related-wrap" id="read-next"><section class="header cap theme"><span>READ NEXT</span></section><section class="body"><div class="post-title h2"><a href="/blog/2020/06/22/c499e157.html">核心处理层-MyBatis初始化</a></div><div class="post-title fs14"><a href="/blog/2021/01/05/d2d07489.html">or prev: 《Elasticsearch权威指南》-基础入门</a></div></section></div>
+
+
+<div class="related-wrap" id="related-posts">
+    <section class="header">
+      <div class="title cap theme">Related Posts</div>
+    </section>
+    <section class="body">
+    <div class="related-posts"><a class="item" href="/blog/2020/06/22/c499e157.html" title="核心处理层-MyBatis初始化"><div class="img"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/22/image-20200622175512211_aegXOG.png"></div><span class="title">核心处理层-MyBatis初始化</span><span class="excerpt">核心处理层以基础支持层为基础，实现了MyBatis的核心功能。</span></a><a class="item" href="/blog/2019/10/31/fce458a9.html" title="基础支持层——缓存模块"><div class="img"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/09/2_c5SKkm_zgJEGC.png"></div><span class="title">基础支持层——缓存模块</span><span class="excerpt">MyBatis基础支持层位于 Mybatis 整体架构的最底层，支撑着 Mybatis 的核心处理层，是整个框架的基石。基础支持层中封装了多个较为通用的、独立的模块，不仅仅为 Mybatis 提供基础支撑，也可以在合适的场景中直接复用。</span></a><a class="item" href="/blog/2019/10/30/e275ec7f.html" title="基础支持层——binding模块"><div class="img"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/09/2_c5SKkm_zgJEGC.png"></div><span class="title">基础支持层——binding模块</span><span class="excerpt">MyBatis基础支持层位于 Mybatis 整体架构的最底层，支撑着 Mybatis 的核心处理层，是整个框架的基石。基础支持层中封装了多个较为通用的、独立的模块，不仅仅为 Mybatis 提供基础支撑，也可以在合适的场景中直接复用。</span></a><a class="item" href="/blog/2019/10/29/e275ec7f.html" title="基础支持层——Transaction"><div class="img"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/09/2_c5SKkm_zgJEGC.png"></div><span class="title">基础支持层——Transaction</span><span class="excerpt">MyBatis基础支持层位于 Mybatis 整体架构的最底层，支撑着 Mybatis 的核心处理层，是整个框架的基石。基础支持层中封装了多个较为通用的、独立的模块，不仅仅为 Mybatis 提供基础支撑，也可以在合适的场景中直接复用。</span></a><a class="item" href="/blog/2019/10/28/899df03d.html" title="基础支持层——DataSource"><div class="img"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/09/2_c5SKkm_zgJEGC.png"></div><span class="title">基础支持层——DataSource</span><span class="excerpt">MyBatis基础支持层位于 Mybatis 整体架构的最底层，支撑着 Mybatis 的核心处理层，是整个框架的基石。基础支持层中封装了多个较为通用的、独立的模块，不仅仅为 Mybatis 提供基础支撑，也可以在合适的场景中直接复用。</span></a></div></section></div>
+
+
+
+
+
+      
+<footer class="page-footer fs12"><hr><div><p>All articles in this blog are licensed under <a target="_blank" rel="external nofollow noopener noreferrer" href="https://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY-NC-SA 4.0</a> unless stating additionally.</p>
+<p>This site was deployed by <a href="https://www.cayzlh.com/blog/">@🐳Ant丶</a> using <a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/xaoxuu/hexo-theme-stellar/tree/1.1.0">Stellar</a>.</p>
+</div></footer>
+
+      <div class="float-panel mobile-only" style="display:none">
+  <button type="button" class="sidebar-toggle mobile" onclick="sidebar.toggle()">
+    <svg class="icon" viewbox="0 0 1228 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2849"><path d="M0 0m97.390199 0l973.901995 0q97.390199 0 97.390199 97.390199l0 0q0 97.390199-97.390199 97.3902l-973.901995 0q-97.390199 0-97.390199-97.3902l0 0q0-97.390199 97.390199-97.390199Z" p-id="2850"/><path d="M0 389.560798m97.390199 0l973.901995 0q97.390199 0 97.390199 97.390199l0 0q0 97.390199-97.390199 97.3902l-973.901995 0q-97.390199 0-97.390199-97.3902l0 0q0-97.390199 97.390199-97.390199Z" p-id="2851"/><path d="M0 779.121596m97.390199 0l973.901995 0q97.390199 0 97.390199 97.390199l0 0q0 97.390199-97.390199 97.390199l-973.901995 0q-97.390199 0-97.390199-97.390199l0 0q0-97.390199 97.390199-97.390199Z" p-id="2852"/></svg>
+  </button>
+</div>
+
+    </div>
+  </div>
+  <div class="scripts">
+    <script type="text/javascript">
+  stellar = {
+    // 懒加载 css https://github.com/filamentgroup/loadCSS
+    loadCSS: (href, before, media, attributes) => {
+      var doc = window.document;
+      var ss = doc.createElement("link");
+      var ref;
+      if (before) {
+        ref = before;
+      } else {
+        var refs = (doc.body || doc.getElementsByTagName("head")[0]).childNodes;
+        ref = refs[refs.length - 1];
+      }
+      var sheets = doc.styleSheets;
+      if (attributes) {
+        for (var attributeName in attributes) {
+          if (attributes.hasOwnProperty(attributeName)) {
+            ss.setAttribute(attributeName, attributes[attributeName]);
+          }
+        }
+      }
+      ss.rel = "stylesheet";
+      ss.href = href;
+      ss.media = "only x";
+      function ready(cb) {
+        if (doc.body) {
+          return cb();
+        }
+        setTimeout(function () {
+          ready(cb);
+        });
+      }
+      ready(function () {
+        ref.parentNode.insertBefore(ss, before ? ref : ref.nextSibling);
+      });
+      var onloadcssdefined = function (cb) {
+        var resolvedHref = ss.href;
+        var i = sheets.length;
+        while (i--) {
+          if (sheets[i].href === resolvedHref) {
+            return cb();
+          }
+        }
+        setTimeout(function () {
+          onloadcssdefined(cb);
+        });
+      };
+      function loadCB() {
+        if (ss.addEventListener) {
+          ss.removeEventListener("load", loadCB);
+        }
+        ss.media = media || "all";
+      }
+      if (ss.addEventListener) {
+        ss.addEventListener("load", loadCB);
+      }
+      ss.onloadcssdefined = onloadcssdefined;
+      onloadcssdefined(loadCB);
+      return ss;
+    },
+
+    // 从 butterfly 和 volantis 获得灵感
+    loadScript: (src, opt) => new Promise((resolve, reject) => {
+      var script = document.createElement('script')
+      script.src = src
+      if (opt) {
+        for (let key of Object.keys(opt)) {
+          script[key] = opt[key]
+        }
+      } else {
+        // 默认异步，如果需要同步，第二个参数传入 {} 即可
+        script.async = true
+      }
+      script.onerror = reject
+      script.onload = script.onreadystatechange = function() {
+        const loadState = this.readyState
+        if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+        script.onload = script.onreadystatechange = null
+        resolve()
+      }
+      document.head.appendChild(script)
+    }),
+
+    // https://github.com/jerryc127/hexo-theme-butterfly
+    jQuery: (fn) => {
+      if (typeof jQuery === 'undefined') {
+        stellar.loadScript(stellar.plugins.jQuery).then(fn)
+      } else {
+        fn()
+      }
+    }
+  };
+  stellar.github = 'https://github.com/xaoxuu/hexo-theme-stellar/tree/1.1.0';
+  stellar.config = {
+    date_suffix: {
+      just: 'Just',
+      min: 'minutes ago',
+      hour: 'hours ago',
+      day: 'days ago',
+      month: 'months ago',
+    },
+  };
+
+  // required plugins (only load if needs)
+  stellar.plugins = {
+    jQuery: 'https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js',
+    sitesjs: '/blog/js/plugins/sites.js',
+    friendsjs: '/blog/js/plugins/friends.js',
+  };
+
+  // optional plugins
+  if ('true' == 'true') {
+    stellar.plugins.lazyload = Object.assign({"enable":true,"js":"https://cdn.jsdelivr.net/npm/vanilla-lazyload@17.3.1/dist/lazyload.min.js","transition":"blur"});
+  }
+  if ('true' == 'true') {
+    stellar.plugins.swiper = Object.assign({"enable":true,"css":"https://unpkg.com/swiper/swiper-bundle.min.css","js":"https://unpkg.com/swiper/swiper-bundle.min.js"});
+  }
+  if ('' == 'true') {
+    stellar.plugins.scrollreveal = Object.assign({"enable":null,"js":"https://cdn.jsdelivr.net/npm/scrollreveal@4.0.9/dist/scrollreveal.min.js","distance":"8px","duration":500,"interval":100,"scale":1});
+  }
+  if ('true' == 'true') {
+    stellar.plugins.preload = Object.assign({"enable":true,"service":"flying_pages","instant_page":"https://cdn.jsdelivr.net/gh/volantis-x/cdn-volantis@4.1.2/js/instant_page.js","flying_pages":"https://cdn.jsdelivr.net/gh/gijo-varghese/flying-pages@2.1.2/flying-pages.min.js"});
+  }
+</script>
+
+<!-- required -->
+
+  
+<script src="/blog/js/main.js" async></script>
+
+
+
+<!-- optional -->
+
+
+
+<!-- inject -->
+
+
+  </div>
+</body>
+</html>

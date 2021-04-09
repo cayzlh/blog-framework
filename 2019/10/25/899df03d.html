@@ -1,22 +1,132 @@
-<!DOCTYPE html><html lang="[&quot;zh-Hans&quot;,&quot;en&quot;,&quot;default&quot;]"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"><meta name="description" content="MyBatis基础支持层位于 Mybatis 整体架构的最底层，支撑着 Mybatis 的核心处理层，是整个框架的基石。基础支持层中封装了多个较为通用的、独立的模块，不仅仅为 Mybatis 提供基础支撑，也可以在合适的场景中直接复用。"><meta name="keywords" content="MyBatis, MyBatis技术内幕"><meta name="author" content="🐳Ant丶"><meta name="copyright" content="🐳Ant丶"><title>基础支持层——反射模块 | BLOG | CAYZLH</title><link rel="shortcut icon" href="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/logo/favicon.ico"><link rel="stylesheet" href="/blog/css/index.css?version=1.9.0"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/font-awesome@latest/css/font-awesome.min.css?version=1.9.0"><meta name="format-detection" content="telephone=no"><meta http-equiv="x-dns-prefetch-control" content="on"><link rel="dns-prefetch" href="https://cdn.jsdelivr.net"><link rel="dns-prefetch" href="https://www.google-analytics.com"><script>(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-})(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+<!DOCTYPE html>
+<html lang="zh-Hans">
 
-ga('create', 'UA-129095667-1', 'auto');
-ga('send', 'pageview');</script><meta name="google-site-verification" content="VrcbMTVpFGlHkIERHBt753dAtXKF4qirjnDweuXSRJw"><meta http-equiv="Cache-Control" content="no-transform"><meta http-equiv="Cache-Control" content="no-siteapp"><script src="https://v1.hitokoto.cn/?encode=js&amp;charset=utf-8&amp;select=.footer_custom_text" defer></script><script>var GLOBAL_CONFIG = { 
-  root: '/blog/',
-  algolia: undefined,
-  localSearch: {"path":"search.xml","languages":{"hits_empty":"找不到您查询的内容:${query}"}},
-  copy: {
-    success: '复制成功',
-    error: '复制错误',
-    noSupport: '浏览器不支持'
-  },
-  hexoVersion: '5.4.0'
-} </script><meta name="generator" content="Hexo 5.4.0"><link rel="alternate" href="/blog/atom.xml" title="BLOG | CAYZLH" type="application/atom+xml">
-</head><body><i class="fa fa-arrow-right" id="toggle-sidebar" aria-hidden="true"></i><div id="sidebar" data-display="true"><div class="toggle-sidebar-info text-center"><span data-toggle="切换文章详情">切换站点概览</span><hr></div><div class="sidebar-toc"><div class="sidebar-toc__title">目录</div><div class="sidebar-toc__progress"><span class="progress-notice">你已经读了</span><span class="progress-num">0</span><span class="progress-percentage">%</span><div class="sidebar-toc__progress-bar"></div></div><div class="sidebar-toc__content"><ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%8F%8D%E5%B0%84%E5%B7%A5%E5%85%B7%E7%AE%B1"><span class="toc-text">反射工具箱</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Reflector-amp-ReflectorFactory"><span class="toc-text">Reflector &amp; ReflectorFactory</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#TypeParameterResolver"><span class="toc-text">TypeParameterResolver</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#ObjectFactory"><span class="toc-text">ObjectFactory</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Property%E5%B7%A5%E5%85%B7%E7%B1%BB"><span class="toc-text">Property工具类</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#MetaClass"><span class="toc-text">MetaClass</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#ObjectWrapper"><span class="toc-text">ObjectWrapper</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#MetaObject"><span class="toc-text">MetaObject</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%B1%BB%E5%9E%8B%E8%BD%AC%E6%8D%A2"><span class="toc-text">类型转换</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#TypeHandler"><span class="toc-text">TypeHandler</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#TypeHandlerRegistry"><span class="toc-text">TypeHandlerRegistry</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#TypeAliasRegistry"><span class="toc-text">TypeAliasRegistry</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%8F%82%E8%80%83"><span class="toc-text">参考</span></a></li></ol></div></div><div class="author-info hide"><div class="author-info__avatar text-center"><img src="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/image/IMG_4207.JPG"></div><div class="author-info__name text-center">🐳Ant丶</div><div class="author-info__description text-center">CODE IS POETRY</div><div class="follow-button"><a target="_blank" rel="external nofollow noopener noreferrer" href="https://telegram.me/Q2F5emxo">contact me</a></div><hr><div class="author-info-articles"><a class="author-info-articles__archives article-meta" href="/blog/archives"><span class="pull-left">文章</span><span class="pull-right">98</span></a><!--if site.tags.length--><!--  a(href=url_for(config.tag_dir)).author-info-articles__tags.article-meta--><!--    span.pull-left= _p('sidebar.tags')--><!--    span.pull-right= site.tags.length--><!--if site.categories.length--><!--  a(href=url_for(config.category_dir)).author-info-articles__categories.article-meta--><!--    span.pull-left= _p('sidebar.categories')--><!--    span.pull-right= site.categories.length--><a class="author-info-articles__categories article-meta" href="/blog/categories/%E4%B9%A6%E7%B1%8D/%E3%80%8A%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3Java%E8%99%9A%E6%8B%9F%E6%9C%BA%E3%80%8B/"><span class="pull-left">《深入理解Java虚拟机》</span><span class="pull-right">♾️</span></a><a class="author-info-articles__categories article-meta" href="/blog/categories/%E4%B9%A6%E7%B1%8D/%E3%80%8AMyBatis%E6%8A%80%E6%9C%AF%E5%86%85%E5%B9%95%E3%80%8B/"><span class="pull-left">《MyBatis技术内幕》</span><span class="pull-right">♾️</span></a><a class="author-info-articles__categories article-meta" href="/blog/categories/Java/Java%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/"><span class="pull-left">Java设计模式</span><span class="pull-right">♾️</span></a></div></div></div><div id="content-outer"><div class="no-bg" id="top-container"><div id="page-header"><span class="pull-left"> <a id="site-name" href="/blog/">BLOG | CAYZLH</a></span><i class="fa fa-bars toggle-menu pull-right" aria-hidden="true"></i><span class="pull-right"><a class="site-page social-icon search"><i class="fa fa-search"></i><span> 搜索</span></a></span></div><div id="post-info"><div id="post-title">基础支持层——反射模块</div><div id="post-meta"><time class="post-meta__date"><i class="fa fa-calendar" aria-hidden="true"></i> 2019-10-25</time><span class="post-meta__separator">|</span><i class="fa fa-inbox post-meta__icon" aria-hidden="true"></i><a class="post-meta__categories" href="/blog/categories/%E4%B9%A6%E7%B1%8D/">书籍</a><i class="fa fa-angle-right" aria-hidden="true"></i><i class="fa fa-inbox post-meta__icon" aria-hidden="true"></i><a class="post-meta__categories" href="/blog/categories/%E4%B9%A6%E7%B1%8D/%E3%80%8AMyBatis%E6%8A%80%E6%9C%AF%E5%86%85%E5%B9%95%E3%80%8B/">《MyBatis技术内幕》</a><div class="post-meta-wordcount"><span>字数总计: </span><span class="word-count">8.7k</span><span class="post-meta__separator">|</span><span>阅读时长: 37 分钟</span></div></div></div></div><div class="layout" id="content-inner"><article id="post"><div class="article-container" id="post-content"><p>MyBatis基础支持层位于 Mybatis 整体架构的最底层，支撑着 Mybatis 的核心处理层，是整个框架的基石。基础支持层中封装了多个较为通用的、独立的模块，不仅仅为 Mybatis 提供基础支撑，也可以在合适的场景中直接复用。</p>
-<p><img src="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/09/2_c5SKkm-20200609160003190_wDXqrk.png" alt="整体架构"></p>
+<head>
+  <meta name="generator" content="Hexo 5.4.0">
+  <meta charset="utf-8">
+  
+
+  <meta http-equiv="x-dns-prefetch-control" content="on">
+  <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+
+  <meta name="renderer" content="webkit">
+  <meta name="force-rendering" content="webkit">
+  <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+  <meta name="HandheldFriendly" content="True">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <title>基础支持层——反射模块 - BLOG | CAYZLH</title>
+
+  
+    <meta name="description" content="MyBatis基础支持层位于 Mybatis 整体架构的最底层，支撑着 Mybatis 的核心处理层，是整个框架的基石。基础支持层中封装了多个较为通用的、独立的模块，不仅仅为 Mybatis 提供基础支撑，也可以在合适的场景中直接复用。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="基础支持层——反射模块">
+<meta property="og:url" content="https://www.cayzlh.com/2019/10/25/899df03d.html">
+<meta property="og:site_name" content="BLOG | CAYZLH">
+<meta property="og:description" content="MyBatis基础支持层位于 Mybatis 整体架构的最底层，支撑着 Mybatis 的核心处理层，是整个框架的基石。基础支持层中封装了多个较为通用的、独立的模块，不仅仅为 Mybatis 提供基础支撑，也可以在合适的场景中直接复用。">
+<meta property="og:locale">
+<meta property="og:image" content="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/09/2_c5SKkm-20200609160003190_wDXqrk.png">
+<meta property="og:image" content="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/06/image-20200606160310736_88u4tj.png">
+<meta property="og:image" content="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/06/image-20200606162023961_yxCRz4.png">
+<meta property="og:image" content="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/07/image-20200607094904927_ZT0Sxt.png">
+<meta property="og:image" content="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/07/image-20200607100948201_0zx3nS.png">
+<meta property="og:image" content="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/07/image-20200607102830771_hVgxny.png">
+<meta property="og:image" content="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/07/image-20200607105809062_CxBOIT.png">
+<meta property="og:image" content="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/07/image-20200607110710849_oIM782.png">
+<meta property="og:image" content="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/07/image-20200607224820211_lIdG1a.png">
+<meta property="og:image" content="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/07/image-20200607225857225_4Xvffn.png">
+<meta property="og:image" content="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/07/image-20200607231443963_Zd5zVS.png">
+<meta property="og:image" content="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/08/image-20200608163219733_jqTbhc.png">
+<meta property="article:published_time" content="2019-10-25T01:09:42.000Z">
+<meta property="article:modified_time" content="2021-02-20T15:30:20.508Z">
+<meta property="article:author" content="🐳Ant丶">
+<meta property="article:tag" content="MyBatis">
+<meta property="article:tag" content="《MyBatis技术内幕》">
+<meta property="article:tag" content="基础支持层">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/09/2_c5SKkm-20200609160003190_wDXqrk.png">
+  
+  
+
+  <!-- feed -->
+  
+    <link rel="alternate" href="/blog/atom.xml" title="BLOG | CAYZLH" type="application/atom+xml">
+  
+
+  
+    
+<link rel="stylesheet" href="/blog/css/main.css">
+
+  
+
+  
+</head>
+
+<body>
+  
+
+
+  <div class="l_body" id="start">
+    <aside class="l_left">
+    
+
+<header class="header">
+  <div class="logo-wrap">
+  
+  
+    <a class="title" href="/blog/">
+      BLOG | CAYZLH
+    </a>
+  
+</div>
+
+  <nav class="menu dis-select"><a class="nav-item active" href="/blog/">Blog</a></nav>
+</header>
+
+<div class="widgets">
+  
+    
+      
+      
+<div class="widget-wrap" id="toc"><div class="widget-header h4 dis-select"><span class="name">TOC</span></div><div class="widget-body fs14 post"><div class="doc-tree active"><ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%8F%8D%E5%B0%84%E5%B7%A5%E5%85%B7%E7%AE%B1"><span class="toc-text">反射工具箱</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Reflector-amp-ReflectorFactory"><span class="toc-text">Reflector &amp; ReflectorFactory</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#TypeParameterResolver"><span class="toc-text">TypeParameterResolver</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#ObjectFactory"><span class="toc-text">ObjectFactory</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Property%E5%B7%A5%E5%85%B7%E7%B1%BB"><span class="toc-text">Property工具类</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#MetaClass"><span class="toc-text">MetaClass</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#ObjectWrapper"><span class="toc-text">ObjectWrapper</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#MetaObject"><span class="toc-text">MetaObject</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%B1%BB%E5%9E%8B%E8%BD%AC%E6%8D%A2"><span class="toc-text">类型转换</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#TypeHandler"><span class="toc-text">TypeHandler</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#TypeHandlerRegistry"><span class="toc-text">TypeHandlerRegistry</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#TypeAliasRegistry"><span class="toc-text">TypeAliasRegistry</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%8F%82%E8%80%83"><span class="toc-text">参考</span></a></li></ol></div></div></div>
+
+    
+  
+</div>
+
+
+    </aside>
+    <div class="l_main">
+      
+
+      
+
+
+  <div class="bread-nav fs12">
+  
+    
+    <div id="breadcrumb">
+      <a class="cap breadcrumb" href="/">Home</a>
+      <span class="sep"></span>
+      <a class="cap breadcrumb" href="/">Blog</a>
+      
+        <span class="sep"></span>
+        <a class="cap breadcrumb-link" href="/blog/categories/%E4%B9%A6%E7%B1%8D/">书籍</a> <span class="sep"></span> <a class="cap breadcrumb-link" href="/blog/categories/%E4%B9%A6%E7%B1%8D/%E3%80%8AMyBatis%E6%8A%80%E6%9C%AF%E5%86%85%E5%B9%95%E3%80%8B/">《MyBatis技术内幕》</a>
+      
+    </div>
+    <div id="post-meta">
+      Posted on&nbsp;<time datetime="2019-10-25T01:09:42.000Z">2019-10-25</time>
+    </div>
+  
+  </div>
+
+
+<article class="content md post">
+<h1 class="article-title"><span>基础支持层——反射模块</span></h1>
+<p>MyBatis基础支持层位于 Mybatis 整体架构的最底层，支撑着 Mybatis 的核心处理层，是整个框架的基石。基础支持层中封装了多个较为通用的、独立的模块，不仅仅为 Mybatis 提供基础支撑，也可以在合适的场景中直接复用。</p>
+<p><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/09/2_c5SKkm-20200609160003190_wDXqrk.png" alt="整体架构"></p>
 <blockquote>
 <p>这篇介绍MyBatis的反射模块</p>
 </blockquote>
@@ -41,7 +151,7 @@ ga('send', 'pageview');</script><meta name="google-site-verification" content="V
 </li>
 </ol>
 <h4 id="TypeParameterResolver"><a href="#TypeParameterResolver" class="headerlink" title="TypeParameterResolver"></a>TypeParameterResolver</h4><p>在开 始介绍 TypeParameterResolver之前，先简 单 介绍 一下Type接口的基础 知识 。Type是所有类 型的父接口，它 有四个 子接口和一个 实 现 类 ，如图所示。</p>
-<p><img src="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/06/image-20200606160310736_88u4tj.png" alt="image-20200606160310736"></p>
+<p><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/06/image-20200606160310736_88u4tj.png" alt="image-20200606160310736"></p>
 <p>下面来 看这 些子接口和子类 所代表的类 型。</p>
 <ul>
 <li><p><strong>Class</strong>比较 常见 ，它 表示的是原始类 型。</p>
@@ -82,7 +192,7 @@ ga('send', 'pageview');</script><meta name="google-site-verification" content="V
 </li>
 </ul>
 <p> 回到对 <code>TypeParameterResolve</code>，它 是一个 工具类 ，提供了一系列静 态 方法来 解析指定类 中的字段、方法返回值 或方法参 数 的类 型。TypeParameterResolver中各个 静 态 方法之间 的调 用关 系大致如下图 所示，为 保持清 晰 ，其中递 归 调 用没 有表现 出来 ，在后面 的代码 分析过 程中会 进 行强调 。</p>
-<p><img src="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/06/image-20200606162023961_yxCRz4.png" alt="image-20200606162023961"></p>
+<p><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/06/image-20200606162023961_yxCRz4.png" alt="image-20200606162023961"></p>
 <p><code>TypeParameterResolver</code> 中 通 过 <code>resolveFieldType()</code>方 法 、 <code>resolveRetumType()</code>方 法 、 <code>resolveParamTypes()</code>方法分别 解析字段类 型、方法返回值 类 型和方法参 数 列表中各个 参 数 的类 型。 这 三个 方法的逻 辑 基本类 似，这 里以resolveFieldType()方法为 例进 行介绍 ，<code>TypeParameterResolver.resolveFieldType()</code>方法的具体 实 现 如下:</p>
 <figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment">   * <span class="doctag">@return</span> The field type as &#123;<span class="doctag">@link</span> Type&#125;. If it has type parameters in the declaration,</span></span><br><span class="line"><span class="comment">   *         they will be resolved to the actual runtime &#123;<span class="doctag">@link</span> Type&#125;s.</span></span><br><span class="line"><span class="comment">   */</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> Type <span class="title">resolveFieldType</span><span class="params">(Field field, Type srcType)</span> </span>&#123;</span><br><span class="line">  Type fieldType = field.getGenericType();</span><br><span class="line">  Class&lt;?&gt; declaringClass = field.getDeclaringClass();</span><br><span class="line">  <span class="keyword">return</span> resolveType(fieldType, srcType, declaringClass);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
@@ -112,7 +222,7 @@ ga('send', 'pageview');</script><meta name="google-site-verification" content="V
 <figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">static</span> Type <span class="title">scanSuperTypes</span><span class="params">(</span></span></span><br><span class="line"><span class="function"><span class="params">  TypeVariable&lt;?&gt; typeVar, Type srcType, </span></span></span><br><span class="line"><span class="function"><span class="params">  Class&lt;?&gt; declaringClass, Class&lt;?&gt; clazz, Type superclass)</span> </span>&#123;</span><br><span class="line">    Type result = <span class="keyword">null</span>;</span><br><span class="line">    <span class="keyword">if</span> (superclass <span class="keyword">instanceof</span> ParameterizedType) &#123;</span><br><span class="line">      ParameterizedType parentAsType = (ParameterizedType) superclass;</span><br><span class="line">      Class&lt;?&gt; parentAsClass = (Class&lt;?&gt;) parentAsType.getRawType();</span><br><span class="line">      <span class="keyword">if</span> (declaringClass == parentAsClass) &#123;</span><br><span class="line">        Type[] typeArgs = parentAsType.getActualTypeArguments();</span><br><span class="line">        TypeVariable&lt;?&gt;[] declaredTypeVars = </span><br><span class="line">          declaringClass.getTypeParameters();</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; declaredTypeVars.length; i++) &#123;</span><br><span class="line">          <span class="keyword">if</span> (declaredTypeVars[i] == typeVar) &#123;</span><br><span class="line">            <span class="keyword">if</span> (typeArgs[i] <span class="keyword">instanceof</span> TypeVariable) &#123;</span><br><span class="line">              TypeVariable&lt;?&gt;[] typeParams = clazz.getTypeParameters();</span><br><span class="line">              <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">0</span>; j &lt; typeParams.length; j++) &#123;</span><br><span class="line">                <span class="keyword">if</span> (typeParams[j] == typeArgs[i]) &#123;</span><br><span class="line">                  <span class="keyword">if</span> (srcType <span class="keyword">instanceof</span> ParameterizedType) &#123;</span><br><span class="line">                    result = ((ParameterizedType) srcType).getActualTypeArguments()[j];</span><br><span class="line">                  &#125;</span><br><span class="line">                  <span class="keyword">break</span>;</span><br><span class="line">                &#125;</span><br><span class="line">              &#125;</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">              result = typeArgs[i];</span><br><span class="line">            &#125;</span><br><span class="line">          &#125;</span><br><span class="line">        &#125;</span><br><span class="line">      &#125; <span class="keyword">else</span> <span class="keyword">if</span> (declaringClass.isAssignableFrom(parentAsClass)) &#123;</span><br><span class="line">        result = resolveTypeVar(typeVar, parentAsType, declaringClass);</span><br><span class="line">      &#125;</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (superclass <span class="keyword">instanceof</span> Class) &#123;</span><br><span class="line">      <span class="keyword">if</span> (declaringClass.isAssignableFrom((Class&lt;?&gt;) superclass)) &#123;</span><br><span class="line">        result = resolveTypeVar(typeVar, superclass, declaringClass);</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> result;</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
 
 <p>下图展示了scanSuperTypes()方法解析类型变量的核心逻辑。</p>
-<p><img src="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/07/image-20200607094904927_ZT0Sxt.png" alt="image-20200607094904927"></p>
+<p><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/07/image-20200607094904927_ZT0Sxt.png" alt="image-20200607094904927"></p>
 <h4 id="ObjectFactory"><a href="#ObjectFactory" class="headerlink" title="ObjectFactory"></a>ObjectFactory</h4><p>MyBatis中很多模块会使用到ObjectFactory接口，该接口提供了多个create()方法的重载，通过这些create()方法可以创建指定类型的对象。ObjectFactory的定义如下：</p>
 <figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">ObjectFactory</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">  <span class="comment">/**</span></span><br><span class="line"><span class="comment">   * Sets configuration properties.</span></span><br><span class="line"><span class="comment">   * 设置配置信息</span></span><br><span class="line"><span class="comment">   * <span class="doctag">@param</span> properties configuration properties</span></span><br><span class="line"><span class="comment">   */</span></span><br><span class="line">  <span class="function"><span class="keyword">void</span> <span class="title">setProperties</span><span class="params">(Properties properties)</span></span>;</span><br><span class="line"></span><br><span class="line">  <span class="comment">/**</span></span><br><span class="line"><span class="comment">   * Creates a new object with default constructor. </span></span><br><span class="line"><span class="comment">   * 通过无参构造器创建指定类的对象</span></span><br><span class="line"><span class="comment">   * <span class="doctag">@param</span> type Object type</span></span><br><span class="line"><span class="comment">   * <span class="doctag">@return</span></span></span><br><span class="line"><span class="comment">   */</span></span><br><span class="line">  &lt;T&gt; <span class="function">T <span class="title">create</span><span class="params">(Class&lt;T&gt; type)</span></span>;</span><br><span class="line"></span><br><span class="line">  <span class="comment">/**</span></span><br><span class="line"><span class="comment">   * Creates a new object with the specified constructor and params.</span></span><br><span class="line"><span class="comment">   * 根据参数列表，从指定类型中选择合适的构造器创建对象</span></span><br><span class="line"><span class="comment">   * <span class="doctag">@param</span> type Object type</span></span><br><span class="line"><span class="comment">   * <span class="doctag">@param</span> constructorArgTypes Constructor argument types</span></span><br><span class="line"><span class="comment">   * <span class="doctag">@param</span> constructorArgs Constructor argument values</span></span><br><span class="line"><span class="comment">   * <span class="doctag">@return</span></span></span><br><span class="line"><span class="comment">   */</span></span><br><span class="line">  &lt;T&gt; <span class="function">T <span class="title">create</span><span class="params">(Class&lt;T&gt; type, List&lt;Class&lt;?&gt;&gt; constructorArgTypes, List&lt;Object&gt; constructorArgs)</span></span>;</span><br><span class="line">  </span><br><span class="line">  <span class="comment">/**</span></span><br><span class="line"><span class="comment">   * Returns true if this object can have a set of other objects.</span></span><br><span class="line"><span class="comment">   * It&#x27;s main purpose is to support non-java.util.Collection objects like Scala collections.</span></span><br><span class="line"><span class="comment">   * 检测指定类型是否为集合类型，主要处理java.util.Collectiopn及其子类</span></span><br><span class="line"><span class="comment">   * </span></span><br><span class="line"><span class="comment">   * <span class="doctag">@param</span> type Object type</span></span><br><span class="line"><span class="comment">   * <span class="doctag">@return</span> whether it is a collection or not</span></span><br><span class="line"><span class="comment">   * <span class="doctag">@since</span> 3.1.0</span></span><br><span class="line"><span class="comment">   */</span></span><br><span class="line">  &lt;T&gt; <span class="function"><span class="keyword">boolean</span> <span class="title">isCollection</span><span class="params">(Class&lt;T&gt; type)</span></span>;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
@@ -157,7 +267,7 @@ ga('send', 'pageview');</script><meta name="google-site-verification" content="V
 </tr>
 </tbody></table>
 <p>对象模型如下：</p>
-<p><img src="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/07/image-20200607100948201_0zx3nS.png" alt="image-20200607100948201"></p>
+<p><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/07/image-20200607100948201_0zx3nS.png" alt="image-20200607100948201"></p>
 <p>假设现在需要将结果集中的<code>item1</code>列雨用户第一个订单（Order）的第一条目（Item）的名称映射，<code>item2</code>与用户第一个订单的（Order）的第二条目（Item）的名称映射（这里仅仅是一个示例，在实际生产中很少这样的设计），我们可以得到下面的映射规则：</p>
 <figure class="highlight xml"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">resultMap</span> <span class="attr">id</span>=<span class="string">&quot;rm4testProTool&quot;</span> <span class="attr">type</span>=<span class="string">&quot;User&quot;</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">id</span> <span class="attr">column</span>=<span class="string">&quot;id&quot;</span> <span class="attr">property</span>=<span class="string">&quot;id&quot;</span> /&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">result</span> <span class="attr">property</span>=<span class="string">&quot;orders[0].items[0].name&quot;</span> <span class="attr">column</span>=<span class="string">&quot;iteml&quot;</span> /&gt;</span> </span><br><span class="line">	<span class="tag">&lt;<span class="name">result</span> <span class="attr">property</span>=<span class="string">&quot;orders[0].items[1].name&quot;</span> <span class="attr">column</span>=<span class="string">&quot;item2&quot;</span> /&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">resultMap</span>&gt;</span></span><br></pre></td></tr></table></figure>
 
@@ -167,7 +277,7 @@ ga('send', 'pageview');</script><meta name="google-site-verification" content="V
 <p><code>PropertyTokenizer</code>继承了<code>Iterator</code>接口，它可以迭代处理嵌套多层表达式。</p>
 <p><code>next()</code>方法中会创建<code>PropertyTokenizer</code>对象并解析<code>children</code>字段记录的子表达式。</p>
 <p>继续使用订单示例进行说明，描述解析属性表达式<code>orders[0].items[0].name</code>的迭代过程：</p>
-<p><img src="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/07/image-20200607102830771_hVgxny.png" alt="image-20200607102830771"></p>
+<p><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/07/image-20200607102830771_hVgxny.png" alt="image-20200607102830771"></p>
 <p><strong>PropertyNamer</strong></p>
 <p><code>PropertyNamer</code>是另一个工具类，提供了下列静态方法帮助完成方法名到属性名的转换，以及多种检测操作。</p>
 <figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">final</span> <span class="class"><span class="keyword">class</span> <span class="title">PropertyNamer</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">private</span> <span class="title">PropertyNamer</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="comment">// Prevent Instantiation of Static Class</span></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 将方法名转换成属性名</span></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> String <span class="title">methodToProperty</span><span class="params">(String name)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (name.startsWith(<span class="string">&quot;is&quot;</span>)) &#123;</span><br><span class="line">      name = name.substring(<span class="number">2</span>);</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (name.startsWith(<span class="string">&quot;get&quot;</span>) || name.startsWith(<span class="string">&quot;set&quot;</span>)) &#123;</span><br><span class="line">      name = name.substring(<span class="number">3</span>);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      <span class="keyword">throw</span> <span class="keyword">new</span> ReflectionException(<span class="string">&quot;Error parsing property name &#x27;&quot;</span> + name + <span class="string">&quot;&#x27;.  Didn&#x27;t start with &#x27;is&#x27;, &#x27;get&#x27; or &#x27;set&#x27;.&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (name.length() == <span class="number">1</span> || (name.length() &gt; <span class="number">1</span> &amp;&amp; !Character.isUpperCase(name.charAt(<span class="number">1</span>)))) &#123;</span><br><span class="line">      name = name.substring(<span class="number">0</span>, <span class="number">1</span>).toLowerCase(Locale.ENGLISH) + name.substring(<span class="number">1</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> name;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">boolean</span> <span class="title">isProperty</span><span class="params">(String name)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> name.startsWith(<span class="string">&quot;get&quot;</span>) || name.startsWith(<span class="string">&quot;set&quot;</span>) || name.startsWith(<span class="string">&quot;is&quot;</span>);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">boolean</span> <span class="title">isGetter</span><span class="params">(String name)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> name.startsWith(<span class="string">&quot;get&quot;</span>) || name.startsWith(<span class="string">&quot;is&quot;</span>);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">boolean</span> <span class="title">isSetter</span><span class="params">(String name)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> name.startsWith(<span class="string">&quot;set&quot;</span>);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
@@ -187,10 +297,10 @@ ga('send', 'pageview');</script><meta name="google-site-verification" content="V
 <figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">ObjectWrapper</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 如果ObjectWrapper中封装的是普通的Bean对象，则调用相应属性的相应getter方法，</span></span><br><span class="line">  <span class="comment">// 如果封装的是集合类，则获取指定key或下标对应的value值</span></span><br><span class="line">  <span class="function">Object <span class="title">get</span><span class="params">(PropertyTokenizer prop)</span></span>;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 如果ObjectWrapper中封装的是普通的Bean对象，则调用相应的setter方法</span></span><br><span class="line">  <span class="comment">// 如果封装的是集合类，则设置指定key或下标对应的value值</span></span><br><span class="line">  <span class="function"><span class="keyword">void</span> <span class="title">set</span><span class="params">(PropertyTokenizer prop, Object value)</span></span>;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 查找属性表达式指定的属性，第二个参数表示是否忽略属性表达式中的下划线</span></span><br><span class="line">  <span class="function">String <span class="title">findProperty</span><span class="params">(String name, <span class="keyword">boolean</span> useCamelCaseMapping)</span></span>;</span><br><span class="line"></span><br><span class="line">  String[] getGetterNames();</span><br><span class="line"></span><br><span class="line">  String[] getSetterNames();</span><br><span class="line"></span><br><span class="line">  Class&lt;?&gt; getSetterType(String name);</span><br><span class="line"></span><br><span class="line">  Class&lt;?&gt; getGetterType(String name);</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">boolean</span> <span class="title">hasSetter</span><span class="params">(String name)</span></span>;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">boolean</span> <span class="title">hasGetter</span><span class="params">(String name)</span></span>;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 为属性表达式的属性创建相应的MetaObject对象</span></span><br><span class="line">  <span class="function">MetaObject <span class="title">instantiatePropertyValue</span><span class="params">(String name, PropertyTokenizer prop, ObjectFactory objectFactory)</span></span>;</span><br><span class="line">  </span><br><span class="line">  <span class="function"><span class="keyword">boolean</span> <span class="title">isCollection</span><span class="params">()</span></span>;</span><br><span class="line">  </span><br><span class="line">  <span class="function"><span class="keyword">void</span> <span class="title">add</span><span class="params">(Object element)</span></span>;</span><br><span class="line">  </span><br><span class="line">  &lt;E&gt; <span class="function"><span class="keyword">void</span> <span class="title">addAll</span><span class="params">(List&lt;E&gt; element)</span></span>;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <p>ObjectWrapperFactory负责创建ObjectWrapper对象。</p>
-<p><img src="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/07/image-20200607105809062_CxBOIT.png" alt="image-20200607105809062"></p>
+<p><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/07/image-20200607105809062_CxBOIT.png" alt="image-20200607105809062"></p>
 <p><code>DefaultObjectWrapperFactory</code>实 现 了 <code>ObjectWrapperFactory</code>接口，但它 实 现 的 <code>getWrapperFor()</code> 方法始终 抛出异 常，<code>hasWrapperFor()</code>方法始终 返回false，所以该 实 现 实 际 上是不可用的。但是 与 ObjectFactory 类 似，我们 可以在 mybatis-config.xml 中配置自定义 的 ObjectWrapperFactory 实 现 类 进 行扩 展，在后面介绍 MyBatis初始化时 还 会 提到该 扩 展点。</p>
 <p><code>BaseWrapper</code>是一个实现了<code>ObjectWrapper</code>接口的抽象类，其中封装了<code>MetaObject</code>对象，并提供了三个方勇的方法提供其子类使用：</p>
-<p><img src="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/07/image-20200607110710849_oIM782.png" alt="image-20200607110710849"></p>
+<p><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/07/image-20200607110710849_oIM782.png" alt="image-20200607110710849"></p>
 <p>BaseWrapper,resolveCollection()方法会 调 用 MetaObject.get Value()方法，它 会 解析属 性表达 式并 获 取指定的属 性。</p>
 <p>BaseWrapper.getCollectionValue()方法和 setCollectionValue()方法会 解析属 性表达 式的索引 信息，然后获 取/设 置对 应 项 。</p>
 <h4 id="MetaObject"><a href="#MetaObject" class="headerlink" title="MetaObject"></a>MetaObject</h4><p><code>org.apache.ibatis.reflection.MetaObject</code> ，对象元数据，提供了对象的属性值的获得和设置等等方法。 可以理解成，对 BaseWrapper 操作的进一步<strong>增强</strong>。</p>
@@ -210,7 +320,7 @@ ga('send', 'pageview');</script><meta name="google-site-verification" content="V
 
 <h3 id="类型转换"><a href="#类型转换" class="headerlink" title="类型转换"></a>类型转换</h3><p>JDBC数据类型与Java语言中的数据类型并不是完全对应的，所以在PreparedStatement为SQL语句绑定参数时，需要从Java类型转换成JDBC类型，而从结果集获取数据的时候，则需要从JDBC类型转换成Java类型。</p>
 <p>MyBatis使用类型转换处理器完车过了上述两种转换。</p>
-<p><img src="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/07/image-20200607224820211_lIdG1a.png" alt="image-20200607224820211"></p>
+<p><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/07/image-20200607224820211_lIdG1a.png" alt="image-20200607224820211"></p>
 <blockquote>
 <p>在 MyBatis中使用JdbcType这 个 枚举 类 型代表JDBC中的数 据类 型，该 枚举 类 型中定义 了 TYPE_CODE字段，记 录 了 JDBC类 型在java.sql.Types中相应 的常量 编 码 ，并 通过 一个 静 态 集合codeLookup (HashMap&lt;Integer，JdbcType&gt;类 型)维 护 了常量编 码 与JdbcType之间的对应关系。</p>
 </blockquote>
@@ -218,7 +328,7 @@ ga('send', 'pageview');</script><meta name="google-site-verification" content="V
 <figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">TypeHandler</span>&lt;<span class="title">T</span>&gt; </span>&#123;</span><br><span class="line"></span><br><span class="line">  <span class="comment">//在通过 PreparedStatement为 SQL语 句绑 定参 数 时 ，会 将 数 据由JdbcType类 型转 换 成Java类 型</span></span><br><span class="line">  <span class="function"><span class="keyword">void</span> <span class="title">setParameter</span><span class="params">(PreparedStatement ps, <span class="keyword">int</span> i, T parameter, JdbcType jdbcType)</span> <span class="keyword">throws</span> SQLException</span>;</span><br><span class="line">  </span><br><span class="line"><span class="comment">//从 ResultSet中获 取数 据时 会 调 用此方法，会 将 数 据由Java类 型转 换 成JdbcType类 型</span></span><br><span class="line">  <span class="function">T <span class="title">getResult</span><span class="params">(ResultSet rs, String columnName)</span> <span class="keyword">throws</span> SQLException</span>;</span><br><span class="line"></span><br><span class="line">  <span class="function">T <span class="title">getResult</span><span class="params">(ResultSet rs, <span class="keyword">int</span> columnIndex)</span> <span class="keyword">throws</span> SQLException</span>;</span><br><span class="line"></span><br><span class="line">  <span class="function">T <span class="title">getResult</span><span class="params">(CallableStatement cs, <span class="keyword">int</span> columnIndex)</span> <span class="keyword">throws</span> SQLException</span>;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <p>为了方便用户自定义TypeHandler实现，MyBatis提供了BaseTypeHandler这个抽象类，它实现了TypeHandler接口，并继承了TypeReference抽象类，其继承结构如下：</p>
-<p><img src="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/07/image-20200607225857225_4Xvffn.png" alt="image-20200607225857225"></p>
+<p><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/07/image-20200607225857225_4Xvffn.png" alt="image-20200607225857225"></p>
 <p>在BaseTypeHandler中实现了<code>TypeHandler.setParameter()</code>方法和<code>TypeHandler.getResult()</code>方法，具体实现如下。需要注意的是，这两个方法对于非空数据的处理都交给了子类实现。</p>
 <figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="class"><span class="keyword">class</span> <span class="title">BaseTypeHandler</span>&lt;<span class="title">T</span>&gt; <span class="keyword">extends</span> <span class="title">TypeReference</span>&lt;<span class="title">T</span>&gt; <span class="keyword">implements</span> <span class="title">TypeHandler</span>&lt;<span class="title">T</span>&gt; </span>&#123;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">protected</span> Configuration configuration;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">setConfiguration</span><span class="params">(Configuration c)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">this</span>.configuration = c;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="meta">@Override</span></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">setParameter</span><span class="params">(PreparedStatement ps, <span class="keyword">int</span> i, T parameter, JdbcType jdbcType)</span> <span class="keyword">throws</span> SQLException </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (parameter == <span class="keyword">null</span>) &#123;</span><br><span class="line">      <span class="keyword">if</span> (jdbcType == <span class="keyword">null</span>) &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> TypeException(<span class="string">&quot;JDBC requires that the JdbcType must be specified for all nullable parameters.&quot;</span>);</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">try</span> &#123;</span><br><span class="line">        ps.setNull(i, jdbcType.TYPE_CODE);</span><br><span class="line">      &#125; <span class="keyword">catch</span> (SQLException e) &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> TypeException(<span class="string">&quot;Error setting null for parameter #&quot;</span> + i + <span class="string">&quot; with JdbcType &quot;</span> + jdbcType + <span class="string">&quot; . &quot;</span> +</span><br><span class="line">                <span class="string">&quot;Try setting a different JdbcType for this parameter or a different jdbcTypeForNull configuration property. &quot;</span> +</span><br><span class="line">                <span class="string">&quot;Cause: &quot;</span> + e, e);</span><br><span class="line">      &#125;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      <span class="keyword">try</span> &#123;</span><br><span class="line">        setNonNullParameter(ps, i, parameter, jdbcType);</span><br><span class="line">      &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> TypeException(<span class="string">&quot;Error setting non null for parameter #&quot;</span> + i + <span class="string">&quot; with JdbcType &quot;</span> + jdbcType + <span class="string">&quot; . &quot;</span> +</span><br><span class="line">                <span class="string">&quot;Try setting a different JdbcType for this parameter or a different configuration property. &quot;</span> +</span><br><span class="line">                <span class="string">&quot;Cause: &quot;</span> + e, e);</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="meta">@Override</span></span><br><span class="line">  <span class="function"><span class="keyword">public</span> T <span class="title">getResult</span><span class="params">(ResultSet rs, String columnName)</span> <span class="keyword">throws</span> SQLException </span>&#123;</span><br><span class="line">    T result;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">      result = getNullableResult(rs, columnName);</span><br><span class="line">    &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">      <span class="keyword">throw</span> <span class="keyword">new</span> ResultMapException(<span class="string">&quot;Error attempting to get column &#x27;&quot;</span> + columnName + <span class="string">&quot;&#x27; from result set.  Cause: &quot;</span> + e, e);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (rs.wasNull()) &#123;</span><br><span class="line">      <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      <span class="keyword">return</span> result;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="meta">@Override</span></span><br><span class="line">  <span class="function"><span class="keyword">public</span> T <span class="title">getResult</span><span class="params">(ResultSet rs, <span class="keyword">int</span> columnIndex)</span> <span class="keyword">throws</span> SQLException </span>&#123;</span><br><span class="line">    T result;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">      result = getNullableResult(rs, columnIndex);</span><br><span class="line">    &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">      <span class="keyword">throw</span> <span class="keyword">new</span> ResultMapException(<span class="string">&quot;Error attempting to get column #&quot;</span> + columnIndex+ <span class="string">&quot; from result set.  Cause: &quot;</span> + e, e);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (rs.wasNull()) &#123;</span><br><span class="line">      <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      <span class="keyword">return</span> result;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="meta">@Override</span></span><br><span class="line">  <span class="function"><span class="keyword">public</span> T <span class="title">getResult</span><span class="params">(CallableStatement cs, <span class="keyword">int</span> columnIndex)</span> <span class="keyword">throws</span> SQLException </span>&#123;</span><br><span class="line">    T result;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">      result = getNullableResult(cs, columnIndex);</span><br><span class="line">    &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">      <span class="keyword">throw</span> <span class="keyword">new</span> ResultMapException(<span class="string">&quot;Error attempting to get column #&quot;</span> + columnIndex+ <span class="string">&quot; from callable statement.  Cause: &quot;</span> + e, e);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (cs.wasNull()) &#123;</span><br><span class="line">      <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      <span class="keyword">return</span> result;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="keyword">void</span> <span class="title">setNonNullParameter</span><span class="params">(PreparedStatement ps, <span class="keyword">int</span> i, T parameter, JdbcType jdbcType)</span> <span class="keyword">throws</span> SQLException</span>;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">abstract</span> T <span class="title">getNullableResult</span><span class="params">(ResultSet rs, String columnName)</span> <span class="keyword">throws</span> SQLException</span>;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">abstract</span> T <span class="title">getNullableResult</span><span class="params">(ResultSet rs, <span class="keyword">int</span> columnIndex)</span> <span class="keyword">throws</span> SQLException</span>;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">abstract</span> T <span class="title">getNullableResult</span><span class="params">(CallableStatement cs, <span class="keyword">int</span> columnIndex)</span> <span class="keyword">throws</span> SQLException</span>;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
@@ -230,7 +340,7 @@ ga('send', 'pageview');</script><meta name="google-site-verification" content="V
 
 <p><strong>1. 注册TypeHandler对象</strong></p>
 <p>TypeHandlerRegistry.register()方法实 现 了注册 TypeHandler对 象的功能，该 注册 过 程会 向上 述四个 集合中添加TypeHandler对 象。register()方法有多个 重载 ，这 些重载 之间 的调 用关 系如图 。</p>
-<p><img src="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/07/image-20200607231443963_Zd5zVS.png" alt="image-20200607231443963"></p>
+<p><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/07/image-20200607231443963_Zd5zVS.png" alt="image-20200607231443963"></p>
 <p>从 上图中可以看出，多数 register()方法最终 会 调 用重载(4) 完成注册 功能，先来看该方法的实现，其三个 参 数 分别 指定了 TypeHandler能够 处 理的Java类 型、Jdbc类 型以及 TypeHandler对 象。</p>
 <p>重载(4)</p>
 <figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">register</span><span class="params">(Type javaType, JdbcType jdbcType, TypeHandler&lt;?&gt; handler)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (javaType != <span class="keyword">null</span>) &#123;<span class="comment">// 检测是否明确指定了TypeHanlder能够处理的Java类型</span></span><br><span class="line">    <span class="comment">// 获取指定java类型在TYPE_HANDLER_MAP集合中对应TypeHanlder集合</span></span><br><span class="line">    Map&lt;JdbcType, TypeHandler&lt;?&gt;&gt; map = TYPE_HANDLER_MAP.get(javaType);</span><br><span class="line">    <span class="keyword">if</span> (map == <span class="keyword">null</span> || map == NULL_TYPE_HANDLER_MAP) &#123;</span><br><span class="line">      <span class="comment">// 创建新的TypeHandler集合，并添加到TYPE_HANDLER_MAP中</span></span><br><span class="line">      map = <span class="keyword">new</span> HashMap&lt;JdbcType, TypeHandler&lt;?&gt;&gt;();</span><br><span class="line">      TYPE_HANDLER_MAP.put(javaType, map);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 将TypeHandler对象注册到并添加到TYPE_HANDLER_MAP中</span></span><br><span class="line">    map.put(jdbcType, handler);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="comment">// 向ALL_TYPE_HANDLERS_MAP集合注册TypeHandler类型和对应的TypeHanlder对象</span></span><br><span class="line">  ALL_TYPE_HANDLERS_MAP.put(handler.getClass(), handler);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
@@ -255,7 +365,7 @@ ga('send', 'pageview');</script><meta name="google-site-verification" content="V
 
 <p><strong>2. 查找TypeHandler</strong></p>
 <p><code>TypeHandlerRegistry</code>提供了查 找 <code>TypeHandler</code>对 象的功能。<code>TypeHandlerRegistry.getTypeHandler()</code>方法实 现 了从 上述四个 集合中获 取对 应 <code>TypeHandler</code>对 象的功能。TypeHandlerRegistry.getTypeHandler()方法有多个 重载 ，这 些重 载 之间 的关 系如下图所示。</p>
-<p><img src="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/08/image-20200608163219733_jqTbhc.png" alt="image-20200608163219733"></p>
+<p><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/08/image-20200608163219733_jqTbhc.png" alt="image-20200608163219733"></p>
 <p>经 过 一系列类 型转 换 之后，<code>TypeHandlerRegistry.getTypeHandler()</code>方法的多个 重载 都会 调 用 <code>TypeHandlerRegistry.getTypeHandle(Type, JdbcType)</code>这 个 重载 方法，它 会 根据指定的 Java 类 型和 JdbcType类 型查 找 相应 的TypeHandler对 象。</p>
 <h4 id="TypeAliasRegistry"><a href="#TypeAliasRegistry" class="headerlink" title="TypeAliasRegistry"></a>TypeAliasRegistry</h4><p>在编 写 SQL语 句时 ，使用别 名可以方便理解以及维 护 ，例如表名或列名很 长 时 ，我们 一般 会 为 其设 计 易懂 易维 护 的别 名。MyBatis将 SQL语 句中别 名的概 念进 行了延伸和扩 展，MyBatis 可以为 一个 类 添加一个 别 名，之后就可以通过 别 名引用该 类 。</p>
 <p><code>MyBatis</code>通过 <code>TypeAliasRegistry</code>类 完成别 名注册 和管理的功能，<code>TypeAliasRegistry</code>的结 构 比 较 简 单 ，它 通过 <code>TYPE_ALIASES</code>字段(<code>Map&lt;String，Class&lt;?&gt;&gt;</code>类 型)管理别 名与 Java类 型之间 的对 应 关 系，通过 <code>TypeAHasRegistiy.registerAlias()</code>方法完成注册 别 名，该 方法的具体 实 现 如下:</p>
@@ -270,8 +380,180 @@ ga('send', 'pageview');</script><meta name="google-site-verification" content="V
 <li><p>部分图片来源——<strong>《MyBatis技术内幕》</strong></p>
 </li>
 </ul>
-</div></article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta">文章作者: </span><span class="post-copyright-info"><a href="mailto:undefined" rel="external nofollow noopener noreferrer" target="_blank">🐳Ant丶</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta">文章链接: </span><span class="post-copyright-info"><a href="https://www.cayzlh.com/2019/10/25/899df03d.html">https://www.cayzlh.com/2019/10/25/899df03d.html</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta">版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a target="_blank" rel="external nofollow noopener noreferrer" href="https://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来自 <a href="https://www.cayzlh.com">BLOG | CAYZLH</a>！</span></div></div><div class="post-meta__tag-list"><a class="post-meta__tags" href="/blog/tags/MyBatis/">MyBatis</a><a class="post-meta__tags" href="/blog/tags/%E3%80%8AMyBatis%E6%8A%80%E6%9C%AF%E5%86%85%E5%B9%95%E3%80%8B/">《MyBatis技术内幕》</a><a class="post-meta__tags" href="/blog/tags/%E5%9F%BA%E7%A1%80%E6%94%AF%E6%8C%81%E5%B1%82/">基础支持层</a></div><nav id="pagination"><div class="prev-post pull-left"><a href="/blog/2019/10/26/899df03d.html"><i class="fa fa-chevron-left">  </i><span>基础支持层——日志模块</span></a></div><div class="next-post pull-right"><a href="/blog/2019/10/24/94150c5.html"><span>基础支持层——解析器模块</span><i class="fa fa-chevron-right"></i></a></div></nav></div></div><footer><div class="layout" id="footer"><div class="footer_custom_text">hitokoto</div><div class="copyright">🐳Ant丶 &copy;2019 - 2021</div><div class="icp"><a><span>粤ICP备20058712号</span></a></div><div class="busuanzi"><script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></div></footer><i class="fa fa-arrow-up" id="go-up" aria-hidden="true"></i><script src="https://cdn.jsdelivr.net/npm/animejs@latest/anime.min.js"></script><script src="https://cdn.jsdelivr.net/npm/jquery@latest/dist/jquery.min.js"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@latest/dist/jquery.fancybox.min.js"></script><script src="https://cdn.jsdelivr.net/npm/velocity-animate@latest/velocity.min.js"></script><script src="https://cdn.jsdelivr.net/npm/velocity-ui-pack@latest/velocity.ui.min.js"></script><script src="/blog/js/utils.js?version=1.9.0"></script><script src="/blog/js/fancybox.js?version=1.9.0"></script><script src="/blog/js/sidebar.js?version=1.9.0"></script><script src="/blog/js/copy.js?version=1.9.0"></script><script src="/blog/js/fireworks.js?version=1.9.0"></script><script src="/blog/js/transition.js?version=1.9.0"></script><script src="/blog/js/scroll.js?version=1.9.0"></script><script src="/blog/js/head.js?version=1.9.0"></script><script src="/blog/js/search/local-search.js"></script><script>if(/Android|webOS|iPhone|iPod|iPad|BlackBerry/i.test(navigator.userAgent)) {
-  $('#nav').addClass('is-mobile')
-  $('footer').addClass('is-mobile')
-  $('#top-container').addClass('is-mobile')
-}</script><div class="search-dialog" id="local-search"><div class="search-dialog__title" id="local-search-title">本地搜索</div><div id="local-input-panel"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="搜索文章"></div></div></div><hr><div id="local-search-results"><div id="local-hits"></div><div id="local-stats"><div class="local-search-stats__hr" id="hr"><span>Powered by</span> <a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/wzpan/hexo-generator-search" style="color:#49B1F5;">hexo-generator-search</a></div></div></div><span class="search-close-button"><i class="fa fa-times"></i></span></div><div class="search-mask"></div></body></html>
+
+
+<div class="article-footer fs14"><section id="license"><div class="header"><span>License</span></div><div class="body"><p>本文采用 <a target="_blank" rel="external nofollow noopener noreferrer" href="https://creativecommons.org/licenses/by-nc-sa/4.0/">署名-非商业性使用-相同方式共享 4.0 国际</a> 许可协议，转载请注明出处。</p>
+</div></section></div>
+
+</article>
+
+<div class="related-wrap" id="read-next"><section class="header cap theme"><span>READ NEXT</span></section><section class="body"><div class="post-title h2"><a href="/blog/2019/10/24/94150c5.html">基础支持层——解析器模块</a></div><div class="post-title fs14"><a href="/blog/2019/10/26/899df03d.html">or prev: 基础支持层——日志模块</a></div></section></div>
+
+
+<div class="related-wrap" id="related-posts">
+    <section class="header">
+      <div class="title cap theme">Related Posts</div>
+    </section>
+    <section class="body">
+    <div class="related-posts"><a class="item" href="/blog/2019/10/31/fce458a9.html" title="基础支持层——缓存模块"><div class="img"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/09/2_c5SKkm_zgJEGC.png"></div><span class="title">基础支持层——缓存模块</span><span class="excerpt">MyBatis基础支持层位于 Mybatis 整体架构的最底层，支撑着 Mybatis 的核心处理层，是整个框架的基石。基础支持层中封装了多个较为通用的、独立的模块，不仅仅为 Mybatis 提供基础支撑，也可以在合适的场景中直接复用。</span></a><a class="item" href="/blog/2019/10/30/e275ec7f.html" title="基础支持层——binding模块"><div class="img"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/09/2_c5SKkm_zgJEGC.png"></div><span class="title">基础支持层——binding模块</span><span class="excerpt">MyBatis基础支持层位于 Mybatis 整体架构的最底层，支撑着 Mybatis 的核心处理层，是整个框架的基石。基础支持层中封装了多个较为通用的、独立的模块，不仅仅为 Mybatis 提供基础支撑，也可以在合适的场景中直接复用。</span></a><a class="item" href="/blog/2019/10/29/e275ec7f.html" title="基础支持层——Transaction"><div class="img"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/09/2_c5SKkm_zgJEGC.png"></div><span class="title">基础支持层——Transaction</span><span class="excerpt">MyBatis基础支持层位于 Mybatis 整体架构的最底层，支撑着 Mybatis 的核心处理层，是整个框架的基石。基础支持层中封装了多个较为通用的、独立的模块，不仅仅为 Mybatis 提供基础支撑，也可以在合适的场景中直接复用。</span></a><a class="item" href="/blog/2019/10/28/899df03d.html" title="基础支持层——DataSource"><div class="img"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/09/2_c5SKkm_zgJEGC.png"></div><span class="title">基础支持层——DataSource</span><span class="excerpt">MyBatis基础支持层位于 Mybatis 整体架构的最底层，支撑着 Mybatis 的核心处理层，是整个框架的基石。基础支持层中封装了多个较为通用的、独立的模块，不仅仅为 Mybatis 提供基础支撑，也可以在合适的场景中直接复用。</span></a><a class="item" href="/blog/2020/08/21/bebe404d.html" title="核心处理层-SqlNode&SqlSource"><div class="img"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/22/image-20200622175512211_aegXOG.png"></div><span class="title">核心处理层-SqlNode&SqlSource</span><span class="excerpt">核心处理层以基础支持层为基础，实现了MyBatis的核心功能。</span></a></div></section></div>
+
+
+
+
+
+      
+<footer class="page-footer fs12"><hr><div><p>All articles in this blog are licensed under <a target="_blank" rel="external nofollow noopener noreferrer" href="https://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY-NC-SA 4.0</a> unless stating additionally.</p>
+<p>This site was deployed by <a href="https://www.cayzlh.com/blog/">@🐳Ant丶</a> using <a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/xaoxuu/hexo-theme-stellar/tree/1.1.0">Stellar</a>.</p>
+</div></footer>
+
+      <div class="float-panel mobile-only" style="display:none">
+  <button type="button" class="sidebar-toggle mobile" onclick="sidebar.toggle()">
+    <svg class="icon" viewbox="0 0 1228 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2849"><path d="M0 0m97.390199 0l973.901995 0q97.390199 0 97.390199 97.390199l0 0q0 97.390199-97.390199 97.3902l-973.901995 0q-97.390199 0-97.390199-97.3902l0 0q0-97.390199 97.390199-97.390199Z" p-id="2850"/><path d="M0 389.560798m97.390199 0l973.901995 0q97.390199 0 97.390199 97.390199l0 0q0 97.390199-97.390199 97.3902l-973.901995 0q-97.390199 0-97.390199-97.3902l0 0q0-97.390199 97.390199-97.390199Z" p-id="2851"/><path d="M0 779.121596m97.390199 0l973.901995 0q97.390199 0 97.390199 97.390199l0 0q0 97.390199-97.390199 97.390199l-973.901995 0q-97.390199 0-97.390199-97.390199l0 0q0-97.390199 97.390199-97.390199Z" p-id="2852"/></svg>
+  </button>
+</div>
+
+    </div>
+  </div>
+  <div class="scripts">
+    <script type="text/javascript">
+  stellar = {
+    // 懒加载 css https://github.com/filamentgroup/loadCSS
+    loadCSS: (href, before, media, attributes) => {
+      var doc = window.document;
+      var ss = doc.createElement("link");
+      var ref;
+      if (before) {
+        ref = before;
+      } else {
+        var refs = (doc.body || doc.getElementsByTagName("head")[0]).childNodes;
+        ref = refs[refs.length - 1];
+      }
+      var sheets = doc.styleSheets;
+      if (attributes) {
+        for (var attributeName in attributes) {
+          if (attributes.hasOwnProperty(attributeName)) {
+            ss.setAttribute(attributeName, attributes[attributeName]);
+          }
+        }
+      }
+      ss.rel = "stylesheet";
+      ss.href = href;
+      ss.media = "only x";
+      function ready(cb) {
+        if (doc.body) {
+          return cb();
+        }
+        setTimeout(function () {
+          ready(cb);
+        });
+      }
+      ready(function () {
+        ref.parentNode.insertBefore(ss, before ? ref : ref.nextSibling);
+      });
+      var onloadcssdefined = function (cb) {
+        var resolvedHref = ss.href;
+        var i = sheets.length;
+        while (i--) {
+          if (sheets[i].href === resolvedHref) {
+            return cb();
+          }
+        }
+        setTimeout(function () {
+          onloadcssdefined(cb);
+        });
+      };
+      function loadCB() {
+        if (ss.addEventListener) {
+          ss.removeEventListener("load", loadCB);
+        }
+        ss.media = media || "all";
+      }
+      if (ss.addEventListener) {
+        ss.addEventListener("load", loadCB);
+      }
+      ss.onloadcssdefined = onloadcssdefined;
+      onloadcssdefined(loadCB);
+      return ss;
+    },
+
+    // 从 butterfly 和 volantis 获得灵感
+    loadScript: (src, opt) => new Promise((resolve, reject) => {
+      var script = document.createElement('script')
+      script.src = src
+      if (opt) {
+        for (let key of Object.keys(opt)) {
+          script[key] = opt[key]
+        }
+      } else {
+        // 默认异步，如果需要同步，第二个参数传入 {} 即可
+        script.async = true
+      }
+      script.onerror = reject
+      script.onload = script.onreadystatechange = function() {
+        const loadState = this.readyState
+        if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+        script.onload = script.onreadystatechange = null
+        resolve()
+      }
+      document.head.appendChild(script)
+    }),
+
+    // https://github.com/jerryc127/hexo-theme-butterfly
+    jQuery: (fn) => {
+      if (typeof jQuery === 'undefined') {
+        stellar.loadScript(stellar.plugins.jQuery).then(fn)
+      } else {
+        fn()
+      }
+    }
+  };
+  stellar.github = 'https://github.com/xaoxuu/hexo-theme-stellar/tree/1.1.0';
+  stellar.config = {
+    date_suffix: {
+      just: 'Just',
+      min: 'minutes ago',
+      hour: 'hours ago',
+      day: 'days ago',
+      month: 'months ago',
+    },
+  };
+
+  // required plugins (only load if needs)
+  stellar.plugins = {
+    jQuery: 'https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js',
+    sitesjs: '/blog/js/plugins/sites.js',
+    friendsjs: '/blog/js/plugins/friends.js',
+  };
+
+  // optional plugins
+  if ('true' == 'true') {
+    stellar.plugins.lazyload = Object.assign({"enable":true,"js":"https://cdn.jsdelivr.net/npm/vanilla-lazyload@17.3.1/dist/lazyload.min.js","transition":"blur"});
+  }
+  if ('true' == 'true') {
+    stellar.plugins.swiper = Object.assign({"enable":true,"css":"https://unpkg.com/swiper/swiper-bundle.min.css","js":"https://unpkg.com/swiper/swiper-bundle.min.js"});
+  }
+  if ('' == 'true') {
+    stellar.plugins.scrollreveal = Object.assign({"enable":null,"js":"https://cdn.jsdelivr.net/npm/scrollreveal@4.0.9/dist/scrollreveal.min.js","distance":"8px","duration":500,"interval":100,"scale":1});
+  }
+  if ('true' == 'true') {
+    stellar.plugins.preload = Object.assign({"enable":true,"service":"flying_pages","instant_page":"https://cdn.jsdelivr.net/gh/volantis-x/cdn-volantis@4.1.2/js/instant_page.js","flying_pages":"https://cdn.jsdelivr.net/gh/gijo-varghese/flying-pages@2.1.2/flying-pages.min.js"});
+  }
+</script>
+
+<!-- required -->
+
+  
+<script src="/blog/js/main.js" async></script>
+
+
+
+<!-- optional -->
+
+
+
+<!-- inject -->
+
+
+  </div>
+</body>
+</html>

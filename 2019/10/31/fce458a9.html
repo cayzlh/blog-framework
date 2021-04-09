@@ -1,22 +1,127 @@
-<!DOCTYPE html><html lang="[&quot;zh-Hans&quot;,&quot;en&quot;,&quot;default&quot;]"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"><meta name="description" content="MyBatis基础支持层位于 Mybatis 整体架构的最底层，支撑着 Mybatis 的核心处理层，是整个框架的基石。基础支持层中封装了多个较为通用的、独立的模块，不仅仅为 Mybatis 提供基础支撑，也可以在合适的场景中直接复用。"><meta name="keywords" content="MyBatis, MyBatis技术内幕"><meta name="author" content="🐳Ant丶"><meta name="copyright" content="🐳Ant丶"><title>基础支持层——缓存模块 | BLOG | CAYZLH</title><link rel="shortcut icon" href="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/logo/favicon.ico"><link rel="stylesheet" href="/blog/css/index.css?version=1.9.0"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/font-awesome@latest/css/font-awesome.min.css?version=1.9.0"><meta name="format-detection" content="telephone=no"><meta http-equiv="x-dns-prefetch-control" content="on"><link rel="dns-prefetch" href="https://cdn.jsdelivr.net"><link rel="dns-prefetch" href="https://www.google-analytics.com"><script>(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-})(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+<!DOCTYPE html>
+<html lang="zh-Hans">
 
-ga('create', 'UA-129095667-1', 'auto');
-ga('send', 'pageview');</script><meta name="google-site-verification" content="VrcbMTVpFGlHkIERHBt753dAtXKF4qirjnDweuXSRJw"><meta http-equiv="Cache-Control" content="no-transform"><meta http-equiv="Cache-Control" content="no-siteapp"><script src="https://v1.hitokoto.cn/?encode=js&amp;charset=utf-8&amp;select=.footer_custom_text" defer></script><script>var GLOBAL_CONFIG = { 
-  root: '/blog/',
-  algolia: undefined,
-  localSearch: {"path":"search.xml","languages":{"hits_empty":"找不到您查询的内容:${query}"}},
-  copy: {
-    success: '复制成功',
-    error: '复制错误',
-    noSupport: '浏览器不支持'
-  },
-  hexoVersion: '5.4.0'
-} </script><meta name="generator" content="Hexo 5.4.0"><link rel="alternate" href="/blog/atom.xml" title="BLOG | CAYZLH" type="application/atom+xml">
-</head><body><i class="fa fa-arrow-right" id="toggle-sidebar" aria-hidden="true"></i><div id="sidebar" data-display="true"><div class="toggle-sidebar-info text-center"><span data-toggle="切换文章详情">切换站点概览</span><hr></div><div class="sidebar-toc"><div class="sidebar-toc__title">目录</div><div class="sidebar-toc__progress"><span class="progress-notice">你已经读了</span><span class="progress-num">0</span><span class="progress-percentage">%</span><div class="sidebar-toc__progress-bar"></div></div><div class="sidebar-toc__content"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%A3%85%E9%A5%B0%E5%99%A8%E6%A8%A1%E5%BC%8F"><span class="toc-text">装饰器模式</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Cache%E6%8E%A5%E5%8F%A3%E5%8F%8A%E5%85%B6%E5%AE%9E%E7%8E%B0"><span class="toc-text">Cache接口及其实现</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#PerpetualCache"><span class="toc-text">PerpetualCache</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#BlockingCache"><span class="toc-text">BlockingCache</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#FifoCache-amp-LruCache"><span class="toc-text">FifoCache&amp;LruCache</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#SoftCache-amp-WeakCache"><span class="toc-text">SoftCache&amp;WeakCache</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#others"><span class="toc-text">others</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#CacheKey"><span class="toc-text">CacheKey</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8F%82%E8%80%83"><span class="toc-text">参考</span></a></li></ol></div></div><div class="author-info hide"><div class="author-info__avatar text-center"><img src="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/image/IMG_4207.JPG"></div><div class="author-info__name text-center">🐳Ant丶</div><div class="author-info__description text-center">CODE IS POETRY</div><div class="follow-button"><a target="_blank" rel="external nofollow noopener noreferrer" href="https://telegram.me/Q2F5emxo">contact me</a></div><hr><div class="author-info-articles"><a class="author-info-articles__archives article-meta" href="/blog/archives"><span class="pull-left">文章</span><span class="pull-right">98</span></a><!--if site.tags.length--><!--  a(href=url_for(config.tag_dir)).author-info-articles__tags.article-meta--><!--    span.pull-left= _p('sidebar.tags')--><!--    span.pull-right= site.tags.length--><!--if site.categories.length--><!--  a(href=url_for(config.category_dir)).author-info-articles__categories.article-meta--><!--    span.pull-left= _p('sidebar.categories')--><!--    span.pull-right= site.categories.length--><a class="author-info-articles__categories article-meta" href="/blog/categories/%E4%B9%A6%E7%B1%8D/%E3%80%8A%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3Java%E8%99%9A%E6%8B%9F%E6%9C%BA%E3%80%8B/"><span class="pull-left">《深入理解Java虚拟机》</span><span class="pull-right">♾️</span></a><a class="author-info-articles__categories article-meta" href="/blog/categories/%E4%B9%A6%E7%B1%8D/%E3%80%8AMyBatis%E6%8A%80%E6%9C%AF%E5%86%85%E5%B9%95%E3%80%8B/"><span class="pull-left">《MyBatis技术内幕》</span><span class="pull-right">♾️</span></a><a class="author-info-articles__categories article-meta" href="/blog/categories/Java/Java%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/"><span class="pull-left">Java设计模式</span><span class="pull-right">♾️</span></a></div></div></div><div id="content-outer"><div class="no-bg" id="top-container"><div id="page-header"><span class="pull-left"> <a id="site-name" href="/blog/">BLOG | CAYZLH</a></span><i class="fa fa-bars toggle-menu pull-right" aria-hidden="true"></i><span class="pull-right"><a class="site-page social-icon search"><i class="fa fa-search"></i><span> 搜索</span></a></span></div><div id="post-info"><div id="post-title">基础支持层——缓存模块</div><div id="post-meta"><time class="post-meta__date"><i class="fa fa-calendar" aria-hidden="true"></i> 2019-10-31</time><span class="post-meta__separator">|</span><i class="fa fa-inbox post-meta__icon" aria-hidden="true"></i><a class="post-meta__categories" href="/blog/categories/%E4%B9%A6%E7%B1%8D/">书籍</a><i class="fa fa-angle-right" aria-hidden="true"></i><i class="fa fa-inbox post-meta__icon" aria-hidden="true"></i><a class="post-meta__categories" href="/blog/categories/%E4%B9%A6%E7%B1%8D/%E3%80%8AMyBatis%E6%8A%80%E6%9C%AF%E5%86%85%E5%B9%95%E3%80%8B/">《MyBatis技术内幕》</a><div class="post-meta-wordcount"><span>字数总计: </span><span class="word-count">4.7k</span><span class="post-meta__separator">|</span><span>阅读时长: 17 分钟</span></div></div></div></div><div class="layout" id="content-inner"><article id="post"><div class="article-container" id="post-content"><p>MyBatis基础支持层位于 Mybatis 整体架构的最底层，支撑着 Mybatis 的核心处理层，是整个框架的基石。基础支持层中封装了多个较为通用的、独立的模块，不仅仅为 Mybatis 提供基础支撑，也可以在合适的场景中直接复用。</p>
-<p><img src="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/09/2_c5SKkm_zgJEGC.png" alt="整体架构"></p>
+<head>
+  <meta name="generator" content="Hexo 5.4.0">
+  <meta charset="utf-8">
+  
+
+  <meta http-equiv="x-dns-prefetch-control" content="on">
+  <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+
+  <meta name="renderer" content="webkit">
+  <meta name="force-rendering" content="webkit">
+  <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+  <meta name="HandheldFriendly" content="True">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <title>基础支持层——缓存模块 - BLOG | CAYZLH</title>
+
+  
+    <meta name="description" content="MyBatis基础支持层位于 Mybatis 整体架构的最底层，支撑着 Mybatis 的核心处理层，是整个框架的基石。基础支持层中封装了多个较为通用的、独立的模块，不仅仅为 Mybatis 提供基础支撑，也可以在合适的场景中直接复用。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="基础支持层——缓存模块">
+<meta property="og:url" content="https://www.cayzlh.com/2019/10/31/fce458a9.html">
+<meta property="og:site_name" content="BLOG | CAYZLH">
+<meta property="og:description" content="MyBatis基础支持层位于 Mybatis 整体架构的最底层，支撑着 Mybatis 的核心处理层，是整个框架的基石。基础支持层中封装了多个较为通用的、独立的模块，不仅仅为 Mybatis 提供基础支撑，也可以在合适的场景中直接复用。">
+<meta property="og:locale">
+<meta property="og:image" content="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/09/2_c5SKkm_zgJEGC.png">
+<meta property="og:image" content="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/11/image-20200611103644916_Rw2GMv.png">
+<meta property="og:image" content="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/11/image-20200611105658387_IJSXLa.png">
+<meta property="og:image" content="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/11/image-20200611114247838_a3jRci.png">
+<meta property="og:image" content="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/11/image-20200611120028350_RNaWIP.png">
+<meta property="og:image" content="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/16/image-20200616092820328_4agKqU.png">
+<meta property="og:image" content="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/18/image-20200618093048912_N2ifEV.png">
+<meta property="article:published_time" content="2019-10-31T01:09:42.000Z">
+<meta property="article:modified_time" content="2021-02-20T15:30:20.511Z">
+<meta property="article:author" content="🐳Ant丶">
+<meta property="article:tag" content="MyBatis">
+<meta property="article:tag" content="《MyBatis技术内幕》">
+<meta property="article:tag" content="基础支持层">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/09/2_c5SKkm_zgJEGC.png">
+  
+  
+
+  <!-- feed -->
+  
+    <link rel="alternate" href="/blog/atom.xml" title="BLOG | CAYZLH" type="application/atom+xml">
+  
+
+  
+    
+<link rel="stylesheet" href="/blog/css/main.css">
+
+  
+
+  
+</head>
+
+<body>
+  
+
+
+  <div class="l_body" id="start">
+    <aside class="l_left">
+    
+
+<header class="header">
+  <div class="logo-wrap">
+  
+  
+    <a class="title" href="/blog/">
+      BLOG | CAYZLH
+    </a>
+  
+</div>
+
+  <nav class="menu dis-select"><a class="nav-item active" href="/blog/">Blog</a></nav>
+</header>
+
+<div class="widgets">
+  
+    
+      
+      
+<div class="widget-wrap" id="toc"><div class="widget-header h4 dis-select"><span class="name">TOC</span></div><div class="widget-body fs14 post"><div class="doc-tree active"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%A3%85%E9%A5%B0%E5%99%A8%E6%A8%A1%E5%BC%8F"><span class="toc-text">装饰器模式</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Cache%E6%8E%A5%E5%8F%A3%E5%8F%8A%E5%85%B6%E5%AE%9E%E7%8E%B0"><span class="toc-text">Cache接口及其实现</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#PerpetualCache"><span class="toc-text">PerpetualCache</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#BlockingCache"><span class="toc-text">BlockingCache</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#FifoCache-amp-LruCache"><span class="toc-text">FifoCache&amp;LruCache</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#SoftCache-amp-WeakCache"><span class="toc-text">SoftCache&amp;WeakCache</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#others"><span class="toc-text">others</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#CacheKey"><span class="toc-text">CacheKey</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8F%82%E8%80%83"><span class="toc-text">参考</span></a></li></ol></div></div></div>
+
+    
+  
+</div>
+
+
+    </aside>
+    <div class="l_main">
+      
+
+      
+
+
+  <div class="bread-nav fs12">
+  
+    
+    <div id="breadcrumb">
+      <a class="cap breadcrumb" href="/">Home</a>
+      <span class="sep"></span>
+      <a class="cap breadcrumb" href="/">Blog</a>
+      
+        <span class="sep"></span>
+        <a class="cap breadcrumb-link" href="/blog/categories/%E4%B9%A6%E7%B1%8D/">书籍</a> <span class="sep"></span> <a class="cap breadcrumb-link" href="/blog/categories/%E4%B9%A6%E7%B1%8D/%E3%80%8AMyBatis%E6%8A%80%E6%9C%AF%E5%86%85%E5%B9%95%E3%80%8B/">《MyBatis技术内幕》</a>
+      
+    </div>
+    <div id="post-meta">
+      Posted on&nbsp;<time datetime="2019-10-31T01:09:42.000Z">2019-10-31</time>
+    </div>
+  
+  </div>
+
+
+<article class="content md post">
+<h1 class="article-title"><span>基础支持层——缓存模块</span></h1>
+<p>MyBatis基础支持层位于 Mybatis 整体架构的最底层，支撑着 Mybatis 的核心处理层，是整个框架的基石。基础支持层中封装了多个较为通用的、独立的模块，不仅仅为 Mybatis 提供基础支撑，也可以在合适的场景中直接复用。</p>
+<p><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/09/2_c5SKkm_zgJEGC.png" alt="整体架构"></p>
 <blockquote>
 <p>这篇文章介绍MyBatis的<strong>缓存模块</strong></p>
 </blockquote>
@@ -35,7 +140,7 @@ ga('send', 'pageview');</script><meta name="google-site-verification" content="V
 <p>装饰器模式能够帮助我们解决上述问题，装饰器可以动态地为对象添加功能，它是基于组合的方式实现该功能的。</p>
 <p><strong>在实践中，我们应该尽量使用组合的方式来扩展系统的功能，而非使用继承的方式。</strong><u>设计模式中常见的一句话:组合优于继承。</u></p>
 <p>装饰器模式的类图，以及其中的核心角色：</p>
-<p><img src="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/11/image-20200611103644916_Rw2GMv.png" alt="image-20200611103644916"></p>
+<p><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/11/image-20200611103644916_Rw2GMv.png" alt="image-20200611103644916"></p>
 <ul>
 <li><p><strong>Component（组件）</strong></p>
 <p>组件接口定义了全部组件实现类以及所有装饰器实现的行为。</p>
@@ -49,7 +154,7 @@ ga('send', 'pageview');</script><meta name="google-site-verification" content="V
 <p>而这个被装饰的对象只要是<code>Component</code>类型即可，这就实现了装饰器的组合和复用。</p>
 <p>如下图，装饰器**C(ConcreteDecoratorl类型)<strong>修饰了装饰器</strong>B(ConcreteDecorator2类型)**并为其添加功能<code>W</code>，而装饰器<code>B(ConcreteDecorator2类型)</code>又修饰了组件<code>A(ConcreteComponent类型)</code>并为其添加功能<code>V</code>。</p>
 <p>其中，组件对象A提供的是最基本的功能，装饰器B和装饰器C会为组件对象A添加新的功能。</p>
-<p><img src="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/11/image-20200611105658387_IJSXLa.png" alt="image-20200611105658387"></p>
+<p><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/11/image-20200611105658387_IJSXLa.png" alt="image-20200611105658387"></p>
 </li>
 <li><p><strong>ConcreteDecorator</strong></p>
 <p>具体的装饰器实现类，该实现类要向被装饰对象添加某些功能。如上图，装饰器B、C就是该角色，被装饰的对象只要是<code>Component</code>类型即可。<br>在<code>JavaIO</code>包中，大量应用了装饰器模式，我们在使用<code>JavaIO</code>包读取文件时，经常会看到如下代码:</p>
@@ -58,7 +163,7 @@ ga('send', 'pageview');</script><meta name="google-site-verification" content="V
 <p><code>FilelnputStream</code>并没有缓冲功能，每次调用其<code>read()</code>方法时都会向操作系统发起相应的系统调用，当读取大量数据时，就会导致操作系统在用户态和内核态之间频繁切换，性能较低。</p>
 <p><code>BufferedlnputStream</code>是提供了缓冲功能的装饰器，每次调用其<code>read()</code>方法时，会预先从文件中获取一部分数据并缓存到<code>BufferedlnputStream</code>的缓冲区中，后面连续的几次读取可以直接从缓冲区中获取数据，直到缓冲区数据耗尽才会重新从文件中读取数据，这样就可以减少用户态和内核态的切换，提高了读取的性能。</p>
 <p>在<code>MyBatis</code>的缓存模块中，使用了装饰器模式的变体，其中将<code>Decorator</code>接口和<code>Component</code>接口合并为一个<code>Component</code>接口</p>
-<p><img src="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/11/image-20200611114247838_a3jRci.png" alt="image-20200611114247838"></p>
+<p><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/11/image-20200611114247838_a3jRci.png" alt="image-20200611114247838"></p>
 <p>使用装饰器模式的优点：</p>
 <ul>
 <li>相较于继承来说，装饰器模式的灵活性更强，可扩展性也强。正如前面所说，继承方式会导致大量子类的情况。<strong>而装饰者模式可以将复杂的功能切分成一个个独立的装饰器，通过多个独立装饰器的动态组合，创建不同功能的组件，从而满足多种不同需求。</strong></li>
@@ -70,7 +175,7 @@ ga('send', 'pageview');</script><meta name="google-site-verification" content="V
 <figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">Cache</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">  <span class="comment">/**</span></span><br><span class="line"><span class="comment">   * 返回该缓存对应的id</span></span><br><span class="line"><span class="comment">   * <span class="doctag">@return</span> The identifier of this cache</span></span><br><span class="line"><span class="comment">   */</span></span><br><span class="line">  <span class="function">String <span class="title">getId</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line">  <span class="comment">/**</span></span><br><span class="line"><span class="comment">   * 向缓存中添加数据，一般情况下Key是CacheKey，value是查询结果</span></span><br><span class="line"><span class="comment">   * <span class="doctag">@param</span> key Can be any object but usually it is a &#123;<span class="doctag">@link</span> CacheKey&#125;</span></span><br><span class="line"><span class="comment">   * <span class="doctag">@param</span> value The result of a select.</span></span><br><span class="line"><span class="comment">   */</span></span><br><span class="line">  <span class="function"><span class="keyword">void</span> <span class="title">putObject</span><span class="params">(Object key, Object value)</span></span>;</span><br><span class="line"></span><br><span class="line">  <span class="comment">/**</span></span><br><span class="line"><span class="comment">   * 从缓存中获取数据</span></span><br><span class="line"><span class="comment">   * <span class="doctag">@param</span> key The key</span></span><br><span class="line"><span class="comment">   * <span class="doctag">@return</span> The object stored in the cache.</span></span><br><span class="line"><span class="comment">   */</span></span><br><span class="line">  <span class="function">Object <span class="title">getObject</span><span class="params">(Object key)</span></span>;</span><br><span class="line"></span><br><span class="line">  <span class="comment">/**</span></span><br><span class="line"><span class="comment">   * 删除Key对应的缓存</span></span><br><span class="line"><span class="comment">   * As of 3.3.0 this method is only called during a rollback </span></span><br><span class="line"><span class="comment">   * for any previous value that was missing in the cache.</span></span><br><span class="line"><span class="comment">   * This lets any blocking cache to release the lock that </span></span><br><span class="line"><span class="comment">   * may have previously put on the key.</span></span><br><span class="line"><span class="comment">   * A blocking cache puts a lock when a value is null </span></span><br><span class="line"><span class="comment">   * and releases it when the value is back again.</span></span><br><span class="line"><span class="comment">   * This way other threads will wait for the value to be </span></span><br><span class="line"><span class="comment">   * available instead of hitting the database.</span></span><br><span class="line"><span class="comment">   *</span></span><br><span class="line"><span class="comment">   * </span></span><br><span class="line"><span class="comment">   * <span class="doctag">@param</span> key The key</span></span><br><span class="line"><span class="comment">   * <span class="doctag">@return</span> Not used</span></span><br><span class="line"><span class="comment">   */</span></span><br><span class="line">  <span class="function">Object <span class="title">removeObject</span><span class="params">(Object key)</span></span>;</span><br><span class="line"></span><br><span class="line">  <span class="comment">/**</span></span><br><span class="line"><span class="comment">   * 清空缓存</span></span><br><span class="line"><span class="comment">   * Clears this cache instance</span></span><br><span class="line"><span class="comment">   */</span>  </span><br><span class="line">  <span class="function"><span class="keyword">void</span> <span class="title">clear</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line">  <span class="comment">/**</span></span><br><span class="line"><span class="comment">   * 缓存项的个数，不会被MyBatis核心代码调用</span></span><br><span class="line"><span class="comment">   * Optional. This method is not called by the core.</span></span><br><span class="line"><span class="comment">   * </span></span><br><span class="line"><span class="comment">   * <span class="doctag">@return</span> The number of elements stored in the cache (not its capacity).</span></span><br><span class="line"><span class="comment">   */</span></span><br><span class="line">  <span class="function"><span class="keyword">int</span> <span class="title">getSize</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line">  <span class="comment">/** </span></span><br><span class="line"><span class="comment">   * 获取读写锁，不会被MyBatis核心代码调用</span></span><br><span class="line"><span class="comment">   * Optional. As of 3.2.6 this method is no longer called by the core.</span></span><br><span class="line"><span class="comment">   *  </span></span><br><span class="line"><span class="comment">   * Any locking needed by the cache must be provided internally by the cache provider.</span></span><br><span class="line"><span class="comment">   * </span></span><br><span class="line"><span class="comment">   * <span class="doctag">@return</span> A ReadWriteLock </span></span><br><span class="line"><span class="comment">   */</span></span><br><span class="line">  <span class="function">ReadWriteLock <span class="title">getReadWriteLock</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <p><code>Cache</code>接口的实现类有多个，大部分都是装饰器，只有<code>PerpetualCache</code>提供了Cache接口的基本实现。</p>
-<p><img src="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/11/image-20200611120028350_RNaWIP.png" alt="image-20200611120028350"></p>
+<p><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/11/image-20200611120028350_RNaWIP.png" alt="image-20200611120028350"></p>
 <h3 id="PerpetualCache"><a href="#PerpetualCache" class="headerlink" title="PerpetualCache"></a>PerpetualCache</h3><p><code>**PerpetualCache</code>在缓存模块中扮演着<code>ConcreteComponent</code>的角色**，其实现比较简单，底层使用<code>HashMap</code>记录缓存项，也是通过该<code>HashMap</code>对象的方法实现的<code>Cache</code>接口中定义的相应方法。</p>
 <figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">PerpetualCache</span> <span class="keyword">implements</span> <span class="title">Cache</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">final</span> String id;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">private</span> Map&lt;Object, Object&gt; cache = <span class="keyword">new</span> HashMap&lt;Object, Object&gt;();</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="title">PerpetualCache</span><span class="params">(String id)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">this</span>.id = id;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="meta">@Override</span></span><br><span class="line">  <span class="function"><span class="keyword">public</span> String <span class="title">getId</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> id;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="meta">@Override</span></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">getSize</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> cache.size();</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="meta">@Override</span></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">putObject</span><span class="params">(Object key, Object value)</span> </span>&#123;</span><br><span class="line">    cache.put(key, value);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="meta">@Override</span></span><br><span class="line">  <span class="function"><span class="keyword">public</span> Object <span class="title">getObject</span><span class="params">(Object key)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> cache.get(key);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="meta">@Override</span></span><br><span class="line">  <span class="function"><span class="keyword">public</span> Object <span class="title">removeObject</span><span class="params">(Object key)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> cache.remove(key);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="meta">@Override</span></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">clear</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    cache.clear();</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="meta">@Override</span></span><br><span class="line">  <span class="function"><span class="keyword">public</span> ReadWriteLock <span class="title">getReadWriteLock</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="meta">@Override</span></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">equals</span><span class="params">(Object o)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (getId() == <span class="keyword">null</span>) &#123;</span><br><span class="line">      <span class="keyword">throw</span> <span class="keyword">new</span> CacheException(<span class="string">&quot;Cache instances require an ID.&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (<span class="keyword">this</span> == o) &#123;</span><br><span class="line">      <span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (!(o <span class="keyword">instanceof</span> Cache)) &#123;</span><br><span class="line">      <span class="keyword">return</span> <span class="keyword">false</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    Cache otherCache = (Cache) o;</span><br><span class="line">    <span class="keyword">return</span> getId().equals(otherCache.getId());</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="meta">@Override</span></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">hashCode</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (getId() == <span class="keyword">null</span>) &#123;</span><br><span class="line">      <span class="keyword">throw</span> <span class="keyword">new</span> CacheException(<span class="string">&quot;Cache instances require an ID.&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> getId().hashCode();</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
@@ -80,7 +185,7 @@ ga('send', 'pageview');</script><meta name="google-site-verification" content="V
 <figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="comment">// 阻塞超时时间</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">long</span> timeout;</span><br><span class="line"><span class="comment">// 被装饰的底层Cache对象</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> Cache delegate;</span><br><span class="line"><span class="comment">// 每个Key都有对应的ReentrantLock对象</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> ConcurrentHashMap&lt;Object, ReentrantLock&gt; locks;</span><br></pre></td></tr></table></figure>
 
 <p>假设<code>线程A</code>在<code>BlockingCache</code>中未查找到<code>keyA</code>对应的缓存项时，<code>线程A</code>会获取<code>keyA</code>对应的锁，这样后续线程在查找<code>keyA</code>时会发生阻塞</p>
-<p><img src="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/16/image-20200616092820328_4agKqU.png" alt="image-20200616092820328"></p>
+<p><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/16/image-20200616092820328_4agKqU.png" alt="image-20200616092820328"></p>
 <p><strong>BlockingCache.getObject(Object key)</strong></p>
 <figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> Object <span class="title">getObject</span><span class="params">(Object key)</span> </span>&#123;</span><br><span class="line">  <span class="comment">// 获取key对应的锁</span></span><br><span class="line">  acquireLock(key);</span><br><span class="line">  Object value = delegate.getObject(key);</span><br><span class="line">  <span class="keyword">if</span> (value != <span class="keyword">null</span>) &#123;</span><br><span class="line">    <span class="comment">// 如果缓存有key对应的缓存项，则释放锁	</span></span><br><span class="line">    releaseLock(key);</span><br><span class="line">  &#125;        </span><br><span class="line">  <span class="keyword">return</span> value;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
@@ -92,7 +197,7 @@ ga('send', 'pageview');</script><meta name="google-site-verification" content="V
 
 <p>假设线程A从数据库中查找到keyA对应的结果对象后，将结果对象放入到<code>BlockingCache</code>中，此时线程A会释放keyA对应的锁，唤醒阻塞在该锁上的线程。</p>
 <p>其他线程即可从<code>BlockingCache</code>中获取keyA对应的数据，而不是再次访问数据库。</p>
-<p><img src="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/18/image-20200618093048912_N2ifEV.png" alt="image-20200618093048912"></p>
+<p><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/18/image-20200618093048912_N2ifEV.png" alt="image-20200618093048912"></p>
 <p><strong>BlockingCache.putObject()</strong></p>
 <figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">putObject</span><span class="params">(Object key, Object value)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">try</span> &#123;</span><br><span class="line">    <span class="comment">// 向缓存中添加缓存项</span></span><br><span class="line">    delegate.putObject(key, value);</span><br><span class="line">  &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">    releaseLock(key);<span class="comment">// 释放锁</span></span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
@@ -160,8 +265,180 @@ ga('send', 'pageview');</script><meta name="google-site-verification" content="V
 <li><p>部分图片来源——<strong>《MyBatis技术内幕》</strong></p>
 </li>
 </ul>
-</div></article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta">文章作者: </span><span class="post-copyright-info"><a href="mailto:undefined" rel="external nofollow noopener noreferrer" target="_blank">🐳Ant丶</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta">文章链接: </span><span class="post-copyright-info"><a href="https://www.cayzlh.com/2019/10/31/fce458a9.html">https://www.cayzlh.com/2019/10/31/fce458a9.html</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta">版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a target="_blank" rel="external nofollow noopener noreferrer" href="https://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来自 <a href="https://www.cayzlh.com">BLOG | CAYZLH</a>！</span></div></div><div class="post-meta__tag-list"><a class="post-meta__tags" href="/blog/tags/MyBatis/">MyBatis</a><a class="post-meta__tags" href="/blog/tags/%E3%80%8AMyBatis%E6%8A%80%E6%9C%AF%E5%86%85%E5%B9%95%E3%80%8B/">《MyBatis技术内幕》</a><a class="post-meta__tags" href="/blog/tags/%E5%9F%BA%E7%A1%80%E6%94%AF%E6%8C%81%E5%B1%82/">基础支持层</a></div><nav id="pagination"><div class="prev-post pull-left"><a href="/blog/2020/01/01/a426e6ea.html"><i class="fa fa-chevron-left">  </i><span>IOC之深入理解SpringIoC</span></a></div><div class="next-post pull-right"><a href="/blog/2019/10/30/e275ec7f.html"><span>基础支持层——binding模块</span><i class="fa fa-chevron-right"></i></a></div></nav></div></div><footer><div class="layout" id="footer"><div class="footer_custom_text">hitokoto</div><div class="copyright">🐳Ant丶 &copy;2019 - 2021</div><div class="icp"><a><span>粤ICP备20058712号</span></a></div><div class="busuanzi"><script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></div></footer><i class="fa fa-arrow-up" id="go-up" aria-hidden="true"></i><script src="https://cdn.jsdelivr.net/npm/animejs@latest/anime.min.js"></script><script src="https://cdn.jsdelivr.net/npm/jquery@latest/dist/jquery.min.js"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@latest/dist/jquery.fancybox.min.js"></script><script src="https://cdn.jsdelivr.net/npm/velocity-animate@latest/velocity.min.js"></script><script src="https://cdn.jsdelivr.net/npm/velocity-ui-pack@latest/velocity.ui.min.js"></script><script src="/blog/js/utils.js?version=1.9.0"></script><script src="/blog/js/fancybox.js?version=1.9.0"></script><script src="/blog/js/sidebar.js?version=1.9.0"></script><script src="/blog/js/copy.js?version=1.9.0"></script><script src="/blog/js/fireworks.js?version=1.9.0"></script><script src="/blog/js/transition.js?version=1.9.0"></script><script src="/blog/js/scroll.js?version=1.9.0"></script><script src="/blog/js/head.js?version=1.9.0"></script><script src="/blog/js/search/local-search.js"></script><script>if(/Android|webOS|iPhone|iPod|iPad|BlackBerry/i.test(navigator.userAgent)) {
-  $('#nav').addClass('is-mobile')
-  $('footer').addClass('is-mobile')
-  $('#top-container').addClass('is-mobile')
-}</script><div class="search-dialog" id="local-search"><div class="search-dialog__title" id="local-search-title">本地搜索</div><div id="local-input-panel"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="搜索文章"></div></div></div><hr><div id="local-search-results"><div id="local-hits"></div><div id="local-stats"><div class="local-search-stats__hr" id="hr"><span>Powered by</span> <a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/wzpan/hexo-generator-search" style="color:#49B1F5;">hexo-generator-search</a></div></div></div><span class="search-close-button"><i class="fa fa-times"></i></span></div><div class="search-mask"></div></body></html>
+
+
+<div class="article-footer fs14"><section id="license"><div class="header"><span>License</span></div><div class="body"><p>本文采用 <a target="_blank" rel="external nofollow noopener noreferrer" href="https://creativecommons.org/licenses/by-nc-sa/4.0/">署名-非商业性使用-相同方式共享 4.0 国际</a> 许可协议，转载请注明出处。</p>
+</div></section></div>
+
+</article>
+
+<div class="related-wrap" id="read-next"><section class="header cap theme"><span>READ NEXT</span></section><section class="body"><div class="post-title h2"><a href="/blog/2019/10/30/e275ec7f.html">基础支持层——binding模块</a></div><div class="post-title fs14"><a href="/blog/2020/01/01/a426e6ea.html">or prev: IOC之深入理解SpringIoC</a></div></section></div>
+
+
+<div class="related-wrap" id="related-posts">
+    <section class="header">
+      <div class="title cap theme">Related Posts</div>
+    </section>
+    <section class="body">
+    <div class="related-posts"><a class="item" href="/blog/2019/10/30/e275ec7f.html" title="基础支持层——binding模块"><div class="img"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/09/2_c5SKkm_zgJEGC.png"></div><span class="title">基础支持层——binding模块</span><span class="excerpt">MyBatis基础支持层位于 Mybatis 整体架构的最底层，支撑着 Mybatis 的核心处理层，是整个框架的基石。基础支持层中封装了多个较为通用的、独立的模块，不仅仅为 Mybatis 提供基础支撑，也可以在合适的场景中直接复用。</span></a><a class="item" href="/blog/2019/10/29/e275ec7f.html" title="基础支持层——Transaction"><div class="img"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/09/2_c5SKkm_zgJEGC.png"></div><span class="title">基础支持层——Transaction</span><span class="excerpt">MyBatis基础支持层位于 Mybatis 整体架构的最底层，支撑着 Mybatis 的核心处理层，是整个框架的基石。基础支持层中封装了多个较为通用的、独立的模块，不仅仅为 Mybatis 提供基础支撑，也可以在合适的场景中直接复用。</span></a><a class="item" href="/blog/2019/10/28/899df03d.html" title="基础支持层——DataSource"><div class="img"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/09/2_c5SKkm_zgJEGC.png"></div><span class="title">基础支持层——DataSource</span><span class="excerpt">MyBatis基础支持层位于 Mybatis 整体架构的最底层，支撑着 Mybatis 的核心处理层，是整个框架的基石。基础支持层中封装了多个较为通用的、独立的模块，不仅仅为 Mybatis 提供基础支撑，也可以在合适的场景中直接复用。</span></a><a class="item" href="/blog/2019/10/27/899df03d.html" title="基础支持层——资源加载"><div class="img"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2020/05/21/2_c5SKkm.png"></div><span class="title">基础支持层——资源加载</span><span class="excerpt">MyBatis基础支持层位于 Mybatis 整体架构的最底层，支撑着 Mybatis 的核心处理层，是整个框架的基石。基础支持层中封装了多个较为通用的、独立的模块，不仅仅为 Mybatis 提供基础支撑，也可以在合适的场景中直接复用。</span></a><a class="item" href="/blog/2020/08/21/bebe404d.html" title="核心处理层-SqlNode&SqlSource"><div class="img"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/22/image-20200622175512211_aegXOG.png"></div><span class="title">核心处理层-SqlNode&SqlSource</span><span class="excerpt">核心处理层以基础支持层为基础，实现了MyBatis的核心功能。</span></a></div></section></div>
+
+
+
+
+
+      
+<footer class="page-footer fs12"><hr><div><p>All articles in this blog are licensed under <a target="_blank" rel="external nofollow noopener noreferrer" href="https://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY-NC-SA 4.0</a> unless stating additionally.</p>
+<p>This site was deployed by <a href="https://www.cayzlh.com/blog/">@🐳Ant丶</a> using <a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/xaoxuu/hexo-theme-stellar/tree/1.1.0">Stellar</a>.</p>
+</div></footer>
+
+      <div class="float-panel mobile-only" style="display:none">
+  <button type="button" class="sidebar-toggle mobile" onclick="sidebar.toggle()">
+    <svg class="icon" viewbox="0 0 1228 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2849"><path d="M0 0m97.390199 0l973.901995 0q97.390199 0 97.390199 97.390199l0 0q0 97.390199-97.390199 97.3902l-973.901995 0q-97.390199 0-97.390199-97.3902l0 0q0-97.390199 97.390199-97.390199Z" p-id="2850"/><path d="M0 389.560798m97.390199 0l973.901995 0q97.390199 0 97.390199 97.390199l0 0q0 97.390199-97.390199 97.3902l-973.901995 0q-97.390199 0-97.390199-97.3902l0 0q0-97.390199 97.390199-97.390199Z" p-id="2851"/><path d="M0 779.121596m97.390199 0l973.901995 0q97.390199 0 97.390199 97.390199l0 0q0 97.390199-97.390199 97.390199l-973.901995 0q-97.390199 0-97.390199-97.390199l0 0q0-97.390199 97.390199-97.390199Z" p-id="2852"/></svg>
+  </button>
+</div>
+
+    </div>
+  </div>
+  <div class="scripts">
+    <script type="text/javascript">
+  stellar = {
+    // 懒加载 css https://github.com/filamentgroup/loadCSS
+    loadCSS: (href, before, media, attributes) => {
+      var doc = window.document;
+      var ss = doc.createElement("link");
+      var ref;
+      if (before) {
+        ref = before;
+      } else {
+        var refs = (doc.body || doc.getElementsByTagName("head")[0]).childNodes;
+        ref = refs[refs.length - 1];
+      }
+      var sheets = doc.styleSheets;
+      if (attributes) {
+        for (var attributeName in attributes) {
+          if (attributes.hasOwnProperty(attributeName)) {
+            ss.setAttribute(attributeName, attributes[attributeName]);
+          }
+        }
+      }
+      ss.rel = "stylesheet";
+      ss.href = href;
+      ss.media = "only x";
+      function ready(cb) {
+        if (doc.body) {
+          return cb();
+        }
+        setTimeout(function () {
+          ready(cb);
+        });
+      }
+      ready(function () {
+        ref.parentNode.insertBefore(ss, before ? ref : ref.nextSibling);
+      });
+      var onloadcssdefined = function (cb) {
+        var resolvedHref = ss.href;
+        var i = sheets.length;
+        while (i--) {
+          if (sheets[i].href === resolvedHref) {
+            return cb();
+          }
+        }
+        setTimeout(function () {
+          onloadcssdefined(cb);
+        });
+      };
+      function loadCB() {
+        if (ss.addEventListener) {
+          ss.removeEventListener("load", loadCB);
+        }
+        ss.media = media || "all";
+      }
+      if (ss.addEventListener) {
+        ss.addEventListener("load", loadCB);
+      }
+      ss.onloadcssdefined = onloadcssdefined;
+      onloadcssdefined(loadCB);
+      return ss;
+    },
+
+    // 从 butterfly 和 volantis 获得灵感
+    loadScript: (src, opt) => new Promise((resolve, reject) => {
+      var script = document.createElement('script')
+      script.src = src
+      if (opt) {
+        for (let key of Object.keys(opt)) {
+          script[key] = opt[key]
+        }
+      } else {
+        // 默认异步，如果需要同步，第二个参数传入 {} 即可
+        script.async = true
+      }
+      script.onerror = reject
+      script.onload = script.onreadystatechange = function() {
+        const loadState = this.readyState
+        if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+        script.onload = script.onreadystatechange = null
+        resolve()
+      }
+      document.head.appendChild(script)
+    }),
+
+    // https://github.com/jerryc127/hexo-theme-butterfly
+    jQuery: (fn) => {
+      if (typeof jQuery === 'undefined') {
+        stellar.loadScript(stellar.plugins.jQuery).then(fn)
+      } else {
+        fn()
+      }
+    }
+  };
+  stellar.github = 'https://github.com/xaoxuu/hexo-theme-stellar/tree/1.1.0';
+  stellar.config = {
+    date_suffix: {
+      just: 'Just',
+      min: 'minutes ago',
+      hour: 'hours ago',
+      day: 'days ago',
+      month: 'months ago',
+    },
+  };
+
+  // required plugins (only load if needs)
+  stellar.plugins = {
+    jQuery: 'https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js',
+    sitesjs: '/blog/js/plugins/sites.js',
+    friendsjs: '/blog/js/plugins/friends.js',
+  };
+
+  // optional plugins
+  if ('true' == 'true') {
+    stellar.plugins.lazyload = Object.assign({"enable":true,"js":"https://cdn.jsdelivr.net/npm/vanilla-lazyload@17.3.1/dist/lazyload.min.js","transition":"blur"});
+  }
+  if ('true' == 'true') {
+    stellar.plugins.swiper = Object.assign({"enable":true,"css":"https://unpkg.com/swiper/swiper-bundle.min.css","js":"https://unpkg.com/swiper/swiper-bundle.min.js"});
+  }
+  if ('' == 'true') {
+    stellar.plugins.scrollreveal = Object.assign({"enable":null,"js":"https://cdn.jsdelivr.net/npm/scrollreveal@4.0.9/dist/scrollreveal.min.js","distance":"8px","duration":500,"interval":100,"scale":1});
+  }
+  if ('true' == 'true') {
+    stellar.plugins.preload = Object.assign({"enable":true,"service":"flying_pages","instant_page":"https://cdn.jsdelivr.net/gh/volantis-x/cdn-volantis@4.1.2/js/instant_page.js","flying_pages":"https://cdn.jsdelivr.net/gh/gijo-varghese/flying-pages@2.1.2/flying-pages.min.js"});
+  }
+</script>
+
+<!-- required -->
+
+  
+<script src="/blog/js/main.js" async></script>
+
+
+
+<!-- optional -->
+
+
+
+<!-- inject -->
+
+
+  </div>
+</body>
+</html>

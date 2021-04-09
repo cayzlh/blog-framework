@@ -1,21 +1,126 @@
-<!DOCTYPE html><html lang="[&quot;zh-Hans&quot;,&quot;en&quot;,&quot;default&quot;]"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"><meta name="description" content="在一开始学习 Spring 的时候，我们就接触 IoC 了，作为 Spring 第一个最核心的概念，我们在解读它源码之前一定需要对其有深入的认识，本篇为【死磕 Spring】系列博客的第一篇博文，主要介绍 IoC 基本概念和各个组件。"><meta name="keywords" content="死磕SpringIoC, Spring, IoC"><meta name="author" content="🐳Ant丶"><meta name="copyright" content="🐳Ant丶"><title>IOC之深入理解SpringIoC | BLOG | CAYZLH</title><link rel="shortcut icon" href="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/logo/favicon.ico"><link rel="stylesheet" href="/blog/css/index.css?version=1.9.0"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/font-awesome@latest/css/font-awesome.min.css?version=1.9.0"><meta name="format-detection" content="telephone=no"><meta http-equiv="x-dns-prefetch-control" content="on"><link rel="dns-prefetch" href="https://cdn.jsdelivr.net"><link rel="dns-prefetch" href="https://www.google-analytics.com"><script>(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-})(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+<!DOCTYPE html>
+<html lang="zh-Hans">
 
-ga('create', 'UA-129095667-1', 'auto');
-ga('send', 'pageview');</script><meta name="google-site-verification" content="VrcbMTVpFGlHkIERHBt753dAtXKF4qirjnDweuXSRJw"><meta http-equiv="Cache-Control" content="no-transform"><meta http-equiv="Cache-Control" content="no-siteapp"><script src="https://v1.hitokoto.cn/?encode=js&amp;charset=utf-8&amp;select=.footer_custom_text" defer></script><script>var GLOBAL_CONFIG = { 
-  root: '/blog/',
-  algolia: undefined,
-  localSearch: {"path":"search.xml","languages":{"hits_empty":"找不到您查询的内容:${query}"}},
-  copy: {
-    success: '复制成功',
-    error: '复制错误',
-    noSupport: '浏览器不支持'
-  },
-  hexoVersion: '5.4.0'
-} </script><meta name="generator" content="Hexo 5.4.0"><link rel="alternate" href="/blog/atom.xml" title="BLOG | CAYZLH" type="application/atom+xml">
-</head><body><i class="fa fa-arrow-right" id="toggle-sidebar" aria-hidden="true"></i><div id="sidebar" data-display="true"><div class="toggle-sidebar-info text-center"><span data-toggle="切换文章详情">切换站点概览</span><hr></div><div class="sidebar-toc"><div class="sidebar-toc__title">目录</div><div class="sidebar-toc__progress"><span class="progress-notice">你已经读了</span><span class="progress-num">0</span><span class="progress-percentage">%</span><div class="sidebar-toc__progress-bar"></div></div><div class="sidebar-toc__content"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%91%98%E8%A6%81"><span class="toc-text">摘要</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#IOC-%E7%90%86%E8%AE%BA"><span class="toc-text">IOC 理论</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%9E%84%E9%80%A0%E5%99%A8%E6%B3%A8%E5%85%A5"><span class="toc-text">构造器注入</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#setter-%E6%96%B9%E6%B3%95%E6%B3%A8%E5%85%A5"><span class="toc-text">setter 方法注入</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%8E%A5%E5%8F%A3%E6%96%B9%E5%BC%8F%E6%B3%A8%E5%85%A5"><span class="toc-text">接口方式注入</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%90%84%E4%B8%AA%E7%BB%84%E4%BB%B6"><span class="toc-text">各个组件</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Resource%E4%BD%93%E7%B3%BB"><span class="toc-text">Resource体系</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#BeanFactory-%E4%BD%93%E7%B3%BB"><span class="toc-text">BeanFactory 体系</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Beandefinition-%E4%BD%93%E7%B3%BB"><span class="toc-text">Beandefinition 体系</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#BeandefinitionReader%E4%BD%93%E7%B3%BB"><span class="toc-text">BeandefinitionReader体系</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#ApplicationContext%E4%BD%93%E7%B3%BB"><span class="toc-text">ApplicationContext体系</span></a></li></ol></li></ol></div></div><div class="author-info hide"><div class="author-info__avatar text-center"><img src="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/image/IMG_4207.JPG"></div><div class="author-info__name text-center">🐳Ant丶</div><div class="author-info__description text-center">CODE IS POETRY</div><div class="follow-button"><a target="_blank" rel="external nofollow noopener noreferrer" href="https://telegram.me/Q2F5emxo">contact me</a></div><hr><div class="author-info-articles"><a class="author-info-articles__archives article-meta" href="/blog/archives"><span class="pull-left">文章</span><span class="pull-right">98</span></a><!--if site.tags.length--><!--  a(href=url_for(config.tag_dir)).author-info-articles__tags.article-meta--><!--    span.pull-left= _p('sidebar.tags')--><!--    span.pull-right= site.tags.length--><!--if site.categories.length--><!--  a(href=url_for(config.category_dir)).author-info-articles__categories.article-meta--><!--    span.pull-left= _p('sidebar.categories')--><!--    span.pull-right= site.categories.length--><a class="author-info-articles__categories article-meta" href="/blog/categories/%E4%B9%A6%E7%B1%8D/%E3%80%8A%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3Java%E8%99%9A%E6%8B%9F%E6%9C%BA%E3%80%8B/"><span class="pull-left">《深入理解Java虚拟机》</span><span class="pull-right">♾️</span></a><a class="author-info-articles__categories article-meta" href="/blog/categories/%E4%B9%A6%E7%B1%8D/%E3%80%8AMyBatis%E6%8A%80%E6%9C%AF%E5%86%85%E5%B9%95%E3%80%8B/"><span class="pull-left">《MyBatis技术内幕》</span><span class="pull-right">♾️</span></a><a class="author-info-articles__categories article-meta" href="/blog/categories/Java/Java%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/"><span class="pull-left">Java设计模式</span><span class="pull-right">♾️</span></a></div></div></div><div id="content-outer"><div class="no-bg" id="top-container"><div id="page-header"><span class="pull-left"> <a id="site-name" href="/blog/">BLOG | CAYZLH</a></span><i class="fa fa-bars toggle-menu pull-right" aria-hidden="true"></i><span class="pull-right"><a class="site-page social-icon search"><i class="fa fa-search"></i><span> 搜索</span></a></span></div><div id="post-info"><div id="post-title">IOC之深入理解SpringIoC</div><div id="post-meta"><time class="post-meta__date"><i class="fa fa-calendar" aria-hidden="true"></i> 2020-01-01</time><span class="post-meta__separator">|</span><i class="fa fa-inbox post-meta__icon" aria-hidden="true"></i><a class="post-meta__categories" href="/blog/categories/Spring/">Spring</a><i class="fa fa-angle-right" aria-hidden="true"></i><i class="fa fa-inbox post-meta__icon" aria-hidden="true"></i><a class="post-meta__categories" href="/blog/categories/Spring/%E3%80%8ASpring%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E3%80%8B/">《Spring源码分析》</a><div class="post-meta-wordcount"><span>字数总计: </span><span class="word-count">2.6k</span><span class="post-meta__separator">|</span><span>阅读时长: 8 分钟</span></div></div></div></div><div class="layout" id="content-inner"><article id="post"><div class="article-container" id="post-content"><h2 id="摘要"><a href="#摘要" class="headerlink" title="摘要"></a>摘要</h2><blockquote>
+<head>
+  <meta name="generator" content="Hexo 5.4.0">
+  <meta charset="utf-8">
+  
+
+  <meta http-equiv="x-dns-prefetch-control" content="on">
+  <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+
+  <meta name="renderer" content="webkit">
+  <meta name="force-rendering" content="webkit">
+  <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+  <meta name="HandheldFriendly" content="True">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <title>IOC之深入理解SpringIoC - BLOG | CAYZLH</title>
+
+  
+    <meta name="description" content="在一开始学习 Spring 的时候，我们就接触 IoC 了，作为 Spring 第一个最核心的概念，我们在解读它源码之前一定需要对其有深入的认识，本篇为【死磕 Spring】系列博客的第一篇博文，主要介绍 IoC 基本概念和各个组件。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="IOC之深入理解SpringIoC">
+<meta property="og:url" content="https://www.cayzlh.com/2020/01/01/a426e6ea.html">
+<meta property="og:site_name" content="BLOG | CAYZLH">
+<meta property="og:description" content="在一开始学习 Spring 的时候，我们就接触 IoC 了，作为 Spring 第一个最核心的概念，我们在解读它源码之前一定需要对其有深入的认识，本篇为【死磕 Spring】系列博客的第一篇博文，主要介绍 IoC 基本概念和各个组件。">
+<meta property="og:locale">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/kJbaSJ.jpg">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/KyiN5i.jpg">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/gUeoM5.jpg">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/FKcAl6.jpg">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/EXiivT.jpg">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/ROyten.jpg">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/le62Sh.jpg">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/NFNQp8.jpg">
+<meta property="article:published_time" content="2020-01-01T15:41:06.000Z">
+<meta property="article:modified_time" content="2021-02-20T15:30:20.406Z">
+<meta property="article:author" content="🐳Ant丶">
+<meta property="article:tag" content="Spring">
+<meta property="article:tag" content="死磕Spring">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/kJbaSJ.jpg">
+  
+  
+
+  <!-- feed -->
+  
+    <link rel="alternate" href="/blog/atom.xml" title="BLOG | CAYZLH" type="application/atom+xml">
+  
+
+  
+    
+<link rel="stylesheet" href="/blog/css/main.css">
+
+  
+
+  
+</head>
+
+<body>
+  
+
+
+  <div class="l_body" id="start">
+    <aside class="l_left">
+    
+
+<header class="header">
+  <div class="logo-wrap">
+  
+  
+    <a class="title" href="/blog/">
+      BLOG | CAYZLH
+    </a>
+  
+</div>
+
+  <nav class="menu dis-select"><a class="nav-item active" href="/blog/">Blog</a></nav>
+</header>
+
+<div class="widgets">
+  
+    
+      
+      
+<div class="widget-wrap" id="toc"><div class="widget-header h4 dis-select"><span class="name">TOC</span></div><div class="widget-body fs14 post"><div class="doc-tree active"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%91%98%E8%A6%81"><span class="toc-text">摘要</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#IOC-%E7%90%86%E8%AE%BA"><span class="toc-text">IOC 理论</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%9E%84%E9%80%A0%E5%99%A8%E6%B3%A8%E5%85%A5"><span class="toc-text">构造器注入</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#setter-%E6%96%B9%E6%B3%95%E6%B3%A8%E5%85%A5"><span class="toc-text">setter 方法注入</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%8E%A5%E5%8F%A3%E6%96%B9%E5%BC%8F%E6%B3%A8%E5%85%A5"><span class="toc-text">接口方式注入</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%90%84%E4%B8%AA%E7%BB%84%E4%BB%B6"><span class="toc-text">各个组件</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Resource%E4%BD%93%E7%B3%BB"><span class="toc-text">Resource体系</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#BeanFactory-%E4%BD%93%E7%B3%BB"><span class="toc-text">BeanFactory 体系</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Beandefinition-%E4%BD%93%E7%B3%BB"><span class="toc-text">Beandefinition 体系</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#BeandefinitionReader%E4%BD%93%E7%B3%BB"><span class="toc-text">BeandefinitionReader体系</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#ApplicationContext%E4%BD%93%E7%B3%BB"><span class="toc-text">ApplicationContext体系</span></a></li></ol></li></ol></div></div></div>
+
+    
+  
+</div>
+
+
+    </aside>
+    <div class="l_main">
+      
+
+      
+
+
+  <div class="bread-nav fs12">
+  
+    
+    <div id="breadcrumb">
+      <a class="cap breadcrumb" href="/">Home</a>
+      <span class="sep"></span>
+      <a class="cap breadcrumb" href="/">Blog</a>
+      
+        <span class="sep"></span>
+        <a class="cap breadcrumb-link" href="/blog/categories/Spring/">Spring</a> <span class="sep"></span> <a class="cap breadcrumb-link" href="/blog/categories/Spring/%E3%80%8ASpring%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E3%80%8B/">《Spring源码分析》</a>
+      
+    </div>
+    <div id="post-meta">
+      Posted on&nbsp;<time datetime="2020-01-01T15:41:06.000Z">2020-01-01</time>
+    </div>
+  
+  </div>
+
+
+<article class="content md post">
+<h1 class="article-title"><span>IOC之深入理解SpringIoC</span></h1>
+<h2 id="摘要"><a href="#摘要" class="headerlink" title="摘要"></a>摘要</h2><blockquote>
 <p>本文作者：chenssy</p>
 <p>出处：<a target="_blank" rel="external nofollow noopener noreferrer" href="http://cmsblogs.com/?p=2652">http://cmsblogs.com/?p=2652</a></p>
 <p>在学习<code>Spring源码</code>的过程中发现的好站+好贴，感谢作者。Spring版本：<strong>Spring 5.0.6.RELEASE</strong></p>
@@ -40,7 +145,7 @@ ga('send', 'pageview');</script><meta name="google-site-verification" content="V
 <p>其实我们需要思考一个问题？我们每次用到自己依赖的对象真的需要自己去创建吗？我们知道，我们依赖对象其实并不是依赖该对象本身，而是依赖它所提供的服务，只要在我们需要它的时候，它能够及时提供服务即可，至于它是我们主动去创建的还是别人送给我们的，其实并不是那么重要。再说了，相比于自己千辛万苦去创建它还要管理、善后而言，直接有人送过来是不是显得更加好呢？</p>
 <p>这个给我们送东西的“人” 就是 IoC，在上面的例子中，它就相当于一个婚介公司，作为一个婚介公司它管理着很多男男女女的资料，当我们需要一个女朋友的时候，直接跟婚介公司提出我们的需求，婚介公司则会根据我们的需求提供一个妹子给我们，我们只需要负责谈恋爱，生猴子就行了。你看，这样是不是很简单明了。</p>
 <p>诚然，作为婚介公司的 IoC 帮我们省略了找女朋友的繁杂过程，将原来的主动寻找变成了现在的被动接受（符合我们的要求），更加简洁轻便。你想啊，原来你还得鞍马前后，各种巴结，什么东西都需要自己去亲力亲为，现在好了，直接有人把现成的送过来，多么美妙的事情啊。所以，简单点说，IoC 的理念就是<strong>让别人为你服务</strong>，如下图（<strong>摘自Spring揭秘</strong>）：</p>
-<p><img src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/kJbaSJ.jpg" alt="kJbaSJ"></p>
+<p><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/kJbaSJ.jpg" alt="kJbaSJ"></p>
 <p>在没有引入 IoC 的时候，被注入的对象直接依赖于被依赖的对象，有了 IoC 后，两者及其他们的关系都是通过 Ioc Service Provider 来统一管理维护的。被注入的对象需要什么，直接跟 IoC Service Provider 打声招呼，后者就会把相应的被依赖对象注入到被注入的对象中，从而达到 IOC Service Provider 为被注入对象服务的目的。<strong>所以 IoC 就是这么简单！原来是需要什么东西自己去拿，现在是需要什么东西让别人（IOC Service Provider）送过来</strong></p>
 <p>现在在看上面那四个问题，答案就显得非常明显了:</p>
 <ol>
@@ -73,20 +178,20 @@ ga('send', 'pageview');</script><meta name="google-site-verification" content="V
 <li><a target="_blank" rel="external nofollow noopener noreferrer" href="https://blog.csdn.net/it_man/article/details/4402245">spring ioc原理（看完后大家可以自己写一个spring）</a>：<a target="_blank" rel="external nofollow noopener noreferrer" href="https://blog.csdn.net/it_man/article/details/4402245">https://blog.csdn.net/it_man/article/details/4402245</a></li>
 </ul>
 <h2 id="各个组件"><a href="#各个组件" class="headerlink" title="各个组件"></a>各个组件</h2><p>先看下图（摘自:<a target="_blank" rel="external nofollow noopener noreferrer" href="http://singleant.iteye.com/blog/1177358%EF%BC%89">http://singleant.iteye.com/blog/1177358）</a></p>
-<p><img src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/KyiN5i.jpg" alt="KyiN5i"></p>
+<p><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/KyiN5i.jpg" alt="KyiN5i"></p>
 <p>该图为 <code>ClassPathXmlApplicationContext</code> 的类继承体系结构，虽然只有一部分，但是它基本上包含了 IOC 体系中大部分的核心类和接口。</p>
 <p>下面我们就针对这个图进行简单的拆分和补充说明。</p>
 <h3 id="Resource体系"><a href="#Resource体系" class="headerlink" title="Resource体系"></a>Resource体系</h3><p><code>Resource</code>，对资源的抽象，它的每一个实现类都代表了一种资源的访问策略，如<code>ClasspathResource</code> 、 <code>URLResource</code> ，<code>FileSystemResource</code> 等。</p>
-<p>[<img src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/gUeoM5.jpg" alt="gUeoM5"></p>
+<p>[<img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/gUeoM5.jpg" alt="gUeoM5"></p>
 <p>有了资源，就应该有资源加载，<code>Spring</code> 利用 <code>ResourceLoader</code> 来进行统一资源加载，类图如下：</p>
-<p><img src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/FKcAl6.jpg" alt="FKcAl6"></p>
+<p><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/FKcAl6.jpg" alt="FKcAl6"></p>
 <h3 id="BeanFactory-体系"><a href="#BeanFactory-体系" class="headerlink" title="BeanFactory 体系"></a>BeanFactory 体系</h3><p><code>BeanFactory</code> 是一个非常纯粹的 <code>bean</code> 容器，它是 <code>IOC</code> 必备的数据结构，其中 <code>BeanDefinition</code> 是她的基本结构，它内部维护着一个 <code>BeanDefinition map</code> ，并可根据 <code>BeanDefinition</code> 的描述进行 <code>bean</code> 的创建和管理。</p>
-<p><img src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/EXiivT.jpg" alt="EXiivT"></p>
+<p><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/EXiivT.jpg" alt="EXiivT"></p>
 <p><code>BeanFacoty</code> 有三个直接子类 <code>ListableBeanFactory</code>、<code>HierarchicalBeanFactory</code> 和 <code>AutowireCapableBeanFactory</code>，<code>DefaultListableBeanFactory</code> 为最终默认实现，它实现了所有接口。</p>
 <h3 id="Beandefinition-体系"><a href="#Beandefinition-体系" class="headerlink" title="Beandefinition 体系"></a>Beandefinition 体系</h3><p><code>BeanDefinition</code> 用来描述 <code>Spring</code> 中的 <code>Bean</code> 对象。</p>
-<p><img src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/ROyten.jpg" alt="ROyten"></p>
+<p><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/ROyten.jpg" alt="ROyten"></p>
 <h3 id="BeandefinitionReader体系"><a href="#BeandefinitionReader体系" class="headerlink" title="BeandefinitionReader体系"></a>BeandefinitionReader体系</h3><p><code>BeanDefinitionReader</code> 的作用是读取 <code>Spring</code> 的配置文件的内容，并将其转换成 <code>Ioc</code> 容器内部的数据结构：<code>BeanDefinition</code>。</p>
-<p>[<img src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/le62Sh.jpg" alt="le62Sh"></p>
+<p>[<img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/le62Sh.jpg" alt="le62Sh"></p>
 <h3 id="ApplicationContext体系"><a href="#ApplicationContext体系" class="headerlink" title="ApplicationContext体系"></a>ApplicationContext体系</h3><p>这个就是大名鼎鼎的 <code>Spring</code> 容器，它叫做应用上下文，与我们应用息息相关，她继承 <code>BeanFactory</code>，所以它是 <code>BeanFactory</code> 的扩展升级版，如果<code>BeanFactory</code> 是屌丝的话，那么 <code>ApplicationContext</code> 则是名副其实的高富帅。由于 <code>ApplicationContext</code> 的结构就决定了它与 <code>BeanFactory</code> 的不同，其主要区别有：</p>
 <ol>
 <li>继承 <code>MessageSource</code>，提供国际化的标准访问策略。</li>
@@ -95,13 +200,185 @@ ga('send', 'pageview');</script><meta name="google-site-verification" content="V
 <li>对 <code>Web</code> 应用的支持。</li>
 </ol>
 <p>下图来源：<a target="_blank" rel="external nofollow noopener noreferrer" href="https://blog.csdn.net/yujin753/article/details/47043143">https://blog.csdn.net/yujin753/article/details/47043143</a></p>
-<p><img src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/NFNQp8.jpg" alt="NFNQp8"></p>
+<p><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/NFNQp8.jpg" alt="NFNQp8"></p>
 <p>上面五个体系可以说是<code>Spring IoC</code>中最核心的部分，后面博文也是针对这五个部分进行源码分析。其实 <code>IoC</code> 咋一看还是挺简单的，无非就是将配置文件（暂且认为是 <code>xml</code> 文件）进行解析（分析 <code>xml</code> 谁不会啊），然后放到一个 <code>Map</code> 里面就差不多了，初看有道理，其实要面临的问题还是有很多的，下面就劳烦各位看客跟着 LZ 博客来一步一步揭开 <code>Spring IoC</code> 的神秘面纱。</p>
 <blockquote>
 <p><strong>此系列博文为 LZ 学习、研究 Spring 机制和源码的学习笔记，会涉及参考别人的博文和书籍内容，如有雷同，纯属借鉴，当然 LZ 会标明参考来源。同时由于知识面和能力的问题，文章中难免会出现错误之处，如有，望各位大佬指出，不胜感激</strong>。 <strong>LZ 写此系列博客时，Spring 最新版本为 5.0.6.RELEASE ，所以此系列博客所有源码来源均为 5.0.6.RELEASE</strong>。</p>
 </blockquote>
-</div></article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta">文章作者: </span><span class="post-copyright-info"><a href="mailto:undefined" rel="external nofollow noopener noreferrer" target="_blank">🐳Ant丶</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta">文章链接: </span><span class="post-copyright-info"><a href="https://www.cayzlh.com/2020/01/01/a426e6ea.html">https://www.cayzlh.com/2020/01/01/a426e6ea.html</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta">版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a target="_blank" rel="external nofollow noopener noreferrer" href="https://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来自 <a href="https://www.cayzlh.com">BLOG | CAYZLH</a>！</span></div></div><div class="post-meta__tag-list"><a class="post-meta__tags" href="/blog/tags/Spring/">Spring</a><a class="post-meta__tags" href="/blog/tags/%E6%AD%BB%E7%A3%95Spring/">死磕Spring</a></div><nav id="pagination"><div class="prev-post pull-left"><a href="/blog/2020/01/02/8f7aa5ac.html"><i class="fa fa-chevron-left">  </i><span>IOC之Spring统一资源加载策略</span></a></div><div class="next-post pull-right"><a href="/blog/2019/10/31/fce458a9.html"><span>基础支持层——缓存模块</span><i class="fa fa-chevron-right"></i></a></div></nav></div></div><footer><div class="layout" id="footer"><div class="footer_custom_text">hitokoto</div><div class="copyright">🐳Ant丶 &copy;2019 - 2021</div><div class="icp"><a><span>粤ICP备20058712号</span></a></div><div class="busuanzi"><script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></div></footer><i class="fa fa-arrow-up" id="go-up" aria-hidden="true"></i><script src="https://cdn.jsdelivr.net/npm/animejs@latest/anime.min.js"></script><script src="https://cdn.jsdelivr.net/npm/jquery@latest/dist/jquery.min.js"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@latest/dist/jquery.fancybox.min.js"></script><script src="https://cdn.jsdelivr.net/npm/velocity-animate@latest/velocity.min.js"></script><script src="https://cdn.jsdelivr.net/npm/velocity-ui-pack@latest/velocity.ui.min.js"></script><script src="/blog/js/utils.js?version=1.9.0"></script><script src="/blog/js/fancybox.js?version=1.9.0"></script><script src="/blog/js/sidebar.js?version=1.9.0"></script><script src="/blog/js/copy.js?version=1.9.0"></script><script src="/blog/js/fireworks.js?version=1.9.0"></script><script src="/blog/js/transition.js?version=1.9.0"></script><script src="/blog/js/scroll.js?version=1.9.0"></script><script src="/blog/js/head.js?version=1.9.0"></script><script src="/blog/js/search/local-search.js"></script><script>if(/Android|webOS|iPhone|iPod|iPad|BlackBerry/i.test(navigator.userAgent)) {
-  $('#nav').addClass('is-mobile')
-  $('footer').addClass('is-mobile')
-  $('#top-container').addClass('is-mobile')
-}</script><div class="search-dialog" id="local-search"><div class="search-dialog__title" id="local-search-title">本地搜索</div><div id="local-input-panel"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="搜索文章"></div></div></div><hr><div id="local-search-results"><div id="local-hits"></div><div id="local-stats"><div class="local-search-stats__hr" id="hr"><span>Powered by</span> <a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/wzpan/hexo-generator-search" style="color:#49B1F5;">hexo-generator-search</a></div></div></div><span class="search-close-button"><i class="fa fa-times"></i></span></div><div class="search-mask"></div></body></html>
+
+
+<div class="article-footer fs14"><section id="license"><div class="header"><span>License</span></div><div class="body"><p>本文采用 <a target="_blank" rel="external nofollow noopener noreferrer" href="https://creativecommons.org/licenses/by-nc-sa/4.0/">署名-非商业性使用-相同方式共享 4.0 国际</a> 许可协议，转载请注明出处。</p>
+</div></section></div>
+
+</article>
+
+<div class="related-wrap" id="read-next"><section class="header cap theme"><span>READ NEXT</span></section><section class="body"><div class="post-title h2"><a href="/blog/2019/10/31/fce458a9.html">基础支持层——缓存模块</a></div><div class="post-title fs14"><a href="/blog/2020/01/02/8f7aa5ac.html">or prev: IOC之Spring统一资源加载策略</a></div></section></div>
+
+
+<div class="related-wrap" id="related-posts">
+    <section class="header">
+      <div class="title cap theme">Related Posts</div>
+    </section>
+    <section class="body">
+    <div class="related-posts"><a class="item" href="/blog/2020/01/26/101fc769.html" title="4张图带你读懂Spring IOC的世界"><div class="img"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2020/05/28/spring-201901311001_BJamFt.jpg"></div><span class="title">4张图带你读懂Spring IOC的世界</span><span class="excerpt">4张图带你读懂Spring IOC的世界.</span></a><a class="item" href="/blog/2020/01/26/ea3a33da.html" title="深入分析ApplicationContext的refresh()"><div class="img"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cdn-x/placeholder@1.0.1/cover/76b86c0226ffd.svg"></div><span class="title">深入分析ApplicationContext的refresh()</span><span class="excerpt">分析Spring，ApplicationContext的refresh()方法</span></a><a class="item" href="/blog/2020/01/26/1a84ff95.html" title="ApplicationContext相关接口架构分析"><div class="img"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2020/05/28/15409479819725_t0jF0z_flFIsn.jpg"></div><span class="title">ApplicationContext相关接口架构分析</span><span class="excerpt">Spring的ApplicationContext相关接口的架构分析</span></a><a class="item" href="/blog/2020/01/26/90c034e1.html" title="IOC之分析bean的生命周期"><div class="img"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2020/05/28/15359386381747_wNxvJ5_Lyaby1.jpg"></div><span class="title">IOC之分析bean的生命周期</span><span class="excerpt">分析Spring Bean的生命周期</span></a><a class="item" href="/blog/2020/01/27/9cf21717.html" title="Spring AOP和Spring Transaction源码资料整理"><div class="img"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cdn-x/placeholder@1.0.1/cover/76b86c0226ffd.svg"></div><span class="title">Spring AOP和Spring Transaction源码资料整理</span><span class="excerpt">整理学习AOP源码的相关资料</span></a></div></section></div>
+
+
+
+
+
+      
+<footer class="page-footer fs12"><hr><div><p>All articles in this blog are licensed under <a target="_blank" rel="external nofollow noopener noreferrer" href="https://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY-NC-SA 4.0</a> unless stating additionally.</p>
+<p>This site was deployed by <a href="https://www.cayzlh.com/blog/">@🐳Ant丶</a> using <a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/xaoxuu/hexo-theme-stellar/tree/1.1.0">Stellar</a>.</p>
+</div></footer>
+
+      <div class="float-panel mobile-only" style="display:none">
+  <button type="button" class="sidebar-toggle mobile" onclick="sidebar.toggle()">
+    <svg class="icon" viewbox="0 0 1228 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2849"><path d="M0 0m97.390199 0l973.901995 0q97.390199 0 97.390199 97.390199l0 0q0 97.390199-97.390199 97.3902l-973.901995 0q-97.390199 0-97.390199-97.3902l0 0q0-97.390199 97.390199-97.390199Z" p-id="2850"/><path d="M0 389.560798m97.390199 0l973.901995 0q97.390199 0 97.390199 97.390199l0 0q0 97.390199-97.390199 97.3902l-973.901995 0q-97.390199 0-97.390199-97.3902l0 0q0-97.390199 97.390199-97.390199Z" p-id="2851"/><path d="M0 779.121596m97.390199 0l973.901995 0q97.390199 0 97.390199 97.390199l0 0q0 97.390199-97.390199 97.390199l-973.901995 0q-97.390199 0-97.390199-97.390199l0 0q0-97.390199 97.390199-97.390199Z" p-id="2852"/></svg>
+  </button>
+</div>
+
+    </div>
+  </div>
+  <div class="scripts">
+    <script type="text/javascript">
+  stellar = {
+    // 懒加载 css https://github.com/filamentgroup/loadCSS
+    loadCSS: (href, before, media, attributes) => {
+      var doc = window.document;
+      var ss = doc.createElement("link");
+      var ref;
+      if (before) {
+        ref = before;
+      } else {
+        var refs = (doc.body || doc.getElementsByTagName("head")[0]).childNodes;
+        ref = refs[refs.length - 1];
+      }
+      var sheets = doc.styleSheets;
+      if (attributes) {
+        for (var attributeName in attributes) {
+          if (attributes.hasOwnProperty(attributeName)) {
+            ss.setAttribute(attributeName, attributes[attributeName]);
+          }
+        }
+      }
+      ss.rel = "stylesheet";
+      ss.href = href;
+      ss.media = "only x";
+      function ready(cb) {
+        if (doc.body) {
+          return cb();
+        }
+        setTimeout(function () {
+          ready(cb);
+        });
+      }
+      ready(function () {
+        ref.parentNode.insertBefore(ss, before ? ref : ref.nextSibling);
+      });
+      var onloadcssdefined = function (cb) {
+        var resolvedHref = ss.href;
+        var i = sheets.length;
+        while (i--) {
+          if (sheets[i].href === resolvedHref) {
+            return cb();
+          }
+        }
+        setTimeout(function () {
+          onloadcssdefined(cb);
+        });
+      };
+      function loadCB() {
+        if (ss.addEventListener) {
+          ss.removeEventListener("load", loadCB);
+        }
+        ss.media = media || "all";
+      }
+      if (ss.addEventListener) {
+        ss.addEventListener("load", loadCB);
+      }
+      ss.onloadcssdefined = onloadcssdefined;
+      onloadcssdefined(loadCB);
+      return ss;
+    },
+
+    // 从 butterfly 和 volantis 获得灵感
+    loadScript: (src, opt) => new Promise((resolve, reject) => {
+      var script = document.createElement('script')
+      script.src = src
+      if (opt) {
+        for (let key of Object.keys(opt)) {
+          script[key] = opt[key]
+        }
+      } else {
+        // 默认异步，如果需要同步，第二个参数传入 {} 即可
+        script.async = true
+      }
+      script.onerror = reject
+      script.onload = script.onreadystatechange = function() {
+        const loadState = this.readyState
+        if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+        script.onload = script.onreadystatechange = null
+        resolve()
+      }
+      document.head.appendChild(script)
+    }),
+
+    // https://github.com/jerryc127/hexo-theme-butterfly
+    jQuery: (fn) => {
+      if (typeof jQuery === 'undefined') {
+        stellar.loadScript(stellar.plugins.jQuery).then(fn)
+      } else {
+        fn()
+      }
+    }
+  };
+  stellar.github = 'https://github.com/xaoxuu/hexo-theme-stellar/tree/1.1.0';
+  stellar.config = {
+    date_suffix: {
+      just: 'Just',
+      min: 'minutes ago',
+      hour: 'hours ago',
+      day: 'days ago',
+      month: 'months ago',
+    },
+  };
+
+  // required plugins (only load if needs)
+  stellar.plugins = {
+    jQuery: 'https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js',
+    sitesjs: '/blog/js/plugins/sites.js',
+    friendsjs: '/blog/js/plugins/friends.js',
+  };
+
+  // optional plugins
+  if ('true' == 'true') {
+    stellar.plugins.lazyload = Object.assign({"enable":true,"js":"https://cdn.jsdelivr.net/npm/vanilla-lazyload@17.3.1/dist/lazyload.min.js","transition":"blur"});
+  }
+  if ('true' == 'true') {
+    stellar.plugins.swiper = Object.assign({"enable":true,"css":"https://unpkg.com/swiper/swiper-bundle.min.css","js":"https://unpkg.com/swiper/swiper-bundle.min.js"});
+  }
+  if ('' == 'true') {
+    stellar.plugins.scrollreveal = Object.assign({"enable":null,"js":"https://cdn.jsdelivr.net/npm/scrollreveal@4.0.9/dist/scrollreveal.min.js","distance":"8px","duration":500,"interval":100,"scale":1});
+  }
+  if ('true' == 'true') {
+    stellar.plugins.preload = Object.assign({"enable":true,"service":"flying_pages","instant_page":"https://cdn.jsdelivr.net/gh/volantis-x/cdn-volantis@4.1.2/js/instant_page.js","flying_pages":"https://cdn.jsdelivr.net/gh/gijo-varghese/flying-pages@2.1.2/flying-pages.min.js"});
+  }
+</script>
+
+<!-- required -->
+
+  
+<script src="/blog/js/main.js" async></script>
+
+
+
+<!-- optional -->
+
+
+
+<!-- inject -->
+
+
+  </div>
+</body>
+</html>
