@@ -1,2 +1,2 @@
-# notebook
-[https://www.cayzlh.com/blog](https://www.cayzlh.com/blog)
+# CAYZLH.COM
+[https://www.cayzlh.com/](https://www.cayzlh.com/)
