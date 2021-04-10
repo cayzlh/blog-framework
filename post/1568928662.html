@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta name="generator" content="Hexo 5.4.0">
+  <meta charset="utf-8">
+  
+
+  <meta http-equiv="x-dns-prefetch-control" content="on">
+  <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+
+  <meta name="renderer" content="webkit">
+  <meta name="force-rendering" content="webkit">
+  <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+  <meta name="HandheldFriendly" content="True">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <title>SpringBoot实现Jwt单点登录 - CAYZLH</title>
+
+  
+  <meta name="description" content="使用SpringBoot实现Jwt单点登录，完成演示Demo">
+
+  <!-- feed -->
+  
+    <link rel="alternate" href="/blog/atom.xml" title="CAYZLH" type="application/atom+xml">
+  
+
+  
+    
+<link rel="stylesheet" href="/blog/css/main.css">
+
+  
+
+  
+    
+      <meta name="msapplication-TileColor" content="#2d89ef">
+    
+      <meta name="msapplication-config" content="/assets/favicon/browserconfig.xml">
+    
+      <meta name="theme-color" content="#ffffff">
+    
+      <link rel="shortcut icon" href="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/logo/favicon.ico">
+    
+      <link rel="icon" type="image/png" href="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/logo/favicon-192x192.png" sizes="192x192">
+    
+      <link rel="apple-touch-icon" sizes="180x180" href="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/logo/apple-touch-icon.png">
+    
+  
+</head>
+
+<body>
+  
+
+
+  <div class="l_body" id="start">
+    <aside class="l_left">
+    
+
+<header class="header">
+  <div class="logo-wrap">
+  
+    <a class="avatar" href="/blog/">
+      
+        <img no-lazy class="bg" src="https://cdn.jsdelivr.net/gh/cdn-x/placeholder@1.0.2/avatar/round/rainbow64@3x.webp" onerror="javascript:this.classList.add('error');this.src='https://cdn.jsdelivr.net/gh/cdn-x/placeholder@1.0.1/image/2659360.svg';">
+      
+      <img no-lazy class="avatar" src="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/image/IMG_4207.JPG" onerror="javascript:this.classList.add('error');this.src='https://cdn.jsdelivr.net/gh/cdn-x/placeholder@1.0.1/image/2659360.svg';">
+    </a>
+  
+  
+    <a class="title" href="/blog/">
+      CAYZLH
+    </a>
+  
+</div>
+
+  <nav class="menu dis-select"><a class="nav-item active" href="/blog/">文章</a><a class="nav-item" href="/blog/wiki/">文档</a></nav>
+</header>
+
+<div class="widgets">
+  
+    
+      
+      
+<div class="widget-wrap" id="toc"><div class="widget-header h4 dis-select"><span class="name">本文目录</span></div><div class="widget-body fs14 post"><div class="doc-tree active"><ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%9F%BA%E6%9C%AC%E6%A6%82%E5%BF%B5"><span class="toc-text">基本概念</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#JWT%E7%89%B9%E7%82%B9%EF%BC%9A"><span class="toc-text">JWT特点：</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#JWT%E5%8E%9F%E7%90%86"><span class="toc-text">JWT原理</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#JWT%E7%9A%84token%E7%BB%84%E6%88%90"><span class="toc-text">JWT的token组成</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#header"><span class="toc-text">header</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#payload"><span class="toc-text">payload</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#signature"><span class="toc-text">signature</span></a></li></ol></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BB%A3%E7%A0%81%E5%AE%9E%E7%8E%B0"><span class="toc-text">代码实现</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E9%A1%B9%E7%9B%AE%E5%9C%B0%E5%9D%80"><span class="toc-text">项目地址</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E8%87%AA%E5%AE%9A%E4%B9%89Jwt%E7%99%BB%E5%BD%95%E6%8B%A6%E6%88%AA%E5%99%A8"><span class="toc-text">自定义Jwt登录拦截器</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E8%87%AA%E5%AE%9A%E4%B9%89Jwt%E8%AE%A4%E8%AF%81%E6%8B%A6%E6%88%AA%E5%99%A8"><span class="toc-text">自定义Jwt认证拦截器</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E8%87%AA%E5%AE%9A%E4%B9%89%E8%BA%AB%E4%BB%BD%E9%AA%8C%E8%AF%81%E7%BB%84%E4%BB%B6"><span class="toc-text">自定义身份验证组件</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E9%85%8D%E7%BD%AESecurity"><span class="toc-text">配置Security</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%B5%8B%E8%AF%95"><span class="toc-text">测试</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E7%BC%96%E5%86%99%E4%B8%80%E4%B8%AA%E6%B5%8B%E8%AF%95%E7%9A%84controller"><span class="toc-text">编写一个测试的controller</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E4%BD%BF%E7%94%A8Posman%E8%AE%BF%E9%97%AE"><span class="toc-text">使用Posman访问</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E7%99%BB%E5%BD%95%E8%8E%B7%E5%8F%96token"><span class="toc-text">登录获取token</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%B8%A6%E4%B8%8Atoken%E8%AE%BF%E9%97%AEtest%E6%8E%A5%E5%8F%A3"><span class="toc-text">带上token访问test接口</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%BB%93%E6%9D%9F"><span class="toc-text">结束</span></a></li></ol></div></div></div>
+
+    
+  
+</div>
+
+
+    </aside>
+    <div class="l_main">
+      
+
+      
+
+
+  <div class="bread-nav fs12">
+  
+    
+    <div id="breadcrumb">
+      <a class="cap breadcrumb" href="/">主页</a>
+      <span class="sep"></span>
+      <a class="cap breadcrumb" href="/">文章</a>
+      
+        <span class="sep"></span>
+        <a class="cap breadcrumb-link" href="/blog/categories/%E7%BC%96%E7%A8%8B%E6%8A%80%E6%9C%AF/">编程技术</a>
+      
+    </div>
+    <div id="post-meta">
+      发布于&nbsp;<time datetime="2018-06-02T03:21:50.000Z">2018-06-02</time>
+    </div>
+  
+  </div>
+
+
+<article class="content md post">
+<h1 class="article-title"><span>SpringBoot实现Jwt单点登录</span></h1>
+<blockquote>
+<p>安全管理是应用系统不可缺少的功能. 本文主要分享借助JWT的token技术实现分布式系统的安全管理.</p>
+</blockquote>
+<h3 id="基本概念"><a href="#基本概念" class="headerlink" title="基本概念"></a>基本概念</h3><p>JSON Web Tokens(JWT)是一种开放的、行业标准(RFC 7519)，用于网络应用环境间安全传递声明。JWT的声明一般被用来在身份提供者和服务提供者间传递被认证的用户身份信息，以便于从资源服务器获取资源，也可以增加一些额外的业务逻辑所须的声明信息。</p>
+<h4 id="JWT特点："><a href="#JWT特点：" class="headerlink" title="JWT特点："></a>JWT特点：</h4><p>▷ 跨语言:支持Python、Node.js、Java、Go、c、JavaScript等主流语言</p>
+<p>▷ 自包含：包含了必要的所有信息，如用户信息和签名等</p>
+<p>▷ 易传递：很方便通过HTTP头部传递</p>
+<p>官网位置：<a target="_blank" rel="external nofollow noopener noreferrer" href="https://jwt.io/">https://jwt.io</a></p>
+<h3 id="JWT原理"><a href="#JWT原理" class="headerlink" title="JWT原理"></a>JWT原理</h3><h4 id="JWT的token组成"><a href="#JWT的token组成" class="headerlink" title="JWT的token组成"></a>JWT的token组成</h4><p> JWT的token是三段由小数点分隔组成的字符串,如 aaaa.bbbb.ccccc，这三部分含义分别是header、payload、signature。</p>
+<h5 id="header"><a href="#header" class="headerlink" title="header"></a>header</h5><p>头部包含了两部分：类型和使用的哈希算法（如HMAC SHA256）：</p>
+<figure class="highlight json"><table><tr><td class="code"><pre><span class="line">&#123;</span><br><span class="line">    <span class="attr">&quot;typ&quot;</span>: <span class="string">&quot;JWT&quot;</span>,</span><br><span class="line">    <span class="attr">&quot;alg&quot;</span>: <span class="string">&quot;HS256&quot;</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h5 id="payload"><a href="#payload" class="headerlink" title="payload"></a>payload</h5><p>也称为JWT claims，放置需要传输的信息，有三类：保留claims、公共claims、私有claims。</p>
+<p>▷ 保留claims，主要包括iss发行者、exp过期时间、sub主题、aud用户等 </p>
+<p>▷ 公共claims，定义新创的信息，比如用户信息和其他重要信息</p>
+<p>▷ 私有claims，用于发布者和消费者都同意以私有的方式使用的信息</p>
+<p>JWT示例：</p>
+<figure class="highlight json"><table><tr><td class="code"><pre><span class="line">&#123;</span><br><span class="line"><span class="attr">&quot;iss&quot;</span>: <span class="string">&quot;jwt.io&quot;</span>,</span><br><span class="line"><span class="attr">&quot;exp&quot;</span>: <span class="number">1496199995458</span>,</span><br><span class="line"><span class="attr">&quot;name&quot;</span>: <span class="string">&quot;sinwaj&quot;</span>,</span><br><span class="line"><span class="attr">&quot;role&quot;</span>: <span class="string">&quot;admin&quot;</span> </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h5 id="signature"><a href="#signature" class="headerlink" title="signature"></a>signature</h5><p>  需要采用编码的header、编码的payload、secret，使用header中指定的算法进行签名。 </p>
+<p>JWT提供下述功能：<br>▷ 某种程度的用户身份验证<br>▷ 使用密钥签名<br>▷ 客户端每个请求都带有JWT<br>▷ 服务器使用密钥分析和检查claims</p>
+<p>以上摘自公众号: <code>中兴开发者社区</code></p>
+<hr>
+<h3 id="代码实现"><a href="#代码实现" class="headerlink" title="代码实现"></a>代码实现</h3><h4 id="项目地址"><a href="#项目地址" class="headerlink" title="项目地址"></a>项目地址</h4><p><a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/cayzlh/springboot-jwt-demo">https://github.com/cayzlh/springboot-jwt-demo</a></p>
+<h4 id="自定义Jwt登录拦截器"><a href="#自定义Jwt登录拦截器" class="headerlink" title="自定义Jwt登录拦截器"></a>自定义Jwt登录拦截器</h4><figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">package</span> com.cayzlh.jwt.security.filter;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> com.cayzlh.jwt.exception.BaseException;</span><br><span class="line"><span class="keyword">import</span> com.cayzlh.jwt.security.dto.AuthenticationRequest;</span><br><span class="line"><span class="keyword">import</span> com.cayzlh.jwt.security.jwt.JwtTokenUtil;</span><br><span class="line"><span class="keyword">import</span> com.cayzlh.jwt.security.service.UserDetailsServiceImpl;</span><br><span class="line"><span class="keyword">import</span> com.fasterxml.jackson.databind.ObjectMapper;</span><br><span class="line"><span class="keyword">import</span> com.google.common.base.Preconditions;</span><br><span class="line"><span class="keyword">import</span> com.google.common.collect.Lists;</span><br><span class="line"><span class="keyword">import</span> org.apache.log4j.Logger;</span><br><span class="line"><span class="keyword">import</span> org.springframework.security.authentication.AuthenticationManager;</span><br><span class="line"><span class="keyword">import</span> org.springframework.security.authentication.UsernamePasswordAuthenticationToken;</span><br><span class="line"><span class="keyword">import</span> org.springframework.security.core.Authentication;</span><br><span class="line"><span class="keyword">import</span> org.springframework.security.core.AuthenticationException;</span><br><span class="line"><span class="keyword">import</span> org.springframework.security.core.userdetails.UserDetails;</span><br><span class="line"><span class="keyword">import</span> org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> javax.servlet.FilterChain;</span><br><span class="line"><span class="keyword">import</span> javax.servlet.ServletException;</span><br><span class="line"><span class="keyword">import</span> javax.servlet.http.HttpServletRequest;</span><br><span class="line"><span class="keyword">import</span> javax.servlet.http.HttpServletResponse;</span><br><span class="line"><span class="keyword">import</span> java.io.IOException;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * Description:</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * &lt;p&gt;</span></span><br><span class="line"><span class="comment"> * 	验证用户名密码是否正确, 生成一个token, 并将token返回给客户端</span></span><br><span class="line"><span class="comment"> * 	该类继承自UsernamePasswordAuthenticationFilter，重写了其中的2个方法</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * 	attemptAuthentication ：接收并解析用户凭证。</span></span><br><span class="line"><span class="comment"> * 	successfulAuthentication ：用户成功登录后，这个方法会被调用，我们在这个方法里生成token。</span></span><br><span class="line"><span class="comment"> * &lt;/p&gt;</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@author</span> Ant丶</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@date</span> 2018-05-11.</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">LoginFilter</span> <span class="keyword">extends</span> <span class="title">UsernamePasswordAuthenticationFilter</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> Logger logger = Logger.getLogger(LoginFilter.class);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> AuthenticationManager authenticationManager;</span><br><span class="line">    <span class="keyword">private</span> JwtTokenUtil jwtTokenUtil;</span><br><span class="line">    <span class="keyword">private</span> UserDetailsServiceImpl jwtUserDetailsService;</span><br><span class="line">    <span class="keyword">private</span> String tokenHeader;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">LoginFilter</span><span class="params">(AuthenticationManager authenticationManager, JwtTokenUtil jwtTokenUtil, UserDetailsServiceImpl jwtUserDetailsService, String tokenHeader)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">this</span>.authenticationManager = authenticationManager;</span><br><span class="line">        <span class="keyword">this</span>.jwtTokenUtil = jwtTokenUtil;</span><br><span class="line">        <span class="keyword">this</span>.jwtUserDetailsService = jwtUserDetailsService;</span><br><span class="line">        <span class="keyword">this</span>.tokenHeader = tokenHeader;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 接收并解析用户凭证</span></span><br><span class="line"><span class="comment">     *</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> request request</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> response response</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@return</span></span></span><br><span class="line"><span class="comment">     * <span class="doctag">@throws</span> AuthenticationException</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> Authentication <span class="title">attemptAuthentication</span><span class="params">(HttpServletRequest request, HttpServletResponse response)</span> <span class="keyword">throws</span> AuthenticationException </span>&#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            AuthenticationRequest user = <span class="keyword">new</span> ObjectMapper().readValue(request.getInputStream(), AuthenticationRequest.class);</span><br><span class="line"></span><br><span class="line">            <span class="keyword">return</span> authenticationManager.authenticate(</span><br><span class="line">                    <span class="keyword">new</span> UsernamePasswordAuthenticationToken(user.getUsername(), user.getPassword(), Lists.newArrayList())</span><br><span class="line">            );</span><br><span class="line">        &#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">            logger.error(<span class="string">&quot;[LoginFilter][attemptAuthentication()]&quot;</span>, e);</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> BaseException(e);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 用户成功登录后</span></span><br><span class="line"><span class="comment">     *      这个方法会被调用,  在这里生成token</span></span><br><span class="line"><span class="comment">	 *      设置到header里面返回</span></span><br><span class="line"><span class="comment">     *</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> request request</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> response response</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> chain chain</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> authResult authResult</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@throws</span> IOException</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@throws</span> ServletException</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title">successfulAuthentication</span><span class="params">(HttpServletRequest request, HttpServletResponse response, FilterChain chain, Authentication authResult)</span> <span class="keyword">throws</span> IOException, ServletException </span>&#123;</span><br><span class="line">        UserDetails userDetails = jwtUserDetailsService.loadUserByUsername(authResult.getName());</span><br><span class="line">        Preconditions.checkNotNull(userDetails);</span><br><span class="line">        String token = jwtTokenUtil.generateToken(userDetails);</span><br><span class="line">        response.addHeader(tokenHeader, <span class="string">&quot;Bearer &quot;</span> + token);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="自定义Jwt认证拦截器"><a href="#自定义Jwt认证拦截器" class="headerlink" title="自定义Jwt认证拦截器"></a>自定义Jwt认证拦截器</h4><figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">package</span> com.cayzlh.jwt.security.filter;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> com.cayzlh.jwt.security.jwt.JwtTokenUtil;</span><br><span class="line"><span class="keyword">import</span> io.jsonwebtoken.ExpiredJwtException;</span><br><span class="line"><span class="keyword">import</span> org.apache.commons.lang3.StringUtils;</span><br><span class="line"><span class="keyword">import</span> org.apache.log4j.Logger;</span><br><span class="line"><span class="keyword">import</span> org.springframework.security.authentication.AuthenticationManager;</span><br><span class="line"><span class="keyword">import</span> org.springframework.security.authentication.UsernamePasswordAuthenticationToken;</span><br><span class="line"><span class="keyword">import</span> org.springframework.security.core.context.SecurityContextHolder;</span><br><span class="line"><span class="keyword">import</span> org.springframework.security.core.userdetails.UserDetails;</span><br><span class="line"><span class="keyword">import</span> org.springframework.security.core.userdetails.UserDetailsService;</span><br><span class="line"><span class="keyword">import</span> org.springframework.security.web.AuthenticationEntryPoint;</span><br><span class="line"><span class="keyword">import</span> org.springframework.security.web.authentication.WebAuthenticationDetailsSource;</span><br><span class="line"><span class="keyword">import</span> org.springframework.security.web.authentication.www.BasicAuthenticationFilter;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> javax.servlet.FilterChain;</span><br><span class="line"><span class="keyword">import</span> javax.servlet.ServletException;</span><br><span class="line"><span class="keyword">import</span> javax.servlet.http.HttpServletRequest;</span><br><span class="line"><span class="keyword">import</span> javax.servlet.http.HttpServletResponse;</span><br><span class="line"><span class="keyword">import</span> java.io.IOException;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * Description:</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * &lt;p&gt;</span></span><br><span class="line"><span class="comment"> *     Jwt token认证拦截器</span></span><br><span class="line"><span class="comment"> *          如果校验通过, 就认为这是一个合法的请求</span></span><br><span class="line"><span class="comment"> * &lt;/p&gt;</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@author</span> Ant丶</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@date</span> 2018-05-10.</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">AuthorizationTokenFilter</span> <span class="keyword">extends</span> <span class="title">BasicAuthenticationFilter</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> Logger logger = Logger.getLogger(AuthorizationTokenFilter.class);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> UserDetailsService userDetailsService;</span><br><span class="line">    <span class="keyword">private</span> JwtTokenUtil jwtTokenUtil;</span><br><span class="line">    <span class="keyword">private</span> String tokenHeader;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="title">AuthorizationTokenFilter</span><span class="params">(AuthenticationManager authenticationManager, AuthenticationEntryPoint authenticationEntryPoint, UserDetailsService userDetailsService, JwtTokenUtil jwtTokenUtil, String tokenHeader)</span> </span>&#123;</span><br><span class="line">		<span class="keyword">super</span>(authenticationManager, authenticationEntryPoint);</span><br><span class="line">		<span class="keyword">this</span>.userDetailsService = userDetailsService;</span><br><span class="line">		<span class="keyword">this</span>.jwtTokenUtil = jwtTokenUtil;</span><br><span class="line">		<span class="keyword">this</span>.tokenHeader = tokenHeader;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title">doFilterInternal</span><span class="params">(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse, FilterChain filterChain)</span> <span class="keyword">throws</span> ServletException, IOException </span>&#123;</span><br><span class="line">        logger.debug(<span class="string">&quot;processing authentication for &#x27;&quot;</span>+httpServletRequest.getRequestURL()+<span class="string">&quot;&#x27;&quot;</span>);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">final</span> String requestHeader = httpServletRequest.getHeader(<span class="keyword">this</span>.tokenHeader);</span><br><span class="line"></span><br><span class="line">        String username = <span class="keyword">null</span>;</span><br><span class="line">        String authToken = <span class="keyword">null</span>;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (StringUtils.isNotBlank(requestHeader) &amp;&amp; requestHeader.startsWith(<span class="string">&quot;Bearer &quot;</span>)) &#123;</span><br><span class="line">            authToken = requestHeader.substring(<span class="number">7</span>);</span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">                username = jwtTokenUtil.getUsernameFromToken(authToken);</span><br><span class="line">            &#125; <span class="keyword">catch</span> (IllegalArgumentException e) &#123;</span><br><span class="line">                logger.error(<span class="string">&quot;从令牌[&quot;</span>+authToken+<span class="string">&quot;]获取用户名期间发生错误&quot;</span>, e);</span><br><span class="line">            &#125; <span class="keyword">catch</span> (ExpiredJwtException e) &#123;</span><br><span class="line">                logger.error(<span class="string">&quot;令牌[&quot;</span>+authToken+<span class="string">&quot;]已过期并且不再有效&quot;</span>, e);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            logger.debug(<span class="string">&quot;找不到Bearer字符串, 忽略Header继续.&quot;</span>);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        logger.debug(<span class="string">&quot;检查用户[&quot;</span>+username+<span class="string">&quot;]的身份验证&quot;</span>);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (StringUtils.isNotBlank(username) &amp;&amp; <span class="keyword">null</span> == SecurityContextHolder.getContext().getAuthentication()) &#123;</span><br><span class="line">            logger.debug(<span class="string">&quot;security context为空, 授权用户&quot;</span>);</span><br><span class="line"></span><br><span class="line">			<span class="comment">// 从数据库加载使用使用细节并不是必需的, 也可以存储信息在令牌中读取它并从中读取它.</span></span><br><span class="line">            UserDetails userDetails = <span class="keyword">this</span>.userDetailsService.loadUserByUsername(username);</span><br><span class="line"></span><br><span class="line">			<span class="comment">//对于简单的验证，仅检查令牌完整性就足够了, 不需要引人注目地调用数据库.</span></span><br><span class="line">            <span class="keyword">if</span> (jwtTokenUtil.validateToken(authToken, userDetails)) &#123;</span><br><span class="line">                UsernamePasswordAuthenticationToken authentication = <span class="keyword">new</span> UsernamePasswordAuthenticationToken(userDetails, <span class="keyword">null</span>, userDetails.getAuthorities());</span><br><span class="line">                authentication.setDetails(<span class="keyword">new</span> WebAuthenticationDetailsSource().buildDetails(httpServletRequest));</span><br><span class="line">                logger.info(<span class="string">&quot;认证用户 [&quot;</span>+username+<span class="string">&quot;], 设置 security到context上下文&quot;</span>);</span><br><span class="line">                SecurityContextHolder.getContext().setAuthentication(authentication);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        filterChain.doFilter(httpServletRequest, httpServletResponse);</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="自定义身份验证组件"><a href="#自定义身份验证组件" class="headerlink" title="自定义身份验证组件"></a>自定义身份验证组件</h4><figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">package</span> com.cayzlh.jwt.security.provider;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> com.cayzlh.jwt.security.dto.GrantedAuthorityImpl;</span><br><span class="line"><span class="keyword">import</span> com.google.common.base.Preconditions;</span><br><span class="line"><span class="keyword">import</span> org.springframework.security.authentication.AuthenticationProvider;</span><br><span class="line"><span class="keyword">import</span> org.springframework.security.authentication.BadCredentialsException;</span><br><span class="line"><span class="keyword">import</span> org.springframework.security.authentication.UsernamePasswordAuthenticationToken;</span><br><span class="line"><span class="keyword">import</span> org.springframework.security.core.Authentication;</span><br><span class="line"><span class="keyword">import</span> org.springframework.security.core.AuthenticationException;</span><br><span class="line"><span class="keyword">import</span> org.springframework.security.core.GrantedAuthority;</span><br><span class="line"><span class="keyword">import</span> org.springframework.security.core.userdetails.UserDetails;</span><br><span class="line"><span class="keyword">import</span> org.springframework.security.core.userdetails.UserDetailsService;</span><br><span class="line"><span class="keyword">import</span> org.springframework.security.core.userdetails.UsernameNotFoundException;</span><br><span class="line"><span class="keyword">import</span> org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;</span><br><span class="line"><span class="keyword">import</span> org.springframework.util.DigestUtils;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> java.util.ArrayList;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * Description:</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * &lt;p&gt;</span></span><br><span class="line"><span class="comment"> *     自定义身份验证组件</span></span><br><span class="line"><span class="comment"> * &lt;/p&gt;</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@author</span> Ant丶</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@date</span> 2018-05-11.</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">CustomAuthenticationProvider</span> <span class="keyword">implements</span> <span class="title">AuthenticationProvider</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> UserDetailsService userDetailsService;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> BCryptPasswordEncoder bCryptPasswordEncoder;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">CustomAuthenticationProvider</span><span class="params">(UserDetailsService userDetailsService, BCryptPasswordEncoder bCryptPasswordEncoder)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">this</span>.userDetailsService = userDetailsService;</span><br><span class="line">        <span class="keyword">this</span>.bCryptPasswordEncoder = bCryptPasswordEncoder;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> Authentication <span class="title">authenticate</span><span class="params">(Authentication authentication)</span> <span class="keyword">throws</span> AuthenticationException </span>&#123;</span><br><span class="line">        String name = authentication.getName();</span><br><span class="line">        String password = authentication.getCredentials().toString();</span><br><span class="line"></span><br><span class="line">        Preconditions.checkNotNull(name);</span><br><span class="line">        Preconditions.checkNotNull(password);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// TODO　重新整理逻辑</span></span><br><span class="line">        UserDetails userDetails = userDetailsService.loadUserByUsername(name);</span><br><span class="line">        <span class="keyword">if</span> (<span class="keyword">null</span> != userDetails) &#123;</span><br><span class="line">            String encodePassword = DigestUtils.md5DigestAsHex((password).getBytes());</span><br><span class="line">            <span class="keyword">if</span> (userDetails.getPassword().equalsIgnoreCase(encodePassword)) &#123;</span><br><span class="line">                <span class="comment">// TODO 设置权限</span></span><br><span class="line">                ArrayList&lt;GrantedAuthority&gt; authorities = <span class="keyword">new</span> ArrayList&lt;&gt;();</span><br><span class="line">                authorities.add( <span class="keyword">new</span> GrantedAuthorityImpl(<span class="string">&quot;ROLE_ADMIN&quot;</span>) );</span><br><span class="line">                authorities.add( <span class="keyword">new</span> GrantedAuthorityImpl(<span class="string">&quot;AUTH_WRITE&quot;</span>) );</span><br><span class="line">                <span class="comment">// 生成令牌 这里令牌里面存入了:name,password,authorities, 当然你也可以放其他内容 todo 不要放密码</span></span><br><span class="line">                Authentication auth = <span class="keyword">new</span> UsernamePasswordAuthenticationToken(name, password, authorities);</span><br><span class="line">                <span class="keyword">return</span> auth;</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                <span class="keyword">throw</span> <span class="keyword">new</span> BadCredentialsException(<span class="string">&quot;Password verification failed.&quot;</span>);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> UsernameNotFoundException(<span class="string">&quot;Username does not exist.&quot;</span>);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 是否可以提供输入类型的认证服务</span></span><br><span class="line"><span class="comment">     *</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> authentication auth</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@return</span> 是否可以提供输入类型的认证服务</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">supports</span><span class="params">(Class&lt;?&gt; authentication)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> authentication.equals(UsernamePasswordAuthenticationToken.class);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">		String encodePassword = DigestUtils.md5DigestAsHex((<span class="string">&quot;Aa262535636@@&quot;</span>).getBytes());</span><br><span class="line">		System.out.println(encodePassword);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h4 id="配置Security"><a href="#配置Security" class="headerlink" title="配置Security"></a>配置Security</h4><figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title">configure</span><span class="params">(HttpSecurity httpSecurity)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">    <span class="comment">// jwt登录拦截器</span></span><br><span class="line">    LoginFilter jwtLoginFilter = <span class="keyword">new</span> LoginFilter(authenticationManager(), jwtTokenUtil, jwtUserDetailsService, tokenHeader);</span><br><span class="line">    <span class="comment">// 自定义Jwt认证拦截器</span></span><br><span class="line">    AuthorizationTokenFilter authenticationTokenFilter = <span class="keyword">new</span> AuthorizationTokenFilter(authenticationManager(), unauthorizedHandler, userDetailsService(), jwtTokenUtil, tokenHeader);</span><br><span class="line"></span><br><span class="line">    httpSecurity</span><br><span class="line">            <span class="comment">// 不使用CSRF</span></span><br><span class="line">            .cors().and().csrf().disable()</span><br><span class="line">            <span class="comment">// 不创建session</span></span><br><span class="line">            .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and()</span><br><span class="line">            <span class="comment">// 异常处理</span></span><br><span class="line">            .exceptionHandling().authenticationEntryPoint(unauthorizedHandler).and()</span><br><span class="line"></span><br><span class="line">            .authorizeRequests()</span><br><span class="line"></span><br><span class="line">            .antMatchers(HttpMethod.POST, <span class="string">&quot;/auth/**&quot;</span>).permitAll()</span><br><span class="line"></span><br><span class="line">            .anyRequest().authenticated()</span><br><span class="line"></span><br><span class="line">            .and()</span><br><span class="line">            .addFilter(jwtLoginFilter)</span><br><span class="line">            .addFilter(authenticationTokenFilter)</span><br><span class="line"></span><br><span class="line">            .logout().logoutUrl(<span class="string">&quot;/auth/logout&quot;</span>)</span><br><span class="line">            .logoutSuccessUrl(<span class="string">&quot;/auth/login&quot;</span>)</span><br><span class="line">            .permitAll()</span><br><span class="line"></span><br><span class="line">    ;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// disable page caching</span></span><br><span class="line">    httpSecurity</span><br><span class="line">            .headers()</span><br><span class="line">            .frameOptions().sameOrigin()  <span class="comment">// required to set for H2 else H2 Console will be blank.</span></span><br><span class="line">            .cacheControl();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<p>主要代码如上</p>
+<hr>
+<h3 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h3><h4 id="编写一个测试的controller"><a href="#编写一个测试的controller" class="headerlink" title="编写一个测试的controller"></a>编写一个测试的controller</h4><figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@RestController</span></span><br><span class="line"><span class="meta">@RequestMapping(value = &quot;/jwt&quot;)</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">TestController</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@RequestMapping(value = &quot;/test&quot;)</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> String <span class="title">restTest</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		<span class="keyword">return</span> <span class="string">&quot;hello .&quot;</span>;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h4 id="使用Posman访问"><a href="#使用Posman访问" class="headerlink" title="使用Posman访问"></a>使用<code>Posman</code>访问</h4><p><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://github.com/cayzlh/git-img-repository/raw/master/blog/%E6%97%A0%E6%9D%83%E9%99%90.png"></p>
+<p>可以看到, 直接抛出<code>Unauthorized</code>错误</p>
+<h4 id="登录获取token"><a href="#登录获取token" class="headerlink" title="登录获取token"></a>登录获取token</h4><p>访问 <code>http://localhost:8080/login</code>, 这是<code>security</code>自带的登录接口, 不需要自己定义:</p>
+<p><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://github.com/cayzlh/git-img-repository/raw/master/blog/%E7%99%BB%E5%BD%95.png"></p>
+<p>可以看到, 在返回的<code>Header</code>中多了</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">Authorization →Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJjaGVuYW55dSIsImV4cCI6MTU0NjA1MzExNywiaWF0IjoxNTI3OTA5MTE3fQ.N37plSdzjBMkw5BoZQWXxVA8bobdI5vPfYs5N9CZq1Y_k-LVL3WhzySJBBwjwyVeySGB8CQR0l8yJr8fbxgiFw</span><br></pre></td></tr></table></figure>
+<p>这样的内容, 这个就是<code>jwt</code>生成的token.</p>
+<h4 id="带上token访问test接口"><a href="#带上token访问test接口" class="headerlink" title="带上token访问test接口"></a>带上token访问test接口</h4><p>将<code>token</code>放到<code>head</code>的<code>Authorization</code>节点里面, 重新访问test接口</p>
+<p><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://github.com/cayzlh/git-img-repository/blob/master/raw/%E6%9C%89%E6%9D%83%E9%99%90.png"></p>
+<p>可以看到, 这个时候是可以正常返回结果的.</p>
+<h3 id="结束"><a href="#结束" class="headerlink" title="结束"></a>结束</h3><ol>
+<li>JWT中的token是明文, 但是明文被签名过，签名可以使用对称或者非对称秘钥，无论使用什么秘钥，都没人知道，所以别人无法伪造。也无法修改。</li>
+<li>不需要退出的接口, <code>token</code>已经授权给客户端了，有过期时间，退出的话, 只需客户端把token删掉即可.</li>
+</ol>
+<p>end.</p>
+
+
+<div class="article-footer fs14"><section id="license"><div class="header"><span>许可协议</span></div><div class="body"><p>本文采用 <a target="_blank" rel="external nofollow noopener noreferrer" href="https://creativecommons.org/licenses/by-nc-sa/4.0/">署名-非商业性使用-相同方式共享 4.0 国际</a> 许可协议，转载请注明出处。</p>
+</div></section></div>
+
+</article>
+
+<div class="related-wrap" id="read-next"><section class="header cap theme"><span>接下来阅读</span></section><section class="body"><div class="post-title h2"><a href="/blog/post/1639182984.html">SpringBoot实现Redis分布式锁</a></div><div class="post-title fs14"><a href="/blog/post/3486685421.html">上一篇：利用Github做Maven私服</a></div></section></div>
+
+
+<div class="related-wrap" id="related-posts">
+    <section class="header">
+      <div class="title cap theme">您可能感兴趣的文章</div>
+    </section>
+    <section class="body">
+    <div class="related-posts"><a class="item" href="/blog/post/3136136825.html" title="SpringBoot自动部署脚本"><div class="img"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2021/04/14194816180355881618035588178.png"></div><span class="title">SpringBoot自动部署脚本</span></a><a class="item" href="/blog/post/2348855541.html" title="SpringBoot启动脚本"><div class="img"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2021/04/14194816180355881618035588178.png"></div><span class="title">SpringBoot启动脚本</span></a><a class="item" href="/blog/post/2878379624.html" title="SpringBoot文件上传异常处理"><div class="img"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://gitee.com/cayzlh/img-repo/raw/master/2021/02/10511616140486761614048676335.jpg"></div><span class="title">SpringBoot文件上传异常处理</span><span class="excerpt">SpringBoot文件上传异常处理：The temporary upload location xxx is not valid</span></a><a class="item" href="/blog/post/1086706207.html" title="SpringBoot异步请求和异步调用"><div class="img"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2021/04/14194816180355881618035588178.png"></div><span class="title">SpringBoot异步请求和异步调用</span><span class="excerpt">Spring Boot中异步请求的使用</span></a><a class="item" href="/blog/post/1832342668.html" title="SpringBoot单元测试"><div class="img"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2021/03/14044716155290871615529087504.jpg"></div><span class="title">SpringBoot单元测试</span></a></div></section></div>
+
+
+
+
+
+      
+<footer class="page-footer fs12"><hr><div><p>本博客所有文章除特别声明外，均采用 <a target="_blank" rel="external nofollow noopener noreferrer" href="https://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY-NC-SA 4.0</a> 许可协议，转载请注明出处。</p>
+<p>本站由 <a href="https://www.cayzlh.com/blog/">@🐳Ant丶</a> 创建，使用 <a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/xaoxuu/hexo-theme-stellar/tree/1.1.0">Stellar</a> 作为主题。</p>
+<p><a target="_blank" rel="external nofollow noopener noreferrer" href="https://beian.miit.gov.cn/">粤ICP备20058712号</a></p>
+</div></footer>
+
+      <div class="float-panel mobile-only" style="display:none">
+  <button type="button" class="sidebar-toggle mobile" onclick="sidebar.toggle()">
+    <svg class="icon" viewbox="0 0 1228 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2849"><path d="M0 0m97.390199 0l973.901995 0q97.390199 0 97.390199 97.390199l0 0q0 97.390199-97.390199 97.3902l-973.901995 0q-97.390199 0-97.390199-97.3902l0 0q0-97.390199 97.390199-97.390199Z" p-id="2850"/><path d="M0 389.560798m97.390199 0l973.901995 0q97.390199 0 97.390199 97.390199l0 0q0 97.390199-97.390199 97.3902l-973.901995 0q-97.390199 0-97.390199-97.3902l0 0q0-97.390199 97.390199-97.390199Z" p-id="2851"/><path d="M0 779.121596m97.390199 0l973.901995 0q97.390199 0 97.390199 97.390199l0 0q0 97.390199-97.390199 97.390199l-973.901995 0q-97.390199 0-97.390199-97.390199l0 0q0-97.390199 97.390199-97.390199Z" p-id="2852"/></svg>
+  </button>
+</div>
+
+    </div>
+  </div>
+  <div class="scripts">
+    <script type="text/javascript">
+  stellar = {
+    // 懒加载 css https://github.com/filamentgroup/loadCSS
+    loadCSS: (href, before, media, attributes) => {
+      var doc = window.document;
+      var ss = doc.createElement("link");
+      var ref;
+      if (before) {
+        ref = before;
+      } else {
+        var refs = (doc.body || doc.getElementsByTagName("head")[0]).childNodes;
+        ref = refs[refs.length - 1];
+      }
+      var sheets = doc.styleSheets;
+      if (attributes) {
+        for (var attributeName in attributes) {
+          if (attributes.hasOwnProperty(attributeName)) {
+            ss.setAttribute(attributeName, attributes[attributeName]);
+          }
+        }
+      }
+      ss.rel = "stylesheet";
+      ss.href = href;
+      ss.media = "only x";
+      function ready(cb) {
+        if (doc.body) {
+          return cb();
+        }
+        setTimeout(function () {
+          ready(cb);
+        });
+      }
+      ready(function () {
+        ref.parentNode.insertBefore(ss, before ? ref : ref.nextSibling);
+      });
+      var onloadcssdefined = function (cb) {
+        var resolvedHref = ss.href;
+        var i = sheets.length;
+        while (i--) {
+          if (sheets[i].href === resolvedHref) {
+            return cb();
+          }
+        }
+        setTimeout(function () {
+          onloadcssdefined(cb);
+        });
+      };
+      function loadCB() {
+        if (ss.addEventListener) {
+          ss.removeEventListener("load", loadCB);
+        }
+        ss.media = media || "all";
+      }
+      if (ss.addEventListener) {
+        ss.addEventListener("load", loadCB);
+      }
+      ss.onloadcssdefined = onloadcssdefined;
+      onloadcssdefined(loadCB);
+      return ss;
+    },
+
+    // 从 butterfly 和 volantis 获得灵感
+    loadScript: (src, opt) => new Promise((resolve, reject) => {
+      var script = document.createElement('script')
+      script.src = src
+      if (opt) {
+        for (let key of Object.keys(opt)) {
+          script[key] = opt[key]
+        }
+      } else {
+        // 默认异步，如果需要同步，第二个参数传入 {} 即可
+        script.async = true
+      }
+      script.onerror = reject
+      script.onload = script.onreadystatechange = function() {
+        const loadState = this.readyState
+        if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+        script.onload = script.onreadystatechange = null
+        resolve()
+      }
+      document.head.appendChild(script)
+    }),
+
+    // https://github.com/jerryc127/hexo-theme-butterfly
+    jQuery: (fn) => {
+      if (typeof jQuery === 'undefined') {
+        stellar.loadScript(stellar.plugins.jQuery).then(fn)
+      } else {
+        fn()
+      }
+    }
+  };
+  stellar.github = 'https://github.com/xaoxuu/hexo-theme-stellar/tree/1.1.0';
+  stellar.config = {
+    date_suffix: {
+      just: '刚刚',
+      min: '分钟前',
+      hour: '小时前',
+      day: '天前',
+      month: '个月前',
+    },
+  };
+
+  // required plugins (only load if needs)
+  stellar.plugins = {
+    jQuery: 'https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js',
+    sitesjs: '/blog/js/plugins/sites.js',
+    friendsjs: '/blog/js/plugins/friends.js',
+  };
+
+  // optional plugins
+  if ('true' == 'true') {
+    stellar.plugins.lazyload = Object.assign({"enable":true,"js":"https://cdn.jsdelivr.net/npm/vanilla-lazyload@17.3.1/dist/lazyload.min.js","transition":"blur"});
+  }
+  if ('true' == 'true') {
+    stellar.plugins.swiper = Object.assign({"enable":true,"css":"https://unpkg.com/swiper/swiper-bundle.min.css","js":"https://unpkg.com/swiper/swiper-bundle.min.js"});
+  }
+  if ('' == 'true') {
+    stellar.plugins.scrollreveal = Object.assign({"enable":null,"js":"https://cdn.jsdelivr.net/npm/scrollreveal@4.0.9/dist/scrollreveal.min.js","distance":"8px","duration":500,"interval":100,"scale":1});
+  }
+  if ('true' == 'true') {
+    stellar.plugins.preload = Object.assign({"enable":true,"service":"flying_pages","instant_page":"https://cdn.jsdelivr.net/gh/volantis-x/cdn-volantis@4.1.2/js/instant_page.js","flying_pages":"https://cdn.jsdelivr.net/gh/gijo-varghese/flying-pages@2.1.2/flying-pages.min.js"});
+  }
+</script>
+
+<!-- required -->
+
+  
+<script src="/blog/js/main.js" async></script>
+
+
+
+<!-- optional -->
+
+
+
+<!-- inject -->
+
+
+  </div>
+</body>
+</html>

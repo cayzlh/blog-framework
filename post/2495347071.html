@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta name="generator" content="Hexo 5.4.0">
+  <meta charset="utf-8">
+  
+
+  <meta http-equiv="x-dns-prefetch-control" content="on">
+  <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+
+  <meta name="renderer" content="webkit">
+  <meta name="force-rendering" content="webkit">
+  <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+  <meta name="HandheldFriendly" content="True">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <title>Docker使用rabbitmq - CAYZLH</title>
+
+  
+  <meta name="description" content="最近研习spring cloud bus需要用到rabbitmq，为了方便直接使用Docker镜像来运行rabbitmq，记录几个命令。">
+
+  <!-- feed -->
+  
+    <link rel="alternate" href="/blog/atom.xml" title="CAYZLH" type="application/atom+xml">
+  
+
+  
+    
+<link rel="stylesheet" href="/blog/css/main.css">
+
+  
+
+  
+    
+      <meta name="msapplication-TileColor" content="#2d89ef">
+    
+      <meta name="msapplication-config" content="/assets/favicon/browserconfig.xml">
+    
+      <meta name="theme-color" content="#ffffff">
+    
+      <link rel="shortcut icon" href="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/logo/favicon.ico">
+    
+      <link rel="icon" type="image/png" href="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/logo/favicon-192x192.png" sizes="192x192">
+    
+      <link rel="apple-touch-icon" sizes="180x180" href="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/logo/apple-touch-icon.png">
+    
+  
+</head>
+
+<body>
+  
+
+
+  <div class="l_body" id="start">
+    <aside class="l_left">
+    
+
+<header class="header">
+  <div class="logo-wrap">
+  
+    <a class="avatar" href="/blog/">
+      
+        <img no-lazy class="bg" src="https://cdn.jsdelivr.net/gh/cdn-x/placeholder@1.0.2/avatar/round/rainbow64@3x.webp" onerror="javascript:this.classList.add('error');this.src='https://cdn.jsdelivr.net/gh/cdn-x/placeholder@1.0.1/image/2659360.svg';">
+      
+      <img no-lazy class="avatar" src="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/image/IMG_4207.JPG" onerror="javascript:this.classList.add('error');this.src='https://cdn.jsdelivr.net/gh/cdn-x/placeholder@1.0.1/image/2659360.svg';">
+    </a>
+  
+  
+    <a class="title" href="/blog/">
+      CAYZLH
+    </a>
+  
+</div>
+
+  <nav class="menu dis-select"><a class="nav-item active" href="/blog/">文章</a><a class="nav-item" href="/blog/wiki/">文档</a></nav>
+</header>
+
+<div class="widgets">
+  
+    
+      
+      
+<div class="widget-wrap" id="toc"><div class="widget-header h4 dis-select"><span class="name">本文目录</span></div><div class="widget-body fs14 post"><div class="doc-tree active"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BB%80%E4%B9%88%E6%98%AFRabbitMQ%EF%BC%9F"><span class="toc-text">什么是RabbitMQ？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%A6%82%E4%BD%95%E5%9C%A8Docker%E4%BD%BF%E7%94%A8RabbitMQ%E9%95%9C%E5%83%8F"><span class="toc-text">如何在Docker使用RabbitMQ镜像</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%BF%90%E8%A1%8C%E5%AE%88%E6%8A%A4%E8%BF%9B%E7%A8%8B"><span class="toc-text">运行守护进程</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%86%85%E5%AD%98%E9%99%90%E5%88%B6"><span class="toc-text">内存限制</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%AE%A1%E7%90%86%E6%8F%92%E4%BB%B6"><span class="toc-text">管理插件</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F"><span class="toc-text">环境变量</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%AE%BE%E7%BD%AE%E9%BB%98%E8%AE%A4%E7%94%A8%E6%88%B7%E5%92%8C%E5%AF%86%E7%A0%81"><span class="toc-text">设置默认用户和密码</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%AE%BE%E7%BD%AE%E9%BB%98%E8%AE%A4vhost"><span class="toc-text">设置默认vhost</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%90%AF%E7%94%A8HiPE"><span class="toc-text">启用HiPE</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%90%AF%E7%94%A8%E6%8F%92%E4%BB%B6"><span class="toc-text">启用插件</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%99%84%E5%8A%A0%E9%85%8D%E7%BD%AE"><span class="toc-text">附加配置</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%BF%9E%E6%8E%A5%E5%88%B0%E5%AE%88%E6%8A%A4%E8%BF%9B%E7%A8%8B"><span class="toc-text">连接到守护进程</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#spring-cloud-bus%E4%B8%AD%E4%BD%BF%E7%94%A8"><span class="toc-text">spring cloud bus中使用</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%8B%89%E5%8F%96rabbitmq%E9%95%9C%E5%83%8F"><span class="toc-text">拉取rabbitmq镜像</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BD%BF%E7%94%A8%E9%95%9C%E5%83%8F"><span class="toc-text">使用镜像</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8F%82%E8%80%83"><span class="toc-text">参考</span></a></li></ol></div></div></div>
+
+    
+  
+</div>
+
+
+    </aside>
+    <div class="l_main">
+      
+
+      
+
+
+  <div class="bread-nav fs12">
+  
+    
+    <div id="breadcrumb">
+      <a class="cap breadcrumb" href="/">主页</a>
+      <span class="sep"></span>
+      <a class="cap breadcrumb" href="/">文章</a>
+      
+        <span class="sep"></span>
+        <a class="cap breadcrumb-link" href="/blog/categories/%E7%AC%94%E8%AE%B0%E6%9C%AC/">笔记本</a>
+      
+    </div>
+    <div id="post-meta">
+      发布于&nbsp;<time datetime="2019-01-01T12:28:08.000Z">2019-01-01</time>
+    </div>
+  
+  </div>
+
+
+<article class="content md post">
+<h1 class="article-title"><span>Docker使用rabbitmq</span></h1>
+<h2 id="什么是RabbitMQ？"><a href="#什么是RabbitMQ？" class="headerlink" title="什么是RabbitMQ？"></a>什么是RabbitMQ？</h2><p>RabbitMQ是开源消息代理软件（有时称为面向消息的中间件），它实现了高级消息队列协议（AMQP）。RabbitMQ服务器采用Erlang编程语言编写，构建于Open Telecom Platform框架之上，用于集群和故障转移。与代理接口的客户端库可用于所有主要编程语言。</p>
+<h2 id="如何在Docker使用RabbitMQ镜像"><a href="#如何在Docker使用RabbitMQ镜像" class="headerlink" title="如何在Docker使用RabbitMQ镜像"></a>如何在Docker使用RabbitMQ镜像</h2><h3 id="运行守护进程"><a href="#运行守护进程" class="headerlink" title="运行守护进程"></a>运行守护进程</h3><p>关于RabbitMQ的一个重要注意事项是它根据所谓的“节点名称”存储数据，默认为主机名。这对于在Docker中的使用意味着我们应该为每个守护进程指定<code>-h</code>/ <code>--hostname</code>explicit，这样我们就不会获得随机主机名并且可以跟踪我们的数据：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> docker run -d --hostname my-rabbit --name some-rabbit rabbitmq:3</span></span><br></pre></td></tr></table></figure>
+
+<p>这将启动一个侦听默认端口5672的RabbitMQ容器。如果你给它一分钟，那么<code>docker logs some-rabbit</code>你会在输出中看到类似于的块：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">=INFO REPORT==== 6-Jul-2015::20:47:02 ===</span><br><span class="line">node           : rabbit@my-rabbit</span><br><span class="line">home dir       : /var/lib/rabbitmq</span><br><span class="line">config file(s) : /etc/rabbitmq/rabbitmq.config</span><br><span class="line">cookie hash    : UoNOcDhfxW9uoZ92wh6BjA==</span><br><span class="line">log            : tty</span><br><span class="line">sasl log       : tty</span><br><span class="line">database dir   : /var/lib/rabbitmq/mnesia/rabbit@my-rabbit</span><br></pre></td></tr></table></figure>
+
+<p>请注意<code>database dir</code>那里，特别是它的“节点名称”附加到文件存储的末尾。<code>/var/lib/rabbitmq</code>默认情况下，此图像会生成所有卷。</p>
+<h3 id="内存限制"><a href="#内存限制" class="headerlink" title="内存限制"></a>内存限制</h3><p>RabbitMQ包含明确跟踪和管理内存使用的功能，因此需要了解cgroup强加的限制。</p>
+<p>上游配置设置为<code>vm_memory_high_watermark</code>，文档中的<a target="_blank" rel="external nofollow noopener noreferrer" href="https://www.rabbitmq.com/memory.html">“Memory Alarms”</a>中对此进行了描述。</p>
+<p>在此图像中，此值通过设置<code>RABBITMQ_VM_MEMORY_HIGH_WATERMARK</code>。此环境变量的值解释如下：</p>
+<ul>
+<li><code>0.49</code>被视为<code>49%</code>，就像上游（<code>&#123; vm_memory_high_watermark, 0.49 &#125;</code>）</li>
+<li><code>56%</code>被视为<code>56%</code>（<code>0.56</code>; <code>&#123; vm_memory_high_watermark, 0.56 &#125;</code>）</li>
+<li><code>1073741824</code>被视为绝对字节数（<code>&#123; vm_memory_high_watermark, &#123; absolute, 1073741824 &#125; &#125;</code>）</li>
+<li><code>1024MiB</code>被视为具有unit（<code>&#123; vm_memory_high_watermark, &#123; absolute, &quot;1024MiB&quot; &#125; &#125;</code>）的绝对字节数</li>
+</ul>
+<p>主要的行为差异在于如何处理百分比。如果当前容器具有内存限制（<code>--memory</code>/ <code>-m</code>），则将根据内存限制将百分比值计算为绝对字节值，而不是按原样传递给RabbitMQ。例如，对于一个容器运行<code>--memory 2048m</code>（以及隐含的上游默认<code>RABBITMQ_VM_MEMORY_HIGH_WATERMARK</code>的<code>40%</code>）将设置有效限制<code>819MB</code>（这是<code>40%</code>的<code>2048MB</code>）。</p>
+<h3 id="管理插件"><a href="#管理插件" class="headerlink" title="管理插件"></a>管理插件</h3><p>默认情况下安装并启用了<a target="_blank" rel="external nofollow noopener noreferrer" href="https://www.rabbitmq.com/management.html">管理插件</a>提供的第二组标签，可在标准管理端口15672上使用，默认用户名和密码为<code>guest</code>/ <code>guest</code>：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> docker run -d --hostname my-rabbit --name some-rabbit rabbitmq:3-management</span></span><br></pre></td></tr></table></figure>
+
+<p>您可以通过<code>http://container-ip:15672</code>浏览器访问它，或者如果您需要在主机外部访问，请访问端口8080：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> docker run -d --hostname my-rabbit --name some-rabbit -p 8080:15672 \</span></span><br><span class="line"><span class="bash">rabbitmq:3-management</span></span><br></pre></td></tr></table></figure>
+
+<p>然后，您可以转到<code>http://localhost:8080</code>或<code>http://host-ip:8080</code>在浏览器中。</p>
+<h3 id="环境变量"><a href="#环境变量" class="headerlink" title="环境变量"></a>环境变量</h3><p>Dockerfile中定义了一小部分可能的环境变量，这些变量将通过docker引擎传递（如下所示）。有关RabbitMQ本身支持的环境变量列表，请参阅：<a target="_blank" rel="external nofollow noopener noreferrer" href="https://www.rabbitmq.com/configure.html">https</a>：<a target="_blank" rel="external nofollow noopener noreferrer" href="https://www.rabbitmq.com/configure.html">//www.rabbitmq.com/configure.html</a></p>
+<p>对于没有管理插件的SSL配置：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">RABBITMQ_SSL_CACERTFILE</span><br><span class="line">RABBITMQ_SSL_CERTFILE</span><br><span class="line">RABBITMQ_SSL_DEPTH</span><br><span class="line">RABBITMQ_SSL_FAIL_IF_NO_PEER_CERT</span><br><span class="line">RABBITMQ_SSL_KEYFILE</span><br><span class="line">RABBITMQ_SSL_VERIFY</span><br></pre></td></tr></table></figure>
+
+<p>对于使用管理插件的SSL配置：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">RABBITMQ_MANAGEMENT_SSL_CACERTFILE</span><br><span class="line">RABBITMQ_MANAGEMENT_SSL_CERTFILE</span><br><span class="line">RABBITMQ_MANAGEMENT_SSL_DEPTH</span><br><span class="line">RABBITMQ_MANAGEMENT_SSL_FAIL_IF_NO_PEER_CERT</span><br><span class="line">RABBITMQ_MANAGEMENT_SSL_KEYFILE</span><br><span class="line">RABBITMQ_MANAGEMENT_SSL_VERIFY</span><br></pre></td></tr></table></figure>
+
+<h3 id="设置默认用户和密码"><a href="#设置默认用户和密码" class="headerlink" title="设置默认用户和密码"></a>设置默认用户和密码</h3><p>如果你想改变默认的用户名和密码<code>guest</code>/ <code>guest</code>，你可以用这样做<code>RABBITMQ_DEFAULT_USER</code>和<code>RABBITMQ_DEFAULT_PASS</code>环境变量：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> docker run -d --hostname my-rabbit --name some-rabbit \</span></span><br><span class="line"><span class="bash">-e RABBITMQ_DEFAULT_USER=user \</span></span><br><span class="line"><span class="bash">-e RABBITMQ_DEFAULT_PASS=password rabbitmq:3-management</span></span><br></pre></td></tr></table></figure>
+
+<p>然后，您可以转到<code>http://localhost:8080</code>或<code>http://host-ip:8080</code>在浏览器中使用<code>user</code>/ <code>password</code>来访问管理控制台</p>
+<p>要从文件而不是环境变量中获取用户名和密码<code>_FILE</code>，请在环境变量名称中添加后缀（例如，<code>RABBITMQ_DEFAULT_USER_FILE=/run/secrets/xxx</code>使用<a target="_blank" rel="external nofollow noopener noreferrer" href="https://docs.docker.com/engine/swarm/secrets/">Docker Secrets</a>）。</p>
+<h3 id="设置默认vhost"><a href="#设置默认vhost" class="headerlink" title="设置默认vhost"></a>设置默认vhost</h3><p>如果要更改默认vhost，可以使用<code>RABBITMQ_DEFAULT_VHOST</code>环境变量：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> docker run -d --hostname my-rabbit --name some-rabbit\ -e RABBITMQ_DEFAULT_VHOST=my_vhost rabbitmq:3-management</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="启用HiPE"><a href="#启用HiPE" class="headerlink" title="启用HiPE"></a>启用HiPE</h3><p>有关各种配置选项的更多信息，请参见<a target="_blank" rel="external nofollow noopener noreferrer" href="http://www.rabbitmq.com/configure.html#config-items">RabbitMQ“配置”</a>。</p>
+<p>要在启动时启用HiPE编译器，请使用<code>RABBITMQ_HIPE_COMPILE</code>set to <code>1</code>。根据官方文件：</p>
+<blockquote>
+<p>设置为true以使用HiPE预编译RabbitMQ的部分，HiPE是Erlang的即时编译器。这将以增加启动时间为代价来增加服务器吞吐量。您可能会在启动时延迟几分钟后看到20-50％的性能提升。</p>
+</blockquote>
+<p>因此，在配置运行状况检查，自动群集等时考虑启动延迟非常重要。</p>
+<h3 id="启用插件"><a href="#启用插件" class="headerlink" title="启用插件"></a>启用插件</h3><p>例 <code>enabled_plugins</code></p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">[rabbitmq_federation_management,rabbitmq_management,rabbitmq_mqtt,rabbitmq_stomp].</span><br></pre></td></tr></table></figure>
+
+<h3 id="附加配置"><a href="#附加配置" class="headerlink" title="附加配置"></a>附加配置</h3><p>如果需要其他配置，建议提供适当的<code>/etc/rabbitmq/rabbitmq.conf</code>文件（<a target="_blank" rel="external nofollow noopener noreferrer" href="https://www.rabbitmq.com/configure.html#configuration-files">有关详细信息</a>，请参阅<a target="_blank" rel="external nofollow noopener noreferrer" href="https://www.rabbitmq.com/configure.html#configuration-files">RabbitMQ文档的“配置文件”部分</a>），例如通过bind-mount，<a target="_blank" rel="external nofollow noopener noreferrer" href="https://docs.docker.com/engine/swarm/configs/">Docker Configs</a>或<code>Dockerfile</code>带有<code>COPY</code>指令的short 。</p>
+<p>或者，可以使用<code>RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS</code>环境变量，其语法<a target="_blank" rel="external nofollow noopener noreferrer" href="http://erlang.org/doc/design_principles/applications.html#id81887">在Erlang OTP设计原则用户指南的7.8节（“配置应用程序”）中</a>描述<a target="_blank" rel="external nofollow noopener noreferrer" href="http://erlang.org/doc/design_principles/applications.html#id81887">（</a><code>-ApplName</code> is 的适当值<code>-rabbit</code>），此方法需要稍微不同的再现相当于<code>rabbitmq.conf</code>。例如，配置<a target="_blank" rel="external nofollow noopener noreferrer" href="https://www.rabbitmq.com/configure.html#config-items"><code>channel_max</code></a>看起来像<code>-e RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS=&quot;-rabbit channel_max 4007&quot;</code>。变量<code>channel_max</code>与其值之间的空间在<code>4007</code>环境中翻译时正确变为逗号的位置。</p>
+<p>其他配置键将被指定为列表。例如，配置两者<a target="_blank" rel="external nofollow noopener noreferrer" href="https://www.rabbitmq.com/configure.html#config-items"><code>channel_max</code></a>并<a target="_blank" rel="external nofollow noopener noreferrer" href="https://www.rabbitmq.com/ldap.html#overview"><code>auth_backends</code></a>看起来像<code>-e RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS=&quot;-rabbit channel_max 4007 auth_backends [rabbit_auth_backend_ldap,rabbit_auth_backend_internal]&quot;</code>。请注意，某些变量（例如for）<code>auth_backends</code>要求将其值括在括号中，并将多个值明确地包括在逗号中作为分隔符。</p>
+<h2 id="连接到守护进程"><a href="#连接到守护进程" class="headerlink" title="连接到守护进程"></a>连接到守护进程</h2><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> docker run --name some-app --link some-rabbit:rabbit \</span></span><br><span class="line"><span class="bash">-d application-that-uses-rabbitmq</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="spring-cloud-bus中使用"><a href="#spring-cloud-bus中使用" class="headerlink" title="spring cloud bus中使用"></a>spring cloud bus中使用</h2><h3 id="拉取rabbitmq镜像"><a href="#拉取rabbitmq镜像" class="headerlink" title="拉取rabbitmq镜像"></a>拉取rabbitmq镜像</h3><p>执行以下命令，拉取<code>latest</code>版官方镜像：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">docker pull rabbitmq:management</span><br></pre></td></tr></table></figure>
+
+<p>使用带管理界面的镜像。</p>
+<p><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://github.com/cayzlh/git-img-repository/raw/master/blog/2019/01/01/2.png" alt="docker-rabbitmq"></p>
+<h3 id="使用镜像"><a href="#使用镜像" class="headerlink" title="使用镜像"></a>使用镜像</h3><p>执行以下命令，使用镜像：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">docker run -d --name rabbitmq --publish 5671:5671 \</span><br><span class="line"> --publish 5672:5672 --publish 4369:4369 \</span><br><span class="line"> --publish 25672:25672 --publish 15671:15671 --publish 15672:15672 \</span><br><span class="line">rabbitmq:management</span><br></pre></td></tr></table></figure>
+
+<p>启动之后访问<a target="_blank" rel="external nofollow noopener noreferrer" href="http://localhost:15672/">http://localhost:15672/</a>能够看到<code>Web</code>管理界面，使用<strong>guest / guest</strong>登录之后看到如下界面，说明镜像已经运行。</p>
+<p><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://github.com/cayzlh/git-img-repository/raw/master/blog/2019/01/01/3.png" alt="docker-rabbitmq"></p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ul>
+<li><a target="_blank" rel="external nofollow noopener noreferrer" href="https://hub.docker.com/_/rabbitmq">rabbitmq</a></li>
+<li><a target="_blank" rel="external nofollow noopener noreferrer" href="https://blog.cayzlh.com/2019/01/01/2019010101/">https://blog.cayzlh.com/2019/01/01/2019010101/</a></li>
+</ul>
+
+
+<div class="article-footer fs14"><section id="license"><div class="header"><span>许可协议</span></div><div class="body"><p>本文采用 <a target="_blank" rel="external nofollow noopener noreferrer" href="https://creativecommons.org/licenses/by-nc-sa/4.0/">署名-非商业性使用-相同方式共享 4.0 国际</a> 许可协议，转载请注明出处。</p>
+</div></section></div>
+
+</article>
+
+<div class="related-wrap" id="read-next"><section class="header cap theme"><span>接下来阅读</span></section><section class="body"><div class="post-title h2"><a href="/blog/post/3864213278.html">easyexcel在Safari浏览器导出文件格式有问题</a></div><div class="post-title fs14"><a href="/blog/post/2907325745.html">上一篇：Docker的网络模式</a></div></section></div>
+
+
+<div class="related-wrap" id="related-posts">
+    <section class="header">
+      <div class="title cap theme">您可能感兴趣的文章</div>
+    </section>
+    <section class="body">
+    <div class="related-posts"><a class="item" href="/blog/post/2481829941.html" title="Docker部署elasticsearch"><div class="img"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://gitee.com/cayzlh/img-repo/raw/master/2021/01/11334316098176231609817623882.png"></div><span class="title">Docker部署elasticsearch</span><span class="excerpt">记一次Dokcer部署elasticsearch的过程与错误解决。</span></a><a class="item" href="/blog/post/656e6847.html" title="Docker Swarm"><div class="img"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://github.com/cayzlh/git-img-repository/raw/master/blog/2019/09/22.png"></div><span class="title">Docker Swarm</span><span class="excerpt">实践中会发现，生产环境中使用单个 Docker 节点是远远不够的，搭建 Docker 集群势在必行。然而，面对 Kubernetes, Mesos 以及 Swarm 等众多容器集群系统，我们该如何选择呢？它们之中，Swarm 是 Do...</span></a><a class="item" href="/blog/post/2311352951.html" title="使用Docker Compose"><div class="img"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://github.com/cayzlh/git-img-repository/raw/master/blog/2019/09/19.png"></div><span class="title">使用Docker Compose</span><span class="excerpt">Docker-Compose 是 Docker 的一种编排服务，是一个用于在 Docker 上定义并运行复杂应用的工具，可以让用户在集群中部署分布式应用</span></a><a class="item" href="/blog/post/709624188.html" title="使用Docker部署SpringBoot项目"><div class="img"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2021/04/14194816180355881618035588178.png"></div><span class="title">使用Docker部署SpringBoot项目</span><span class="excerpt">Docker 技术发展为微服务落地提供了更加便利的环境，使用 Docker 部署 Spring Boot 其实非常简单</span></a><a class="item" href="/blog/post/20210402.html" title="HomeBrew换源"><div class="img"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2021/04/14194816180355881618035588178.png"></div><span class="title">HomeBrew换源</span></a></div></section></div>
+
+
+
+
+
+      
+<footer class="page-footer fs12"><hr><div><p>本博客所有文章除特别声明外，均采用 <a target="_blank" rel="external nofollow noopener noreferrer" href="https://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY-NC-SA 4.0</a> 许可协议，转载请注明出处。</p>
+<p>本站由 <a href="https://www.cayzlh.com/blog/">@🐳Ant丶</a> 创建，使用 <a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/xaoxuu/hexo-theme-stellar/tree/1.1.0">Stellar</a> 作为主题。</p>
+<p><a target="_blank" rel="external nofollow noopener noreferrer" href="https://beian.miit.gov.cn/">粤ICP备20058712号</a></p>
+</div></footer>
+
+      <div class="float-panel mobile-only" style="display:none">
+  <button type="button" class="sidebar-toggle mobile" onclick="sidebar.toggle()">
+    <svg class="icon" viewbox="0 0 1228 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2849"><path d="M0 0m97.390199 0l973.901995 0q97.390199 0 97.390199 97.390199l0 0q0 97.390199-97.390199 97.3902l-973.901995 0q-97.390199 0-97.390199-97.3902l0 0q0-97.390199 97.390199-97.390199Z" p-id="2850"/><path d="M0 389.560798m97.390199 0l973.901995 0q97.390199 0 97.390199 97.390199l0 0q0 97.390199-97.390199 97.3902l-973.901995 0q-97.390199 0-97.390199-97.3902l0 0q0-97.390199 97.390199-97.390199Z" p-id="2851"/><path d="M0 779.121596m97.390199 0l973.901995 0q97.390199 0 97.390199 97.390199l0 0q0 97.390199-97.390199 97.390199l-973.901995 0q-97.390199 0-97.390199-97.390199l0 0q0-97.390199 97.390199-97.390199Z" p-id="2852"/></svg>
+  </button>
+</div>
+
+    </div>
+  </div>
+  <div class="scripts">
+    <script type="text/javascript">
+  stellar = {
+    // 懒加载 css https://github.com/filamentgroup/loadCSS
+    loadCSS: (href, before, media, attributes) => {
+      var doc = window.document;
+      var ss = doc.createElement("link");
+      var ref;
+      if (before) {
+        ref = before;
+      } else {
+        var refs = (doc.body || doc.getElementsByTagName("head")[0]).childNodes;
+        ref = refs[refs.length - 1];
+      }
+      var sheets = doc.styleSheets;
+      if (attributes) {
+        for (var attributeName in attributes) {
+          if (attributes.hasOwnProperty(attributeName)) {
+            ss.setAttribute(attributeName, attributes[attributeName]);
+          }
+        }
+      }
+      ss.rel = "stylesheet";
+      ss.href = href;
+      ss.media = "only x";
+      function ready(cb) {
+        if (doc.body) {
+          return cb();
+        }
+        setTimeout(function () {
+          ready(cb);
+        });
+      }
+      ready(function () {
+        ref.parentNode.insertBefore(ss, before ? ref : ref.nextSibling);
+      });
+      var onloadcssdefined = function (cb) {
+        var resolvedHref = ss.href;
+        var i = sheets.length;
+        while (i--) {
+          if (sheets[i].href === resolvedHref) {
+            return cb();
+          }
+        }
+        setTimeout(function () {
+          onloadcssdefined(cb);
+        });
+      };
+      function loadCB() {
+        if (ss.addEventListener) {
+          ss.removeEventListener("load", loadCB);
+        }
+        ss.media = media || "all";
+      }
+      if (ss.addEventListener) {
+        ss.addEventListener("load", loadCB);
+      }
+      ss.onloadcssdefined = onloadcssdefined;
+      onloadcssdefined(loadCB);
+      return ss;
+    },
+
+    // 从 butterfly 和 volantis 获得灵感
+    loadScript: (src, opt) => new Promise((resolve, reject) => {
+      var script = document.createElement('script')
+      script.src = src
+      if (opt) {
+        for (let key of Object.keys(opt)) {
+          script[key] = opt[key]
+        }
+      } else {
+        // 默认异步，如果需要同步，第二个参数传入 {} 即可
+        script.async = true
+      }
+      script.onerror = reject
+      script.onload = script.onreadystatechange = function() {
+        const loadState = this.readyState
+        if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+        script.onload = script.onreadystatechange = null
+        resolve()
+      }
+      document.head.appendChild(script)
+    }),
+
+    // https://github.com/jerryc127/hexo-theme-butterfly
+    jQuery: (fn) => {
+      if (typeof jQuery === 'undefined') {
+        stellar.loadScript(stellar.plugins.jQuery).then(fn)
+      } else {
+        fn()
+      }
+    }
+  };
+  stellar.github = 'https://github.com/xaoxuu/hexo-theme-stellar/tree/1.1.0';
+  stellar.config = {
+    date_suffix: {
+      just: '刚刚',
+      min: '分钟前',
+      hour: '小时前',
+      day: '天前',
+      month: '个月前',
+    },
+  };
+
+  // required plugins (only load if needs)
+  stellar.plugins = {
+    jQuery: 'https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js',
+    sitesjs: '/blog/js/plugins/sites.js',
+    friendsjs: '/blog/js/plugins/friends.js',
+  };
+
+  // optional plugins
+  if ('true' == 'true') {
+    stellar.plugins.lazyload = Object.assign({"enable":true,"js":"https://cdn.jsdelivr.net/npm/vanilla-lazyload@17.3.1/dist/lazyload.min.js","transition":"blur"});
+  }
+  if ('true' == 'true') {
+    stellar.plugins.swiper = Object.assign({"enable":true,"css":"https://unpkg.com/swiper/swiper-bundle.min.css","js":"https://unpkg.com/swiper/swiper-bundle.min.js"});
+  }
+  if ('' == 'true') {
+    stellar.plugins.scrollreveal = Object.assign({"enable":null,"js":"https://cdn.jsdelivr.net/npm/scrollreveal@4.0.9/dist/scrollreveal.min.js","distance":"8px","duration":500,"interval":100,"scale":1});
+  }
+  if ('true' == 'true') {
+    stellar.plugins.preload = Object.assign({"enable":true,"service":"flying_pages","instant_page":"https://cdn.jsdelivr.net/gh/volantis-x/cdn-volantis@4.1.2/js/instant_page.js","flying_pages":"https://cdn.jsdelivr.net/gh/gijo-varghese/flying-pages@2.1.2/flying-pages.min.js"});
+  }
+</script>
+
+<!-- required -->
+
+  
+<script src="/blog/js/main.js" async></script>
+
+
+
+<!-- optional -->
+
+
+
+<!-- inject -->
+
+
+  </div>
+</body>
+</html>

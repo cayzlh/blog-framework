@@ -1,0 +1,1114 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta name="generator" content="Hexo 5.4.0">
+  <meta charset="utf-8">
+  
+
+  <meta http-equiv="x-dns-prefetch-control" content="on">
+  <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+
+  <meta name="renderer" content="webkit">
+  <meta name="force-rendering" content="webkit">
+  <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+  <meta name="HandheldFriendly" content="True">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <title>Mybatis技术内幕：核心处理层-MyBatis初始化 - CAYZLH</title>
+
+  
+  <meta name="description" content="核心处理层以基础支持层为基础，实现了MyBatis的核心功能。这个部分将从MyBatis的初始化、动态SQL语句的解析、结果集的映射、参数解析以及SQL语句的执行等几个方面分析MyBatis的核心处理层，了解MyBatis的核心原理。
+
+
+本篇介绍MyBatis的初始化
+
+在MyBatis初始...">
+
+  <!-- feed -->
+  
+    <link rel="alternate" href="/blog/atom.xml" title="CAYZLH" type="application/atom+xml">
+  
+
+  
+    
+<link rel="stylesheet" href="/blog/css/main.css">
+
+  
+
+  
+    
+      <meta name="msapplication-TileColor" content="#2d89ef">
+    
+      <meta name="msapplication-config" content="/assets/favicon/browserconfig.xml">
+    
+      <meta name="theme-color" content="#ffffff">
+    
+      <link rel="shortcut icon" href="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/logo/favicon.ico">
+    
+      <link rel="icon" type="image/png" href="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/logo/favicon-192x192.png" sizes="192x192">
+    
+      <link rel="apple-touch-icon" sizes="180x180" href="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/logo/apple-touch-icon.png">
+    
+  
+</head>
+
+<body>
+  
+
+
+  <div class="l_body" id="start">
+    <aside class="l_left">
+    
+
+<header class="header">
+  <div class="logo-wrap">
+  
+    <a class="avatar" href="/blog/">
+      
+        <img no-lazy class="bg" src="https://cdn.jsdelivr.net/gh/cdn-x/placeholder@1.0.2/avatar/round/rainbow64@3x.webp" onerror="javascript:this.classList.add('error');this.src='https://cdn.jsdelivr.net/gh/cdn-x/placeholder@1.0.1/image/2659360.svg';">
+      
+      <img no-lazy class="avatar" src="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/image/IMG_4207.JPG" onerror="javascript:this.classList.add('error');this.src='https://cdn.jsdelivr.net/gh/cdn-x/placeholder@1.0.1/image/2659360.svg';">
+    </a>
+  
+  
+    <a class="title" href="/blog/">
+      CAYZLH
+    </a>
+  
+</div>
+
+  <nav class="menu dis-select"><a class="nav-item" href="/blog/">文章</a><a class="nav-item active" href="/blog/wiki/">文档</a></nav>
+</header>
+
+<div class="widgets">
+  
+    
+      
+      
+<div class="widget-wrap" id="toc"><div class="widget-header h4 dis-select"><span class="name">本文目录</span></div><div class="widget-body fs14 wiki"><div class="doc-tree"><a class="doc-tree-link" href="/blog/wiki/mybatis_technology_insider/index.html"><span class="toc-text">Mybatis技术内幕</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/blog/wiki/mybatis_technology_insider/part1.html"><span class="toc-text">MyBatis快速入门</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/blog/wiki/mybatis_technology_insider/part2.html"><span class="toc-text">基础支持层——解析器模块</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/blog/wiki/mybatis_technology_insider/part3.html"><span class="toc-text">基础支持层——反射模块</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/blog/wiki/mybatis_technology_insider/part4.html"><span class="toc-text">基础支持层——日志模块</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/blog/wiki/mybatis_technology_insider/part5.html"><span class="toc-text">基础支持层——资源加载</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/blog/wiki/mybatis_technology_insider/part6.html"><span class="toc-text">基础支持层——DataSource</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/blog/wiki/mybatis_technology_insider/part7.html"><span class="toc-text">基础支持层——Transaction</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/blog/wiki/mybatis_technology_insider/part8.html"><span class="toc-text">基础支持层——binding模块</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/blog/wiki/mybatis_technology_insider/part9.html"><span class="toc-text">基础支持层——缓存模块</span></a></div><div class="doc-tree active"><a class="doc-tree-link active" href="/blog/wiki/mybatis_technology_insider/part10.html"><span class="toc-text">核心处理层-MyBatis初始化</span></a><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%BB%BA%E9%80%A0%E8%80%85%E6%A8%A1%E5%BC%8F"><span class="toc-text">建造者模式</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#BaseBuilder"><span class="toc-text">BaseBuilder</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#XMLConfigBuilder"><span class="toc-text">XMLConfigBuilder</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#XMLMapperBuilder"><span class="toc-text">XMLMapperBuilder</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#XMLStatementBuilder"><span class="toc-text">XMLStatementBuilder</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%BB%91%E5%AE%9AMapper%E6%8E%A5%E5%8F%A3"><span class="toc-text">绑定Mapper接口</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%A4%84%E7%90%86incomplete-%E9%9B%86%E5%90%88"><span class="toc-text">处理incomplete*集合</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8F%82%E8%80%83"><span class="toc-text">参考</span></a></li></ol></div><div class="doc-tree"><a class="doc-tree-link" href="/blog/wiki/mybatis_technology_insider/part11.html"><span class="toc-text">核心处理层-SqlNode&SqlSource</span></a></div></div></div>
+
+    
+  
+    
+      
+      
+  
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+      <div class="widget-wrap" id="related">
+        <div class="widget-header h4 dis-select">
+          <span class="name">更多读书笔记</span>
+        </div>
+        <div class="widget-body fs14">
+          
+            
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+          
+            
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+                <div class="post-title">
+                  <a href="/blog/wiki/understanding_jvm/index.html">
+                    深入理解Java虚拟机
+                  </a>
+                </div>
+              
+            
+          
+            
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+                <div class="post-title">
+                  <a href="/blog/wiki/how_to_reading/index.html">
+                    《如何阅读一本书》
+                  </a>
+                </div>
+              
+            
+          
+        </div>
+      </div>
+    
+  
+
+
+    
+  
+</div>
+
+
+    </aside>
+    <div class="l_main">
+      
+
+      
+
+  
+  
+  <div class="bread-nav fs12">
+  
+    
+    <div id="breadcrumb">
+      <a class="cap breadcrumb" href="/">主页</a>
+      <span class="sep"></span>
+      
+        <a class="cap breadcrumb" href="/blog/wiki/">文档</a>
+      
+      
+        <span class="sep"></span>
+        <a class="cap breadcrumb" href="/blog/wiki/categories/reading/index.html">读书笔记</a>
+      
+      
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        <span class="sep"></span>
+        <a class="cap breadcrumb" href="/blog/wiki/mybatis_technology_insider/index.html">Mybatis技术内幕</a>
+      
+    </div>
+    <div id="post-meta">
+      更新于&nbsp;<time datetime="2021-04-09T07:52:02.974Z">2021-04-09</time>
+    </div>
+  
+  </div>
+
+
+  <article class="content md wiki">
+  <h1 class="article-title"><span>核心处理层-MyBatis初始化</span></h1>
+  <p>核心处理层以基础支持层为基础，实现了<code>MyBatis</code>的核心功能。这个部分将从<code>MyBatis</code>的初始化、动态<code>SQL</code>语句的解析、结果集的映射、参数解析以及<code>SQL</code>语句的执行等几个方面分析<code>MyBatis</code>的核心处理层，了解<code>MyBatis</code>的核心原理。</p>
+<p><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/22/image-20200622175512211_aegXOG.png" alt="image-20200622175512211"></p>
+<blockquote>
+<p>本篇介绍MyBatis的初始化</p>
+</blockquote>
+<p>在<code>MyBatis</code>初始化的过程中，除了会读取<code>mybatis-config.xml</code>配置文件以及映射配置文件，还会加载配置文件指定的类，处理类中的注解，创建一些配置对象，最终完成框架中各个模块的初始化。</p>
+<p>另外，也可以使用<code>JavaAPI</code>的方式对<code>MyBatis</code>进行配置，这种硬编码的配置方式主要用在配置量比较少且配置信息不常变化的场景下。</p>
+<h2 id="建造者模式"><a href="#建造者模式" class="headerlink" title="建造者模式"></a>建造者模式</h2><p>在<code>MyBatis</code>处理<code>mybatis-config.xml</code>以及映射配置文件时，会在内存中创建相应的配置对象，该过程的设计使用到<strong>建造者模式</strong>的相关知识。</p>
+<p><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/22/image-20200622215026613_lPP12T.png" alt="image-20200622215026613"></p>
+<p>建造者模式中的主要角色如下：</p>
+<ul>
+<li><p><strong>建造者(Builder)接口</strong></p>
+<p>Builder接口用于定义建造者构建产品对象的各部分的行为。</p>
+</li>
+<li><p><strong>具体建造者(ConcreteBuilder)角色</strong></p>
+<p><strong>在建造者模式中，直接创建产品对象的是具体建造者。</strong>具体建造者类必须实现建造者接口所要求的两类方法：</p>
+<p>一类是建造方法，如上图中的<code>buildPart1()</code>、<code>buildPart2()</code>等方法。</p>
+<p>另一类是获取构建好的产品对象的方法，如上图中的<code>getProduct()</code>方法。</p>
+</li>
+<li><p><strong>导演(Director)角色</strong></p>
+<p>该角色会通过调用具体建造者， 创建需要的产品对象</p>
+</li>
+<li><p><strong>产品(Product)角色</strong></p>
+<p>产品对象就是用户需要使用的复杂对象</p>
+</li>
+</ul>
+<p>建造者模式的优点：</p>
+<ul>
+<li>建造者模式中的导演角色并不需要知晓产品类的内部细节，它只提供需要的信息给建造者，由具体建造者处理这些信息(这个处理过程可能会比较复杂)并完成产品构造。这就使<strong>产品对象的上层代码与产品对象的创建过程解耦。</strong></li>
+<li>建造者模式将复杂产品的创建过程分散到了不同的构造步骤中，这样可以对产品创建过程实现更加精细的控制，也会使<strong>创建过程更加清晰。</strong></li>
+<li>每个具体建造者都可以创建出完整的产品对象，而且具体建造者之间是相互独立的，因此系统就可以通过不同的具体建造者，得到不同的产品对象。<strong>当有新产品出现时，无须修改原有的代码，只需要添加新的具体建造者即可完成扩展</strong>，这符合<strong>开放-封闭</strong>原则。</li>
+</ul>
+<p>建造者模式也有一些缺点，它所创建的产品一般具有较多的共同点，其组成部分相似，<strong>如果产品之间的差异性很大，则不适合使用建造者模式。</strong></p>
+<p>如果产品种类较多，且内部变化复杂，就需要定义多个具体建造者类来实现这种变化，导致整个系统变得很复杂，不易于理解。</p>
+<h2 id="BaseBuilder"><a href="#BaseBuilder" class="headerlink" title="BaseBuilder"></a>BaseBuilder</h2><p><code>MyBatis</code>初始化的主要工作是加载并解析<code>mybatis-config.xml</code>配置文件、映射配置文件以及相关的注解信息。<code>MyBatis</code>的初始化入口是<code>SqlSessionFactoryBuilder.build()</code>方法，其具体实现如下:</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> SqlSessionFactory <span class="title">build</span><span class="params">(Reader reader, String environment, Properties properties)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">try</span> &#123;</span><br><span class="line">    <span class="comment">// 读取配置文件</span></span><br><span class="line">    XMLConfigBuilder parser = <span class="keyword">new</span> XMLConfigBuilder(reader, environment, properties);</span><br><span class="line">    <span class="comment">// 解析配置文件得到Configuration对象，创建DefaultSqlSessionFactory对象</span></span><br><span class="line">    <span class="keyword">return</span> build(parser.parse());</span><br><span class="line">  &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">    <span class="keyword">throw</span> ExceptionFactory.wrapException(<span class="string">&quot;Error building SqlSession.&quot;</span>, e);</span><br><span class="line">  &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">    ErrorContext.instance().reset();</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">      reader.close();</span><br><span class="line">    &#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">      <span class="comment">// Intentionally ignore. Prefer previous error.</span></span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>SqlSessionFactoryBuilder.build()</code>方法会创建<code>XMLConfigBuilder</code>对象来解析<code>mybatis-config.xml</code>配置文件，而<code>XMLConfigBuilder</code>继承自<code>BaseBuilder</code>抽象类。</p>
+<p><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/23/image-20200623160844166_VAke1q.png" alt="image-20200623160844166"></p>
+<p><code>MyBatis</code>的初始化过程使用了建造者模式，这里的<code>BaseBuilder</code>抽象类就扮演着建造者接口的角色。<code>BaseBuilder</code>中核心字段的含义如下：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="comment">// Configuration是MyBatis初始化过程的核心对象，MyBatis中几乎全部的配置信息都会保存到Configuration中</span></span><br><span class="line"><span class="comment">// Configuration对象是在MyBatis初始化过程中创建且是全局唯一的（all-in-one配置对象）。</span></span><br><span class="line"><span class="keyword">protected</span> <span class="keyword">final</span> Configuration configuration;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 在mybatis-config.xml配置文件中可以使用&lt;typeAliases&gt;标签定义别名，这些定义的别名都会记录在</span></span><br><span class="line"><span class="comment">// TypeAliasRegistry对象中</span></span><br><span class="line"><span class="keyword">protected</span> <span class="keyword">final</span> TypeAliasRegistry typeAliasRegistry;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 在mybatis-config.xml配置文件中可以使用&lt;typeHandlers&gt;标签添加自定义TypeHandler器，</span></span><br><span class="line"><span class="comment">// 完成指定数据库类型与Java类型的转换，这些TypeHandler都会记录在TypeHandlerRegistry中</span></span><br><span class="line"><span class="keyword">protected</span> <span class="keyword">final</span> TypeHandlerRegistry typeHandlerRegistry;</span><br></pre></td></tr></table></figure>
+
+<p><code>BaseBuilder</code>中记录的<code>TypeAliasRegistry</code>对象和<code>TypeHandlerRegistry</code>对象，其实是全局唯一的，它们都是在<code>Configuration</code>对象初始化时创建的。</p>
+<p><code>Configuration</code>类中定义了这两个字段：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">protected</span> <span class="keyword">final</span> TypeHandlerRegistry typeHandlerRegistry = <span class="keyword">new</span> TypeHandlerRegistry();</span><br><span class="line"><span class="keyword">protected</span> <span class="keyword">final</span> TypeAliasRegistry typeAliasRegistry = <span class="keyword">new</span> TypeAliasRegistry();</span><br></pre></td></tr></table></figure>
+
+<p>在<code>BaseBuilder</code>构造函数中，通过相应的<code>Configuration.get*()</code>方法得到<code>TypeAliasRegistry</code>对象和<code>TypeHandlerRegistry</code>对象，并赋值给<code>BaseBuilder</code>相应字段。</p>
+<p><code>BaseBuilder.resolveAlias()</code>方法依赖<code>TypeAliasRegistry</code>解析别名，<code>BaseBuilder.resolveTypeHandler()</code>方法依赖<code>TypeHandlerRegistry</code>查找指定的<code>TypeHandler</code>对象。</p>
+<p><code>MyBatis</code>使用<code>JdbcType</code>枚举类型表示<code>JDBC</code>类型。<code>MyBatis</code>中常用的枚举类型还有<code>ResultSetType</code>和<code>ParameterMode:ResultSetType</code>枚举类型表示结果集类型，使用<code>ParameterMode</code>枚举类型表示存储过程中的参数类型。</p>
+<p>在<code>BaseBuilder</code>中提供了相应的<code>resolveJdbcType()</code>、<code>resolveResultSetType()</code>、<code>resolveParameterMode()</code>方法，将<code>String</code>转换成对应的枚举对象。</p>
+<h2 id="XMLConfigBuilder"><a href="#XMLConfigBuilder" class="headerlink" title="XMLConfigBuilder"></a>XMLConfigBuilder</h2><p><code>XMLConfigBuilder</code>是<code>BaseBuilder</code>的众多子类之一，它扮演的是具体建造者的角色。**<code>XMLConfigBuilder</code>主要负责解析<code>mybatis-config.xml</code>配置。**</p>
+<p>核心字段：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="comment">// 标识是否已经解析过mybatis-config.xml文件</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">boolean</span> parsed;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 用于解析mybatis-config.xml配置文件的XpathParser对象</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> XPathParser parser;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 标识 &lt;environment&gt; 配置的名称， 默认读取&lt;environment&gt;标签的默认值</span></span><br><span class="line"><span class="keyword">private</span> String environment;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 负责创建和缓存Reflector对象</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> ReflectorFactory localReflectorFactory = <span class="keyword">new</span> DefaultReflectorFactory();</span><br></pre></td></tr></table></figure>
+
+<p><code>XMLConfigBuilder.parse()</code>方法是解析<code>mybatis-config.xml</code>配置文件的入口，它通过调用<code>XMLConfigBuilder.parseConfiguration()</code>方法实现整个解析过程。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> Configuration <span class="title">parse</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (parsed) &#123;</span><br><span class="line">    <span class="comment">// 根据parsed变量的值判断是否已经完成了对mybatis-config.xml配置文件的解析</span></span><br><span class="line">    <span class="keyword">throw</span> <span class="keyword">new</span> BuilderException(<span class="string">&quot;Each XMLConfigBuilder can only be used once.&quot;</span>);</span><br><span class="line">  &#125;</span><br><span class="line">  parsed = <span class="keyword">true</span>;</span><br><span class="line">  <span class="comment">// 找到 configuration 节点，开始解析</span></span><br><span class="line">  parseConfiguration(parser.evalNode(<span class="string">&quot;/configuration&quot;</span>));</span><br><span class="line">  <span class="keyword">return</span> configuration;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">parseConfiguration</span><span class="params">(XNode root)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">try</span> &#123;</span><br><span class="line">    <span class="comment">// 解析properties节点</span></span><br><span class="line">    propertiesElement(root.evalNode(<span class="string">&quot;properties&quot;</span>));</span><br><span class="line">    <span class="comment">// 解析settings节点	</span></span><br><span class="line">    Properties settings = settingsAsProperties(root.evalNode(<span class="string">&quot;settings&quot;</span>));</span><br><span class="line">    loadCustomVfs(settings);</span><br><span class="line">    typeAliasesElement(root.evalNode(<span class="string">&quot;typeAliases&quot;</span>));</span><br><span class="line">    pluginElement(root.evalNode(<span class="string">&quot;plugins&quot;</span>));</span><br><span class="line">    objectFactoryElement(root.evalNode(<span class="string">&quot;objectFactory&quot;</span>));</span><br><span class="line">    objectWrapperFactoryElement(root.evalNode(<span class="string">&quot;objectWrapperFactory&quot;</span>));</span><br><span class="line">    reflectorFactoryElement(root.evalNode(<span class="string">&quot;reflectorFactory&quot;</span>));</span><br><span class="line">    settingsElement(settings);</span><br><span class="line">    <span class="comment">// read it after objectFactory and objectWrapperFactory issue #631</span></span><br><span class="line">    environmentsElement(root.evalNode(<span class="string">&quot;environments&quot;</span>));</span><br><span class="line">    databaseIdProviderElement(root.evalNode(<span class="string">&quot;databaseIdProvider&quot;</span>));</span><br><span class="line">    typeHandlerElement(root.evalNode(<span class="string">&quot;typeHandlers&quot;</span>));</span><br><span class="line">    mapperElement(root.evalNode(<span class="string">&quot;mappers&quot;</span>));</span><br><span class="line">  &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">    <span class="keyword">throw</span> <span class="keyword">new</span> BuilderException(<span class="string">&quot;Error parsing SQL Mapper Configuration. Cause: &quot;</span> + e, e);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>解析<code>&lt;properties&gt;</code>节点</strong></p>
+<p><code>XMLConfigBuilder.propertiesElement()</code>方法会解析<code>mybatis-config.xml</code>配置文件中的<code>properties</code>节点并形成<code>java.util.Properties</code>对象，之后将该<code>Properties</code>对象设置到<code>XPathParser</code>和<code>Configuration</code>的<code>variables</code>字段中。在后面的解析过程中，会使用该<code>Properties</code>对象中的信息替换占位符。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">propertiesElement</span><span class="params">(XNode context)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (context != <span class="keyword">null</span>) &#123;</span><br><span class="line">    <span class="comment">// 解析&lt;properties&gt;的子节点（&lt;property&gt;标签）的name和value属性， 并记录到Properties中</span></span><br><span class="line">    Properties defaults = context.getChildrenAsProperties();</span><br><span class="line">    <span class="comment">// 解析&lt;properties&gt;的resource和url属性，这两个属性用于确定properties配置文件的位置</span></span><br><span class="line">    String resource = context.getStringAttribute(<span class="string">&quot;resource&quot;</span>);</span><br><span class="line">    String url = context.getStringAttribute(<span class="string">&quot;url&quot;</span>);</span><br><span class="line">    <span class="comment">// resource和url属性不能同时存在，否则抛出异常</span></span><br><span class="line">    <span class="keyword">if</span> (resource != <span class="keyword">null</span> &amp;&amp; url != <span class="keyword">null</span>) &#123;</span><br><span class="line">      <span class="keyword">throw</span> <span class="keyword">new</span> BuilderException(<span class="string">&quot;...&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (resource != <span class="keyword">null</span>) &#123;</span><br><span class="line">      defaults.putAll(Resources.getResourceAsProperties(resource));</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (url != <span class="keyword">null</span>) &#123;</span><br><span class="line">      defaults.putAll(Resources.getUrlAsProperties(url));</span><br><span class="line">    &#125;</span><br><span class="line">    Properties vars = configuration.getVariables();</span><br><span class="line">    <span class="keyword">if</span> (vars != <span class="keyword">null</span>) &#123;</span><br><span class="line">      defaults.putAll(vars);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 更新XPathParser和Configuration的variables字段</span></span><br><span class="line">    parser.setVariables(defaults);</span><br><span class="line">    configuration.setVariables(defaults);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>解析<code>&lt;settings&gt;</code>节点</strong></p>
+<p><code>XMLConfigBuilder.settingsAsProperties()</code>方法负责解析<code>settings</code>节点，在<code>settings</code>点下的配置是<code>MyBatis</code>全局性的配置，它们会改变<code>MyBatis</code>的运行时行为，需要注意的是，在<code>MyBatis</code>初始化时，这些全局配置信息都会被记录到<code>Configuration</code>对象的对应属性中。</p>
+<p>例如：开发人员可以通过配置<code>autoMappingBehavior</code>修改<code>MyBatis</code>是否开启自动映射的功能，具体配置如下</p>
+<figure class="highlight xml"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">settings</span>&gt;</span></span><br><span class="line">	&lt;!- autoMappingBehavior配置项 是决 定MyBatis是否幵 启 自动 映射功能的条 件之一 --&gt; </span><br><span class="line">	<span class="tag">&lt;<span class="name">setting</span> <span class="attr">name</span>=<span class="string">&quot;autoMappingBehavior&quot;</span> <span class="attr">value</span>=<span class="string">&quot;PARTIAL&quot;</span> /&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">settings</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>在<code>Configuration</code>中存在一个同名的相应字段：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">protected</span> AutoMappingBehavior autoMappingBehavior = AutoMappingBehavior.PARTIAL;</span><br></pre></td></tr></table></figure>
+
+<p><code>settingsAsProperties()</code>方法的解析方式与<code>propertiesElement()</code>方法类似，但是多了使用<code>MetaClass</code>检测<code>key</code>指定的属性在<code>Configuration</code>类中是否有对应<code>setter</code>方法的步骤。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> Properties <span class="title">settingsAsProperties</span><span class="params">(XNode context)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (context == <span class="keyword">null</span>) &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">new</span> Properties();</span><br><span class="line">  &#125;</span><br><span class="line">  Properties props = context.getChildrenAsProperties();</span><br><span class="line">  <span class="comment">// Check that all settings are known to the configuration class</span></span><br><span class="line">  <span class="comment">// 创建 Configuration 对应的MetaClass对象</span></span><br><span class="line">  MetaClass metaConfig = MetaClass.forClass(Configuration.class, localReflectorFactory);</span><br><span class="line">  </span><br><span class="line">  <span class="comment">// 检测Configuration中是否定义了key指定属性相应的setter方法</span></span><br><span class="line">  <span class="keyword">for</span> (Object key : props.keySet()) &#123;</span><br><span class="line">    <span class="keyword">if</span> (!metaConfig.hasSetter(String.valueOf(key))) &#123;</span><br><span class="line">      <span class="keyword">throw</span> <span class="keyword">new</span> BuilderException(<span class="string">&quot;...&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> props;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>解析<code>&lt;typeAliases&gt;</code>、<code>&lt;typeHandlers&gt;</code>节点</strong></p>
+<p><code>XMLConfigBuilder.typeAliasesElement()</code>方法负责解析<code>typeAliases</code>节点点及其子节点，并通过<code>TypeAliasRegistry</code>完成别名的注册。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">typeAliasesElement</span><span class="params">(XNode parent)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (parent != <span class="keyword">null</span>) &#123;</span><br><span class="line">    <span class="keyword">for</span> (XNode child : parent.getChildren()) &#123; <span class="comment">// 处理全部子节点</span></span><br><span class="line">      <span class="keyword">if</span> (<span class="string">&quot;package&quot;</span>.equals(child.getName())) &#123; <span class="comment">// 处理package节点</span></span><br><span class="line">				<span class="comment">// 获取指定包名</span></span><br><span class="line">        String typeAliasPackage = child.getStringAttribute(<span class="string">&quot;name&quot;</span>);</span><br><span class="line">        <span class="comment">// 通过TypeAliasRegistry扫描指定包中所有的类，并解析@Alias注解，完成别名注册</span></span><br><span class="line">        configuration.getTypeAliasRegistry().registerAliases(typeAliasPackage);</span><br><span class="line">      &#125; <span class="keyword">else</span> &#123; <span class="comment">// 处理typeAlias节点</span></span><br><span class="line">        String alias = child.getStringAttribute(<span class="string">&quot;alias&quot;</span>); <span class="comment">// 获取指定别名</span></span><br><span class="line">        String type = child.getStringAttribute(<span class="string">&quot;type&quot;</span>); <span class="comment">// 获取别名对应的类型</span></span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">          Class&lt;?&gt; clazz = Resources.classForName(type);</span><br><span class="line">          <span class="keyword">if</span> (alias == <span class="keyword">null</span>) &#123;</span><br><span class="line">            typeAliasRegistry.registerAlias(clazz); <span class="comment">// 扫描@Alias注解，完成注册</span></span><br><span class="line">          &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            typeAliasRegistry.registerAlias(alias, clazz); <span class="comment">// 注册别名</span></span><br><span class="line">          &#125;</span><br><span class="line">        &#125; <span class="keyword">catch</span> (ClassNotFoundException e) &#123;</span><br><span class="line">          <span class="keyword">throw</span> <span class="keyword">new</span> BuilderException(<span class="string">&quot;...&quot;</span>);</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>XMLConfigBuilder.typeHandlerElement()</code>方法负责解析<code>typeHandlers</code>节点，并通过<code>TypeHandlerRegistry</code>对象完成<code>TypeHandler</code>的注册，该方法的实现与<code>typeAliasesElement()</code>方法类似。</p>
+<p><strong>解析<code>&lt;plugins&gt;</code>节点</strong></p>
+<p>插件是<code>MyBatis</code>提供的扩展机制之一，用户可以通过添加自定义插件在<code>SQL</code>语句执行过程中的某一点进行拦截。</p>
+<p><code>MyBatis</code>中的自定义插件只需实现<code>Interceptor</code>接口，并通过注解指定想要拦截的方法签名即可。这里分析MyBatis中如何加载和管理插件。<br><code>XMLConfigBuilder.pluginElement()</code>方法负责解析<code>plugins</code>节点中定义的插件，并完成实例化和配置操作。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">pluginElement</span><span class="params">(XNode parent)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (parent != <span class="keyword">null</span>) &#123;</span><br><span class="line">    <span class="keyword">for</span> (XNode child : parent.getChildren()) &#123;</span><br><span class="line">      <span class="comment">// 获取plugin节点的interceptor属性</span></span><br><span class="line">      String interceptor = child.getStringAttribute(<span class="string">&quot;interceptor&quot;</span>);</span><br><span class="line">      <span class="comment">// 获取plugin节点下的properties配置的信息，并形成Properties对象</span></span><br><span class="line">      Properties properties = child.getChildrenAsProperties();</span><br><span class="line">      <span class="comment">// 通过TypeAliasRegistry解析别名之后，实例化Interceptor对象</span></span><br><span class="line">      Interceptor interceptorInstance </span><br><span class="line">        = (Interceptor) resolveClass(interceptor).newInstance();</span><br><span class="line">      <span class="comment">// 设置Interceptor的属性</span></span><br><span class="line">      interceptorInstance.setProperties(properties);</span><br><span class="line">      <span class="comment">// 记录Interceptor对象</span></span><br><span class="line">      configuration.addInterceptor(interceptorInstance);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>所有配置的<code>Interceptor</code>对象都是通过<code>Configuration.interceptorChain</code>字段(<code>InterceptorChain</code>类型)管理的，<code>InterceptorChain</code>底层使用<code>ArrayList&lt;Interceptor&gt;</code>实现。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">InterceptorChain</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">final</span> List&lt;Interceptor&gt; interceptors = <span class="keyword">new</span> ArrayList&lt;Interceptor&gt;();</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">public</span> Object <span class="title">pluginAll</span><span class="params">(Object target)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">for</span> (Interceptor interceptor : interceptors) &#123;</span><br><span class="line">      target = interceptor.plugin(target);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> target;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">addInterceptor</span><span class="params">(Interceptor interceptor)</span> </span>&#123;</span><br><span class="line">    interceptors.add(interceptor);</span><br><span class="line">  &#125;</span><br><span class="line">  </span><br><span class="line">  <span class="function"><span class="keyword">public</span> List&lt;Interceptor&gt; <span class="title">getInterceptors</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> Collections.unmodifiableList(interceptors);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>解析<code>&lt;objectFactory&gt;</code>节点</strong></p>
+<p>我们可以通过添加自定义<code>Objectory</code>实现类、<code>ObjectWrapperFactory</code>实现类以及<code>ReflectorFactory</code>实现类对<code>MyBatis</code>进行扩展。<br><code>XMLConfigBuilder.objectFactoryElement()</code>方法负责解析并实例化<code>&lt;objectFactory&gt;</code>节点指定的<code>ObjectFactory</code>实现类，之后将自定义的<code>ObjectFactory</code>对象记录到<code>Configuration.objectFactory</code>字段中。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">objectFactoryElement</span><span class="params">(XNode context)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (context != <span class="keyword">null</span>) &#123;</span><br><span class="line">    <span class="comment">// 获取&lt;objectFactory&gt;节点的type属性</span></span><br><span class="line">    String type = context.getStringAttribute(<span class="string">&quot;type&quot;</span>);</span><br><span class="line">		<span class="comment">// 获取&lt;ObjectFactory&gt;节点下配置的信息，并形成Properties对象</span></span><br><span class="line">    Properties properties = context.getChildrenAsProperties();</span><br><span class="line">    <span class="comment">// 进行别名解析后，实例化自定义ObjectFactory实现</span></span><br><span class="line">    ObjectFactory factory = (ObjectFactory) resolveClass(type).newInstance();</span><br><span class="line">    <span class="comment">// 设置自定义ObjectFactory属性， 完成初始化相关操作</span></span><br><span class="line">    factory.setProperties(properties);</span><br><span class="line">    <span class="comment">// 将自定义ObjectFactory对象记录到Configuration对象的ObjectFactory字段中，待后续使用</span></span><br><span class="line">    configuration.setObjectFactory(factory);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>XMLConfigBuilder</code>对<code>&lt;objectWrapperFactory&gt;</code>节点、<code>&lt;reflectorFactory&gt;</code>节点的解析与上述过程类似，最终会将解析得到的自定义对象记录到<code>Configuration</code>的相应字段中。</p>
+<p><strong>解析<code>&lt;environments&gt;</code>节点</strong></p>
+<p>在实际生产中，同一项目可能分为开发、测试和生产多个不同的环境，每个环境的配置可能也不尽相同。</p>
+<p><code>MyBatis</code>可以配置多个<code>&lt;environment&gt;</code>节点，每个<code>&lt;environment&gt;</code>节点对应一种环境的配置。但需要注意的是，尽管可以配置多个环境，每个<code>SqlSessionFactory</code>实例只能选择其一。</p>
+<p><code>XMLConfigBuilder.environmentsElement()</code>方法负责解析<code>&lt;environments&gt;</code>的相关配置，它会根据<code>XMLConfigBuilder.environment</code>字段值确定要使用的<code>&lt;environment&gt;</code>配置，之后创建对应的<code>TransactionFactory</code>和<code>DataSource</code>对象，并封装进<code>Environment</code>对象中。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">environmentsElement</span><span class="params">(XNode context)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (context != <span class="keyword">null</span>) &#123;</span><br><span class="line">    <span class="comment">// 未指定 XMLConfigBuilder.environment 字段，则使用default属性指定的&lt;environment&gt;</span></span><br><span class="line">    <span class="keyword">if</span> (environment == <span class="keyword">null</span>) &#123;</span><br><span class="line">      environment = context.getStringAttribute(<span class="string">&quot;default&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">for</span> (XNode child : context.getChildren()) &#123;</span><br><span class="line">      String id = child.getStringAttribute(<span class="string">&quot;id&quot;</span>);</span><br><span class="line">      <span class="keyword">if</span> (isSpecifiedEnvironment(id)) &#123;</span><br><span class="line">        TransactionFactory txFactory </span><br><span class="line">          = transactionManagerElement(child.evalNode(<span class="string">&quot;transactionManager&quot;</span>));</span><br><span class="line">        DataSourceFactory dsFactory = dataSourceElement(child.evalNode(<span class="string">&quot;dataSource&quot;</span>));</span><br><span class="line">        DataSource dataSource = dsFactory.getDataSource();</span><br><span class="line">        Environment.Builder environmentBuilder = <span class="keyword">new</span> Environment.Builder(id)</span><br><span class="line">          .transactionFactory(txFactory)</span><br><span class="line">          .dataSource(dataSource);</span><br><span class="line">        configuration.setEnvironment(environmentBuilder.build());</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>解析<code>&lt;databaseldProvider&gt;</code>节点</strong></p>
+<p><code>MyBatis</code>不能像<code>Hibernate</code>那样，直接帮助开发人员屏蔽多种数据库产品在<code>SQL</code>语言支持方面的差异。</p>
+<p>但是在<code>mybatis-config.xml</code>配置文件中，通过<code>&lt;databaseIdProvider&gt;</code>定义所有支持的数据库产品的<code>databaseld</code>,然后在映射配置文件中定义<code>SQL</code>语句节点时，通过<code>databaseld</code>指定该<code>SQL</code>语句应用的数据库产品，这样也可以实现类似的功能。</p>
+<p>在<code>MyBatis</code>初始化时，会根据前面确定的<code>DataSource</code>确定当前使用的数据库产品，然后在解析映射配置文件时，加载不带<code>databaseld</code>属性和带有匹配当前数据库<code>databaseld</code>属性的所有SQL语句。如果同时找到带有<code>databaseld</code>和不带<code>databaseld</code>的相同语句，则后者会被舍弃，使用前者。</p>
+<p><code>XMLConfigBuilder.databaseIdProviderElement()</code>方法负责解析<code>&lt;databaseIdProvider&gt;</code>节点，并创建指定的<code>DatabaseldProvider</code>对象。<code>DatabaseldProvider</code>会返回<code>databaseld</code>值，<code>MyBatis</code>会根据<code>databaseld</code>选择合适的<code>SQL</code>进行执行。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">databaseIdProviderElement</span><span class="params">(XNode context)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">  DatabaseIdProvider databaseIdProvider = <span class="keyword">null</span>;</span><br><span class="line">  <span class="keyword">if</span> (context != <span class="keyword">null</span>) &#123;</span><br><span class="line">    String type = context.getStringAttribute(<span class="string">&quot;type&quot;</span>);</span><br><span class="line">    <span class="comment">// awful patch to keep backward compatibility</span></span><br><span class="line">    <span class="keyword">if</span> (<span class="string">&quot;VENDOR&quot;</span>.equals(type)) &#123;</span><br><span class="line">      type = <span class="string">&quot;DB_VENDOR&quot;</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    Properties properties = context.getChildrenAsProperties();</span><br><span class="line">    <span class="comment">// 创建DatabaseIdProvider对象</span></span><br><span class="line">    databaseIdProvider = (DatabaseIdProvider) resolveClass(type).newInstance();</span><br><span class="line">    <span class="comment">// 配置DatabaseIdProvider，完成初始化</span></span><br><span class="line">    databaseIdProvider.setProperties(properties);</span><br><span class="line">  &#125;</span><br><span class="line">  Environment environment = configuration.getEnvironment();</span><br><span class="line">  <span class="keyword">if</span> (environment != <span class="keyword">null</span> &amp;&amp; databaseIdProvider != <span class="keyword">null</span>) &#123;</span><br><span class="line">    <span class="comment">// 通过前面确定的DataSource获取databaseld，并记录到Configuration.databaseld字段中</span></span><br><span class="line">    String databaseId = databaseIdProvider.getDatabaseId(environment.getDataSource());</span><br><span class="line">    configuration.setDatabaseId(databaseId);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>MyBatis</code>提供的<code>DatabaseldProvider</code>接口及其实现比较简单。</p>
+<p><code>DatabaseldProvider</code>接口的核心方法是<code>getDatabaseId()</code>方法，它主要负责通过给定的<code>DataSource</code>来查找对应的<code>databaseld</code>。</p>
+<blockquote>
+<p><code>MyBatis</code>提供了<code>VendorDatabaseldProvider</code>和<code>DefaukDatabaseldProvider</code>两个实现，其中<code>DefaultDatabaseldProvider</code>己过时。</p>
+</blockquote>
+<p><code>VendorDatabaseIdProvider.getDatabaseId()</code>方法在接收到<code>DataSource</code>对象时，会先解析<code>DataSource</code>所连接的数据库产品名称，之后根据<code>&lt;databaseIdProvider&gt;</code>节点配置的数据库产品名称与<code>databaseld</code>的对应关系确定最终的<code>databaseld</code>。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> String <span class="title">getDatabaseName</span><span class="params">(DataSource dataSource)</span> <span class="keyword">throws</span> SQLException </span>&#123;</span><br><span class="line">  <span class="comment">// 解析DataSource连接的数据库产品的名称</span></span><br><span class="line">  String productName = getDatabaseProductName(dataSource);</span><br><span class="line">  <span class="keyword">if</span> (<span class="keyword">this</span>.properties != <span class="keyword">null</span>) &#123;</span><br><span class="line">    <span class="keyword">for</span> (Map.Entry&lt;Object, Object&gt; property : properties.entrySet()) &#123;</span><br><span class="line">      <span class="keyword">if</span> (productName.contains((String) property.getKey())) &#123;</span><br><span class="line">        <span class="keyword">return</span> (String) property.getValue();</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// no match, return null</span></span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> productName;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">private</span> String <span class="title">getDatabaseProductName</span><span class="params">(DataSource dataSource)</span> <span class="keyword">throws</span> SQLException </span>&#123;</span><br><span class="line">  Connection con = <span class="keyword">null</span>;</span><br><span class="line">  <span class="keyword">try</span> &#123;</span><br><span class="line">    con = dataSource.getConnection();</span><br><span class="line">    DatabaseMetaData metaData = con.getMetaData();</span><br><span class="line">    <span class="keyword">return</span> metaData.getDatabaseProductName();</span><br><span class="line">  &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (con != <span class="keyword">null</span>) &#123;</span><br><span class="line">      <span class="keyword">try</span> &#123;</span><br><span class="line">        con.close();</span><br><span class="line">      &#125; <span class="keyword">catch</span> (SQLException e) &#123;</span><br><span class="line">        <span class="comment">// ignored</span></span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>解析<code>&lt;mappers&gt;</code>节点</strong></p>
+<p>在<code>MyBatis</code>初始化时，除了加载<code>mybatis-config.xml</code>配置文件，还会加载全部的映射配置文件，<code>mybatis-config.xml</code>配置文件中的<code>&lt;mappers&gt;</code>节点会告诉<code>MyBatis</code>去哪些位置查找映射配置文件以及使用了配置注解标识的接口。<br><code>XMLConfigBuilder.mapperElement()</code>方法负责解析<code>&lt;mappers&gt;</code>节点，它会创建<code>XMLMapperBuilder</code>对象加载映射文件，如果映射配置文件存在相应的<code>Mapper</code>接口，也会加载相应的<code>Mapper</code>接口，解析其中的注解并完成向<code>MapperRegistry</code>的注册。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">mapperElement</span><span class="params">(XNode parent)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (parent != <span class="keyword">null</span>) &#123;</span><br><span class="line">    <span class="keyword">for</span> (XNode child : parent.getChildren()) &#123; <span class="comment">// 处理&lt;mappers&gt;的子节点</span></span><br><span class="line">      <span class="keyword">if</span> (<span class="string">&quot;package&quot;</span>.equals(child.getName())) &#123;	<span class="comment">// &lt;package&gt;子节点</span></span><br><span class="line">        String mapperPackage = child.getStringAttribute(<span class="string">&quot;name&quot;</span>);</span><br><span class="line">        <span class="comment">// 扫描指定的包，并向MapperRegistry注册Mapper接口</span></span><br><span class="line">        configuration.addMappers(mapperPackage);</span><br><span class="line">      &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="comment">// 获 取&lt;mapper&gt;节点的resource、url、class属性，这三个属性互斥</span></span><br><span class="line">        String resource = child.getStringAttribute(<span class="string">&quot;resource&quot;</span>);</span><br><span class="line">        String url = child.getStringAttribute(<span class="string">&quot;url&quot;</span>);</span><br><span class="line">        String mapperClass = child.getStringAttribute(<span class="string">&quot;class&quot;</span>);</span><br><span class="line">        <span class="comment">// 如果&lt;mapper&gt;节点指定了resource或是url属性，则创建XMLMapperBuilder对象，</span></span><br><span class="line">        <span class="comment">// 并通过该对象解析resource或是url属性指定的Mapper配置文件</span></span><br><span class="line">        <span class="keyword">if</span> (resource != <span class="keyword">null</span> &amp;&amp; url == <span class="keyword">null</span> &amp;&amp; mapperClass == <span class="keyword">null</span>) &#123;</span><br><span class="line">          ErrorContext.instance().resource(resource);</span><br><span class="line">          InputStream inputStream = Resources.getResourceAsStream(resource);</span><br><span class="line">          <span class="comment">// 创建XMLMapperBuilder对象，解析映射配置文件</span></span><br><span class="line">          XMLMapperBuilder mapperParser = </span><br><span class="line">            <span class="keyword">new</span> XMLMapperBuilder(inputStream, configuration, resource,</span><br><span class="line">                                 configuration.getSqlFragments());</span><br><span class="line">          mapperParser.parse();</span><br><span class="line">        &#125; <span class="keyword">else</span> <span class="keyword">if</span> (resource == <span class="keyword">null</span> &amp;&amp; url != <span class="keyword">null</span> &amp;&amp; mapperClass == <span class="keyword">null</span>) &#123;</span><br><span class="line">          ErrorContext.instance().resource(url);</span><br><span class="line">          InputStream inputStream = Resources.getUrlAsStream(url);</span><br><span class="line">          <span class="comment">// 创建XMLMapperBuilder对象，解析映射配置文件</span></span><br><span class="line">          XMLMapperBuilder mapperParser = </span><br><span class="line">            <span class="keyword">new</span> XMLMapperBuilder(inputStream, configuration, url, </span><br><span class="line">                                 configuration.getSqlFragments());</span><br><span class="line">          mapperParser.parse();</span><br><span class="line">        &#125; <span class="keyword">else</span> <span class="keyword">if</span> (resource == <span class="keyword">null</span> &amp;&amp; url == <span class="keyword">null</span> &amp;&amp; mapperClass != <span class="keyword">null</span>) &#123;</span><br><span class="line">          <span class="comment">// 如果&lt;mapper&gt;节点指定了class属性，则向MapperRegistry注册该Mapper接口</span></span><br><span class="line">          Class&lt;?&gt; mapperInterface = Resources.classForName(mapperClass);</span><br><span class="line">          configuration.addMapper(mapperInterface);</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">          <span class="keyword">throw</span> <span class="keyword">new</span> BuilderException(<span class="string">&quot;...&quot;</span>);</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="XMLMapperBuilder"><a href="#XMLMapperBuilder" class="headerlink" title="XMLMapperBuilder"></a>XMLMapperBuilder</h2><p>通过对<code>XMLConfigBuilder.mapperElement()</code>方法的介绍我们知道，<code>XMLMapperBuilder</code>负责解析映射配置文件，它继承了<code>BaseBuilder</code>抽象类，也是具体建造者的角色。<code>XMLMapperBuilder.parse()</code>方法是解析映射文件的入口。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">parse</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="comment">// 判断是否已加载过该映射文件</span></span><br><span class="line">  <span class="keyword">if</span> (!configuration.isResourceLoaded(resource)) &#123;</span><br><span class="line">    configurationElement(parser.evalNode(<span class="string">&quot;/mapper&quot;</span>));</span><br><span class="line">    <span class="comment">// 将resource添加到Configuration•loadedResources集合中保存，它是HashSet&lt;String&gt;</span></span><br><span class="line">    <span class="comment">// 类型的集合，其中记录了已经加栽过的映射文件。</span></span><br><span class="line">    configuration.addLoadedResource(resource);</span><br><span class="line">    bindMapperForNamespace();</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 处理configurationElement()方法中解析失败的&lt;resultMap&gt;节点</span></span><br><span class="line">  parsePendingResultMaps();</span><br><span class="line">  <span class="comment">// 处理configurationElement()方法中解析失败的&lt;cache-ref&gt;节点</span></span><br><span class="line">  parsePendingCacheRefs();</span><br><span class="line">  <span class="comment">// 处理configurationElement()方法中解析失败的SQL语句节点</span></span><br><span class="line">  parsePendingStatements();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>XMLMapperBuilder</code>也是将每个节点的解析过程封装成了一个方法，而这些方法由<code>XMLMapperBuilder.configurationElement()</code>方法调用。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">configurationElement</span><span class="params">(XNode context)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">try</span> &#123;</span><br><span class="line">    String namespace = context.getStringAttribute(<span class="string">&quot;namespace&quot;</span>);</span><br><span class="line">    <span class="keyword">if</span> (namespace == <span class="keyword">null</span> || namespace.equals(<span class="string">&quot;&quot;</span>)) &#123;</span><br><span class="line">      <span class="keyword">throw</span> <span class="keyword">new</span> BuilderException(<span class="string">&quot;Mapper&#x27;s namespace cannot be empty&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    builderAssistant.setCurrentNamespace(namespace);</span><br><span class="line">    cacheRefElement(context.evalNode(<span class="string">&quot;cache-ref&quot;</span>));</span><br><span class="line">    cacheElement(context.evalNode(<span class="string">&quot;cache&quot;</span>));</span><br><span class="line">    parameterMapElement(context.evalNodes(<span class="string">&quot;/mapper/parameterMap&quot;</span>));</span><br><span class="line">    resultMapElements(context.evalNodes(<span class="string">&quot;/mapper/resultMap&quot;</span>));</span><br><span class="line">    sqlElement(context.evalNodes(<span class="string">&quot;/mapper/sql&quot;</span>));</span><br><span class="line">    buildStatementFromContext(context.evalNodes(<span class="string">&quot;select|insert|update|delete&quot;</span>));</span><br><span class="line">  &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">    <span class="keyword">throw</span> <span class="keyword">new</span> BuilderException(<span class="string">&quot;...&quot;</span>);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>1. 解析<code>&lt;cache&gt;</code>节点</strong></p>
+<p><code>MyBatis</code>拥有非常强大的二级缓存功能，该功能可以非常方便地进行配置，**<code>MyBatis</code>默认情**<br><strong>况下没有开启二级缓存，如果要为某命名空间开启二级缓存功能，则需要在相应映射配置文件中添加<code>&lt;cache&gt;</code>节点，还可以通过配置<code>&lt;cache&gt;</code>节点的相关属性，为二级缓存配置相应的特性(本质上就是添加相应的装饰器)。</strong></p>
+<p><code>XMLMapperBuilder.cacheElement()</code>方法主要负责解析<code>&lt;cache&gt;</code>节点：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">cacheElement</span><span class="params">(XNode context)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (context != <span class="keyword">null</span>) &#123;</span><br><span class="line">    String type = context.getStringAttribute(<span class="string">&quot;type&quot;</span>, <span class="string">&quot;PERPETUAL&quot;</span>);</span><br><span class="line">    Class&lt;? extends Cache&gt; typeClass = typeAliasRegistry.resolveAlias(type);</span><br><span class="line">    String eviction = context.getStringAttribute(<span class="string">&quot;eviction&quot;</span>, <span class="string">&quot;LRU&quot;</span>);</span><br><span class="line">    Class&lt;? extends Cache&gt; evictionClass = typeAliasRegistry.resolveAlias(eviction);</span><br><span class="line">    Long flushInterval = context.getLongAttribute(<span class="string">&quot;flushInterval&quot;</span>);</span><br><span class="line">    Integer size = context.getIntAttribute(<span class="string">&quot;size&quot;</span>);</span><br><span class="line">    <span class="keyword">boolean</span> readWrite = !context.getBooleanAttribute(<span class="string">&quot;readOnly&quot;</span>, <span class="keyword">false</span>);</span><br><span class="line">    <span class="keyword">boolean</span> blocking = context.getBooleanAttribute(<span class="string">&quot;blocking&quot;</span>, <span class="keyword">false</span>);</span><br><span class="line">    Properties props = context.getChildrenAsProperties();</span><br><span class="line">    builderAssistant.useNewCache(</span><br><span class="line">      typeClass, evictionClass, flushInterval, size, readWrite, blocking, props);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>MapperBuilderAssistant</code>是一个辅助类，其<code>useNewCache()</code>方法负责创建<code>Cache</code>对象，并将其添加到<code>Configuration.caches</code>集合中保存。</p>
+<p><code>Configuration</code>中的<code>caches</code>字段是<code>StrictMap&lt;Cache&gt;</code>类型的字段，它记录<code>Cache</code>的id(默认是映射文件的<code>namespace</code>)与<code>Cache</code>对象(二级缓存)之间的对应关系。</p>
+<p><code>StrictMap</code>继承了<code>HashMap</code>,并在其基础上进行了少许修改，这里重点关注<code>StrictMap.put()</code>方法，如果检测到重复的<code>key</code>则抛出异常，如果没有重复的<code>key</code>则添加<code>key</code>以及<code>value</code>，同时会根据<code>key</code>产生<code>shortKey</code>。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> V <span class="title">put</span><span class="params">(String key, V value)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (containsKey(key)) &#123; <span class="comment">// 如果已经包含了该key，则直接返回异常</span></span><br><span class="line">    <span class="keyword">throw</span> <span class="keyword">new</span> IllegalArgumentException(name + <span class="string">&quot; already contains value for &quot;</span> + key);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">if</span> (key.contains(<span class="string">&quot;.&quot;</span>)) &#123;</span><br><span class="line">    <span class="comment">// 按照将key切分成数组，并将数组的最后一项作为shortKey</span></span><br><span class="line">    <span class="keyword">final</span> String shortKey = getShortName(key);</span><br><span class="line">    <span class="keyword">if</span> (<span class="keyword">super</span>.get(shortKey) == <span class="keyword">null</span>) &#123;</span><br><span class="line">      <span class="comment">// 如果不包含指定的sortKey，则添加键值对</span></span><br><span class="line">      <span class="keyword">super</span>.put(shortKey, value);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      <span class="comment">// 如果shortKey已存在，则将value修改成Ambiguity对象</span></span><br><span class="line">      <span class="keyword">super</span>.put(shortKey, (V) <span class="keyword">new</span> Ambiguity(shortKey));</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> <span class="keyword">super</span>.put(key, value); <span class="comment">// 如果不包含该key，则添加键值对</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>Ambiguity</code>是<code>StrictMap</code>中定义的静态内部类，它表示的是存在<strong>二义性的键值对</strong>。<code>Ambiguity</code>中使用<code>subject</code>字段记录了存在二义性的<code>key</code>，并提供了相应的<code>getter</code>方法。</p>
+<p><code>StrictMap.get()</code>方法会检测<code>value</code>是否存在以及<code>value</code>是否为<code>Ambiguity</code>类型对象，如果满足这两个条件中的任意一个，则抛出异常。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> V <span class="title">get</span><span class="params">(Object key)</span> </span>&#123;</span><br><span class="line">  V value = <span class="keyword">super</span>.get(key);</span><br><span class="line">  <span class="keyword">if</span> (value == <span class="keyword">null</span>) &#123; <span class="comment">// 如果key没有对应的value，就报错</span></span><br><span class="line">    <span class="keyword">throw</span> <span class="keyword">new</span> IllegalArgumentException(<span class="string">&quot;...&quot;</span>);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">if</span> (value <span class="keyword">instanceof</span> Ambiguity) &#123;</span><br><span class="line">    <span class="keyword">throw</span> <span class="keyword">new</span> IllegalArgumentException(<span class="string">&quot;...&quot;</span>);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> value;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>MapperBuilderAssistant. useNewCache()</code>方法的实现如下：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> Cache <span class="title">useNewCache</span><span class="params">(Class&lt;? extends Cache&gt; typeClass,</span></span></span><br><span class="line"><span class="function"><span class="params">                         Class&lt;? extends Cache&gt; evictionClass,</span></span></span><br><span class="line"><span class="function"><span class="params">                         Long flushInterval,</span></span></span><br><span class="line"><span class="function"><span class="params">                         Integer size,</span></span></span><br><span class="line"><span class="function"><span class="params">                         <span class="keyword">boolean</span> readWrite,</span></span></span><br><span class="line"><span class="function"><span class="params">                         <span class="keyword">boolean</span> blocking,</span></span></span><br><span class="line"><span class="function"><span class="params">                         Properties props)</span> </span>&#123;</span><br><span class="line">  Cache cache = <span class="keyword">new</span> CacheBuilder(currentNamespace)</span><br><span class="line">    .implementation(valueOrDefault(typeClass, PerpetualCache.class))</span><br><span class="line">    .addDecorator(valueOrDefault(evictionClass, LruCache.class))</span><br><span class="line">    .clearInterval(flushInterval)</span><br><span class="line">    .size(size)</span><br><span class="line">    .readWrite(readWrite)</span><br><span class="line">    .blocking(blocking)</span><br><span class="line">    .properties(props)</span><br><span class="line">    .build();</span><br><span class="line">  configuration.addCache(cache);</span><br><span class="line">  currentCache = cache;</span><br><span class="line">  <span class="keyword">return</span> cache;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>CacheBuilder</code>是<code>Cache</code>的建造者，其字段如下：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="comment">// 唯一标识，一般情况下对应的是映射文件中配置的namespace</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> String id;</span><br><span class="line"><span class="comment">// Cache对象的真正实现类</span></span><br><span class="line"><span class="keyword">private</span> Class&lt;? extends Cache&gt; implementation;</span><br><span class="line"><span class="comment">// 装饰器集合</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> List&lt;Class&lt;? extends Cache&gt;&gt; decorators;</span><br><span class="line"><span class="comment">// 缓存大小</span></span><br><span class="line"><span class="keyword">private</span> Integer size;</span><br><span class="line"><span class="comment">// 清理时间周期</span></span><br><span class="line"><span class="keyword">private</span> Long clearInterval;</span><br><span class="line"><span class="comment">// 是否可读写</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">boolean</span> readWrite;</span><br><span class="line"><span class="comment">// 其他配置信息</span></span><br><span class="line"><span class="keyword">private</span> Properties properties;</span><br><span class="line"><span class="comment">// 是否阻塞</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">boolean</span> blocking;</span><br></pre></td></tr></table></figure>
+
+<p><code>CacheBuilder.build()</code>方法，根据<code>CacheBuilder</code>中上述字段的值创建<code>Cache</code>对象并添加合适的装饰器。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> Cache <span class="title">build</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  setDefaultImplementations();</span><br><span class="line">  Cache cache = newBaseCacheInstance(implementation, id);</span><br><span class="line">  setCacheProperties(cache);</span><br><span class="line">  <span class="comment">// issue #352, do not apply decorators to custom caches</span></span><br><span class="line">  <span class="keyword">if</span> (PerpetualCache.class.equals(cache.getClass())) &#123;</span><br><span class="line">    <span class="keyword">for</span> (Class&lt;? extends Cache&gt; decorator : decorators) &#123;</span><br><span class="line">      cache = newCacheDecoratorInstance(decorator, cache);</span><br><span class="line">      setCacheProperties(cache);</span><br><span class="line">    &#125;</span><br><span class="line">    cache = setStandardDecorators(cache);</span><br><span class="line">  &#125; <span class="keyword">else</span> <span class="keyword">if</span> (!LoggingCache.class.isAssignableFrom(cache.getClass())) &#123;</span><br><span class="line">    cache = <span class="keyword">new</span> LoggingCache(cache);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> cache;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>CacheBuilder.setCacheProperties()</code>方法会根据<code>&lt;cache&gt;</code>节点下配置的<code>&lt;property&gt;</code>信息，初始化<code>Cache</code>对象。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">setCacheProperties</span><span class="params">(Cache cache)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (properties != <span class="keyword">null</span>) &#123;</span><br><span class="line">    MetaObject metaCache = SystemMetaObject.forObject(cache);</span><br><span class="line">    <span class="keyword">for</span> (Map.Entry&lt;Object, Object&gt; entry : properties.entrySet()) &#123;</span><br><span class="line">      String name = (String) entry.getKey();</span><br><span class="line">      String value = (String) entry.getValue();</span><br><span class="line">      <span class="keyword">if</span> (metaCache.hasSetter(name)) &#123;</span><br><span class="line">        Class&lt;?&gt; type = metaCache.getSetterType(name);</span><br><span class="line">        <span class="keyword">if</span> (String.class == type) &#123;</span><br><span class="line">          metaCache.setValue(name, value);</span><br><span class="line">        &#125; <span class="keyword">else</span> <span class="keyword">if</span> (<span class="keyword">int</span>.class == type</span><br><span class="line">                   || Integer.class == type) &#123;</span><br><span class="line">          metaCache.setValue(name, Integer.valueOf(value));</span><br><span class="line">        &#125; <span class="keyword">else</span> <span class="keyword">if</span> (<span class="keyword">long</span>.class == type</span><br><span class="line">                   || Long.class == type) &#123;</span><br><span class="line">          metaCache.setValue(name, Long.valueOf(value));</span><br><span class="line">        &#125; <span class="keyword">else</span> <span class="keyword">if</span> (<span class="keyword">short</span>.class == type</span><br><span class="line">                   || Short.class == type) &#123;</span><br><span class="line">          metaCache.setValue(name, Short.valueOf(value));</span><br><span class="line">        &#125; <span class="keyword">else</span> <span class="keyword">if</span> (<span class="keyword">byte</span>.class == type</span><br><span class="line">                   || Byte.class == type) &#123;</span><br><span class="line">          metaCache.setValue(name, Byte.valueOf(value));</span><br><span class="line">        &#125; <span class="keyword">else</span> <span class="keyword">if</span> (<span class="keyword">float</span>.class == type</span><br><span class="line">                   || Float.class == type) &#123;</span><br><span class="line">          metaCache.setValue(name, Float.valueOf(value));</span><br><span class="line">        &#125; <span class="keyword">else</span> <span class="keyword">if</span> (<span class="keyword">boolean</span>.class == type</span><br><span class="line">                   || Boolean.class == type) &#123;</span><br><span class="line">          metaCache.setValue(name, Boolean.valueOf(value));</span><br><span class="line">        &#125; <span class="keyword">else</span> <span class="keyword">if</span> (<span class="keyword">double</span>.class == type</span><br><span class="line">                   || Double.class == type) &#123;</span><br><span class="line">          metaCache.setValue(name, Double.valueOf(value));</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">          <span class="keyword">throw</span> <span class="keyword">new</span> CacheException(<span class="string">&quot;...&quot;</span>);</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">if</span> (InitializingObject.class.isAssignableFrom(cache.getClass()))&#123;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">      ((InitializingObject) cache).initialize();</span><br><span class="line">    &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">      <span class="keyword">throw</span> <span class="keyword">new</span> CacheException(<span class="string">&quot;...&quot;</span>, e);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>CacheBuilder.setStandardDecorators()</code>方法会根据<code>CacheBuilder</code>中各个字段的值，为<code>cache</code>对象添加对应的装饰器。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> Cache <span class="title">setStandardDecorators</span><span class="params">(Cache cache)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">try</span> &#123;</span><br><span class="line">    MetaObject metaCache = SystemMetaObject.forObject(cache);</span><br><span class="line">    <span class="keyword">if</span> (size != <span class="keyword">null</span> &amp;&amp; metaCache.hasSetter(<span class="string">&quot;size&quot;</span>)) &#123;</span><br><span class="line">      metaCache.setValue(<span class="string">&quot;size&quot;</span>, size);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (clearInterval != <span class="keyword">null</span>) &#123;</span><br><span class="line">      cache = <span class="keyword">new</span> ScheduledCache(cache);</span><br><span class="line">      ((ScheduledCache) cache).setClearInterval(clearInterval);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (readWrite) &#123;</span><br><span class="line">      cache = <span class="keyword">new</span> SerializedCache(cache);</span><br><span class="line">    &#125;</span><br><span class="line">    cache = <span class="keyword">new</span> LoggingCache(cache);</span><br><span class="line">    cache = <span class="keyword">new</span> SynchronizedCache(cache);</span><br><span class="line">    <span class="keyword">if</span> (blocking) &#123;</span><br><span class="line">      cache = <span class="keyword">new</span> BlockingCache(cache);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> cache;</span><br><span class="line">  &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">    <span class="keyword">throw</span> <span class="keyword">new</span> CacheException(<span class="string">&quot;...&quot;</span>, e);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>2. 解析<code>&lt;cache-ref&gt;</code>节点</strong></p>
+<p><code>XMLMapperBuilder.cacheElement()</code>方法会为每个<code>namespace</code>创建一个对应的<code>Cache</code>对象，并在<code>Configuration.caches</code>集合中记录<code>namespace</code>与<code>Cache</code>对象之间的对应关系。</p>
+<p>如果希望多个<code>namespace</code>共用同一个二级缓存，即同一个<code>Cache</code>对象，则可以使用<code>&lt;cache-ref&gt;</code>点进行配置。</p>
+<blockquote>
+<p><code>XMLMapperBuilder.cacheReffilement()</code>方法负责解析<code>&lt;cache-ref&gt;</code>节点。</p>
+</blockquote>
+<p>这里首先需要了解的是<code>Configuration.cacheRefMap</code>集合，该集合是<code>HashMap&lt;String，String&gt;</code>类型，其中<code>key</code>是<code>&lt;cache-ref&gt;</code>节点所在的<code>namespace</code>，<code>value</code>是<code>&lt;cache-ref&gt;</code>节点的<code>namespace</code>属性所指定的<code>namespace</code>。</p>
+<p>也就是说，前者共用后者的<code>Cache</code>对象，如下图，<code>namespace2</code>共用了<code>namespace1</code>的<code>Cache</code>对象。</p>
+<p><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://gitee.com/cayzlh/img-repo/raw/master/2020/07/10/image-20200710104632511_3VqX9N.png" alt="image-20200710104632511"></p>
+<p><code>XMLMapperBuilder.cacheReffilement()</code>：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">cacheRefElement</span><span class="params">(XNode context)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (context != <span class="keyword">null</span>) &#123;</span><br><span class="line">    configuration.addCacheRef(</span><br><span class="line">      builderAssistant.getCurrentNamespace(), context.getStringAttribute(<span class="string">&quot;namespace&quot;</span>));</span><br><span class="line">    CacheRefResolver cacheRefResolver = <span class="keyword">new</span> CacheRefResolver(</span><br><span class="line">      builderAssistant, context.getStringAttribute(<span class="string">&quot;namespace&quot;</span>));</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">      cacheRefResolver.resolveCacheRef();</span><br><span class="line">    &#125; <span class="keyword">catch</span> (IncompleteElementException e) &#123;</span><br><span class="line">      <span class="comment">//如果解析过程出现异常，则添加到Configuration.incompleteCacheRefs集合，稍后再解析</span></span><br><span class="line">      configuration.addIncompleteCacheRef(cacheRefResolver);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>CacheRefResolver</code>是一个简单的<code>Cache</code>引用解析器，其中封装了被引用的<code>namespace</code>以及当前<code>XMLMapperBuilder</code>对应的<code>MapperBuilderAssistant</code>对象。</p>
+<p><code>CacheRefResolver.resolveCacheRef()</code>方法会调用<code>MapperBuilderAssistant.useCacheRef()</code>方法。在<code>MapperBuilderAssistant.useCacheRef()</code>方法中会通过<code>namespace</code>查找被引用的<code>Cache</code>对象。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> Cache <span class="title">useCacheRef</span><span class="params">(String namespace)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (namespace == <span class="keyword">null</span>) &#123;</span><br><span class="line">      <span class="keyword">throw</span> <span class="keyword">new</span> BuilderException(<span class="string">&quot;...&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">      unresolvedCacheRef = <span class="keyword">true</span>;</span><br><span class="line">      Cache cache = configuration.getCache(namespace);</span><br><span class="line">      <span class="keyword">if</span> (cache == <span class="keyword">null</span>) &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> IncompleteElementException(<span class="string">&quot;...&quot;</span>);</span><br><span class="line">      &#125;</span><br><span class="line">      currentCache = cache;</span><br><span class="line">      unresolvedCacheRef = <span class="keyword">false</span>;</span><br><span class="line">      <span class="keyword">return</span> cache;</span><br><span class="line">    &#125; <span class="keyword">catch</span> (IllegalArgumentException e) &#123;</span><br><span class="line">      <span class="keyword">throw</span> <span class="keyword">new</span> IncompleteElementException(<span class="string">&quot;...&quot;</span>, e);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+
+<p>另一个需要了解的<code>Configuration</code>字段是<code>incompleteCacheRefs</code>集合，它是<code>LinkedList&lt;CacheRefResolver&gt;</code>类型，其中记录了当前解析出现异常的<code>CacheRefResolver</code>对象。</p>
+<p><strong>3. 解析<code>&lt;resultMap&gt;</code>节点</strong></p>
+<p><code>select</code>语句查询得到的结果集是一张<strong>二维表</strong>，<u>水平方向上看是一个个字段，垂直方向上看是一条条记录</u>。</p>
+<p>而<code>Java</code>是面向对象的程序设计语言，对象是根据类定义创建的，类之间的引用关系可以认为是嵌套的结构。</p>
+<p>在<code>JDBC</code>编程中，为了将结果集中的数据映射成对象，我们需要自己写代码从结果集中获取数据，然后封装成对应的对象并设置对象之间的关系，而这些都是大量的重复性代码。</p>
+<p>为了减少这些重复的代码，<code>MyBatis</code>使用<code>&lt;resultMap&gt;</code>节点定义了结果集与结果对象(<code>JavaBean</code>对象)之间的映射规则，<code>&lt;resultMap&gt;</code>节点可以满足绝大部分的映射需求，从而减少开发人员的重复性劳动，提高开发效率。</p>
+<p>每个<code>ResultMapping</code>对象记录了结果集中的一列与<code>JavaBean</code>中一个属性之间的映射关系。<code>&lt;resultMap&gt;</code>节点下除了<code>&lt;discriminator&gt;</code>子节点的其他子节点，都会被解析成对应的<code>ResultMapping</code>对象。核心字段如下：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="comment">// Configuration对象</span></span><br><span class="line"><span class="keyword">private</span> Configuration configuration;</span><br><span class="line"><span class="comment">//  应 节 点的property属 性，表示的是与 该 列进 行映射的属 性</span></span><br><span class="line"><span class="keyword">private</span> String property;</span><br><span class="line"><span class="comment">// 数据库获取的列名或别名</span></span><br><span class="line"><span class="keyword">private</span> String column;</span><br><span class="line"><span class="comment">// 对应的java类型，JavaBean的完全限定名</span></span><br><span class="line"><span class="keyword">private</span> Class&lt;?&gt; javaType;</span><br><span class="line"><span class="comment">// JDBC类型</span></span><br><span class="line"><span class="keyword">private</span> JdbcType jdbcType;</span><br><span class="line"><span class="comment">// 对应节点的typeHandler属性，表示的是类型处理器，它会覆盖默认的类型处理器，后面会介绍该字段的作用</span></span><br><span class="line"><span class="keyword">private</span> TypeHandler&lt;?&gt; typeHandler;</span><br><span class="line"><span class="comment">// 对应节点的resultMap属性，该属性通过id引用了另一个&lt;resultMap&gt;节点定义，它负责将结果集中的一部</span></span><br><span class="line"><span class="comment">// 分列映射成其他关联的结果对象。这样我们就可以通过join方式进行关联查询，然后直接映射成多个对象，</span></span><br><span class="line"><span class="comment">// 并同时设置这些对象之间的组合关系</span></span><br><span class="line"><span class="keyword">private</span> String nestedResultMapId;</span><br><span class="line"><span class="comment">// 对应节点的select属性，该属性通过id引用了另一个&lt;select&gt;节点定义，它会把指定的列的值传入</span></span><br><span class="line"><span class="comment">// select属性指定的select语句中作为参数进行查询。使用select属性可能会导致N+1问题</span></span><br><span class="line"><span class="keyword">private</span> String nestedQueryId;</span><br><span class="line"><span class="comment">// 非空字段集合</span></span><br><span class="line"><span class="keyword">private</span> Set&lt;String&gt; notNullColumns;</span><br><span class="line"><span class="comment">// </span></span><br><span class="line"><span class="keyword">private</span> String columnPrefix;</span><br><span class="line"><span class="comment">//</span></span><br><span class="line"><span class="keyword">private</span> List&lt;ResultFlag&gt; flags;</span><br><span class="line"><span class="comment">//</span></span><br><span class="line"><span class="keyword">private</span> List&lt;ResultMapping&gt; composites;</span><br><span class="line"><span class="comment">//</span></span><br><span class="line"><span class="keyword">private</span> String resultSet;</span><br><span class="line"><span class="comment">// </span></span><br><span class="line"><span class="keyword">private</span> String foreignColumn;</span><br><span class="line"><span class="comment">// 是否延迟加载</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">boolean</span> lazy;</span><br></pre></td></tr></table></figure>
+
+<p><code>ResultMapping</code>中定义了一个内部<code>Builder</code>类，也应用了建造者模式，该<code>Builder</code>类主要用于数据整理和数据校验校验。</p>
+<p>另一个比较重要的类是<code>ResultMap</code>，每个<code>&lt;resultMap&gt;</code>节点都会被解析成一个<code>ResultMap</code>对象，其中每个节点所定义的映射关系，则使用<code>ResultMapping</code>对象表示。</p>
+<p><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://gitee.com/cayzlh/img-repo/raw/master/2020/07/12/image-20200712084001741_Piqi53.png" alt="image-20200712084001741"></p>
+<p><code>ResultMap</code>字段定义：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="comment">// Configuration对象</span></span><br><span class="line"><span class="keyword">private</span> Configuration configuration;</span><br><span class="line"><span class="comment">// 对应节点的id属性</span></span><br><span class="line"><span class="keyword">private</span> String id;</span><br><span class="line"><span class="comment">// 对应节点的type属性</span></span><br><span class="line"><span class="keyword">private</span> Class&lt;?&gt; type;</span><br><span class="line"><span class="comment">// ResultMapping对象集合</span></span><br><span class="line"><span class="keyword">private</span> List&lt;ResultMapping&gt; resultMappings;</span><br><span class="line"><span class="comment">// 记录了映射关系中带有ID标志的映射关系，例如&lt;id&gt;节点和&lt;constructor&gt;节点的&lt;idArg&gt;子节点</span></span><br><span class="line"><span class="keyword">private</span> List&lt;ResultMapping&gt; idResultMappings;</span><br><span class="line"><span class="comment">// 记录了映射关系中带有Constructor标志的映射关系，例如&lt;constructor&gt;所有子元素</span></span><br><span class="line"><span class="keyword">private</span> List&lt;ResultMapping&gt; constructorResultMappings;</span><br><span class="line"><span class="comment">// 记录了映射关系中不带有Constructor标志的映射关系</span></span><br><span class="line"><span class="keyword">private</span> List&lt;ResultMapping&gt; propertyResultMappings;</span><br><span class="line"><span class="comment">// 记录所有映射关系中涉及的column属性的集合</span></span><br><span class="line"><span class="keyword">private</span> Set&lt;String&gt; mappedColumns;</span><br><span class="line"><span class="comment">//</span></span><br><span class="line"><span class="keyword">private</span> Set&lt;String&gt; mappedProperties;</span><br><span class="line"><span class="comment">// 鉴别器</span></span><br><span class="line"><span class="keyword">private</span> Discriminator discriminator;</span><br><span class="line"><span class="comment">// 是否含有嵌套的结果映射，如果某个映射关系中存在resultMap属性，且不存在resultSet属性，则为true</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">boolean</span> hasNestedResultMaps;</span><br><span class="line"><span class="comment">// 是否含有嵌套查询，如果某个属性映射存在select属性，则为true</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">boolean</span> hasNestedQueries;</span><br><span class="line"><span class="comment">// 是否开启自动映射</span></span><br><span class="line"><span class="keyword">private</span> Boolean autoMapping;</span><br></pre></td></tr></table></figure>
+
+<p>在<code>XMLMapperBuilder</code>中通过<code>resultMapElements()</code>方法解析映射配置文件中的全部<code>&lt;resultMap&gt;</code>节点，该方法会循环调用<code>resultMapElement()</code>方法处理每个<code>&lt;resultMap&gt;</code>节点。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> ResultMap <span class="title">resultMapElement</span><span class="params">(XNode resultMapNode, List&lt;ResultMapping&gt; additionalResultMappings)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">  ErrorContext.instance().activity(<span class="string">&quot;processing &quot;</span> + resultMapNode.getValueBasedIdentifier());</span><br><span class="line">  String id </span><br><span class="line">    = resultMapNode.getStringAttribute(</span><br><span class="line">    		<span class="string">&quot;id&quot;</span>, resultMapNode.getValueBasedIdentifier());</span><br><span class="line">  String type </span><br><span class="line">    = resultMapNode.getStringAttribute(</span><br><span class="line">    <span class="string">&quot;type&quot;</span>,resultMapNode.getStringAttribute(</span><br><span class="line">      <span class="string">&quot;ofType&quot;</span>,resultMapNode.getStringAttribute(<span class="string">&quot;resultType&quot;</span>,</span><br><span class="line">                                     resultMapNode.getStringAttribute(<span class="string">&quot;javaType&quot;</span>))));</span><br><span class="line">  String extend = resultMapNode.getStringAttribute(<span class="string">&quot;extends&quot;</span>);</span><br><span class="line">  Boolean autoMapping = resultMapNode.getBooleanAttribute(<span class="string">&quot;autoMapping&quot;</span>);</span><br><span class="line">  Class&lt;?&gt; typeClass = resolveClass(type);</span><br><span class="line">  Discriminator discriminator = <span class="keyword">null</span>;</span><br><span class="line">  List&lt;ResultMapping&gt; resultMappings = <span class="keyword">new</span> ArrayList&lt;ResultMapping&gt;();</span><br><span class="line">  resultMappings.addAll(additionalResultMappings);</span><br><span class="line">  List&lt;XNode&gt; resultChildren = resultMapNode.getChildren();</span><br><span class="line">  <span class="keyword">for</span> (XNode resultChild : resultChildren) &#123;</span><br><span class="line">    <span class="keyword">if</span> (<span class="string">&quot;constructor&quot;</span>.equals(resultChild.getName())) &#123;</span><br><span class="line">      processConstructorElement(resultChild, typeClass, resultMappings);</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (<span class="string">&quot;discriminator&quot;</span>.equals(resultChild.getName())) &#123;</span><br><span class="line">      discriminator = processDiscriminatorElement(resultChild, typeClass, resultMappings);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      List&lt;ResultFlag&gt; flags = <span class="keyword">new</span> ArrayList&lt;ResultFlag&gt;();</span><br><span class="line">      <span class="keyword">if</span> (<span class="string">&quot;id&quot;</span>.equals(resultChild.getName())) &#123;</span><br><span class="line">        flags.add(ResultFlag.ID);</span><br><span class="line">      &#125;</span><br><span class="line">      resultMappings.add(buildResultMappingFromContext(resultChild, typeClass, flags));</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  ResultMapResolver resultMapResolver = <span class="keyword">new</span> ResultMapResolver(builderAssistant, id, typeClass, extend, discriminator, resultMappings, autoMapping);</span><br><span class="line">  <span class="keyword">try</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> resultMapResolver.resolve();</span><br><span class="line">  &#125; <span class="keyword">catch</span> (IncompleteElementException  e) &#123;</span><br><span class="line">    configuration.addIncompleteResultMap(resultMapResolver);</span><br><span class="line">    <span class="keyword">throw</span> e;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在处理<code>&lt;resultMap&gt;</code>节点的过程中，该过程在执行获取到<code>id</code>属性和<code>type</code>属性之后，就会通过<code>XMLMapperBuilder.buildResultMappingFromContext()</code>方法为<code>&lt;result&gt;</code>节点创建对应的<code>ResultMapping</code>对象。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> ResultMapping <span class="title">buildResultMappingFromContext</span><span class="params">(XNode context, Class&lt;?&gt; resultType, List&lt;ResultFlag&gt; flags)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">  String property;</span><br><span class="line">  <span class="comment">// 获取property的属性值</span></span><br><span class="line">  <span class="keyword">if</span> (flags.contains(ResultFlag.CONSTRUCTOR)) &#123;</span><br><span class="line">    property = context.getStringAttribute(<span class="string">&quot;name&quot;</span>);</span><br><span class="line">  &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    property = context.getStringAttribute(<span class="string">&quot;property&quot;</span>);</span><br><span class="line">  &#125;</span><br><span class="line">  String column = context.getStringAttribute(<span class="string">&quot;column&quot;</span>);</span><br><span class="line">  String javaType = context.getStringAttribute(<span class="string">&quot;javaType&quot;</span>);</span><br><span class="line">  String jdbcType = context.getStringAttribute(<span class="string">&quot;jdbcType&quot;</span>);</span><br><span class="line">  String nestedSelect = context.getStringAttribute(<span class="string">&quot;select&quot;</span>);</span><br><span class="line">  String nestedResultMap = context.getStringAttribute(</span><br><span class="line">    <span class="string">&quot;resultMap&quot;</span>,processNestedResultMappings(context, </span><br><span class="line">                                            Collections.&lt;ResultMapping&gt;emptyList()));</span><br><span class="line">  String notNullColumn = context.getStringAttribute(<span class="string">&quot;notNullColumn&quot;</span>);</span><br><span class="line">  String columnPrefix = context.getStringAttribute(<span class="string">&quot;columnPrefix&quot;</span>);</span><br><span class="line">  String typeHandler = context.getStringAttribute(<span class="string">&quot;typeHandler&quot;</span>);</span><br><span class="line">  String resultSet = context.getStringAttribute(<span class="string">&quot;resultSet&quot;</span>);</span><br><span class="line">  String foreignColumn = context.getStringAttribute(<span class="string">&quot;foreignColumn&quot;</span>);</span><br><span class="line">  <span class="keyword">boolean</span> lazy = <span class="string">&quot;lazy&quot;</span>.equals(</span><br><span class="line">    context.getStringAttribute(<span class="string">&quot;fetchType&quot;</span>, </span><br><span class="line">                               configuration.isLazyLoadingEnabled() ? <span class="string">&quot;lazy&quot;</span> : <span class="string">&quot;eager&quot;</span>));</span><br><span class="line">  Class&lt;?&gt; javaTypeClass = resolveClass(javaType);</span><br><span class="line">  <span class="meta">@SuppressWarnings(&quot;unchecked&quot;)</span></span><br><span class="line">  Class&lt;? extends TypeHandler&lt;?&gt;&gt; typeHandlerClass </span><br><span class="line">    = (Class&lt;? extends TypeHandler&lt;?&gt;&gt;) resolveClass(typeHandler);</span><br><span class="line">  JdbcType jdbcTypeEnum = resolveJdbcType(jdbcType);</span><br><span class="line">  <span class="keyword">return</span> builderAssistant.buildResultMapping(</span><br><span class="line">    resultType, property, column, javaTypeClass, </span><br><span class="line">    jdbcTypeEnum, nestedSelect, nestedResultMap, </span><br><span class="line">    notNullColumn, columnPrefix, typeHandlerClass, flags, </span><br><span class="line">    resultSet, foreignColumn, lazy);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>MapperBuilderAssistant.buildResultMapping()</code>的具体实现：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> ResultMapping <span class="title">buildResultMapping</span><span class="params">(</span></span></span><br><span class="line"><span class="function"><span class="params">  Class&lt;?&gt; resultType,</span></span></span><br><span class="line"><span class="function"><span class="params">  String property,</span></span></span><br><span class="line"><span class="function"><span class="params">  String column,</span></span></span><br><span class="line"><span class="function"><span class="params">  Class&lt;?&gt; javaType,</span></span></span><br><span class="line"><span class="function"><span class="params">  JdbcType jdbcType,</span></span></span><br><span class="line"><span class="function"><span class="params">  String nestedSelect,</span></span></span><br><span class="line"><span class="function"><span class="params">  String nestedResultMap,</span></span></span><br><span class="line"><span class="function"><span class="params">  String notNullColumn,</span></span></span><br><span class="line"><span class="function"><span class="params">  String columnPrefix,</span></span></span><br><span class="line"><span class="function"><span class="params">  Class&lt;? extends TypeHandler&lt;?&gt;&gt; typeHandler,</span></span></span><br><span class="line"><span class="function"><span class="params">  List&lt;ResultFlag&gt; flags,</span></span></span><br><span class="line"><span class="function"><span class="params">  String resultSet,</span></span></span><br><span class="line"><span class="function"><span class="params">  String foreignColumn,</span></span></span><br><span class="line"><span class="function"><span class="params">  <span class="keyword">boolean</span> lazy)</span> </span>&#123;</span><br><span class="line">  Class&lt;?&gt; javaTypeClass = resolveResultJavaType(resultType, property, javaType);</span><br><span class="line">  TypeHandler&lt;?&gt; typeHandlerInstance = resolveTypeHandler(javaTypeClass, typeHandler);</span><br><span class="line">  List&lt;ResultMapping&gt; composites = parseCompositeColumnName(column);</span><br><span class="line">  <span class="keyword">return</span> <span class="keyword">new</span> ResultMapping.Builder(configuration, property, column, javaTypeClass)</span><br><span class="line">    .jdbcType(jdbcType)</span><br><span class="line">    .nestedQueryId(applyCurrentNamespace(nestedSelect, <span class="keyword">true</span>))</span><br><span class="line">    .nestedResultMapId(applyCurrentNamespace(nestedResultMap, <span class="keyword">true</span>))</span><br><span class="line">    .resultSet(resultSet)</span><br><span class="line">    .typeHandler(typeHandlerInstance)</span><br><span class="line">    .flags(flags == <span class="keyword">null</span> ? <span class="keyword">new</span> ArrayList&lt;ResultFlag&gt;() : flags)</span><br><span class="line">    .composites(composites)</span><br><span class="line">    .notNullColumns(parseMultipleColumnNames(notNullColumn))</span><br><span class="line">    .columnPrefix(columnPrefix)</span><br><span class="line">    .foreignColumn(foreignColumn)</span><br><span class="line">    .lazy(lazy)</span><br><span class="line">    .build();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>得到<code>ResultMapping</code>对象集合之后，会调用<code>ResultMapResolver.resolve()</code>方法，该方法会调用<code>MapperBuilderAssistant.addResultMap()</code>方法创建<code>ResultMap</code>对象，并将<code>ResultMap</code>对象添加到<code>Configuration.resultMaps</code>集合中保存。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> ResultMap <span class="title">addResultMap</span><span class="params">(</span></span></span><br><span class="line"><span class="function"><span class="params">  String id,</span></span></span><br><span class="line"><span class="function"><span class="params">  Class&lt;?&gt; type,</span></span></span><br><span class="line"><span class="function"><span class="params">  String extend,</span></span></span><br><span class="line"><span class="function"><span class="params">  Discriminator discriminator,</span></span></span><br><span class="line"><span class="function"><span class="params">  List&lt;ResultMapping&gt; resultMappings,</span></span></span><br><span class="line"><span class="function"><span class="params">  Boolean autoMapping)</span> </span>&#123;</span><br><span class="line">  id = applyCurrentNamespace(id, <span class="keyword">false</span>);</span><br><span class="line">  extend = applyCurrentNamespace(extend, <span class="keyword">true</span>);</span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> (extend != <span class="keyword">null</span>) &#123;</span><br><span class="line">    <span class="keyword">if</span> (!configuration.hasResultMap(extend)) &#123;</span><br><span class="line">      <span class="keyword">throw</span> <span class="keyword">new</span> IncompleteElementException(<span class="string">&quot;...&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    ResultMap resultMap = configuration.getResultMap(extend);</span><br><span class="line">    List&lt;ResultMapping&gt; extendedResultMappings = <span class="keyword">new</span> ArrayList&lt;ResultMapping&gt;(resultMap.getResultMappings());</span><br><span class="line">    extendedResultMappings.removeAll(resultMappings);</span><br><span class="line">    <span class="comment">// Remove parent constructor if this resultMap declares a constructor.</span></span><br><span class="line">    <span class="keyword">boolean</span> declaresConstructor = <span class="keyword">false</span>;</span><br><span class="line">    <span class="keyword">for</span> (ResultMapping resultMapping : resultMappings) &#123;</span><br><span class="line">      <span class="keyword">if</span> (resultMapping.getFlags().contains(ResultFlag.CONSTRUCTOR)) &#123;</span><br><span class="line">        declaresConstructor = <span class="keyword">true</span>;</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (declaresConstructor) &#123;</span><br><span class="line">      Iterator&lt;ResultMapping&gt; extendedResultMappingsIter = extendedResultMappings.iterator();</span><br><span class="line">      <span class="keyword">while</span> (extendedResultMappingsIter.hasNext()) &#123;</span><br><span class="line">        <span class="keyword">if</span> (extendedResultMappingsIter.next().getFlags().contains(ResultFlag.CONSTRUCTOR)) &#123;</span><br><span class="line">          extendedResultMappingsIter.remove();</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    resultMappings.addAll(extendedResultMappings);</span><br><span class="line">  &#125;</span><br><span class="line">  ResultMap resultMap = <span class="keyword">new</span> ResultMap.Builder(configuration, id, type, resultMappings, autoMapping)</span><br><span class="line">    .discriminator(discriminator)</span><br><span class="line">    .build();</span><br><span class="line">  configuration.addResultMap(resultMap);</span><br><span class="line">  <span class="keyword">return</span> resultMap;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>&lt;constructor&gt;</code>节点的解析，由<code>XMLMapperBuilder.processConstructorElement()</code>方法完成。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">processConstructorElement</span><span class="params">(XNode resultChild, Class&lt;?&gt; resultType, List&lt;ResultMapping&gt; resultMappings)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">  List&lt;XNode&gt; argChildren = resultChild.getChildren();</span><br><span class="line">  <span class="keyword">for</span> (XNode argChild : argChildren) &#123;</span><br><span class="line">    List&lt;ResultFlag&gt; flags = <span class="keyword">new</span> ArrayList&lt;ResultFlag&gt;();</span><br><span class="line">    flags.add(ResultFlag.CONSTRUCTOR);</span><br><span class="line">    <span class="keyword">if</span> (<span class="string">&quot;idArg&quot;</span>.equals(argChild.getName())) &#123;</span><br><span class="line">      flags.add(ResultFlag.ID);</span><br><span class="line">    &#125;</span><br><span class="line">    resultMappings.add(buildResultMappingFromContext(argChild, resultType, flags));</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>之后会解析<code>&lt;association&gt;</code>节点，正如前面对<code>XMLMapperBuilder.resultMapElement()</code>方法的介绍，<code>&lt;association&gt;</code>节点也是在<code>XMLMapperBuilder.buildResultMappingFromContext()</code>方法中完成解析的。</p>
+<p><code>&lt;discriminator&gt;</code>节点的解析，该解析过程由<code>XMLMapperBuilder.processDiscriminatorElement()</code>方法完成。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> Discriminator <span class="title">processDiscriminatorElement</span><span class="params">(XNode context, Class&lt;?&gt; resultType, List&lt;ResultMapping&gt; resultMappings)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">  String column = context.getStringAttribute(<span class="string">&quot;column&quot;</span>);</span><br><span class="line">  String javaType = context.getStringAttribute(<span class="string">&quot;javaType&quot;</span>);</span><br><span class="line">  String jdbcType = context.getStringAttribute(<span class="string">&quot;jdbcType&quot;</span>);</span><br><span class="line">  String typeHandler = context.getStringAttribute(<span class="string">&quot;typeHandler&quot;</span>);</span><br><span class="line">  Class&lt;?&gt; javaTypeClass = resolveClass(javaType);</span><br><span class="line">  <span class="meta">@SuppressWarnings(&quot;unchecked&quot;)</span></span><br><span class="line">  Class&lt;? extends TypeHandler&lt;?&gt;&gt; typeHandlerClass = (Class&lt;? extends TypeHandler&lt;?&gt;&gt;) resolveClass(typeHandler);</span><br><span class="line">  JdbcType jdbcTypeEnum = resolveJdbcType(jdbcType);</span><br><span class="line">  Map&lt;String, String&gt; discriminatorMap = <span class="keyword">new</span> HashMap&lt;String, String&gt;();</span><br><span class="line">  <span class="keyword">for</span> (XNode caseChild : context.getChildren()) &#123;</span><br><span class="line">    String value = caseChild.getStringAttribute(<span class="string">&quot;value&quot;</span>);</span><br><span class="line">    String resultMap = caseChild.getStringAttribute(<span class="string">&quot;resultMap&quot;</span>, processNestedResultMappings(caseChild, resultMappings));</span><br><span class="line">    discriminatorMap.put(value, resultMap);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> builderAssistant.buildDiscriminator(resultType, column, javaTypeClass, jdbcTypeEnum, typeHandlerClass, discriminatorMap);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>4. 解析<code>&lt;sql&gt;</code>节点</strong></p>
+<p><code>XMLMapperBuilder.sqlElement()</code>方法负责解析映射配置文件中定义的全部<code>&lt;sql&gt;</code>节点。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">sqlElement</span><span class="params">(List&lt;XNode&gt; list)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (configuration.getDatabaseId() != <span class="keyword">null</span>) &#123;</span><br><span class="line">    sqlElement(list, configuration.getDatabaseId());</span><br><span class="line">  &#125;</span><br><span class="line">  sqlElement(list, <span class="keyword">null</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">sqlElement</span><span class="params">(List&lt;XNode&gt; list, String requiredDatabaseId)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">  <span class="keyword">for</span> (XNode context : list) &#123;</span><br><span class="line">    String databaseId = context.getStringAttribute(<span class="string">&quot;databaseId&quot;</span>);</span><br><span class="line">    String id = context.getStringAttribute(<span class="string">&quot;id&quot;</span>);</span><br><span class="line">    id = builderAssistant.applyCurrentNamespace(id, <span class="keyword">false</span>);</span><br><span class="line">    <span class="keyword">if</span> (databaseIdMatchesCurrent(id, databaseId, requiredDatabaseId)) &#123;</span><br><span class="line">      sqlFragments.put(id, context);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="XMLStatementBuilder"><a href="#XMLStatementBuilder" class="headerlink" title="XMLStatementBuilder"></a>XMLStatementBuilder</h2><p>除了节点解析，映射文件中还有一类比较重要的节点需要解析，也就是<code>SQL</code>节点。<code>SQL</code>节点主要用于定义<code>SQL</code>语句，<code>SQL</code>节点由<code>XMLStatementBuilder</code>负责解析。</p>
+<p><code>MyBatis</code>使用<code>SqlSource</code>接口表示映射文件或注解中定义的<code>SQL</code>语句，但它表示的<code>SQL</code>语句是不能直接被数据库执行的，因为其中可能含有动态<code>SQL</code>语句相关的节点或是占位符等需要解析的元素。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">SqlSource</span> </span>&#123;</span><br><span class="line">	<span class="comment">// getBoundSql()方法会根据映射文件或注解描述的SQL语句，以及传入的参数，返回可执行的SQL</span></span><br><span class="line">  <span class="function">BoundSql <span class="title">getBoundSql</span><span class="params">(Object parameterObject)</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>MyBatis</code>使用<code>MappedStatement</code>表示映射配置文件中定义的<code>SQL</code>节点，<code>MappedStatement</code>包含了这些节点的很多属性。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="comment">// id属性</span></span><br><span class="line"><span class="keyword">private</span> String resource;</span><br><span class="line"><span class="keyword">private</span> Configuration configuration;</span><br><span class="line"><span class="keyword">private</span> String id;</span><br><span class="line"><span class="keyword">private</span> Integer fetchSize;</span><br><span class="line"><span class="keyword">private</span> Integer timeout;</span><br><span class="line"><span class="keyword">private</span> StatementType statementType;</span><br><span class="line"><span class="keyword">private</span> ResultSetType resultSetType;</span><br><span class="line"><span class="comment">// 对应一条sql语句</span></span><br><span class="line"><span class="keyword">private</span> SqlSource sqlSource;</span><br><span class="line"><span class="keyword">private</span> Cache cache;</span><br><span class="line"><span class="keyword">private</span> ParameterMap parameterMap;</span><br><span class="line"><span class="keyword">private</span> List&lt;ResultMap&gt; resultMaps;</span><br><span class="line"><span class="keyword">private</span> <span class="keyword">boolean</span> flushCacheRequired;</span><br><span class="line"><span class="keyword">private</span> <span class="keyword">boolean</span> useCache;</span><br><span class="line"><span class="keyword">private</span> <span class="keyword">boolean</span> resultOrdered;</span><br><span class="line"><span class="comment">// sql类型</span></span><br><span class="line"><span class="keyword">private</span> SqlCommandType sqlCommandType;</span><br><span class="line"><span class="keyword">private</span> KeyGenerator keyGenerator;</span><br><span class="line"><span class="keyword">private</span> String[] keyProperties;</span><br><span class="line"><span class="keyword">private</span> String[] keyColumns;</span><br><span class="line"><span class="keyword">private</span> <span class="keyword">boolean</span> hasNestedResultMaps;</span><br><span class="line"><span class="keyword">private</span> String databaseId;</span><br><span class="line"><span class="keyword">private</span> Log statementLog;</span><br><span class="line"><span class="keyword">private</span> LanguageDriver lang;</span><br><span class="line"><span class="keyword">private</span> String[] resultSets;</span><br></pre></td></tr></table></figure>
+
+<p><code>XMLStatementBuilder.parseStatementNode()</code>方法是解析<code>SQL</code>节点的入口函数。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">parseStatementNode</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  String id = context.getStringAttribute(<span class="string">&quot;id&quot;</span>);</span><br><span class="line">  String databaseId = context.getStringAttribute(<span class="string">&quot;databaseId&quot;</span>);</span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> (!databaseIdMatchesCurrent(id, databaseId, <span class="keyword">this</span>.requiredDatabaseId)) &#123;</span><br><span class="line">    <span class="keyword">return</span>;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  Integer fetchSize = context.getIntAttribute(<span class="string">&quot;fetchSize&quot;</span>);</span><br><span class="line">  Integer timeout = context.getIntAttribute(<span class="string">&quot;timeout&quot;</span>);</span><br><span class="line">  String parameterMap = context.getStringAttribute(<span class="string">&quot;parameterMap&quot;</span>);</span><br><span class="line">  String parameterType = context.getStringAttribute(<span class="string">&quot;parameterType&quot;</span>);</span><br><span class="line">  Class&lt;?&gt; parameterTypeClass = resolveClass(parameterType);</span><br><span class="line">  String resultMap = context.getStringAttribute(<span class="string">&quot;resultMap&quot;</span>);</span><br><span class="line">  String resultType = context.getStringAttribute(<span class="string">&quot;resultType&quot;</span>);</span><br><span class="line">  String lang = context.getStringAttribute(<span class="string">&quot;lang&quot;</span>);</span><br><span class="line">  LanguageDriver langDriver = getLanguageDriver(lang);</span><br><span class="line"></span><br><span class="line">  Class&lt;?&gt; resultTypeClass = resolveClass(resultType);</span><br><span class="line">  String resultSetType = context.getStringAttribute(<span class="string">&quot;resultSetType&quot;</span>);</span><br><span class="line">  StatementType statementType = </span><br><span class="line">    StatementType.valueOf(</span><br><span class="line">    context.getStringAttribute(<span class="string">&quot;statementType&quot;</span>, StatementType.PREPARED.toString()));</span><br><span class="line">  ResultSetType resultSetTypeEnum = resolveResultSetType(resultSetType);</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 根据节点名称决定SqlCommandType</span></span><br><span class="line">  String nodeName = context.getNode().getNodeName();</span><br><span class="line">  SqlCommandType sqlCommandType = </span><br><span class="line">    SqlCommandType.valueOf(nodeName.toUpperCase(Locale.ENGLISH));</span><br><span class="line">  <span class="keyword">boolean</span> isSelect = sqlCommandType == SqlCommandType.SELECT;</span><br><span class="line">  <span class="keyword">boolean</span> flushCache = context.getBooleanAttribute(<span class="string">&quot;flushCache&quot;</span>, !isSelect);</span><br><span class="line">  <span class="keyword">boolean</span> useCache = context.getBooleanAttribute(<span class="string">&quot;useCache&quot;</span>, isSelect);</span><br><span class="line">  <span class="keyword">boolean</span> resultOrdered = context.getBooleanAttribute(<span class="string">&quot;resultOrdered&quot;</span>, <span class="keyword">false</span>);</span><br><span class="line"></span><br><span class="line">  <span class="comment">// Include Fragments before parsing</span></span><br><span class="line">  XMLIncludeTransformer includeParser = </span><br><span class="line">    <span class="keyword">new</span> XMLIncludeTransformer(configuration, builderAssistant);</span><br><span class="line">  includeParser.applyIncludes(context.getNode());</span><br><span class="line"></span><br><span class="line">  <span class="comment">// Parse selectKey after includes and remove them.</span></span><br><span class="line">  processSelectKeyNodes(id, parameterTypeClass, langDriver);</span><br><span class="line"></span><br><span class="line">  <span class="comment">// Parse the SQL (pre: &lt;selectKey&gt; and &lt;include&gt; were parsed and removed)</span></span><br><span class="line">  SqlSource sqlSource = </span><br><span class="line">    langDriver.createSqlSource(configuration, context, parameterTypeClass);</span><br><span class="line">  String resultSets = context.getStringAttribute(<span class="string">&quot;resultSets&quot;</span>);</span><br><span class="line">  String keyProperty = context.getStringAttribute(<span class="string">&quot;keyProperty&quot;</span>);</span><br><span class="line">  String keyColumn = context.getStringAttribute(<span class="string">&quot;keyColumn&quot;</span>);</span><br><span class="line">  KeyGenerator keyGenerator;</span><br><span class="line">  String keyStatementId = id + SelectKeyGenerator.SELECT_KEY_SUFFIX;</span><br><span class="line">  keyStatementId = builderAssistant.applyCurrentNamespace(keyStatementId, <span class="keyword">true</span>);</span><br><span class="line">  <span class="keyword">if</span> (configuration.hasKeyGenerator(keyStatementId)) &#123;</span><br><span class="line">    keyGenerator = configuration.getKeyGenerator(keyStatementId);</span><br><span class="line">  &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    keyGenerator = </span><br><span class="line">      context.getBooleanAttribute(<span class="string">&quot;useGeneratedKeys&quot;</span>,</span><br><span class="line">                                  configuration.isUseGeneratedKeys() </span><br><span class="line">                                  &amp;&amp; SqlCommandType.INSERT.equals(sqlCommandType))</span><br><span class="line">      ? Jdbc3KeyGenerator.INSTANCE : NoKeyGenerator.INSTANCE;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  builderAssistant.addMappedStatement(</span><br><span class="line">    id, sqlSource, statementType, sqlCommandType,</span><br><span class="line">    fetchSize, timeout, parameterMap, parameterTypeClass, resultMap, </span><br><span class="line">    resultTypeClass,resultSetTypeEnum, flushCache, useCache, resultOrdered,</span><br><span class="line">    keyGenerator, keyProperty, keyColumn, databaseId, langDriver, resultSets);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>1. 解析<code>&lt;include&gt;</code>节点</strong></p>
+<p>在解析<code>SQL</code>节点之前，首先通过<code>XMLIncludeTransformer</code>解析<code>SQL</code>语句中的<code>&lt;include&gt;</code>节点，该过程会将<code>&lt;include&gt;</code>节点替换成<code>&lt;sql&gt;</code>节点中定义的<code>SQL</code>片段，并将其中的<code>$&#123;xxx&#125;</code>占位符替换成真实的参数，该解析过程在<code>XMLIncludeTransformer.applyIncludes()</code>方法中实现。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">applyIncludes</span><span class="params">(Node source)</span> </span>&#123;</span><br><span class="line">  <span class="comment">// 获取mybatis-config.xml中&lt;properties&gt;节点下定义的变量集合</span></span><br><span class="line">  Properties variablesContext = <span class="keyword">new</span> Properties();</span><br><span class="line">  Properties configurationVariables = configuration.getVariables();</span><br><span class="line">  <span class="keyword">if</span> (configurationVariables != <span class="keyword">null</span>) &#123;</span><br><span class="line">    variablesContext.putAll(configurationVariables);</span><br><span class="line">  &#125;</span><br><span class="line">  applyIncludes(source, variablesContext, <span class="keyword">false</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 处理&lt;include&gt;节点的重载方法</span></span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">applyIncludes</span><span class="params">(Node source, <span class="keyword">final</span> Properties variablesContext, <span class="keyword">boolean</span> included)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (source.getNodeName().equals(<span class="string">&quot;include&quot;</span>)) &#123;</span><br><span class="line">    Node toInclude = findSqlFragment(getStringAttribute(source, <span class="string">&quot;refid&quot;</span>), variablesContext);</span><br><span class="line">    Properties toIncludeContext = getVariablesContext(source, variablesContext);</span><br><span class="line">    applyIncludes(toInclude, toIncludeContext, <span class="keyword">true</span>);</span><br><span class="line">    <span class="keyword">if</span> (toInclude.getOwnerDocument() != source.getOwnerDocument()) &#123;</span><br><span class="line">      toInclude = source.getOwnerDocument().importNode(toInclude, <span class="keyword">true</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    source.getParentNode().replaceChild(toInclude, source);</span><br><span class="line">    <span class="keyword">while</span> (toInclude.hasChildNodes()) &#123;</span><br><span class="line">      toInclude.getParentNode().insertBefore(toInclude.getFirstChild(), toInclude);</span><br><span class="line">    &#125;</span><br><span class="line">    toInclude.getParentNode().removeChild(toInclude);</span><br><span class="line">  &#125; <span class="keyword">else</span> <span class="keyword">if</span> (source.getNodeType() == Node.ELEMENT_NODE) &#123;</span><br><span class="line">    <span class="keyword">if</span> (included &amp;&amp; !variablesContext.isEmpty()) &#123;</span><br><span class="line">      <span class="comment">// replace variables in attribute values</span></span><br><span class="line">      NamedNodeMap attributes = source.getAttributes();</span><br><span class="line">      <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; attributes.getLength(); i++) &#123;</span><br><span class="line">        Node attr = attributes.item(i);</span><br><span class="line">        attr.setNodeValue(PropertyParser.parse(attr.getNodeValue(), variablesContext));</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    NodeList children = source.getChildNodes();</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; children.getLength(); i++) &#123;</span><br><span class="line">      applyIncludes(children.item(i), variablesContext, included);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125; <span class="keyword">else</span> <span class="keyword">if</span> (included &amp;&amp; source.getNodeType() == Node.TEXT_NODE</span><br><span class="line">             &amp;&amp; !variablesContext.isEmpty()) &#123;</span><br><span class="line">    <span class="comment">// replace variables in text node</span></span><br><span class="line">    source.setNodeValue(PropertyParser.parse(source.getNodeValue(), variablesContext));</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>&lt;inClude&gt;</code>节点和<code>&lt;sql&gt;</code>节点可以配合使用、多层嵌套，实现更加复杂的<code>sql</code>片段的重用，这样的话，解析过程就会递归更多层，流程变得更加复杂。</p>
+<p><strong>2. 解析<code>&lt;selectKey&gt;</code>节点</strong></p>
+<p>在<code>&lt;insert&gt;</code>、<code>&lt;update&gt;</code>节点中可以定义<code>&lt;selectKey&gt;</code>节点来解决主键自增问题，<code>&lt;selectKey&gt;</code>节点对应的<code>KeyGenerator</code>接口在后面会详细介绍，现在重点关节点的解析。</p>
+<p><code>XMLStatementBuilder.processSelectKeyNodes()</code>方法负责解析<code>SQL</code>节点中子节点。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">processSelectKeyNodes</span><span class="params">(String id, Class&lt;?&gt; parameterTypeClass, LanguageDriver langDriver)</span> </span>&#123;</span><br><span class="line">  <span class="comment">// 获取全部selectKey节点</span></span><br><span class="line">  List&lt;XNode&gt; selectKeyNodes = context.evalNodes(<span class="string">&quot;selectKey&quot;</span>);</span><br><span class="line">  <span class="comment">// 解析selectKey节点</span></span><br><span class="line">  <span class="keyword">if</span> (configuration.getDatabaseId() != <span class="keyword">null</span>) &#123;</span><br><span class="line">    parseSelectKeyNodes(id, selectKeyNodes, parameterTypeClass, langDriver, configuration.getDatabaseId());</span><br><span class="line">  &#125;</span><br><span class="line">  parseSelectKeyNodes(id, selectKeyNodes, parameterTypeClass, langDriver, <span class="keyword">null</span>);</span><br><span class="line">  removeSelectKeyNodes(selectKeyNodes);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在<code>parseSelectKeyNodes()</code>方法中会为<code>&lt;selectKey&gt;</code>节点生成<code>id</code>，检测<code>databaseld</code>是否匹配以及是否己经加载过相同<code>id</code>且<code>databaseld</code>不为空的<code>&lt;selectKey&gt;</code>节点，并调用<code>parseSelectKeyNode()</code>方法处理每个<code>&lt;selectKey&gt;</code>节点。<br>在<code>parseSelectKeyNode()</code>方法中，首先读取<code>&lt;selectKey&gt;</code>节点的一系列属性，然后调用<code>LanguageDriver.createSqlSource()</code>方法创建对应的<code>SqlSource</code>对象，最后创建<code>MappedStatement</code>对象，并添加到<code>Configuration.mappedStatements</code>集合中保存。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">parseSelectKeyNode</span><span class="params">(String id, XNode nodeToHandle, </span></span></span><br><span class="line"><span class="function"><span class="params">                                Class&lt;?&gt; parameterTypeClass, </span></span></span><br><span class="line"><span class="function"><span class="params">                                LanguageDriver langDriver, String databaseId)</span> </span>&#123;</span><br><span class="line">  String resultType = nodeToHandle.getStringAttribute(<span class="string">&quot;resultType&quot;</span>);</span><br><span class="line">  Class&lt;?&gt; resultTypeClass = resolveClass(resultType);</span><br><span class="line">  StatementType statementType </span><br><span class="line">    = StatementType.valueOf(</span><br><span class="line">    nodeToHandle.getStringAttribute(<span class="string">&quot;statementType&quot;</span>, </span><br><span class="line">                                    StatementType.PREPARED.toString()));</span><br><span class="line">  String keyProperty = nodeToHandle.getStringAttribute(<span class="string">&quot;keyProperty&quot;</span>);</span><br><span class="line">  String keyColumn = nodeToHandle.getStringAttribute(<span class="string">&quot;keyColumn&quot;</span>);</span><br><span class="line">  <span class="keyword">boolean</span> executeBefore = <span class="string">&quot;BEFORE&quot;</span>.equals(nodeToHandle.getStringAttribute(<span class="string">&quot;order&quot;</span>, <span class="string">&quot;AFTER&quot;</span>));</span><br><span class="line"></span><br><span class="line">  <span class="comment">//defaults</span></span><br><span class="line">  <span class="keyword">boolean</span> useCache = <span class="keyword">false</span>;</span><br><span class="line">  <span class="keyword">boolean</span> resultOrdered = <span class="keyword">false</span>;</span><br><span class="line">  KeyGenerator keyGenerator = NoKeyGenerator.INSTANCE;</span><br><span class="line">  Integer fetchSize = <span class="keyword">null</span>;</span><br><span class="line">  Integer timeout = <span class="keyword">null</span>;</span><br><span class="line">  <span class="keyword">boolean</span> flushCache = <span class="keyword">false</span>;</span><br><span class="line">  String parameterMap = <span class="keyword">null</span>;</span><br><span class="line">  String resultMap = <span class="keyword">null</span>;</span><br><span class="line">  ResultSetType resultSetTypeEnum = <span class="keyword">null</span>;</span><br><span class="line"></span><br><span class="line">  SqlSource sqlSource </span><br><span class="line">    = langDriver.createSqlSource(configuration, nodeToHandle, parameterTypeClass);</span><br><span class="line">  SqlCommandType sqlCommandType </span><br><span class="line">    = SqlCommandType.SELECT;</span><br><span class="line"></span><br><span class="line">  builderAssistant.addMappedStatement(</span><br><span class="line">    id, sqlSource, statementType, sqlCommandType,</span><br><span class="line">    fetchSize, timeout, parameterMap, parameterTypeClass, </span><br><span class="line">    resultMap, resultTypeClass,</span><br><span class="line">    resultSetTypeEnum, flushCache, useCache, resultOrdered,    </span><br><span class="line">    keyGenerator, keyProperty, keyColumn, databaseId, langDriver, <span class="keyword">null</span>);</span><br><span class="line"></span><br><span class="line">  id = builderAssistant.applyCurrentNamespace(id, <span class="keyword">false</span>);</span><br><span class="line"></span><br><span class="line">  MappedStatement keyStatement = configuration.getMappedStatement(id, <span class="keyword">false</span>);</span><br><span class="line">  configuration.addKeyGenerator(id, <span class="keyword">new</span> SelectKeyGenerator(keyStatement, executeBefore));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>LanguageDriver</code>接口有两个实现类。</p>
+<p><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://gitee.com/cayzlh/img-repo/raw/master/2020/07/17001915960996191596099619233.png" alt="image-20200730170018404"></p>
+<p>在<code>Configuration</code>的构造方法中，可以看到如下代码片段，我们由此可以判断默认使用的<code>XMLLanguageDriver</code>实现类。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">languageRegistry.setDefaultDriverClass(XMLLanguageDriver.class);</span><br></pre></td></tr></table></figure>
+
+<p>也可以提供自定义的<code>LanguageDriver</code>实现，并在<code>mybatis-config.xml</code>中通过<code>defaultScriptingLanguage</code>配置指定使用该自定义实现。<br>在<code>XMLLanguageDriver.createSqlSource()</code>方法中会创建<code>XMLScriptBuilder</code>对象并<code>XMLScriptBuilder.parseScriptNode()</code>方法创建<code>SqlSource</code>对象。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> SqlSource <span class="title">parseScriptNode</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  MixedSqlNode rootSqlNode = parseDynamicTags(context);</span><br><span class="line">  SqlSource sqlSource = <span class="keyword">null</span>;</span><br><span class="line">  <span class="keyword">if</span> (isDynamic) &#123;</span><br><span class="line">    sqlSource = <span class="keyword">new</span> DynamicSqlSource(configuration, rootSqlNode);</span><br><span class="line">  &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    sqlSource = <span class="keyword">new</span> RawSqlSource(configuration, rootSqlNode, parameterType);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> sqlSource;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在<code>XMLScriptBuilder.parseDynamicTags()</code>方法中，会遍历<code>&lt;selectKey&gt;</code>下的每个节点，如果包含任何标签节点，则认为是动态<code>SQL</code>语句；如果文本节点中含有<code>$&#123;&#125;</code>占位符，也认为其为动态SQL语句。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> MixedSqlNode <span class="title">parseDynamicTags</span><span class="params">(XNode node)</span> </span>&#123;</span><br><span class="line">  List&lt;SqlNode&gt; contents = <span class="keyword">new</span> ArrayList&lt;SqlNode&gt;();</span><br><span class="line">  NodeList children = node.getNode().getChildNodes();</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; children.getLength(); i++) &#123;</span><br><span class="line">    XNode child = node.newXNode(children.item(i));</span><br><span class="line">    <span class="keyword">if</span> (child.getNode().getNodeType() </span><br><span class="line">        == Node.CDATA_SECTION_NODE || </span><br><span class="line">        child.getNode().getNodeType() == Node.TEXT_NODE) &#123;</span><br><span class="line">      String data = child.getStringBody(<span class="string">&quot;&quot;</span>);</span><br><span class="line">      TextSqlNode textSqlNode = <span class="keyword">new</span> TextSqlNode(data);</span><br><span class="line">      <span class="keyword">if</span> (textSqlNode.isDynamic()) &#123;</span><br><span class="line">        contents.add(textSqlNode);</span><br><span class="line">        isDynamic = <span class="keyword">true</span>;</span><br><span class="line">      &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        contents.add(<span class="keyword">new</span> StaticTextSqlNode(data));</span><br><span class="line">      &#125;</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (child.getNode().getNodeType() == Node.ELEMENT_NODE) &#123; <span class="comment">// issue #628</span></span><br><span class="line">      String nodeName = child.getNode().getNodeName();</span><br><span class="line">      NodeHandler handler = nodeHandlerMap.get(nodeName);</span><br><span class="line">      <span class="keyword">if</span> (handler == <span class="keyword">null</span>) &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> BuilderException(<span class="string">&quot;Unknown element &lt;&quot;</span> + nodeName + <span class="string">&quot;&gt; in SQL statement.&quot;</span>);</span><br><span class="line">      &#125;</span><br><span class="line">      handler.handleNode(child, contents);</span><br><span class="line">      isDynamic = <span class="keyword">true</span>;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> <span class="keyword">new</span> MixedSqlNode(contents);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>上面遇到的<code>TextSqlNode</code>、<code>StaticTextSqlNode</code>等都是<code>SqlNode</code>接口的实现，<code>SqlNode</code>接口的<br>每个实现都对应于不同的动态<code>SQL</code>节点类型，每个实现的具体代码后面遇到了再详细分析。</p>
+<p><code>TextSqlNode.isDynamic()</code>方法中会通过<code>GenericTokenParser</code>和<code>DynamicCheckerTokenParser</code>配合解析文本节点，并判断它是否为动态<code>SQL</code>。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">isDynamic</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  DynamicCheckerTokenParser checker = <span class="keyword">new</span> DynamicCheckerTokenParser();</span><br><span class="line">  GenericTokenParser parser = createParser(checker);</span><br><span class="line">  parser.parse(text);</span><br><span class="line">  <span class="keyword">return</span> checker.isDynamic();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> String <span class="title">handleToken</span><span class="params">(String content)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">this</span>.isDynamic = <span class="keyword">true</span>;</span><br><span class="line">  <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>3. 解析SQL节点</strong></p>
+<p>经过上述两个解析过程之后，<code>&lt;include&gt;</code>节点和<code>&lt;selectKey&gt;</code>节点己经被解析并删除掉了。<code>XMLStatementBuilder.parseStatementNode()</code>方法剩余的操作就是解析<code>SQL</code>节点。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">parseStatementNode</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  String id = context.getStringAttribute(<span class="string">&quot;id&quot;</span>);</span><br><span class="line">  String databaseId = context.getStringAttribute(<span class="string">&quot;databaseId&quot;</span>);</span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> (!databaseIdMatchesCurrent(id, databaseId, <span class="keyword">this</span>.requiredDatabaseId)) &#123;</span><br><span class="line">    <span class="keyword">return</span>;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  Integer fetchSize = context.getIntAttribute(<span class="string">&quot;fetchSize&quot;</span>);</span><br><span class="line">  Integer timeout = context.getIntAttribute(<span class="string">&quot;timeout&quot;</span>);</span><br><span class="line">  String parameterMap = context.getStringAttribute(<span class="string">&quot;parameterMap&quot;</span>);</span><br><span class="line">  String parameterType = context.getStringAttribute(<span class="string">&quot;parameterType&quot;</span>);</span><br><span class="line">  Class&lt;?&gt; parameterTypeClass = resolveClass(parameterType);</span><br><span class="line">  String resultMap = context.getStringAttribute(<span class="string">&quot;resultMap&quot;</span>);</span><br><span class="line">  String resultType = context.getStringAttribute(<span class="string">&quot;resultType&quot;</span>);</span><br><span class="line">  String lang = context.getStringAttribute(<span class="string">&quot;lang&quot;</span>);</span><br><span class="line">  LanguageDriver langDriver = getLanguageDriver(lang);</span><br><span class="line"></span><br><span class="line">  Class&lt;?&gt; resultTypeClass = resolveClass(resultType);</span><br><span class="line">  String resultSetType = context.getStringAttribute(<span class="string">&quot;resultSetType&quot;</span>);</span><br><span class="line">  StatementType statementType = StatementType.valueOf(context.getStringAttribute(<span class="string">&quot;statementType&quot;</span>, StatementType.PREPARED.toString()));</span><br><span class="line">  ResultSetType resultSetTypeEnum = resolveResultSetType(resultSetType);</span><br><span class="line"></span><br><span class="line">  String nodeName = context.getNode().getNodeName();</span><br><span class="line">  SqlCommandType sqlCommandType = SqlCommandType.valueOf(nodeName.toUpperCase(Locale.ENGLISH));</span><br><span class="line">  <span class="keyword">boolean</span> isSelect = sqlCommandType == SqlCommandType.SELECT;</span><br><span class="line">  <span class="keyword">boolean</span> flushCache = context.getBooleanAttribute(<span class="string">&quot;flushCache&quot;</span>, !isSelect);</span><br><span class="line">  <span class="keyword">boolean</span> useCache = context.getBooleanAttribute(<span class="string">&quot;useCache&quot;</span>, isSelect);</span><br><span class="line">  <span class="keyword">boolean</span> resultOrdered = context.getBooleanAttribute(<span class="string">&quot;resultOrdered&quot;</span>, <span class="keyword">false</span>);</span><br><span class="line"></span><br><span class="line">  <span class="comment">// Include Fragments before parsing</span></span><br><span class="line">  XMLIncludeTransformer includeParser = <span class="keyword">new</span> XMLIncludeTransformer(configuration, builderAssistant);</span><br><span class="line">  includeParser.applyIncludes(context.getNode());</span><br><span class="line"></span><br><span class="line">  <span class="comment">// Parse selectKey after includes and remove them.</span></span><br><span class="line">  processSelectKeyNodes(id, parameterTypeClass, langDriver);</span><br><span class="line"></span><br><span class="line">  <span class="comment">// Parse the SQL (pre: &lt;selectKey&gt; and &lt;include&gt; were parsed and removed)</span></span><br><span class="line">  SqlSource sqlSource = langDriver.createSqlSource(configuration, context, parameterTypeClass);</span><br><span class="line">  String resultSets = context.getStringAttribute(<span class="string">&quot;resultSets&quot;</span>);</span><br><span class="line">  String keyProperty = context.getStringAttribute(<span class="string">&quot;keyProperty&quot;</span>);</span><br><span class="line">  String keyColumn = context.getStringAttribute(<span class="string">&quot;keyColumn&quot;</span>);</span><br><span class="line">  KeyGenerator keyGenerator;</span><br><span class="line">  String keyStatementId = id + SelectKeyGenerator.SELECT_KEY_SUFFIX;</span><br><span class="line">  keyStatementId = builderAssistant.applyCurrentNamespace(keyStatementId, <span class="keyword">true</span>);</span><br><span class="line">  <span class="keyword">if</span> (configuration.hasKeyGenerator(keyStatementId)) &#123;</span><br><span class="line">    keyGenerator = configuration.getKeyGenerator(keyStatementId);</span><br><span class="line">  &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    keyGenerator = context.getBooleanAttribute(<span class="string">&quot;useGeneratedKeys&quot;</span>,</span><br><span class="line">                                               configuration.isUseGeneratedKeys() &amp;&amp; SqlCommandType.INSERT.equals(sqlCommandType))</span><br><span class="line">      ? Jdbc3KeyGenerator.INSTANCE : NoKeyGenerator.INSTANCE;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  builderAssistant.addMappedStatement(id, sqlSource, statementType, sqlCommandType,</span><br><span class="line">                                      fetchSize, timeout, parameterMap, parameterTypeClass, resultMap, resultTypeClass,</span><br><span class="line">                                      resultSetTypeEnum, flushCache, useCache, resultOrdered, </span><br><span class="line">                                      keyGenerator, keyProperty, keyColumn, databaseId, langDriver, resultSets);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="绑定Mapper接口"><a href="#绑定Mapper接口" class="headerlink" title="绑定Mapper接口"></a>绑定Mapper接口</h2><p>每个映射配置文件的命名空间可以绑定一个<code>Mapper</code>接口，并注册到<code>MapperRegistry</code>中。</p>
+<p>在<code>XMLMapperBuilder.bindMapperForNamespace()</code>方法中，完成了映射配置文件与对应<code>Mapper</code>接口的绑定。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">bindMapperForNamespace</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  String namespace = builderAssistant.getCurrentNamespace();</span><br><span class="line">  <span class="keyword">if</span> (namespace != <span class="keyword">null</span>) &#123;</span><br><span class="line">    Class&lt;?&gt; boundType = <span class="keyword">null</span>;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">      boundType = Resources.classForName(namespace);</span><br><span class="line">    &#125; <span class="keyword">catch</span> (ClassNotFoundException e) &#123;</span><br><span class="line">      <span class="comment">//ignore, bound type is not required</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (boundType != <span class="keyword">null</span>) &#123;</span><br><span class="line">      <span class="keyword">if</span> (!configuration.hasMapper(boundType)) &#123;</span><br><span class="line">        <span class="comment">// Spring may not know the real resource name so we set a flag</span></span><br><span class="line">        <span class="comment">// to prevent loading again this resource from the mapper interface</span></span><br><span class="line">        <span class="comment">// look at MapperAnnotationBuilder#loadXmlResource</span></span><br><span class="line">        configuration.addLoadedResource(<span class="string">&quot;namespace:&quot;</span> + namespace);</span><br><span class="line">        configuration.addMapper(boundType);</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在介绍<code>MapperRegistry.addMapper()</code>方法时，只提到了该方法会向<code>MapperRegistry.knownMappers</code>集合注册指定的<code>Mapper</code>接口，其实该方法还会创建<code>MapperAnnotationBuilder</code>，并调用<code>MapperAnnotationBuilder.parse()</code>方法解析<code>Mapper</code>接口中的注解信息。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">parse</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  String resource = type.toString();</span><br><span class="line">  <span class="keyword">if</span> (!configuration.isResourceLoaded(resource)) &#123;</span><br><span class="line">    loadXmlResource();</span><br><span class="line">    configuration.addLoadedResource(resource);</span><br><span class="line">    assistant.setCurrentNamespace(type.getName());</span><br><span class="line">    parseCache();</span><br><span class="line">    parseCacheRef();</span><br><span class="line">    Method[] methods = type.getMethods();</span><br><span class="line">    <span class="keyword">for</span> (Method method : methods) &#123;</span><br><span class="line">      <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="comment">// issue #237</span></span><br><span class="line">        <span class="keyword">if</span> (!method.isBridge()) &#123;</span><br><span class="line">          parseStatement(method);</span><br><span class="line">        &#125;</span><br><span class="line">      &#125; <span class="keyword">catch</span> (IncompleteElementException e) &#123;</span><br><span class="line">        configuration.addIncompleteMethod(<span class="keyword">new</span> MethodResolver(<span class="keyword">this</span>, method));</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  parsePendingMethods();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="处理incomplete-集合"><a href="#处理incomplete-集合" class="headerlink" title="处理incomplete*集合"></a>处理incomplete*集合</h2><p><code>XMLMapperBuilder.configurationElement()</code>方法解析映射配置文件时，是按照从文件头到文件尾的顺序解析的，但是有时候在解析一个节点时，会引用定义在该节点之后的、还未解析的节点，这就会导致解析失败并抛出<code>IncompleteElementException</code>。</p>
+<p>根据抛出异常的节点不同，<code>MyBatis</code>会创建不同的<code>*Resolver</code>对象，并添加到<code>Configuration</code>的不同<code>incomplete*</code>集合中。</p>
+<p>例如，</p>
+<ul>
+<li><p>解析<code>Mapper</code>接口中的方法出现异常时，会创建<code>MethodResolver</code>对象，并将其追加到<code>Configuration.incompleteMethods</code>集合(<code>LinkedList&lt;MethodResolver&gt;</code>类型)中暂存;</p>
+</li>
+<li><p>解析<code>&lt;resultMap&gt;</code>节点时出现异常，则会将对应的<code>ResultMapResolver</code>对象追加到<code>incompleteResultMaps</code>(<code>LinkedList&lt;ResultMapResolver&gt;</code>类型)集合中暂存;</p>
+</li>
+<li><p>解析<code>&lt;cache-ref&gt;</code>节点时出现异常，则会将对应的<code>CacheRefResolver</code>对象追加到<code>incompleteCacheRefs</code>(<code>LinkedList&lt;CacheRefResolver&gt;</code>类型)集合中暂存;</p>
+</li>
+<li><p>解析<code>SQL</code>语句节点时出现异常，则会将对应的<code>XMLStatementBuilder</code>对象追加到<code>incompleteStatements</code>(<code>LinkedList&lt;XMLStatementBuilder&gt;</code>类型)集合中暂存。</p>
+</li>
+</ul>
+<p>在<code>XMLMapperBuilder.parse()</code>方法中可以看到，通过<code>configurationElement()</code>方法完了一次映射配置文件的解析后，还会调用<code>parsePendingResultMaps()</code>方法、<code>parsePendingChacheRefs()</code>方法、<code>parsePendingStatements()</code>方法三个<code>parsePending*()</code>方法处理<code>Configuration</code>中对应的三个<code>incomplete*</code>集合。所有<code>parsePending*()</code>方法的逻辑都是基本类似的，这里以<code>parsePendingStatements()</code>方法为例进行分析</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">parsePendingStatements</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  Collection&lt;XMLStatementBuilder&gt; incompleteStatements = configuration.getIncompleteStatements();</span><br><span class="line">  <span class="keyword">synchronized</span> (incompleteStatements) &#123;</span><br><span class="line">    Iterator&lt;XMLStatementBuilder&gt; iter = incompleteStatements.iterator();</span><br><span class="line">    <span class="keyword">while</span> (iter.hasNext()) &#123;</span><br><span class="line">      <span class="keyword">try</span> &#123;</span><br><span class="line">        iter.next().parseStatementNode();</span><br><span class="line">        iter.remove();</span><br><span class="line">      &#125; <span class="keyword">catch</span> (IncompleteElementException e) &#123;</span><br><span class="line">        <span class="comment">// Statement is still missing a resource...</span></span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>到此为止，<code>MyBatis</code>的初始化过程就全部介绍完了，其中分析了<code>mybatis-config.xml</code>配置文件的解析过程、映射配置文件的解析过程以及<code>Mapper</code>接口中相关注解的解析过程。</p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ul>
+<li><p><strong>《MyBatis技术内幕》</strong></p>
+</li>
+<li><p>部分图片来源——<strong>《MyBatis技术内幕》</strong></p>
+</li>
+</ul>
+
+  
+
+
+  </article>
+  
+<div class="related-wrap" id="read-next"><section class="header cap theme"><span>接下来阅读</span></section><section class="body"><div class="post-title h2"><a href="/blog/wiki/mybatis_technology_insider/part11.html">核心处理层-SqlNode&SqlSource</a></div><div class="post-title fs14"><a href="/blog/wiki/mybatis_technology_insider/part9.html">上一篇：基础支持层——缓存模块</a></div></section></div>
+
+  
+
+
+
+
+      
+<footer class="page-footer fs12"><hr><div><p>本博客所有文章除特别声明外，均采用 <a target="_blank" rel="external nofollow noopener noreferrer" href="https://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY-NC-SA 4.0</a> 许可协议，转载请注明出处。</p>
+<p>本站由 <a href="https://www.cayzlh.com/blog/">@🐳Ant丶</a> 创建，使用 <a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/xaoxuu/hexo-theme-stellar/tree/1.1.0">Stellar</a> 作为主题。</p>
+<p><a target="_blank" rel="external nofollow noopener noreferrer" href="https://beian.miit.gov.cn/">粤ICP备20058712号</a></p>
+</div></footer>
+
+      <div class="float-panel mobile-only" style="display:none">
+  <button type="button" class="sidebar-toggle mobile" onclick="sidebar.toggle()">
+    <svg class="icon" viewbox="0 0 1228 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2849"><path d="M0 0m97.390199 0l973.901995 0q97.390199 0 97.390199 97.390199l0 0q0 97.390199-97.390199 97.3902l-973.901995 0q-97.390199 0-97.390199-97.3902l0 0q0-97.390199 97.390199-97.390199Z" p-id="2850"/><path d="M0 389.560798m97.390199 0l973.901995 0q97.390199 0 97.390199 97.390199l0 0q0 97.390199-97.390199 97.3902l-973.901995 0q-97.390199 0-97.390199-97.3902l0 0q0-97.390199 97.390199-97.390199Z" p-id="2851"/><path d="M0 779.121596m97.390199 0l973.901995 0q97.390199 0 97.390199 97.390199l0 0q0 97.390199-97.390199 97.390199l-973.901995 0q-97.390199 0-97.390199-97.390199l0 0q0-97.390199 97.390199-97.390199Z" p-id="2852"/></svg>
+  </button>
+</div>
+
+    </div>
+  </div>
+  <div class="scripts">
+    <script type="text/javascript">
+  stellar = {
+    // 懒加载 css https://github.com/filamentgroup/loadCSS
+    loadCSS: (href, before, media, attributes) => {
+      var doc = window.document;
+      var ss = doc.createElement("link");
+      var ref;
+      if (before) {
+        ref = before;
+      } else {
+        var refs = (doc.body || doc.getElementsByTagName("head")[0]).childNodes;
+        ref = refs[refs.length - 1];
+      }
+      var sheets = doc.styleSheets;
+      if (attributes) {
+        for (var attributeName in attributes) {
+          if (attributes.hasOwnProperty(attributeName)) {
+            ss.setAttribute(attributeName, attributes[attributeName]);
+          }
+        }
+      }
+      ss.rel = "stylesheet";
+      ss.href = href;
+      ss.media = "only x";
+      function ready(cb) {
+        if (doc.body) {
+          return cb();
+        }
+        setTimeout(function () {
+          ready(cb);
+        });
+      }
+      ready(function () {
+        ref.parentNode.insertBefore(ss, before ? ref : ref.nextSibling);
+      });
+      var onloadcssdefined = function (cb) {
+        var resolvedHref = ss.href;
+        var i = sheets.length;
+        while (i--) {
+          if (sheets[i].href === resolvedHref) {
+            return cb();
+          }
+        }
+        setTimeout(function () {
+          onloadcssdefined(cb);
+        });
+      };
+      function loadCB() {
+        if (ss.addEventListener) {
+          ss.removeEventListener("load", loadCB);
+        }
+        ss.media = media || "all";
+      }
+      if (ss.addEventListener) {
+        ss.addEventListener("load", loadCB);
+      }
+      ss.onloadcssdefined = onloadcssdefined;
+      onloadcssdefined(loadCB);
+      return ss;
+    },
+
+    // 从 butterfly 和 volantis 获得灵感
+    loadScript: (src, opt) => new Promise((resolve, reject) => {
+      var script = document.createElement('script')
+      script.src = src
+      if (opt) {
+        for (let key of Object.keys(opt)) {
+          script[key] = opt[key]
+        }
+      } else {
+        // 默认异步，如果需要同步，第二个参数传入 {} 即可
+        script.async = true
+      }
+      script.onerror = reject
+      script.onload = script.onreadystatechange = function() {
+        const loadState = this.readyState
+        if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+        script.onload = script.onreadystatechange = null
+        resolve()
+      }
+      document.head.appendChild(script)
+    }),
+
+    // https://github.com/jerryc127/hexo-theme-butterfly
+    jQuery: (fn) => {
+      if (typeof jQuery === 'undefined') {
+        stellar.loadScript(stellar.plugins.jQuery).then(fn)
+      } else {
+        fn()
+      }
+    }
+  };
+  stellar.github = 'https://github.com/xaoxuu/hexo-theme-stellar/tree/1.1.0';
+  stellar.config = {
+    date_suffix: {
+      just: '刚刚',
+      min: '分钟前',
+      hour: '小时前',
+      day: '天前',
+      month: '个月前',
+    },
+  };
+
+  // required plugins (only load if needs)
+  stellar.plugins = {
+    jQuery: 'https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js',
+    sitesjs: '/blog/js/plugins/sites.js',
+    friendsjs: '/blog/js/plugins/friends.js',
+  };
+
+  // optional plugins
+  if ('true' == 'true') {
+    stellar.plugins.lazyload = Object.assign({"enable":true,"js":"https://cdn.jsdelivr.net/npm/vanilla-lazyload@17.3.1/dist/lazyload.min.js","transition":"blur"});
+  }
+  if ('true' == 'true') {
+    stellar.plugins.swiper = Object.assign({"enable":true,"css":"https://unpkg.com/swiper/swiper-bundle.min.css","js":"https://unpkg.com/swiper/swiper-bundle.min.js"});
+  }
+  if ('' == 'true') {
+    stellar.plugins.scrollreveal = Object.assign({"enable":null,"js":"https://cdn.jsdelivr.net/npm/scrollreveal@4.0.9/dist/scrollreveal.min.js","distance":"8px","duration":500,"interval":100,"scale":1});
+  }
+  if ('true' == 'true') {
+    stellar.plugins.preload = Object.assign({"enable":true,"service":"flying_pages","instant_page":"https://cdn.jsdelivr.net/gh/volantis-x/cdn-volantis@4.1.2/js/instant_page.js","flying_pages":"https://cdn.jsdelivr.net/gh/gijo-varghese/flying-pages@2.1.2/flying-pages.min.js"});
+  }
+</script>
+
+<!-- required -->
+
+  
+<script src="/blog/js/main.js" async></script>
+
+
+
+<!-- optional -->
+
+
+
+<!-- inject -->
+
+
+  </div>
+</body>
+</html>

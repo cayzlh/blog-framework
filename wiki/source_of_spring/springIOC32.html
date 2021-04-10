@@ -1,0 +1,994 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta name="generator" content="Hexo 5.4.0">
+  <meta charset="utf-8">
+  
+
+  <meta http-equiv="x-dns-prefetch-control" content="on">
+  <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+
+  <meta name="renderer" content="webkit">
+  <meta name="force-rendering" content="webkit">
+  <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+  <meta name="HandheldFriendly" content="True">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <title>Spring源码分析：Spring的环境&属性：PropertySource、Environment、Profile - CAYZLH</title>
+
+  
+  <meta name="description" content="
+本文作者：chenssy
+出处：http://cmsblogs.com/?p=4032
+在学习Spring源码的过程中发现的好站+好贴，原创不易感谢作者。
+Spring版本：Spring 5.0.6.RELEASE
+
+spring.profiles.active 和 @Profile 这两个...">
+
+  <!-- feed -->
+  
+    <link rel="alternate" href="/blog/atom.xml" title="CAYZLH" type="application/atom+xml">
+  
+
+  
+    
+<link rel="stylesheet" href="/blog/css/main.css">
+
+  
+
+  
+    
+      <meta name="msapplication-TileColor" content="#2d89ef">
+    
+      <meta name="msapplication-config" content="/assets/favicon/browserconfig.xml">
+    
+      <meta name="theme-color" content="#ffffff">
+    
+      <link rel="shortcut icon" href="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/logo/favicon.ico">
+    
+      <link rel="icon" type="image/png" href="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/logo/favicon-192x192.png" sizes="192x192">
+    
+      <link rel="apple-touch-icon" sizes="180x180" href="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/logo/apple-touch-icon.png">
+    
+  
+</head>
+
+<body>
+  
+
+
+  <div class="l_body" id="start">
+    <aside class="l_left">
+    
+
+<header class="header">
+  <div class="logo-wrap">
+  
+    <a class="avatar" href="/blog/">
+      
+        <img no-lazy class="bg" src="https://cdn.jsdelivr.net/gh/cdn-x/placeholder@1.0.2/avatar/round/rainbow64@3x.webp" onerror="javascript:this.classList.add('error');this.src='https://cdn.jsdelivr.net/gh/cdn-x/placeholder@1.0.1/image/2659360.svg';">
+      
+      <img no-lazy class="avatar" src="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/image/IMG_4207.JPG" onerror="javascript:this.classList.add('error');this.src='https://cdn.jsdelivr.net/gh/cdn-x/placeholder@1.0.1/image/2659360.svg';">
+    </a>
+  
+  
+    <a class="title" href="/blog/">
+      CAYZLH
+    </a>
+  
+</div>
+
+  <nav class="menu dis-select"><a class="nav-item" href="/blog/">文章</a><a class="nav-item active" href="/blog/wiki/">文档</a></nav>
+</header>
+
+<div class="widgets">
+  
+    
+      
+      
+<div class="widget-wrap" id="toc"><div class="widget-header h4 dis-select"><span class="name">本文目录</span></div><div class="widget-body fs14 wiki"><div class="doc-tree"><a class="doc-tree-link" href="/blog/wiki/source_of_spring/index.html"><span class="toc-text">Spring源码分析</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/blog/wiki/source_of_spring/springIOC1.html"><span class="toc-text">4张图带你读懂Spring IOC的世界</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/blog/wiki/source_of_spring/springIOC2.html"><span class="toc-text">IOC之深入理解SpringIoC</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/blog/wiki/source_of_spring/springIOC24.html"><span class="toc-text">IOC之深入分析PropertyPlaceholderConfigurer</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/blog/wiki/source_of_spring/springIOC25.html"><span class="toc-text">IOC之PropertyPlaceholderConfigurer的应用</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/blog/wiki/source_of_spring/springIOC2_5.html"><span class="toc-text">IOC之Spring统一资源加载策略</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/blog/wiki/source_of_spring/springIOC3.html"><span class="toc-text">IoC之加载BeanDefinition</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/blog/wiki/source_of_spring/springIOC4.html"><span class="toc-text">IOC之获取验证模型</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/blog/wiki/source_of_spring/springIOC5.html"><span class="toc-text">IOC之获取Document对象</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/blog/wiki/source_of_spring/springIOC6.html"><span class="toc-text">IoC之注册BeanDefinitions</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/blog/wiki/source_of_spring/springIOC7.html"><span class="toc-text">IoC之解析Bean：解析import标签</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/blog/wiki/source_of_spring/springIOC8.html"><span class="toc-text">IOC之解析bean标签：开启解析进程</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/blog/wiki/source_of_spring/springIOC9.html"><span class="toc-text">IOC之解析bean标签：BeanDefinition</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/blog/wiki/source_of_spring/springIOC10.html"><span class="toc-text">IoC之解析bean标签：meta、lookup-method、replace-method</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/blog/wiki/source_of_spring/springIOC11.html"><span class="toc-text">IOC之解析bean标签：constructor-arg、property子元素</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/blog/wiki/source_of_spring/springIOC12.html"><span class="toc-text">IoC之解析bean标签：解析自定义标签</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/blog/wiki/source_of_spring/springIOC13.html"><span class="toc-text">IoC之注册解析的BeanDefinitions</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/blog/wiki/source_of_spring/springIOC14.html"><span class="toc-text">IoC之装载BeanDefinitions总结</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/blog/wiki/source_of_spring/springIOC15.html"><span class="toc-text">IOC之开启bean的加载</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/blog/wiki/source_of_spring/springIOC16.html"><span class="toc-text">IOC之从单例缓存中获取单例bean</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/blog/wiki/source_of_spring/springIOC16_4.html"><span class="toc-text">IOC之parentBeanFactory与依赖处理</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/blog/wiki/source_of_spring/springIOC16_5.html"><span class="toc-text">IOC之分析各scope的bean创建</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/blog/wiki/source_of_spring/springIOC16_6.html"><span class="toc-text">IOC之开启Bean的实例化进程</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/blog/wiki/source_of_spring/springIOC16_7.html"><span class="toc-text">IOC之Factory实例化bean</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/blog/wiki/source_of_spring/springIOC16_8.html"><span class="toc-text">IOC之构造函数实例化bean</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/blog/wiki/source_of_spring/springIOC17.html"><span class="toc-text">IOC之属性填充</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/blog/wiki/source_of_spring/springIOC18.html"><span class="toc-text">IOC之循环依赖</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/blog/wiki/source_of_spring/springIOC19.html"><span class="toc-text">IOC之Bean的初始化</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/blog/wiki/source_of_spring/springIOC20.html"><span class="toc-text">IOC之加载Bean——总结篇</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/blog/wiki/source_of_spring/springIOC21.html"><span class="toc-text">IOC之深入分析Aware接口</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/blog/wiki/source_of_spring/springIOC22.html"><span class="toc-text">IOC之深入分析BeanPostProcessor</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/blog/wiki/source_of_spring/springIOC23.html"><span class="toc-text">IOC之深入分析InitializingBean和init-method</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/blog/wiki/source_of_spring/springIOC25_5.html"><span class="toc-text">IOC之深入分析BeanFactoryPostProcessor</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/blog/wiki/source_of_spring/springIOC26.html"><span class="toc-text">IOC之深入分析PropertyOverrideConfigurer</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/blog/wiki/source_of_spring/springIOC27.html"><span class="toc-text">IOC之深入分析Bean的类型转换体系</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/blog/wiki/source_of_spring/springIOC28.html"><span class="toc-text">IOC之自定义类型转换器</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/blog/wiki/source_of_spring/springIOC29.html"><span class="toc-text">IOC之分析BeanWrapper</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/blog/wiki/source_of_spring/springIOC30.html"><span class="toc-text">IOC之bean的实例化策略：InstantiationStrategy</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/blog/wiki/source_of_spring/springIOC31.html"><span class="toc-text">IOC之BeanDefinition注册机：BeanDefinitionRegistry</span></a></div><div class="doc-tree active"><a class="doc-tree-link active" href="/blog/wiki/source_of_spring/springIOC32.html"><span class="toc-text">Spring的环境&属性：PropertySource、Environment、Profile</span></a><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%A6%82%E6%8B%AC"><span class="toc-text">概括</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Properties"><span class="toc-text">Properties</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#PropertyResolver"><span class="toc-text">PropertyResolver</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#ConfigurablePropertyResolver"><span class="toc-text">ConfigurablePropertyResolver</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#AbstractPropertyResolver"><span class="toc-text">AbstractPropertyResolver</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#PropertySourcesPropertyResolver"><span class="toc-text">PropertySourcesPropertyResolver</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Environment"><span class="toc-text">Environment</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#ConfigurableEnvironment"><span class="toc-text">ConfigurableEnvironment</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#AbstractEnvironment"><span class="toc-text">AbstractEnvironment</span></a></li></ol></li></ol></div><div class="doc-tree"><a class="doc-tree-link" href="/blog/wiki/source_of_spring/springIOC33.html"><span class="toc-text">IOC之分析bean的生命周期</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/blog/wiki/source_of_spring/springIOC34.html"><span class="toc-text">ApplicationContext相关接口架构分析</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/blog/wiki/source_of_spring/springIOC35.html"><span class="toc-text">深入分析ApplicationContext的refresh()</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/blog/wiki/source_of_spring/springIOC36.html"><span class="toc-text">Spring AOP和Spring Transaction源码资料整理</span></a></div></div></div>
+
+    
+  
+    
+      
+      
+  
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+      <div class="widget-wrap" id="related">
+        <div class="widget-header h4 dis-select">
+          <span class="name">更多编程技术</span>
+        </div>
+        <div class="widget-body fs14">
+          
+            
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+                <div class="post-title">
+                  <a href="/blog/wiki/design_patterns/index.html">
+                    设计模式
+                  </a>
+                </div>
+              
+            
+          
+            
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+          
+            
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+                <div class="post-title">
+                  <a href="/blog/wiki/springcloud/index.html">
+                    SpringCloud
+                  </a>
+                </div>
+              
+            
+          
+        </div>
+      </div>
+    
+  
+
+
+    
+  
+</div>
+
+
+    </aside>
+    <div class="l_main">
+      
+
+      
+
+  
+  
+  <div class="bread-nav fs12">
+  
+    
+    <div id="breadcrumb">
+      <a class="cap breadcrumb" href="/">主页</a>
+      <span class="sep"></span>
+      
+        <a class="cap breadcrumb" href="/blog/wiki/">文档</a>
+      
+      
+        <span class="sep"></span>
+        <a class="cap breadcrumb" href="/blog/wiki/categories/programmer/index.html">编程技术</a>
+      
+      
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        <span class="sep"></span>
+        <a class="cap breadcrumb" href="/blog/wiki/source_of_spring/index.html">Spring源码分析</a>
+      
+    </div>
+    <div id="post-meta">
+      更新于&nbsp;<time datetime="2021-04-09T15:42:32.748Z">2021-04-09</time>
+    </div>
+  
+  </div>
+
+
+  <article class="content md wiki">
+  <h1 class="article-title"><span>Spring的环境&属性：PropertySource、Environment、Profile</span></h1>
+  <blockquote>
+<p>本文作者：chenssy</p>
+<p>出处：<a target="_blank" rel="external nofollow noopener noreferrer" href="http://cmsblogs.com/?p=4032">http://cmsblogs.com/?p=4032</a></p>
+<p>在学习<code>Spring源码</code>的过程中发现的好站+好贴，原创不易感谢作者。</p>
+<p>Spring版本：<strong>Spring 5.0.6.RELEASE</strong></p>
+</blockquote>
+<p><code>spring.profiles.active</code> 和 <code>@Profile</code> 这两个我相信各位都熟悉吧，主要功能是可以实现不同环境下（开发、测试、生产）参数配置的切换。</p>
+<p>其实关于环境的切换，在博客 <a href="/2020/01/23/cd2eaad8.html"> IOC 之 PropertyPlaceholderConfigurer 的应用</a> 已经介绍了利用 PropertyPlaceholderConfigurer 来实现动态切换配置环境，当然这种方法需要我们自己实现，有点儿麻烦。但是对于这种非常实际的需求，Spring 怎么可能没有提供呢？下面就这个问题来对 Spring 的<strong>环境 &amp; 属性</strong>来做一个分析说明。</p>
+<h2 id="概括"><a href="#概括" class="headerlink" title="概括"></a>概括</h2><p>Spring 环境 &amp; 属性由四个部分组成：<code>PropertySource</code>、<code>PropertyResolver</code>、<code>Profile</code> 和 <code>Environment</code>。</p>
+<ul>
+<li><strong>PropertySource</strong>：属性源，key-value 属性对抽象，用于配置数据。</li>
+<li><strong>PropertyResolver</strong>：属性解析器，用于解析属性配置</li>
+<li><strong>Profile</strong>：剖面，只有激活的剖面的组件/配置才会注册到 Spring 容器，类似于 Spring Boot 中的 profile</li>
+<li><strong>Environment</strong>：环境，Profile 和 PropertyResolver 的组合。</li>
+</ul>
+<p>下面是整个体系的结构图：</p>
+<p><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://gitee.com/cayzlh/img-repo/raw/master/2020/05/27/15398567835599_IpITEl_QAdnEu.jpg" alt="img"></p>
+<p>下面就针对上面结构图对 Spring 的 Properties &amp; Environment 做一个详细的分析。</p>
+<h2 id="Properties"><a href="#Properties" class="headerlink" title="Properties"></a>Properties</h2><h3 id="PropertyResolver"><a href="#PropertyResolver" class="headerlink" title="PropertyResolver"></a>PropertyResolver</h3><blockquote>
+<p>属性解析器，用于解析任何基础源的属性的接口</p>
+</blockquote>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">PropertyResolver</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 是否包含某个属性</span></span><br><span class="line">    <span class="function"><span class="keyword">boolean</span> <span class="title">containsProperty</span><span class="params">(String key)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 获取属性值 如果找不到返回null</span></span><br><span class="line">    <span class="meta">@Nullable</span></span><br><span class="line">    <span class="function">String <span class="title">getProperty</span><span class="params">(String key)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 获取属性值，如果找不到返回默认值  </span></span><br><span class="line">    <span class="function">String <span class="title">getProperty</span><span class="params">(String key, String defaultValue)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 获取指定类型的属性值，找不到返回null</span></span><br><span class="line">    <span class="meta">@Nullable</span></span><br><span class="line">    &lt;T&gt; <span class="function">T <span class="title">getProperty</span><span class="params">(String key, Class&lt;T&gt; targetType)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 获取指定类型的属性值，找不到返回默认值</span></span><br><span class="line">    &lt;T&gt; <span class="function">T <span class="title">getProperty</span><span class="params">(String key, Class&lt;T&gt; targetType, T defaultValue)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 获取属性值，找不到抛出异常IllegalStateException</span></span><br><span class="line">    <span class="function">String <span class="title">getRequiredProperty</span><span class="params">(String key)</span> <span class="keyword">throws</span> IllegalStateException</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 获取指定类型的属性值，找不到抛出异常IllegalStateException</span></span><br><span class="line">    &lt;T&gt; <span class="function">T <span class="title">getRequiredProperty</span><span class="params">(String key, Class&lt;T&gt; targetType)</span> <span class="keyword">throws</span> IllegalStateException</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 替换文本中的占位符（$&#123;key&#125;）到属性值，找不到不解析</span></span><br><span class="line">    <span class="function">String <span class="title">resolvePlaceholders</span><span class="params">(String text)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 替换文本中的占位符（$&#123;key&#125;）到属性值，找不到抛出异常IllegalArgumentException</span></span><br><span class="line">    <span class="function">String <span class="title">resolveRequiredPlaceholders</span><span class="params">(String text)</span> <span class="keyword">throws</span> IllegalArgumentException</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>从 API 上面我们就知道属性解析器 PropertyResolver 的作用了。下面是一个简单的运用。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">PropertyResolver propertyResolver = <span class="keyword">new</span> PropertySourcesPropertyResolver(propertySources);</span><br><span class="line"></span><br><span class="line">System.out.println(propertyResolver.getProperty(<span class="string">&quot;name&quot;</span>));</span><br><span class="line">System.out.println(propertyResolver.getProperty(<span class="string">&quot;name&quot;</span>, <span class="string">&quot;chenssy&quot;</span>));</span><br><span class="line">System.out.println(propertyResolver.resolvePlaceholders(<span class="string">&quot;my name is  $&#123;name&#125;&quot;</span>));</span><br></pre></td></tr></table></figure>
+
+<p>下图是 PropertyResolver 体系结构图：</p>
+<p><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://gitee.com/cayzlh/img-repo/raw/master/2020/05/27/201810241001_UC9RsT_5WoqUp.png" alt="201810241001"></p>
+<ul>
+<li><strong>ConfigurablePropertyResolver</strong>：供属性类型转换的功能</li>
+<li><strong>AbstractPropertyResolver</strong>：解析属性文件的抽象基类</li>
+<li><strong>PropertySourcesPropertyResolver</strong>：PropertyResolver 的实现者，他对一组 PropertySources 提供属性解析服务</li>
+</ul>
+<h3 id="ConfigurablePropertyResolver"><a href="#ConfigurablePropertyResolver" class="headerlink" title="ConfigurablePropertyResolver"></a>ConfigurablePropertyResolver</h3><blockquote>
+<p>提供属性类型转换的功能</p>
+</blockquote>
+<p>通俗点说就是 ConfigurablePropertyResolver 提供属性值类型转换所需要的 ConversionService。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">ConfigurablePropertyResolver</span> <span class="keyword">extends</span> <span class="title">PropertyResolver</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 返回执行类型转换时使用的 ConfigurableConversionService</span></span><br><span class="line">    <span class="function">ConfigurableConversionService <span class="title">getConversionService</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 设置 ConfigurableConversionService</span></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">setConversionService</span><span class="params">(ConfigurableConversionService conversionService)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 设置占位符前缀</span></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">setPlaceholderPrefix</span><span class="params">(String placeholderPrefix)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 设置占位符后缀</span></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">setPlaceholderSuffix</span><span class="params">(String placeholderSuffix)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 设置占位符与默认值之间的分隔符</span></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">setValueSeparator</span><span class="params">(<span class="meta">@Nullable</span> String valueSeparator)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 设置当遇到嵌套在给定属性值内的不可解析的占位符时是否抛出异常</span></span><br><span class="line">    <span class="comment">// 当属性值包含不可解析的占位符时，getProperty(String)及其变体的实现必须检查此处设置的值以确定正确的行为。</span></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">setIgnoreUnresolvableNestedPlaceholders</span><span class="params">(<span class="keyword">boolean</span> ignoreUnresolvableNestedPlaceholders)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 指定必须存在哪些属性，以便由validateRequiredProperties（）验证</span></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">setRequiredProperties</span><span class="params">(String... requiredProperties)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 验证setRequiredProperties指定的每个属性是否存在并解析为非null值</span></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">validateRequiredProperties</span><span class="params">()</span> <span class="keyword">throws</span> MissingRequiredPropertiesException</span>;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>从 ConfigurablePropertyResolver 所提供的方法来看，除了访问和设置 ConversionService 外，主要还提供了一些解析规则之类的方法。</p>
+<p>就 Properties 体系而言，PropertyResolver 定义了访问 Properties 属性值的方法，而 ConfigurablePropertyResolver 则定义了解析 Properties 一些相关的规则和值进行类型转换所需要的 Service。</p>
+<p>该体系有两个实现者：<code>AbstractPropertyResolver</code> 和 <code>PropertySourcesPropertyResolver</code>，其中 <code>AbstractPropertyResolver</code> 为实现的抽象基类，<code>PropertySourcesPropertyResolver</code> 为真正的实现者。</p>
+<h3 id="AbstractPropertyResolver"><a href="#AbstractPropertyResolver" class="headerlink" title="AbstractPropertyResolver"></a>AbstractPropertyResolver</h3><blockquote>
+<p>解析属性文件的抽象基类</p>
+</blockquote>
+<p>AbstractPropertyResolver 作为基类它仅仅只是设置了一些解析属性文件所需要配置或者转换器，如 <code>setConversionService()</code>、<code>setPlaceholderPrefix()</code>、<code>setValueSeparator()</code>，其实这些方法的实现都比较简单都是设置或者获取 AbstractPropertyResolver 所提供的属性，如下：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="comment">// 类型转换去</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">volatile</span> ConfigurableConversionService conversionService;</span><br><span class="line"><span class="comment">// 占位符</span></span><br><span class="line"><span class="keyword">private</span> PropertyPlaceholderHelper nonStrictHelper;</span><br><span class="line"><span class="comment">//</span></span><br><span class="line"><span class="keyword">private</span> PropertyPlaceholderHelper strictHelper;</span><br><span class="line"><span class="comment">// 设置是否抛出异常</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">boolean</span> ignoreUnresolvableNestedPlaceholders = <span class="keyword">false</span>;</span><br><span class="line"><span class="comment">// 占位符前缀</span></span><br><span class="line"><span class="keyword">private</span> String placeholderPrefix = SystemPropertyUtils.PLACEHOLDER_PREFIX;</span><br><span class="line"><span class="comment">// 占位符后缀</span></span><br><span class="line"><span class="keyword">private</span> String placeholderSuffix = SystemPropertyUtils.PLACEHOLDER_SUFFIX;</span><br><span class="line"><span class="comment">// 与默认值的分割</span></span><br><span class="line"><span class="keyword">private</span> String valueSeparator = SystemPropertyUtils.VALUE_SEPARATOR;</span><br><span class="line"><span class="comment">// 必须要有的字段值</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> Set&lt;String&gt; requiredProperties = <span class="keyword">new</span> LinkedHashSet&lt;&gt;();</span><br></pre></td></tr></table></figure>
+
+<p>这些属性都是 ConfigurablePropertyResolver 接口所提供方法需要的属性，他所提供的方法都是设置和读取这些值，如下几个方法：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> ConfigurableConversionService <span class="title">getConversionService</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="comment">// 需要提供独立的DefaultConversionService，而不是PropertySourcesPropertyResolver 使用的共享DefaultConversionService。</span></span><br><span class="line">  ConfigurableConversionService cs = <span class="keyword">this</span>.conversionService;</span><br><span class="line">  <span class="keyword">if</span> (cs == <span class="keyword">null</span>) &#123;</span><br><span class="line">    <span class="keyword">synchronized</span> (<span class="keyword">this</span>) &#123;</span><br><span class="line">      cs = <span class="keyword">this</span>.conversionService;</span><br><span class="line">      <span class="keyword">if</span> (cs == <span class="keyword">null</span>) &#123;</span><br><span class="line">        cs = <span class="keyword">new</span> DefaultConversionService();</span><br><span class="line">        <span class="keyword">this</span>.conversionService = cs;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> cs;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">setConversionService</span><span class="params">(ConfigurableConversionService conversionService)</span> </span>&#123;</span><br><span class="line">  Assert.notNull(conversionService, <span class="string">&quot;ConversionService must not be null&quot;</span>);</span><br><span class="line">  <span class="keyword">this</span>.conversionService = conversionService;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">setPlaceholderPrefix</span><span class="params">(String placeholderPrefix)</span> </span>&#123;</span><br><span class="line">  Assert.notNull(placeholderPrefix, <span class="string">&quot;&#x27;placeholderPrefix&#x27; must not be null&quot;</span>);</span><br><span class="line">  <span class="keyword">this</span>.placeholderPrefix = placeholderPrefix;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">setPlaceholderSuffix</span><span class="params">(String placeholderSuffix)</span> </span>&#123;</span><br><span class="line">  Assert.notNull(placeholderSuffix, <span class="string">&quot;&#x27;placeholderSuffix&#x27; must not be null&quot;</span>);</span><br><span class="line">  <span class="keyword">this</span>.placeholderSuffix = placeholderSuffix;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>而对属性的访问则委托给子类 PropertySourcesPropertyResolver 实现。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> String <span class="title">getProperty</span><span class="params">(String key)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> getProperty(key, String.class);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">public</span> String <span class="title">getProperty</span><span class="params">(String key, String defaultValue)</span> </span>&#123;</span><br><span class="line">  String value = getProperty(key);</span><br><span class="line">  <span class="keyword">return</span> (value != <span class="keyword">null</span> ? value : defaultValue);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> &lt;T&gt; <span class="function">T <span class="title">getProperty</span><span class="params">(String key, Class&lt;T&gt; targetType, T defaultValue)</span> </span>&#123;</span><br><span class="line">  T value = getProperty(key, targetType);</span><br><span class="line">  <span class="keyword">return</span> (value != <span class="keyword">null</span> ? value : defaultValue);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">public</span> String <span class="title">getRequiredProperty</span><span class="params">(String key)</span> <span class="keyword">throws</span> IllegalStateException </span>&#123;</span><br><span class="line">  String value = getProperty(key);</span><br><span class="line">  <span class="keyword">if</span> (value == <span class="keyword">null</span>) &#123;</span><br><span class="line">    <span class="keyword">throw</span> <span class="keyword">new</span> IllegalStateException(<span class="string">&quot;Required key &#x27;&quot;</span> + key + <span class="string">&quot;&#x27; not found&quot;</span>);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> value;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> &lt;T&gt; <span class="function">T <span class="title">getRequiredProperty</span><span class="params">(String key, Class&lt;T&gt; valueType)</span> <span class="keyword">throws</span> IllegalStateException </span>&#123;</span><br><span class="line">  T value = getProperty(key, valueType);</span><br><span class="line">  <span class="keyword">if</span> (value == <span class="keyword">null</span>) &#123;</span><br><span class="line">    <span class="keyword">throw</span> <span class="keyword">new</span> IllegalStateException(<span class="string">&quot;Required key &#x27;&quot;</span> + key + <span class="string">&quot;&#x27; not found&quot;</span>);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> value;</span><br></pre></td></tr></table></figure>
+
+<h3 id="PropertySourcesPropertyResolver"><a href="#PropertySourcesPropertyResolver" class="headerlink" title="PropertySourcesPropertyResolver"></a>PropertySourcesPropertyResolver</h3><blockquote>
+<p>PropertyResolver 的实现者，他对一组 PropertySources 提供属性解析服务</p>
+</blockquote>
+<p>它仅有一个成员变量：PropertySources。该成员变量内部存储着一组 PropertySource，表示 key-value 键值对的源的抽象基类，即一个 PropertySource 对象则是一个 key-value 键值对。如下：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="class"><span class="keyword">class</span> <span class="title">PropertySource</span>&lt;<span class="title">T</span>&gt; </span>&#123;</span><br><span class="line">    <span class="keyword">protected</span> <span class="keyword">final</span> Log logger = LogFactory.getLog(getClass());</span><br><span class="line">    <span class="keyword">protected</span> <span class="keyword">final</span> String name;</span><br><span class="line">    <span class="keyword">protected</span> <span class="keyword">final</span> T source;</span><br><span class="line"></span><br><span class="line">   <span class="comment">//......</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>对外公开的 <code>getProperty()</code> 都是委托给 <code>getProperty(String key, Class&lt;T&gt; targetValueType, boolean resolveNestedPlaceholders)</code> 实现，他有三个参数，分别表示为：</p>
+<ul>
+<li>key：获取的 key</li>
+<li>targetValueType： 目标 value 的类型</li>
+<li>resolveNestedPlaceholders：是否解决嵌套占位符</li>
+</ul>
+<p>源码如下：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">protected</span> &lt;T&gt; <span class="function">T <span class="title">getProperty</span><span class="params">(String key, Class&lt;T&gt; targetValueType, <span class="keyword">boolean</span> resolveNestedPlaceholders)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (<span class="keyword">this</span>.propertySources != <span class="keyword">null</span>) &#123;</span><br><span class="line">    <span class="keyword">for</span> (PropertySource&lt;?&gt; propertySource : <span class="keyword">this</span>.propertySources) &#123;</span><br><span class="line">      <span class="keyword">if</span> (logger.isTraceEnabled()) &#123;</span><br><span class="line">        logger.trace(<span class="string">&quot;Searching for key &#x27;&quot;</span> + key + <span class="string">&quot;&#x27; in PropertySource &#x27;&quot;</span> +</span><br><span class="line">                     propertySource.getName() + <span class="string">&quot;&#x27;&quot;</span>);</span><br><span class="line">      &#125;</span><br><span class="line">      Object value = propertySource.getProperty(key);</span><br><span class="line">      <span class="keyword">if</span> (value != <span class="keyword">null</span>) &#123;</span><br><span class="line">        <span class="keyword">if</span> (resolveNestedPlaceholders &amp;&amp; value <span class="keyword">instanceof</span> String) &#123;</span><br><span class="line">          value = resolveNestedPlaceholders((String) value);</span><br><span class="line">        &#125;</span><br><span class="line">        logKeyFound(key, propertySource, value);</span><br><span class="line">        <span class="keyword">return</span> convertValueIfNecessary(value, targetValueType);</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">if</span> (logger.isDebugEnabled()) &#123;</span><br><span class="line">    logger.debug(<span class="string">&quot;Could not find key &#x27;&quot;</span> + key + <span class="string">&quot;&#x27; in any property source&quot;</span>);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>首先从 propertySource 中获取指定 key 的 value 值，然后判断是否需要进行嵌套占位符解析，如果需要则调用 <code>resolveNestedPlaceholders()</code> 进行嵌套占位符解析，然后调用 <code>convertValueIfNecessary()</code> 进行类型转换。</p>
+<p><strong>resolveNestedPlaceholders()</strong></p>
+<p>该方法用于解析给定字符串中的占位符，同时根据 ignoreUnresolvableNestedPlaceholders 的值，来确定是否对不可解析的占位符的处理方法：是忽略还是抛出异常（该值由 <code>setIgnoreUnresolvableNestedPlaceholders()</code> 设置）。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> String <span class="title">resolveNestedPlaceholders</span><span class="params">(String value)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> (<span class="keyword">this</span>.ignoreUnresolvableNestedPlaceholders ?</span><br><span class="line">          resolvePlaceholders(value) : resolveRequiredPlaceholders(value));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>如果 this.ignoreUnresolvableNestedPlaceholders 为 true，则调用 <code>resolvePlaceholders()</code> ，否则调用 <code>resolveRequiredPlaceholders()</code>但是无论是哪个方法，最终都会到 <code>doResolvePlaceholders()</code>，该方法接收两个参数：</p>
+<ul>
+<li>String 类型的 text：待解析的字符串</li>
+<li>PropertyPlaceholderHelper 类型的 helper：用于解析占位符的工具类。</li>
+</ul>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> String <span class="title">doResolvePlaceholders</span><span class="params">(String text, PropertyPlaceholderHelper helper)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> helper.replacePlaceholders(text, <span class="keyword">this</span>::getPropertyAsRawString);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>PropertyPlaceholderHelper 是用于处理包含占位符值的字符串，构造该实例需要四个参数：</p>
+<ul>
+<li>placeholderPrefix：占位符前缀</li>
+<li>placeholderSuffix：占位符后缀</li>
+<li>valueSeparator：占位符变量与关联的默认值之间的分隔符</li>
+<li>ignoreUnresolvablePlaceholders：指示是否忽略不可解析的占位符（true）或抛出异常（false）</li>
+</ul>
+<p>构造函数如下：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="title">PropertyPlaceholderHelper</span><span class="params">(String placeholderPrefix, String placeholderSuffix,</span></span></span><br><span class="line"><span class="function"><span class="params">                                 <span class="meta">@Nullable</span> String valueSeparator, <span class="keyword">boolean</span> ignoreUnresolvablePlaceholders)</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">  Assert.notNull(placeholderPrefix, <span class="string">&quot;&#x27;placeholderPrefix&#x27; must not be null&quot;</span>);</span><br><span class="line">  Assert.notNull(placeholderSuffix, <span class="string">&quot;&#x27;placeholderSuffix&#x27; must not be null&quot;</span>);</span><br><span class="line">  <span class="keyword">this</span>.placeholderPrefix = placeholderPrefix;</span><br><span class="line">  <span class="keyword">this</span>.placeholderSuffix = placeholderSuffix;</span><br><span class="line">  String simplePrefixForSuffix = wellKnownSimplePrefixes.get(<span class="keyword">this</span>.placeholderSuffix);</span><br><span class="line">  <span class="keyword">if</span> (simplePrefixForSuffix != <span class="keyword">null</span> &amp;&amp; <span class="keyword">this</span>.placeholderPrefix.endsWith(simplePrefixForSuffix)) &#123;</span><br><span class="line">    <span class="keyword">this</span>.simplePrefix = simplePrefixForSuffix;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="keyword">this</span>.simplePrefix = <span class="keyword">this</span>.placeholderPrefix;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">this</span>.valueSeparator = valueSeparator;</span><br><span class="line">  <span class="keyword">this</span>.ignoreUnresolvablePlaceholders = ignoreUnresolvablePlaceholders;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>就 PropertySourcesPropertyResolver 而言，其父类 AbstractPropertyResolver 已经对上述四个值做了定义：placeholderPrefix 为 <code>$&#123;</code>，placeholderSuffix 为 <code>&#125;</code>，valueSeparator 为 <code>:</code>，ignoreUnresolvablePlaceholders 默认为 false，当然我们也可以使用相应的 setter 方法自定义。</p>
+<p>调用 PropertyPlaceholderHelper 的 <code>replacePlaceholders()</code> 对占位符进行处理，该方法接收两个参数，一个是待解析的字符串 value ，一个是 PlaceholderResolver 类型的 placeholderResolver，他是定义占位符解析的策略类。如下：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> String <span class="title">replacePlaceholders</span><span class="params">(String value, PlaceholderResolver placeholderResolver)</span> </span>&#123;</span><br><span class="line">  Assert.notNull(value, <span class="string">&quot;&#x27;value&#x27; must not be null&quot;</span>);</span><br><span class="line">  <span class="keyword">return</span> parseStringValue(value, placeholderResolver, <span class="keyword">new</span> HashSet&lt;&gt;());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>内部委托给 <code>parseStringValue()</code> 实现：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> String <span class="title">parseStringValue</span><span class="params">(</span></span></span><br><span class="line"><span class="function"><span class="params">  String value, PlaceholderResolver placeholderResolver, Set&lt;String&gt; visitedPlaceholders)</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">  StringBuilder result = <span class="keyword">new</span> StringBuilder(value);</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 检索前缀，$&#123;</span></span><br><span class="line">  <span class="keyword">int</span> startIndex = value.indexOf(<span class="keyword">this</span>.placeholderPrefix);</span><br><span class="line">  <span class="keyword">while</span> (startIndex != -<span class="number">1</span>) &#123;</span><br><span class="line">    <span class="comment">// 检索后缀 ,&#125;</span></span><br><span class="line">    <span class="keyword">int</span> endIndex = findPlaceholderEndIndex(result, startIndex);</span><br><span class="line">    <span class="keyword">if</span> (endIndex != -<span class="number">1</span>) &#123;</span><br><span class="line">      <span class="comment">// 前缀和后缀之间的字符串</span></span><br><span class="line">      String placeholder = result.substring(startIndex + <span class="keyword">this</span>.placeholderPrefix.length(), endIndex);</span><br><span class="line">      String originalPlaceholder = placeholder;</span><br><span class="line">      <span class="comment">// 循环占位符</span></span><br><span class="line">      <span class="comment">// 判断该占位符是否已经处理了</span></span><br><span class="line">      <span class="keyword">if</span> (!visitedPlaceholders.add(originalPlaceholder)) &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> IllegalArgumentException(</span><br><span class="line">          <span class="string">&quot;Circular placeholder reference &#x27;&quot;</span> + originalPlaceholder + <span class="string">&quot;&#x27; in property definitions&quot;</span>);</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="comment">// 递归调用，解析占位符</span></span><br><span class="line">      placeholder = parseStringValue(placeholder, placeholderResolver, visitedPlaceholders);</span><br><span class="line">      <span class="comment">// 获取值</span></span><br><span class="line">      String propVal = placeholderResolver.resolvePlaceholder(placeholder);</span><br><span class="line">      <span class="comment">// propval 为空，则提取默认值</span></span><br><span class="line">      <span class="keyword">if</span> (propVal == <span class="keyword">null</span> &amp;&amp; <span class="keyword">this</span>.valueSeparator != <span class="keyword">null</span>) &#123;</span><br><span class="line">        <span class="keyword">int</span> separatorIndex = placeholder.indexOf(<span class="keyword">this</span>.valueSeparator);</span><br><span class="line">        <span class="keyword">if</span> (separatorIndex != -<span class="number">1</span>) &#123;</span><br><span class="line">          String actualPlaceholder = placeholder.substring(<span class="number">0</span>, separatorIndex);</span><br><span class="line">          String defaultValue = placeholder.substring(separatorIndex + <span class="keyword">this</span>.valueSeparator.length());</span><br><span class="line">          propVal = placeholderResolver.resolvePlaceholder(actualPlaceholder);</span><br><span class="line">          <span class="keyword">if</span> (propVal == <span class="keyword">null</span>) &#123;</span><br><span class="line">            propVal = defaultValue;</span><br><span class="line">          &#125;</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">if</span> (propVal != <span class="keyword">null</span>) &#123;</span><br><span class="line">        <span class="comment">// 递归调用，解析先前解析的占位符值中包含的占位符</span></span><br><span class="line">        propVal = parseStringValue(propVal, placeholderResolver, visitedPlaceholders);</span><br><span class="line">        result.replace(startIndex, endIndex + <span class="keyword">this</span>.placeholderSuffix.length(), propVal);</span><br><span class="line">        <span class="keyword">if</span> (logger.isTraceEnabled()) &#123;</span><br><span class="line">          logger.trace(<span class="string">&quot;Resolved placeholder &#x27;&quot;</span> + placeholder + <span class="string">&quot;&#x27;&quot;</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        startIndex = result.indexOf(<span class="keyword">this</span>.placeholderPrefix, startIndex + propVal.length());</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">else</span> <span class="keyword">if</span> (<span class="keyword">this</span>.ignoreUnresolvablePlaceholders) &#123;</span><br><span class="line">        <span class="comment">// Proceed with unprocessed value.</span></span><br><span class="line">        startIndex = result.indexOf(<span class="keyword">this</span>.placeholderPrefix, endIndex + <span class="keyword">this</span>.placeholderSuffix.length());</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> IllegalArgumentException(<span class="string">&quot;Could not resolve placeholder &#x27;&quot;</span> +</span><br><span class="line">                                           placeholder + <span class="string">&quot;&#x27;&quot;</span> + <span class="string">&quot; in value \&quot;&quot;</span> + value + <span class="string">&quot;\&quot;&quot;</span>);</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="comment">//</span></span><br><span class="line">      visitedPlaceholders.remove(originalPlaceholder);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span> &#123;</span><br><span class="line">      startIndex = -<span class="number">1</span>;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> result.toString();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>其实就是获取占位符 <code>$&#123;&#125;</code> 中间的值，这里面会涉及到一个递归的过程，因为可能会存在这种情况 <code>$&#123;$&#123;name&#125;&#125;</code>。</p>
+<p><strong>convertValueIfNecessary()</strong></p>
+<p>该方法是不是感觉到非常的熟悉，该方法就是完成类型转换的。如下：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">protected</span> &lt;T&gt; <span class="function">T <span class="title">convertValueIfNecessary</span><span class="params">(Object value, <span class="meta">@Nullable</span> Class&lt;T&gt; targetType)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (targetType == <span class="keyword">null</span>) &#123;</span><br><span class="line">    <span class="keyword">return</span> (T) value;</span><br><span class="line">  &#125;</span><br><span class="line">  ConversionService conversionServiceToUse = <span class="keyword">this</span>.conversionService;</span><br><span class="line">  <span class="keyword">if</span> (conversionServiceToUse == <span class="keyword">null</span>) &#123;</span><br><span class="line">    <span class="comment">// Avoid initialization of shared DefaultConversionService if</span></span><br><span class="line">    <span class="comment">// no standard type conversion is needed in the first place...</span></span><br><span class="line">    <span class="keyword">if</span> (ClassUtils.isAssignableValue(targetType, value)) &#123;</span><br><span class="line">      <span class="keyword">return</span> (T) value;</span><br><span class="line">    &#125;</span><br><span class="line">    conversionServiceToUse = DefaultConversionService.getSharedInstance();</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> conversionServiceToUse.convert(value, targetType);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>首先获取类型转换服务 conversionService ，若为空，则判断是否可以通过反射来设置，如果可以则直接强转返回，否则构造一个 DefaultConversionService 实例，最后调用其 <code>convert()</code> 完成类型转换，后续就是 Spring 类型转换体系的事情了，如果对其不了解，可以参考小编这篇博客：<a href="/2020/01/24/683bb448.html">IOC 之深入分析 Bean 的类型转换体系</a></p>
+<h2 id="Environment"><a href="#Environment" class="headerlink" title="Environment"></a>Environment</h2><blockquote>
+<p>表示当前应用程序正在运行的环境</p>
+</blockquote>
+<p>应用程序的环境有两个关键方面：profile 和 properties。</p>
+<ul>
+<li>properties 的方法由 PropertyResolver 定义。</li>
+<li>profile 则表示当前的运行环境，对于应用程序中的 properties 而言，并不是所有的都会加载到系统中，只有其属性与 profile 一直才会被激活加载，</li>
+</ul>
+<p>所以 Environment 对象的作用是确定哪些配置文件（如果有）当前处于活动状态，以及默认情况下哪些配置文件（如果有）应处于活动状态。properties 在几乎所有应用程序中都发挥着重要作用，并且有多种来源：属性文件，JVM 系统属性，系统环境变量，JNDI，servlet 上下文参数，ad-hoc 属性对象，映射等。同时它继承 PropertyResolver 接口，所以与属性相关的 Environment 对象其主要是为用户提供方便的服务接口，用于配置属性源和从中属性源中解析属性。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">Environment</span> <span class="keyword">extends</span> <span class="title">PropertyResolver</span> </span>&#123;</span><br><span class="line">    <span class="comment">// 返回此环境下激活的配置文件集</span></span><br><span class="line">    String[] getActiveProfiles();</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 如果未设置激活配置文件，则返回默认的激活的配置文件集</span></span><br><span class="line">    String[] getDefaultProfiles();</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">boolean</span> <span class="title">acceptsProfiles</span><span class="params">(String... profiles)</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Environment 体系结构图如下：</p>
+<p><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://gitee.com/cayzlh/img-repo/raw/master/2020/05/27/15403714670613_02ZL9z_ul8OAy.jpg" alt="img"></p>
+<ul>
+<li>PropertyResolver：提供属性访问功能</li>
+<li>Environment：提供访问和判断 profiles 的功能</li>
+<li>ConfigurableEnvironment：提供设置激活的 profile 和默认的 profile 的功能以及操作 Properties 的工具</li>
+<li>ConfigurableWebEnvironment：提供配置 Servlet 上下文和 Servlet 参数的功能</li>
+<li>AbstractEnvironment：实现了 ConfigurableEnvironment 接口，默认属性和存储容器的定义，并且实现了 ConfigurableEnvironment 的方法，并且为子类预留可覆盖了扩展方法</li>
+<li>StandardEnvironment：继承自 AbstractEnvironment ，非 Servlet(Web) 环境下的标准 Environment 实现</li>
+<li>StandardServletEnvironment：继承自 StandardEnvironment ，Servlet(Web) 环境下的标准 Environment 实现</li>
+</ul>
+<h3 id="ConfigurableEnvironment"><a href="#ConfigurableEnvironment" class="headerlink" title="ConfigurableEnvironment"></a>ConfigurableEnvironment</h3><blockquote>
+<p>提供设置激活的 profile 和默认的 profile 的功能以及操作 Properties 的工具</p>
+</blockquote>
+<p>该类除了继承 Environment 接口外还继承了 ConfigurablePropertyResolver 接口，所以它即具备了设置 profile 的功能也具备了操作 Properties 的功能。同时还允许客户端通过它设置和验证所需要的属性，自定义转换服务等功能。如下：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">ConfigurableEnvironment</span> <span class="keyword">extends</span> <span class="title">Environment</span>, <span class="title">ConfigurablePropertyResolver</span> </span>&#123;</span><br><span class="line">    <span class="comment">// 指定该环境下的 profile 集</span></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">setActiveProfiles</span><span class="params">(String... profiles)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 增加此环境的 profile</span></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">addActiveProfile</span><span class="params">(String profile)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 设置默认的 profile</span></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">setDefaultProfiles</span><span class="params">(String... profiles)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 返回此环境的 PropertySources</span></span><br><span class="line">    <span class="function">MutablePropertySources <span class="title">getPropertySources</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line">   <span class="comment">// 尝试返回 System.getenv() 的值，若失败则返回通过 System.getenv(string) 的来访问各个键的映射</span></span><br><span class="line">    <span class="function">Map&lt;String, Object&gt; <span class="title">getSystemEnvironment</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 尝试返回 System.getProperties() 的值，若失败则返回通过 System.getProperties(string) 的来访问各个键的映射</span></span><br><span class="line">    <span class="function">Map&lt;String, Object&gt; <span class="title">getSystemProperties</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">merge</span><span class="params">(ConfigurableEnvironment parent)</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="AbstractEnvironment"><a href="#AbstractEnvironment" class="headerlink" title="AbstractEnvironment"></a>AbstractEnvironment</h3><blockquote>
+<p>Environment 的基础实现</p>
+</blockquote>
+<p>允许通过设置 ACTIVE_PROFILES_PROPERTY_NAME 和DEFAULT_PROFILES_PROPERTY_NAME 属性指定活动和默认配置文件。子类的主要区别在于它们默认添加的 PropertySource 对象。而 AbstractEnvironment 则没有添加任何内容。子类应该通过受保护的 <code>customizePropertySources(MutablePropertySources)</code> 钩子提供属性源，而客户端应该使用<code>ConfigurableEnvironment.getPropertySources()</code>进行自定义并对MutablePropertySources API进行操作。</p>
+<p>在 AbstractEnvironment 有两对变量，这两对变量维护着激活和默认配置 profile。如下：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">final</span> String ACTIVE_PROFILES_PROPERTY_NAME = <span class="string">&quot;spring.profiles.active&quot;</span>;</span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> Set&lt;String&gt; activeProfiles = <span class="keyword">new</span> LinkedHashSet&lt;&gt;();</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">final</span> String DEFAULT_PROFILES_PROPERTY_NAME = <span class="string">&quot;spring.profiles.default&quot;</span>;</span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> Set&lt;String&gt; defaultProfiles = <span class="keyword">new</span> LinkedHashSet&lt;&gt;(getReservedDefaultProfiles());</span><br></pre></td></tr></table></figure>
+
+<p>由于实现方法较多，这里只关注两个方法：<code>setActiveProfiles()</code> 和 <code>getActiveProfiles()</code>。</p>
+<p><strong>setActiveProfiles()</strong></p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">setActiveProfiles</span><span class="params">(String... profiles)</span> </span>&#123;</span><br><span class="line">  Assert.notNull(profiles, <span class="string">&quot;Profile array must not be null&quot;</span>);</span><br><span class="line">  <span class="keyword">if</span> (logger.isDebugEnabled()) &#123;</span><br><span class="line">    logger.debug(<span class="string">&quot;Activating profiles &quot;</span> + Arrays.asList(profiles));</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">synchronized</span> (<span class="keyword">this</span>.activeProfiles) &#123;</span><br><span class="line">    <span class="keyword">this</span>.activeProfiles.clear();</span><br><span class="line">    <span class="keyword">for</span> (String profile : profiles) &#123;</span><br><span class="line">      validateProfile(profile);</span><br><span class="line">      <span class="keyword">this</span>.activeProfiles.add(profile);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>该方法其实就是操作 activeProfiles 集合，在每次设置之前都会将该集合清空重新添加，添加之前调用 <code>validateProfile()</code> 对添加的 profile 进行校验，如下：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title">validateProfile</span><span class="params">(String profile)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (!StringUtils.hasText(profile)) &#123;</span><br><span class="line">    <span class="keyword">throw</span> <span class="keyword">new</span> IllegalArgumentException(<span class="string">&quot;Invalid profile [&quot;</span> + profile + <span class="string">&quot;]: must contain text&quot;</span>);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">if</span> (profile.charAt(<span class="number">0</span>) == <span class="string">&#x27;!&#x27;</span>) &#123;</span><br><span class="line">    <span class="keyword">throw</span> <span class="keyword">new</span> IllegalArgumentException(<span class="string">&quot;Invalid profile [&quot;</span> + profile + <span class="string">&quot;]: must not begin with ! operator&quot;</span>);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这个校验过程比较弱，子类可以提供更加严格的校验规则。</p>
+<p><strong>getActiveProfiles()</strong></p>
+<p>从 <code>getActiveProfiles()</code> 中我们可以猜出这个方法实现的逻辑：获取 activeProfiles 集合即可。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> String[] getActiveProfiles() &#123;</span><br><span class="line">  <span class="keyword">return</span> StringUtils.toStringArray(doGetActiveProfiles());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>委托给 <code>doGetActiveProfiles()</code> 实现：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> Set&lt;String&gt; <span class="title">doGetActiveProfiles</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="keyword">synchronized</span> (<span class="keyword">this</span>.activeProfiles) &#123;</span><br><span class="line">    <span class="keyword">if</span> (<span class="keyword">this</span>.activeProfiles.isEmpty()) &#123;</span><br><span class="line">      String profiles = getProperty(ACTIVE_PROFILES_PROPERTY_NAME);</span><br><span class="line">      <span class="keyword">if</span> (StringUtils.hasText(profiles)) &#123;</span><br><span class="line">        setActiveProfiles(StringUtils.commaDelimitedListToStringArray(</span><br><span class="line">          StringUtils.trimAllWhitespace(profiles)));</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">this</span>.activeProfiles;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>如果 activeProfiles 为空，则从 Properties 中获取 spring.profiles.active 配置，如果不为空，则调用 <code>setActiveProfiles()</code> 设置 profile，最后返回。</p>
+
+  
+
+
+  </article>
+  
+<div class="related-wrap" id="read-next"><section class="header cap theme"><span>接下来阅读</span></section><section class="body"><div class="post-title h2"><a href="/blog/wiki/source_of_spring/springIOC33.html">IOC之分析bean的生命周期</a></div><div class="post-title fs14"><a href="/blog/wiki/source_of_spring/springIOC31.html">上一篇：IOC之BeanDefinition注册机：BeanDefinitionRegistry</a></div></section></div>
+
+  
+
+
+
+
+      
+<footer class="page-footer fs12"><hr><div><p>本博客所有文章除特别声明外，均采用 <a target="_blank" rel="external nofollow noopener noreferrer" href="https://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY-NC-SA 4.0</a> 许可协议，转载请注明出处。</p>
+<p>本站由 <a href="https://www.cayzlh.com/blog/">@🐳Ant丶</a> 创建，使用 <a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/xaoxuu/hexo-theme-stellar/tree/1.1.0">Stellar</a> 作为主题。</p>
+<p><a target="_blank" rel="external nofollow noopener noreferrer" href="https://beian.miit.gov.cn/">粤ICP备20058712号</a></p>
+</div></footer>
+
+      <div class="float-panel mobile-only" style="display:none">
+  <button type="button" class="sidebar-toggle mobile" onclick="sidebar.toggle()">
+    <svg class="icon" viewbox="0 0 1228 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2849"><path d="M0 0m97.390199 0l973.901995 0q97.390199 0 97.390199 97.390199l0 0q0 97.390199-97.390199 97.3902l-973.901995 0q-97.390199 0-97.390199-97.3902l0 0q0-97.390199 97.390199-97.390199Z" p-id="2850"/><path d="M0 389.560798m97.390199 0l973.901995 0q97.390199 0 97.390199 97.390199l0 0q0 97.390199-97.390199 97.3902l-973.901995 0q-97.390199 0-97.390199-97.3902l0 0q0-97.390199 97.390199-97.390199Z" p-id="2851"/><path d="M0 779.121596m97.390199 0l973.901995 0q97.390199 0 97.390199 97.390199l0 0q0 97.390199-97.390199 97.390199l-973.901995 0q-97.390199 0-97.390199-97.390199l0 0q0-97.390199 97.390199-97.390199Z" p-id="2852"/></svg>
+  </button>
+</div>
+
+    </div>
+  </div>
+  <div class="scripts">
+    <script type="text/javascript">
+  stellar = {
+    // 懒加载 css https://github.com/filamentgroup/loadCSS
+    loadCSS: (href, before, media, attributes) => {
+      var doc = window.document;
+      var ss = doc.createElement("link");
+      var ref;
+      if (before) {
+        ref = before;
+      } else {
+        var refs = (doc.body || doc.getElementsByTagName("head")[0]).childNodes;
+        ref = refs[refs.length - 1];
+      }
+      var sheets = doc.styleSheets;
+      if (attributes) {
+        for (var attributeName in attributes) {
+          if (attributes.hasOwnProperty(attributeName)) {
+            ss.setAttribute(attributeName, attributes[attributeName]);
+          }
+        }
+      }
+      ss.rel = "stylesheet";
+      ss.href = href;
+      ss.media = "only x";
+      function ready(cb) {
+        if (doc.body) {
+          return cb();
+        }
+        setTimeout(function () {
+          ready(cb);
+        });
+      }
+      ready(function () {
+        ref.parentNode.insertBefore(ss, before ? ref : ref.nextSibling);
+      });
+      var onloadcssdefined = function (cb) {
+        var resolvedHref = ss.href;
+        var i = sheets.length;
+        while (i--) {
+          if (sheets[i].href === resolvedHref) {
+            return cb();
+          }
+        }
+        setTimeout(function () {
+          onloadcssdefined(cb);
+        });
+      };
+      function loadCB() {
+        if (ss.addEventListener) {
+          ss.removeEventListener("load", loadCB);
+        }
+        ss.media = media || "all";
+      }
+      if (ss.addEventListener) {
+        ss.addEventListener("load", loadCB);
+      }
+      ss.onloadcssdefined = onloadcssdefined;
+      onloadcssdefined(loadCB);
+      return ss;
+    },
+
+    // 从 butterfly 和 volantis 获得灵感
+    loadScript: (src, opt) => new Promise((resolve, reject) => {
+      var script = document.createElement('script')
+      script.src = src
+      if (opt) {
+        for (let key of Object.keys(opt)) {
+          script[key] = opt[key]
+        }
+      } else {
+        // 默认异步，如果需要同步，第二个参数传入 {} 即可
+        script.async = true
+      }
+      script.onerror = reject
+      script.onload = script.onreadystatechange = function() {
+        const loadState = this.readyState
+        if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+        script.onload = script.onreadystatechange = null
+        resolve()
+      }
+      document.head.appendChild(script)
+    }),
+
+    // https://github.com/jerryc127/hexo-theme-butterfly
+    jQuery: (fn) => {
+      if (typeof jQuery === 'undefined') {
+        stellar.loadScript(stellar.plugins.jQuery).then(fn)
+      } else {
+        fn()
+      }
+    }
+  };
+  stellar.github = 'https://github.com/xaoxuu/hexo-theme-stellar/tree/1.1.0';
+  stellar.config = {
+    date_suffix: {
+      just: '刚刚',
+      min: '分钟前',
+      hour: '小时前',
+      day: '天前',
+      month: '个月前',
+    },
+  };
+
+  // required plugins (only load if needs)
+  stellar.plugins = {
+    jQuery: 'https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js',
+    sitesjs: '/blog/js/plugins/sites.js',
+    friendsjs: '/blog/js/plugins/friends.js',
+  };
+
+  // optional plugins
+  if ('true' == 'true') {
+    stellar.plugins.lazyload = Object.assign({"enable":true,"js":"https://cdn.jsdelivr.net/npm/vanilla-lazyload@17.3.1/dist/lazyload.min.js","transition":"blur"});
+  }
+  if ('true' == 'true') {
+    stellar.plugins.swiper = Object.assign({"enable":true,"css":"https://unpkg.com/swiper/swiper-bundle.min.css","js":"https://unpkg.com/swiper/swiper-bundle.min.js"});
+  }
+  if ('' == 'true') {
+    stellar.plugins.scrollreveal = Object.assign({"enable":null,"js":"https://cdn.jsdelivr.net/npm/scrollreveal@4.0.9/dist/scrollreveal.min.js","distance":"8px","duration":500,"interval":100,"scale":1});
+  }
+  if ('true' == 'true') {
+    stellar.plugins.preload = Object.assign({"enable":true,"service":"flying_pages","instant_page":"https://cdn.jsdelivr.net/gh/volantis-x/cdn-volantis@4.1.2/js/instant_page.js","flying_pages":"https://cdn.jsdelivr.net/gh/gijo-varghese/flying-pages@2.1.2/flying-pages.min.js"});
+  }
+</script>
+
+<!-- required -->
+
+  
+<script src="/blog/js/main.js" async></script>
+
+
+
+<!-- optional -->
+
+
+
+<!-- inject -->
+
+
+  </div>
+</body>
+</html>

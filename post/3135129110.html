@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta name="generator" content="Hexo 5.4.0">
+  <meta charset="utf-8">
+  
+
+  <meta http-equiv="x-dns-prefetch-control" content="on">
+  <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+
+  <meta name="renderer" content="webkit">
+  <meta name="force-rendering" content="webkit">
+  <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+  <meta name="HandheldFriendly" content="True">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <title>RocketMQ相关流程图/原理图 - CAYZLH</title>
+
+  
+  <meta name="description" content="RocketMQ相关流程图/原理图">
+
+  <!-- feed -->
+  
+    <link rel="alternate" href="/blog/atom.xml" title="CAYZLH" type="application/atom+xml">
+  
+
+  
+    
+<link rel="stylesheet" href="/blog/css/main.css">
+
+  
+
+  
+    
+      <meta name="msapplication-TileColor" content="#2d89ef">
+    
+      <meta name="msapplication-config" content="/assets/favicon/browserconfig.xml">
+    
+      <meta name="theme-color" content="#ffffff">
+    
+      <link rel="shortcut icon" href="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/logo/favicon.ico">
+    
+      <link rel="icon" type="image/png" href="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/logo/favicon-192x192.png" sizes="192x192">
+    
+      <link rel="apple-touch-icon" sizes="180x180" href="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/logo/apple-touch-icon.png">
+    
+  
+</head>
+
+<body>
+  
+
+
+  <div class="l_body" id="start">
+    <aside class="l_left">
+    
+
+<header class="header">
+  <div class="logo-wrap">
+  
+    <a class="avatar" href="/blog/">
+      
+        <img no-lazy class="bg" src="https://cdn.jsdelivr.net/gh/cdn-x/placeholder@1.0.2/avatar/round/rainbow64@3x.webp" onerror="javascript:this.classList.add('error');this.src='https://cdn.jsdelivr.net/gh/cdn-x/placeholder@1.0.1/image/2659360.svg';">
+      
+      <img no-lazy class="avatar" src="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/image/IMG_4207.JPG" onerror="javascript:this.classList.add('error');this.src='https://cdn.jsdelivr.net/gh/cdn-x/placeholder@1.0.1/image/2659360.svg';">
+    </a>
+  
+  
+    <a class="title" href="/blog/">
+      CAYZLH
+    </a>
+  
+</div>
+
+  <nav class="menu dis-select"><a class="nav-item active" href="/blog/">文章</a><a class="nav-item" href="/blog/wiki/">文档</a></nav>
+</header>
+
+<div class="widgets">
+  
+    
+      
+      
+<div class="widget-wrap" id="toc"><div class="widget-header h4 dis-select"><span class="name">本文目录</span></div><div class="widget-body fs14 post"><div class="doc-tree active"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#RocketMQ%E6%98%AF%E4%BB%80%E4%B9%88"><span class="toc-text">RocketMQ是什么</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#RocketMQ-%E6%A0%B8%E5%BF%83%E7%BB%84%E4%BB%B6%E5%9B%BE"><span class="toc-text">RocketMQ 核心组件图</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#NameServer"><span class="toc-text">NameServer</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Producer"><span class="toc-text">Producer</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Broker"><span class="toc-text">Broker</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Consumer"><span class="toc-text">Consumer</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#RokcetMQ-%E7%89%A9%E7%90%86%E9%83%A8%E7%BD%B2%E5%9B%BE"><span class="toc-text">RokcetMQ 物理部署图</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#NameServer-1"><span class="toc-text">NameServer</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Broker-1"><span class="toc-text">Broker</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Producer-1"><span class="toc-text">Producer</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Consumer-1"><span class="toc-text">Consumer</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#RocketMQ-%E9%80%BB%E8%BE%91%E9%83%A8%E7%BD%B2%E7%BB%93%E6%9E%84"><span class="toc-text">RocketMQ 逻辑部署结构</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Producer-Group"><span class="toc-text">Producer Group</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Consumer-Group"><span class="toc-text">Consumer Group</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#NameServer-%E8%B7%AF%E7%94%B1%E6%B3%A8%E5%86%8C%E3%80%81%E5%88%A0%E9%99%A4%E6%9C%BA%E5%88%B6"><span class="toc-text">NameServer 路由注册、删除机制</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#RocketMQ%E7%9A%84%E6%B6%88%E6%81%AF%E9%A2%86%E5%9F%9F%E6%A8%A1%E5%9E%8B%E5%9B%BE"><span class="toc-text">RocketMQ的消息领域模型图</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Topic"><span class="toc-text">Topic</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Tag"><span class="toc-text">Tag</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Group"><span class="toc-text">Group</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Message-Queue"><span class="toc-text">Message Queue</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%A1%BA%E5%BA%8F%E6%B6%88%E6%81%AF%E5%8E%9F%E7%90%86%E5%9B%BE"><span class="toc-text">顺序消息原理图</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#RocketMQ-%E6%B6%88%E6%81%AF%E5%AD%98%E5%82%A8%E8%AE%BE%E8%AE%A1%E5%8E%9F%E7%90%86%E5%9B%BE"><span class="toc-text">RocketMQ 消息存储设计原理图</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#CommitLog"><span class="toc-text">CommitLog</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#ConsumeQueue"><span class="toc-text">ConsumeQueue</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#IndexFile"><span class="toc-text">IndexFile</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BA%8B%E5%8A%A1%E7%8A%B6%E6%80%81%E6%9C%8D%E5%8A%A1"><span class="toc-text">事务状态服务</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%AE%9A%E6%97%B6%E6%B6%88%E6%81%AF%E6%9C%8D%E5%8A%A1"><span class="toc-text">定时消息服务</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#RMQ%E6%96%87%E4%BB%B6%E5%AD%98%E5%82%A8%E6%A8%A1%E5%9E%8B%E5%B1%82"><span class="toc-text">RMQ文件存储模型层</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#RocketMQ%E4%B8%9A%E5%8A%A1%E5%A4%84%E7%90%86%E5%99%A8%E5%B1%82"><span class="toc-text">RocketMQ业务处理器层</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#RocketMQ%E6%95%B0%E6%8D%AE%E5%AD%98%E5%82%A8%E7%BB%84%E4%BB%B6%E5%B1%82"><span class="toc-text">RocketMQ数据存储组件层</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#RocketMQ%E5%AD%98%E5%82%A8%E9%80%BB%E8%BE%91%E5%AF%B9%E8%B1%A1%E5%B1%82"><span class="toc-text">RocketMQ存储逻辑对象层</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%B0%81%E8%A3%85%E7%9A%84%E6%96%87%E4%BB%B6%E5%86%85%E5%AD%98%E6%98%A0%E5%B0%84%E5%B1%82"><span class="toc-text">封装的文件内存映射层</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%A3%81%E7%9B%98%E5%AD%98%E5%82%A8%E5%B1%82"><span class="toc-text">磁盘存储层</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#RocketMQ%E4%B8%AD%E6%B6%88%E6%81%AF%E5%88%B7%E7%9B%98"><span class="toc-text">RocketMQ中消息刷盘</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%90%8C%E6%AD%A5%E5%88%B7%E7%9B%98"><span class="toc-text">同步刷盘</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%BC%82%E6%AD%A5%E5%88%B7%E7%9B%98"><span class="toc-text">异步刷盘</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%B6%88%E6%81%AF%E5%9C%A8%E7%B3%BB%E7%BB%9F%E4%B8%AD%E6%B5%81%E8%BD%AC%E5%9B%BE"><span class="toc-text">消息在系统中流转图</span></a></li></ol></div></div></div>
+
+    
+  
+</div>
+
+
+    </aside>
+    <div class="l_main">
+      
+
+      
+
+
+  <div class="bread-nav fs12">
+  
+    
+    <div id="breadcrumb">
+      <a class="cap breadcrumb" href="/">主页</a>
+      <span class="sep"></span>
+      <a class="cap breadcrumb" href="/">文章</a>
+      
+        <span class="sep"></span>
+        <a class="cap breadcrumb-link" href="/blog/categories/%E7%AC%94%E8%AE%B0%E6%9C%AC/">笔记本</a>
+      
+    </div>
+    <div id="post-meta">
+      发布于&nbsp;<time datetime="2019-09-19T01:51:47.000Z">2019-09-19</time>
+    </div>
+  
+  </div>
+
+
+<article class="content md post">
+<h1 class="article-title"><span>RocketMQ相关流程图/原理图</span></h1>
+<blockquote>
+<p>转自：<a target="_blank" rel="external nofollow noopener noreferrer" href="https://juejin.im/post/5d7b06596fb9a06ae61ae5e3">后端程序员必备：RocketMQ相关流程图/原理图</a>，怕以后找不到。</p>
+</blockquote>
+<h2 id="RocketMQ是什么"><a href="#RocketMQ是什么" class="headerlink" title="RocketMQ是什么"></a>RocketMQ是什么</h2><p><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://github.com/cayzlh/git-img-repository/raw/master/blog/2019/09/4.png" alt="RocketMQ是什么"></p>
+<ul>
+<li>是一个队列模型的消息中间件，具有高性能、高可靠、高实时、分布式特点。</li>
+<li>Producer、Consumer、队列都可以分布式。</li>
+<li>Producer 向一些队列轮流发送消息，队列集合称为 Topic，Consumer 如果做广播消费，则一个 consumer 实例消费这个 Topic 对应的所有队列，如果做集群消费，则多个 Consumer 实例平均消费这个 topic 对应的队列集合。</li>
+<li>能够保证严格的消息顺序</li>
+<li>提供丰富的消息拉取模式</li>
+<li>高效的订阅者水平扩展能力</li>
+<li>实时的消息订阅机制</li>
+<li>亿级消息堆积能力</li>
+<li>较少的依赖</li>
+</ul>
+<h2 id="RocketMQ-核心组件图"><a href="#RocketMQ-核心组件图" class="headerlink" title="RocketMQ 核心组件图"></a>RocketMQ 核心组件图</h2><p>RocketMQ是开源的消息中间件，它主要由<code>NameServer</code>，<code>Producer</code>，<code>Broker</code>，<code>Consumer</code>四部分构成。</p>
+<p><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://github.com/cayzlh/git-img-repository/raw/master/blog/2019/09/5.png" alt="RocketMQ 核心组件图"></p>
+<h3 id="NameServer"><a href="#NameServer" class="headerlink" title="NameServer"></a>NameServer</h3><p>NameServer主要负责Topic和路由信息的管理，功能类似Dubbo的zookeeper。</p>
+<h3 id="Producer"><a href="#Producer" class="headerlink" title="Producer"></a>Producer</h3><p>消息生产者，负责产生消息，一般由业务系统负责产生消息。</p>
+<h3 id="Broker"><a href="#Broker" class="headerlink" title="Broker"></a>Broker</h3><p>消息中转角色，负责存储消息，转发消息。</p>
+<h3 id="Consumer"><a href="#Consumer" class="headerlink" title="Consumer"></a>Consumer</h3><p>消息消费者，负责消息消费，一般是后台系统负责异步消费。</p>
+<h2 id="RokcetMQ-物理部署图"><a href="#RokcetMQ-物理部署图" class="headerlink" title="RokcetMQ 物理部署图"></a>RokcetMQ 物理部署图</h2><p><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://github.com/cayzlh/git-img-repository/raw/master/blog/2019/09/6.png" alt="RokcetMQ 物理部署图"></p>
+<h3 id="NameServer-1"><a href="#NameServer-1" class="headerlink" title="NameServer"></a>NameServer</h3><p>NameServer是一个几乎无状态节点，可集群部署，节点之间无任何信息同步。</p>
+<h3 id="Broker-1"><a href="#Broker-1" class="headerlink" title="Broker"></a>Broker</h3><p>Broker分为Master与Slave，一个Master可以对应多个Slave，但是一个Slave只能对应一个Master，Master与Slave的对应关系通过指定相同的BrokerName，不同的BrokerId来定义，BrokerId为0表示Master，非0表示Slave。Master也可以部署多个。每个Broker与Name Server集群中的所有节点建立长连接，定时注册Topic信息到所有Name Server。</p>
+<h3 id="Producer-1"><a href="#Producer-1" class="headerlink" title="Producer"></a>Producer</h3><p>Producer与Name Server集群中的其中一个节点（随机选择）建立长连接，定期从Name Server取Topic路由信息，并向提供Topic服务的Master建立长连接，且定时向Master发送心跳。Producer完全无状态，可集群部署。</p>
+<h3 id="Consumer-1"><a href="#Consumer-1" class="headerlink" title="Consumer"></a>Consumer</h3><p>Consumer与Name Server集群中的其中一个节点（随机选择）建立长连接，定期从Name Server取Topic路由信息，并向提供Topic服务的Master、Slave建立长连接，且定时向Master、Slave发送心跳。Consumer既可以从Master订阅消息，也可以从Slave订阅消息，订阅规则由Broker配置决定。</p>
+<h2 id="RocketMQ-逻辑部署结构"><a href="#RocketMQ-逻辑部署结构" class="headerlink" title="RocketMQ 逻辑部署结构"></a>RocketMQ 逻辑部署结构</h2><p><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://github.com/cayzlh/git-img-repository/raw/master/blog/2019/09/7.png" alt="RocketMQ 逻辑部署结构"></p>
+<h3 id="Producer-Group"><a href="#Producer-Group" class="headerlink" title="Producer Group"></a>Producer Group</h3><p>用来表示一个发送消息应用，一个 Producer Group 下包含多个 Producer 实例，可以是多台机器，也可以 是一台机器的多个进程，或者一个进程的多个 Producer 对象。一个 Producer Group 可以发送多个 Topic 消息，Producer Group 作用如下：</p>
+<ul>
+<li>标识一类 Producer</li>
+<li>可以通过运维工具查询这个发送消息应用下有多个 Producer 实例</li>
+<li>发送分布式事务消息时，如果 Producer 中途意外宕机，Broker 会主动回调 Producer Group 内的任意 一台机器来确认事务状态。</li>
+</ul>
+<h3 id="Consumer-Group"><a href="#Consumer-Group" class="headerlink" title="Consumer Group"></a>Consumer Group</h3><p>用来表示一个消费消息应用，一个 Consumer Group 下包含多个 Consumer 实例，可以是多台机器，也可 以是多个进程，或者是一个进程的多个 Consumer 对象。一个 Consumer Group 下的多个 Consumer 以均摊 方式消费消息，如果设置为广播方式，那么这个 Consumer Group 下的每个实例都消费全量数据。</p>
+<h2 id="NameServer-路由注册、删除机制"><a href="#NameServer-路由注册、删除机制" class="headerlink" title="NameServer 路由注册、删除机制"></a>NameServer 路由注册、删除机制</h2><p><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://github.com/cayzlh/git-img-repository/raw/master/blog/2019/09/8.png" alt="NameServer 路由注册、删除机制"></p>
+<ul>
+<li>Broker每30秒向NameServer发送心跳包，心跳包中包含topic的路由信息</li>
+<li>NarneServer 收到 Broker 心跳包后 更新 brokerLiveTable 中的信息， 特别记录心跳时间 lastUpdateTime</li>
+<li>NarneServer 每隔 10s 扫描 brokerLiveTable， 检 测表中上次收到心跳包的时间，比较当前时间 与上一次时间，如果超过120s，则认为 broker 不可用，移除路由表中与该 broker相关的所有 信息</li>
+<li>消息生产者拉取主题的路由信息，即消息生产者并不会立即感知 Broker 服务器的新增与删除。</li>
+</ul>
+<h2 id="RocketMQ的消息领域模型图"><a href="#RocketMQ的消息领域模型图" class="headerlink" title="RocketMQ的消息领域模型图"></a>RocketMQ的消息领域模型图</h2><p><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://github.com/cayzlh/git-img-repository/raw/master/blog/2019/09/9.png" alt="RocketMQ的消息领域模型图"></p>
+<h3 id="Topic"><a href="#Topic" class="headerlink" title="Topic"></a>Topic</h3><ul>
+<li>Topic表示消息的第一级类型，比如一个电商系统的消息可以分为：交易消息、物流消息等。一条消息必须有一个Topic。</li>
+<li>最细粒度的订阅单位，一个Group可以订阅多个Topic的消息。</li>
+</ul>
+<h3 id="Tag"><a href="#Tag" class="headerlink" title="Tag"></a>Tag</h3><p>Tag表示消息的第二级类型，比如交易消息又可以分为：交易创建消息，交易完成消息等。RocketMQ提供2级消息分类，方便灵活控制。</p>
+<h3 id="Group"><a href="#Group" class="headerlink" title="Group"></a>Group</h3><p>组，一个组可以订阅多个Topic。</p>
+<h3 id="Message-Queue"><a href="#Message-Queue" class="headerlink" title="Message Queue"></a>Message Queue</h3><p>消息的物理管理单位。一个Topic下可以有多个Queue，Queue的引入使得消息的存储可以分布式集群化，具有了水平扩展能力。</p>
+<p>在 RocketMQ 中，所有消息队列都是持久化，长度无限的数据结构，所谓长度无限是指队列中的每个存储单元都是定长，访问其中的存储单元使用 Offset 来访问，offset 为 java long 类型，64 位，理论上在 100年内不会溢出，所以认为是长度无限。</p>
+<p>也可以认为 Message Queue 是一个长度无限的数组，Offset 就是下标。</p>
+<h2 id="顺序消息原理图"><a href="#顺序消息原理图" class="headerlink" title="顺序消息原理图"></a>顺序消息原理图</h2><p><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://github.com/cayzlh/git-img-repository/raw/master/blog/2019/09/10.png" alt="顺序消息原理图"></p>
+<p>消费消息的顺序要同发送消息的顺序一致，在 RocketMQ 中，主要的是局部顺序，即一类消息为满足顺 序性，必须 Producer 单线程顺序发送，且发送到同一个队列，这样 Consumer 就可以按照 Producer 收送 的顺序去消费消息。</p>
+<h2 id="RocketMQ-消息存储设计原理图"><a href="#RocketMQ-消息存储设计原理图" class="headerlink" title="RocketMQ 消息存储设计原理图"></a>RocketMQ 消息存储设计原理图</h2><p><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://github.com/cayzlh/git-img-repository/raw/master/blog/2019/09/11.png" alt="RocketMQ 消息存储设计原理图"></p>
+<h3 id="CommitLog"><a href="#CommitLog" class="headerlink" title="CommitLog"></a>CommitLog</h3><p>消息存储文件，所有消息主题的消息都存储在 CommitLog 文件中。 Commitlog 文件存储的逻辑视图如图所示</p>
+<p><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://github.com/cayzlh/git-img-repository/raw/master/blog/2019/09/12.png" alt="CommitLog"></p>
+<h3 id="ConsumeQueue"><a href="#ConsumeQueue" class="headerlink" title="ConsumeQueue"></a>ConsumeQueue</h3><p>消息消费队列，消息到达 CommitLog 文件后，将异步转发到消息 消费队列，供消息消费者消费。ConsumeQueue存储格式如下：</p>
+<p><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://github.com/cayzlh/git-img-repository/raw/master/blog/2019/09/13.png" alt="ConsumeQueue"></p>
+<ul>
+<li>单个 ConsumeQueue 文件中默认包含 30 万个条目，单个文件的长度为 30w × 20 字节， 单个 ConsumeQueue 文件可以看出是一个 ConsumeQueue 条目的数组，其下标为 ConsumeQueue 的逻辑偏移量，消息消费进度存储的偏移量 即逻辑偏移量。</li>
+<li>ConsumeQueue 即为 Commitlog 文件的索引文件， 其构建机制是当消息到达 Commitlog 文件后， 由专门的线程 产生消息转发任务，从而构建消息消费队列文件与下文提到的索引文件。</li>
+</ul>
+<h3 id="IndexFile"><a href="#IndexFile" class="headerlink" title="IndexFile"></a>IndexFile</h3><p>消息索引文件，主要存储消息 Key 与 Offset 的对应关系。</p>
+<p>消息消费队列是RocketMQ专门为消息订阅构建的索引文件，提高根据主题与消息队 列检索消息的速度 ，另外 RocketMQ 引入了 Hash 索引机制为消息建立索引， HashMap 的设 计包含两个基本点 ： Hash 槽与 Hash 冲突的链表结构。 RocketMQ 索引文件布局如图所示</p>
+<p><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://github.com/cayzlh/git-img-repository/raw/master/blog/2019/09/14.png" alt="IndexFile"></p>
+<p>lndexFile 总共包含 lndexHeader、 Hash 槽、 Hash 条目</p>
+<h3 id="事务状态服务"><a href="#事务状态服务" class="headerlink" title="事务状态服务"></a>事务状态服务</h3><p>存储每条消息的事务状态。</p>
+<h3 id="定时消息服务"><a href="#定时消息服务" class="headerlink" title="定时消息服务"></a>定时消息服务</h3><p>每一个延迟级别对应一个消息消费队列，存储延迟队列的消息拉取进度。</p>
+<h2 id="RMQ文件存储模型层"><a href="#RMQ文件存储模型层" class="headerlink" title="RMQ文件存储模型层"></a>RMQ文件存储模型层</h2><p><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://github.com/cayzlh/git-img-repository/raw/master/blog/2019/09/15.png" alt="RMQ文件存储模型层"></p>
+<h3 id="RocketMQ业务处理器层"><a href="#RocketMQ业务处理器层" class="headerlink" title="RocketMQ业务处理器层"></a>RocketMQ业务处理器层</h3><p>Broker端对消息进行读取和写入的业务逻辑入口，这一层主要包含了业务逻辑相关处理操作（根据解析RemotingCommand中的RequestCode来区分具体的业务操作类型，进而执行不同的业务处理流程），比如前置的检查和校验步骤、构造MessageExtBrokerInner对象、decode反序列化、构造Response返回对象等。</p>
+<h3 id="RocketMQ数据存储组件层"><a href="#RocketMQ数据存储组件层" class="headerlink" title="RocketMQ数据存储组件层"></a>RocketMQ数据存储组件层</h3><ul>
+<li>该层主要是RocketMQ的存储核心类—DefaultMessageStore，其为RocketMQ消息数据文件的访问入口，通过该类的“putMessage()”和“getMessage()”方法完成对CommitLog消息存储的日志数据文件进行读写操作（具体的读写访问操作还是依赖下一层中CommitLog对象模型提供的方法）；</li>
+<li>另外，在该组件初始化时候，还会启动很多存储相关的后台服务线程，包括AllocateMappedFileService（MappedFile预分配服务线程）、ReputMessageService（回放存储消息服务线程）、HAService（Broker主从同步高可用服务线程）、StoreStatsService（消息存储统计服务线程）、IndexService（索引文件服务线程）等。</li>
+</ul>
+<h3 id="RocketMQ存储逻辑对象层"><a href="#RocketMQ存储逻辑对象层" class="headerlink" title="RocketMQ存储逻辑对象层"></a>RocketMQ存储逻辑对象层</h3><ul>
+<li>该层主要包含了RocketMQ数据文件存储直接相关的三个模型类IndexFile、ConsumerQueue和CommitLog。</li>
+<li>IndexFile为索引数据文件提供访问服务，ConsumerQueue为逻辑消息队列提供访问服务，CommitLog则为消息存储的日志数据文件提供访问服务。</li>
+<li>这三个模型类也是构成了RocketMQ存储层的整体结构。</li>
+</ul>
+<h3 id="封装的文件内存映射层"><a href="#封装的文件内存映射层" class="headerlink" title="封装的文件内存映射层"></a>封装的文件内存映射层</h3><ul>
+<li>RocketMQ主要采用JDK NIO中的MappedByteBuffer和FileChannel两种方式完成数据文件的读写。</li>
+<li>其中，采用MappedByteBuffer这种内存映射磁盘文件的方式完成对大文件的读写，在RocketMQ中将该类封装成MappedFile类。</li>
+<li>这里，每一种类的单个文件均由MappedFile类提供读写操作服务（其中，MappedFile类提供了顺序写/随机读、内存数据刷盘、内存清理等和文件相关的服务）。</li>
+</ul>
+<h3 id="磁盘存储层"><a href="#磁盘存储层" class="headerlink" title="磁盘存储层"></a>磁盘存储层</h3><p>主要指的是部署RocketMQ服务器所用的磁盘。这里，需要考虑不同磁盘类型（如SSD或者普通的HDD）特性以及磁盘的性能参数（如IOPS、吞吐量和访问时延等指标）对顺序写/随机读操作带来的影响。</p>
+<h2 id="RocketMQ中消息刷盘"><a href="#RocketMQ中消息刷盘" class="headerlink" title="RocketMQ中消息刷盘"></a>RocketMQ中消息刷盘</h2><p>在RocketMQ中消息刷盘主要可以分为同步刷盘和异步刷盘两种。</p>
+<h3 id="同步刷盘"><a href="#同步刷盘" class="headerlink" title="同步刷盘"></a>同步刷盘</h3><p><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://github.com/cayzlh/git-img-repository/raw/master/blog/2019/09/16.png" alt="同步刷盘"></p>
+<ul>
+<li>在返回写成功状态时，消息已经被写入磁盘。</li>
+<li>具体流程是，消息写入内存的PAGECACHE后，立刻通知刷盘线程刷盘，然后等待刷盘完成，刷盘线程执行完成后唤醒等待的线程，返回消息写成功的状态。</li>
+<li>一般只用于金融场景。</li>
+</ul>
+<h3 id="异步刷盘"><a href="#异步刷盘" class="headerlink" title="异步刷盘"></a>异步刷盘</h3><p><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://github.com/cayzlh/git-img-repository/raw/master/blog/2019/09/17.png" alt="异步刷盘"></p>
+<p>在返回写成功状态时，消息可能只是被写入了内存的PAGECACHE，写操作的返回快，吞吐量大；当内存里的消息量积累到一定程度时，统一触发写磁盘操作，快速写入。</p>
+<h2 id="消息在系统中流转图"><a href="#消息在系统中流转图" class="headerlink" title="消息在系统中流转图"></a>消息在系统中流转图</h2><p><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://github.com/cayzlh/git-img-repository/raw/master/blog/2019/09/18.png" alt="消息在系统中流转图"></p>
+<p>1、Producer 发送消息，消息从 socket 进入 java 堆。</p>
+<p>2、Producer 发送消息，消息从 java 堆转入 PAGACACHE，物理内存。</p>
+<p>3、Producer 发送消息，由异步线程刷盘，消息从 PAGECACHE 刷入磁盘。</p>
+<p>4、Consumer 拉消息（正常消费），消息直接从 PAGECACHE（数据在物理内存）转入 socket，到达 consumer， 不经过 java 堆。这种消费场景最多，线上 96G 物理内存，按照 1K 消息算，可以在物理内存缓存 1 亿条消 息。</p>
+<p>5、Consumer 拉消息（异常消费），消息直接从 PAGECACHE（数据在虚拟内存）转入 socket。</p>
+<p>6、Consumer 拉消息（异常消费），由于 Socket 访问了虚拟内存，产生缺页中断，此时会产生磁盘 IO，从磁 盘 Load 消息到 PAGECACHE，然后直接从 socket 发出去。</p>
+<p>7、同 5 一致。</p>
+<p>8、同 6 一致。</p>
+<hr>
+<p>^_^.</p>
+
+
+<div class="article-footer fs14"><section id="license"><div class="header"><span>许可协议</span></div><div class="body"><p>本文采用 <a target="_blank" rel="external nofollow noopener noreferrer" href="https://creativecommons.org/licenses/by-nc-sa/4.0/">署名-非商业性使用-相同方式共享 4.0 国际</a> 许可协议，转载请注明出处。</p>
+</div></section></div>
+
+</article>
+
+<div class="related-wrap" id="read-next"><section class="header cap theme"><span>接下来阅读</span></section><section class="body"><div class="post-title h2"><a href="/blog/post/2680260790.html">Gson简易指南</a></div><div class="post-title fs14"><a href="/blog/post/709624188.html">上一篇：使用Docker部署SpringBoot项目</a></div></section></div>
+
+
+<div class="related-wrap" id="related-posts">
+    <section class="header">
+      <div class="title cap theme">您可能感兴趣的文章</div>
+    </section>
+    <section class="body">
+    <div class="related-posts"><a class="item" href="/blog/post/20210402.html" title="HomeBrew换源"><div class="img"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2021/04/14194816180355881618035588178.png"></div><span class="title">HomeBrew换源</span></a></div></section></div>
+
+
+
+
+
+      
+<footer class="page-footer fs12"><hr><div><p>本博客所有文章除特别声明外，均采用 <a target="_blank" rel="external nofollow noopener noreferrer" href="https://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY-NC-SA 4.0</a> 许可协议，转载请注明出处。</p>
+<p>本站由 <a href="https://www.cayzlh.com/blog/">@🐳Ant丶</a> 创建，使用 <a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/xaoxuu/hexo-theme-stellar/tree/1.1.0">Stellar</a> 作为主题。</p>
+<p><a target="_blank" rel="external nofollow noopener noreferrer" href="https://beian.miit.gov.cn/">粤ICP备20058712号</a></p>
+</div></footer>
+
+      <div class="float-panel mobile-only" style="display:none">
+  <button type="button" class="sidebar-toggle mobile" onclick="sidebar.toggle()">
+    <svg class="icon" viewbox="0 0 1228 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2849"><path d="M0 0m97.390199 0l973.901995 0q97.390199 0 97.390199 97.390199l0 0q0 97.390199-97.390199 97.3902l-973.901995 0q-97.390199 0-97.390199-97.3902l0 0q0-97.390199 97.390199-97.390199Z" p-id="2850"/><path d="M0 389.560798m97.390199 0l973.901995 0q97.390199 0 97.390199 97.390199l0 0q0 97.390199-97.390199 97.3902l-973.901995 0q-97.390199 0-97.390199-97.3902l0 0q0-97.390199 97.390199-97.390199Z" p-id="2851"/><path d="M0 779.121596m97.390199 0l973.901995 0q97.390199 0 97.390199 97.390199l0 0q0 97.390199-97.390199 97.390199l-973.901995 0q-97.390199 0-97.390199-97.390199l0 0q0-97.390199 97.390199-97.390199Z" p-id="2852"/></svg>
+  </button>
+</div>
+
+    </div>
+  </div>
+  <div class="scripts">
+    <script type="text/javascript">
+  stellar = {
+    // 懒加载 css https://github.com/filamentgroup/loadCSS
+    loadCSS: (href, before, media, attributes) => {
+      var doc = window.document;
+      var ss = doc.createElement("link");
+      var ref;
+      if (before) {
+        ref = before;
+      } else {
+        var refs = (doc.body || doc.getElementsByTagName("head")[0]).childNodes;
+        ref = refs[refs.length - 1];
+      }
+      var sheets = doc.styleSheets;
+      if (attributes) {
+        for (var attributeName in attributes) {
+          if (attributes.hasOwnProperty(attributeName)) {
+            ss.setAttribute(attributeName, attributes[attributeName]);
+          }
+        }
+      }
+      ss.rel = "stylesheet";
+      ss.href = href;
+      ss.media = "only x";
+      function ready(cb) {
+        if (doc.body) {
+          return cb();
+        }
+        setTimeout(function () {
+          ready(cb);
+        });
+      }
+      ready(function () {
+        ref.parentNode.insertBefore(ss, before ? ref : ref.nextSibling);
+      });
+      var onloadcssdefined = function (cb) {
+        var resolvedHref = ss.href;
+        var i = sheets.length;
+        while (i--) {
+          if (sheets[i].href === resolvedHref) {
+            return cb();
+          }
+        }
+        setTimeout(function () {
+          onloadcssdefined(cb);
+        });
+      };
+      function loadCB() {
+        if (ss.addEventListener) {
+          ss.removeEventListener("load", loadCB);
+        }
+        ss.media = media || "all";
+      }
+      if (ss.addEventListener) {
+        ss.addEventListener("load", loadCB);
+      }
+      ss.onloadcssdefined = onloadcssdefined;
+      onloadcssdefined(loadCB);
+      return ss;
+    },
+
+    // 从 butterfly 和 volantis 获得灵感
+    loadScript: (src, opt) => new Promise((resolve, reject) => {
+      var script = document.createElement('script')
+      script.src = src
+      if (opt) {
+        for (let key of Object.keys(opt)) {
+          script[key] = opt[key]
+        }
+      } else {
+        // 默认异步，如果需要同步，第二个参数传入 {} 即可
+        script.async = true
+      }
+      script.onerror = reject
+      script.onload = script.onreadystatechange = function() {
+        const loadState = this.readyState
+        if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+        script.onload = script.onreadystatechange = null
+        resolve()
+      }
+      document.head.appendChild(script)
+    }),
+
+    // https://github.com/jerryc127/hexo-theme-butterfly
+    jQuery: (fn) => {
+      if (typeof jQuery === 'undefined') {
+        stellar.loadScript(stellar.plugins.jQuery).then(fn)
+      } else {
+        fn()
+      }
+    }
+  };
+  stellar.github = 'https://github.com/xaoxuu/hexo-theme-stellar/tree/1.1.0';
+  stellar.config = {
+    date_suffix: {
+      just: '刚刚',
+      min: '分钟前',
+      hour: '小时前',
+      day: '天前',
+      month: '个月前',
+    },
+  };
+
+  // required plugins (only load if needs)
+  stellar.plugins = {
+    jQuery: 'https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js',
+    sitesjs: '/blog/js/plugins/sites.js',
+    friendsjs: '/blog/js/plugins/friends.js',
+  };
+
+  // optional plugins
+  if ('true' == 'true') {
+    stellar.plugins.lazyload = Object.assign({"enable":true,"js":"https://cdn.jsdelivr.net/npm/vanilla-lazyload@17.3.1/dist/lazyload.min.js","transition":"blur"});
+  }
+  if ('true' == 'true') {
+    stellar.plugins.swiper = Object.assign({"enable":true,"css":"https://unpkg.com/swiper/swiper-bundle.min.css","js":"https://unpkg.com/swiper/swiper-bundle.min.js"});
+  }
+  if ('' == 'true') {
+    stellar.plugins.scrollreveal = Object.assign({"enable":null,"js":"https://cdn.jsdelivr.net/npm/scrollreveal@4.0.9/dist/scrollreveal.min.js","distance":"8px","duration":500,"interval":100,"scale":1});
+  }
+  if ('true' == 'true') {
+    stellar.plugins.preload = Object.assign({"enable":true,"service":"flying_pages","instant_page":"https://cdn.jsdelivr.net/gh/volantis-x/cdn-volantis@4.1.2/js/instant_page.js","flying_pages":"https://cdn.jsdelivr.net/gh/gijo-varghese/flying-pages@2.1.2/flying-pages.min.js"});
+  }
+</script>
+
+<!-- required -->
+
+  
+<script src="/blog/js/main.js" async></script>
+
+
+
+<!-- optional -->
+
+
+
+<!-- inject -->
+
+
+  </div>
+</body>
+</html>
