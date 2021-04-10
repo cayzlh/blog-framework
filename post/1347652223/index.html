@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta name="generator" content="Hexo 5.4.0">
+  <meta charset="utf-8">
+  
+
+  <meta http-equiv="x-dns-prefetch-control" content="on">
+  <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+
+  <meta name="renderer" content="webkit">
+  <meta name="force-rendering" content="webkit">
+  <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+  <meta name="HandheldFriendly" content="True">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <title>Tomcat单机多实例部署 - CAYZLH</title>
+
+  
+  <meta name="description" content="一个实用的Tomcat使用技巧，Tomcat单机多实例部署">
+
+  <!-- feed -->
+  
+    <link rel="alternate" href="/atom.xml" title="CAYZLH" type="application/atom+xml">
+  
+
+  
+    
+<link rel="stylesheet" href="/css/main.css">
+
+  
+
+  
+    
+      <meta name="msapplication-TileColor" content="#2d89ef">
+    
+      <meta name="msapplication-config" content="/assets/favicon/browserconfig.xml">
+    
+      <meta name="theme-color" content="#ffffff">
+    
+      <link rel="shortcut icon" href="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/logo/favicon.ico">
+    
+      <link rel="icon" type="image/png" href="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/logo/favicon-192x192.png" sizes="192x192">
+    
+      <link rel="apple-touch-icon" sizes="180x180" href="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/logo/apple-touch-icon.png">
+    
+  
+</head>
+
+<body>
+  
+
+
+  <div class="l_body" id="start">
+    <aside class="l_left">
+    
+
+<header class="header">
+  <div class="logo-wrap">
+  
+    <a class="avatar" href="/">
+      
+        <img no-lazy class="bg" src="https://cdn.jsdelivr.net/gh/cdn-x/placeholder@1.0.2/avatar/round/rainbow64@3x.webp" onerror="javascript:this.classList.add('error');this.src='https://cdn.jsdelivr.net/gh/cdn-x/placeholder@1.0.1/image/2659360.svg';">
+      
+      <img no-lazy class="avatar" src="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/image/IMG_4207.JPG" onerror="javascript:this.classList.add('error');this.src='https://cdn.jsdelivr.net/gh/cdn-x/placeholder@1.0.1/image/2659360.svg';">
+    </a>
+  
+  
+    <a class="title" href="/">
+      CAYZLH
+    </a>
+  
+</div>
+
+  <nav class="menu dis-select"><a class="nav-item active" href="/">文章</a><a class="nav-item" href="/wiki/">文档</a><a class="nav-item" href="/talking/">动态</a></nav>
+</header>
+
+<div class="widgets">
+  
+    
+      
+      
+<div class="widget-wrap" id="toc"><div class="widget-header h4 dis-select"><span class="name">本文目录</span></div><div class="widget-body fs14 post"><div class="doc-tree active"><ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%89%8D%E8%A8%80"><span class="toc-text">前言</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%AE%9E%E7%8E%B0%E5%9B%9B%E8%B7%AF"><span class="toc-text">实现四路</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BC%A0%E7%BB%9F%E5%AE%9E%E7%8E%B0%E6%96%B9%E5%BC%8F%EF%BC%9A%E7%AE%80%E5%8D%95%E7%9A%84%E5%A4%8D%E5%88%B6%E5%87%BA%E4%B8%80%E4%B8%AA%E6%96%B0%E7%9A%84Tomcat%E7%9B%AE%E5%BD%95%E5%90%8E%E6%94%B9%E4%B8%80%E4%B8%8B%E7%AB%AF%E5%8F%A3"><span class="toc-text">传统实现方式：简单的复制出一个新的Tomcat目录后改一下端口</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%AE%9E%E7%8E%B0%E6%AD%A5%E9%AA%A4"><span class="toc-text">实现步骤</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E4%B8%8B%E8%BD%BD%E5%B9%B6%E8%A7%A3%E5%8E%8B%E5%AE%89%E8%A3%85%E5%8C%85%E5%88%B0%E7%9B%AE%E5%BD%95"><span class="toc-text">下载并解压安装包到目录</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E7%BC%96%E8%BE%91-etc-profile-%E6%96%87%E4%BB%B6"><span class="toc-text">编辑 &#x2F;etc&#x2F;profile 文件</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%B7%BB%E5%8A%A0Tomcat"><span class="toc-text">添加Tomcat</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%B0%86%E5%9C%A8-data-service-%E4%B8%AD%E5%88%9B%E5%BB%BA%E4%B8%A4%E4%B8%AA%E5%AE%9E%E4%BE%8B%E6%96%87%E4%BB%B6%E5%A4%B9"><span class="toc-text">将在 &#x2F;data&#x2F;service&#x2F;中创建两个实例文件夹</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#tomcat%E7%9A%84%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6%E5%A4%8D%E5%88%B6%E5%88%B0%E5%AE%9E%E4%BE%8B%E6%96%87%E4%BB%B6%E5%A4%B9%E5%86%85"><span class="toc-text">tomcat的配置文件复制到实例文件夹内</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%AD%A4%E6%97%B6"><span class="toc-text">此时</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%88%9B%E5%BB%BA%E8%BF%90%E8%A1%8C%E8%84%9A%E6%9C%AC"><span class="toc-text">创建运行脚本</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E7%BC%96%E8%BE%91startup-sh%E5%92%8Cshutdown-sh"><span class="toc-text">编辑startup.sh和shutdown.sh</span></a></li></ol></li></ol></div></div></div>
+
+    
+  
+</div>
+
+
+    </aside>
+    <div class="l_main">
+      
+
+      
+
+
+  <div class="bread-nav fs12">
+  
+    
+    <div id="breadcrumb">
+      <a class="cap breadcrumb" href="/">主页</a>
+      <span class="sep"></span>
+      <a class="cap breadcrumb" href="/">文章</a>
+      
+        <span class="sep"></span>
+        <a class="cap breadcrumb-link" href="/categories/%E7%BC%96%E7%A8%8B%E6%8A%80%E6%9C%AF/">编程技术</a>
+      
+    </div>
+    <div id="post-meta">
+      发布于&nbsp;<time datetime="2018-05-27T00:50:02.000Z">2018-05-27</time>
+    </div>
+  
+  </div>
+
+
+<article class="content md post">
+<h1 class="article-title"><span>Tomcat单机多实例部署</span></h1>
+<h3 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h3><blockquote>
+<p>单机多实例部署tomcat, 可以充分利用系统资源, 周期性地更新Tomcat，使用最新版的Tomcat, 统一管理，让Tomcat版本统一, 实例的配置统一.</p>
+</blockquote>
+<p>本文介绍Linux下Tomcat单机多实例的部署步骤.</p>
+<h3 id="实现四路"><a href="#实现四路" class="headerlink" title="实现四路"></a>实现四路</h3><p>1、Tomcat运行时，系统会从conf及webapps目录中读取配置文件，并且写入logs、temp和work目录中<br>2、一些jar文件和class文件需要从公共目录例如lib/中加载，只需要加载一次就可以。<br>3、为了多个实例能同时运行，每一个Tomcat实例必须有自己的目录集</p>
+<h3 id="传统实现方式：简单的复制出一个新的Tomcat目录后改一下端口"><a href="#传统实现方式：简单的复制出一个新的Tomcat目录后改一下端口" class="headerlink" title="传统实现方式：简单的复制出一个新的Tomcat目录后改一下端口"></a>传统实现方式：简单的复制出一个新的Tomcat目录后改一下端口</h3><p>缺点：<br>1、资源浪费，公用资源被多次加载，造成在内存中不必要的重用<br>2、针对不同web服务做配置能做但是异常麻烦<br>3、对Tomcat进行版本升级时能做但是异常麻烦，每个目录都需要替换，不必要的大量工作</p>
+<hr>
+<h3 id="实现步骤"><a href="#实现步骤" class="headerlink" title="实现步骤"></a>实现步骤</h3><h4 id="下载并解压安装包到目录"><a href="#下载并解压安装包到目录" class="headerlink" title="下载并解压安装包到目录"></a>下载并解压安装包到目录</h4><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">cd /usr/local/path/tomcat</span><br></pre></td></tr></table></figure>
+
+<h4 id="编辑-etc-profile-文件"><a href="#编辑-etc-profile-文件" class="headerlink" title="编辑 /etc/profile 文件"></a>编辑 <code>/etc/profile</code> 文件</h4><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">sudo vi /etc/profile</span><br></pre></td></tr></table></figure>
+
+<h4 id="添加Tomcat"><a href="#添加Tomcat" class="headerlink" title="添加Tomcat"></a>添加Tomcat</h4><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">export CATALINA_HOME=/usr/local/path/tomcat/apache-tomcat-7.0.85</span><br></pre></td></tr></table></figure>
+<p>以上代码添加到<code>profile</code>中</p>
+<h4 id="将在-data-service-中创建两个实例文件夹"><a href="#将在-data-service-中创建两个实例文件夹" class="headerlink" title="将在 /data/service/中创建两个实例文件夹"></a>将在 <code>/data/service/</code>中创建两个实例文件夹</h4><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">cd /data/service</span><br><span class="line">mkdir tomcat1</span><br><span class="line">mkdir tomcat2</span><br></pre></td></tr></table></figure>
+
+<h4 id="tomcat的配置文件复制到实例文件夹内"><a href="#tomcat的配置文件复制到实例文件夹内" class="headerlink" title="tomcat的配置文件复制到实例文件夹内"></a>tomcat的配置文件复制到实例文件夹内</h4><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">cd tomcat1/</span><br><span class="line">cp -a /usr/local/path/tomcat/* ./</span><br><span class="line">rm -rf lib/ bin/</span><br><span class="line"></span><br><span class="line">cd ..</span><br><span class="line">cp -a tomcat1/* tomcat2/</span><br><span class="line"></span><br><span class="line">cd /usr/local/path/tomcat</span><br><span class="line">rm -rf work/ webapps/ logs/ conf/</span><br></pre></td></tr></table></figure>
+
+<h4 id="此时"><a href="#此时" class="headerlink" title="此时"></a>此时</h4><p><code>/usr/local/path/tomcat</code> 内剩下文件为: <code>bin/</code>, <code>lib/</code>;<br>两个实例文件夹中剩下的文件为; <code>work/</code> <code>webapps/</code> <code>logs/</code> <code>conf/</code></p>
+<h4 id="创建运行脚本"><a href="#创建运行脚本" class="headerlink" title="创建运行脚本"></a>创建运行脚本</h4><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">cd /data/service/tomcat1</span><br><span class="line">mkdir bin</span><br><span class="line">cd bin/</span><br><span class="line">touch startup.sh</span><br><span class="line">touch shutdown.sh</span><br></pre></td></tr></table></figure>
+
+<h4 id="编辑startup-sh和shutdown-sh"><a href="#编辑startup-sh和shutdown-sh" class="headerlink" title="编辑startup.sh和shutdown.sh"></a>编辑<code>startup.sh</code>和<code>shutdown.sh</code></h4><p>startup.sh :</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash">!/bin/bash</span></span><br><span class="line"></span><br><span class="line">export CATALINA_BASE=/data/service/tomcat1</span><br><span class="line"></span><br><span class="line">echo $CATALINA_BASE</span><br><span class="line"></span><br><span class="line">TOMCAT_ID=`ps aux |grep &quot;java&quot;|grep &quot;Dcatalina.base=$CATALINA_BASE &quot;|grep -v &quot;grep&quot;|awk &#x27;&#123; print $2&#125;&#x27;`</span><br><span class="line"></span><br><span class="line">if [ -n &quot;$TOMCAT_ID&quot; ] ; then</span><br><span class="line">echo &quot;tomcat($&#123;TOMCAT_ITOMCAT_ID&#125;) still running now , please shutdown it firest&quot;;</span><br><span class="line">    exit 2;</span><br><span class="line">fi</span><br><span class="line"></span><br><span class="line">TOMCAT_START_LOG=`$CATALINA_HOME/bin/startup.sh`</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">if [ &quot;$?&quot; = &quot;0&quot; ]; then</span><br><span class="line">    echo &quot;$0 $&#123;1%/&#125; start succeed&quot;</span><br><span class="line">else</span><br><span class="line">    echo &quot;$0 $&#123;1%/&#125; start failed&quot;</span><br><span class="line">    echo $TOMCAT_START_LOG</span><br><span class="line">fi</span><br></pre></td></tr></table></figure>
+
+<p>shutdown.sh :</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">rt CATALINA_BASE=/data/service/tomcat-1</span><br><span class="line"></span><br><span class="line">echo $CATALINA_BASE</span><br><span class="line"></span><br><span class="line">TOMCAT_ID=`ps aux |grep &quot;java&quot;|grep &quot;[D]catalina.base=$CATALINA_BASE &quot;|awk &#x27;&#123; print $2&#125;&#x27;`</span><br><span class="line"></span><br><span class="line">if [ -n &quot;$TOMCAT_ID&quot; ] ; then</span><br><span class="line">TOMCAT_STOP_LOG=`$CATALINA_HOME/bin/shutdown.sh`</span><br><span class="line">else</span><br><span class="line">    echo &quot;Tomcat instance not found : $&#123;1%/&#125;&quot;</span><br><span class="line">    exit</span><br><span class="line"></span><br><span class="line">fi</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">if [ &quot;$?&quot; = &quot;0&quot; ]; then</span><br><span class="line">    echo &quot;$0 $&#123;1%/&#125; stop succeed&quot;</span><br><span class="line">else</span><br><span class="line">    echo &quot;$0 $&#123;1%/&#125; stop failed&quot;</span><br><span class="line">    echo $TOMCAT_STOP_LOG</span><br><span class="line">fi</span><br></pre></td></tr></table></figure>
+<p>至此, 单机多实例的tomcat已经基本上配置好了. </p>
+<p>运行: </p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">/data/service/tomcat1/bin/startup.sh</span><br></pre></td></tr></table></figure>
+<p>即可.</p>
+<p>当然, 要运行两个以上实例的话, 还得配置 <code>server.xml</code>, 这里就不讨论了.</p>
+<p>两个tomcat实例运行起来之后, 可以看到2个tomcat实例的PID是不同的，也就是说对某个实例进行操作是不会影响到另外一个实例的.</p>
+<hr>
+
+
+<div class="article-footer fs14"><section id="license"><div class="header"><span>许可协议</span></div><div class="body"><p>本文采用 <a target="_blank" rel="external nofollow noopener noreferrer" href="https://creativecommons.org/licenses/by-nc-sa/4.0/">署名-非商业性使用-相同方式共享 4.0 国际</a> 许可协议，转载请注明出处。</p>
+</div></section></div>
+
+</article>
+
+<div class="related-wrap" id="read-next"><section class="header cap theme"><span>接下来阅读</span></section><section class="body"><div class="post-title h2"><a href="/post/71240450/">Linux搭建Git服务器</a></div><div class="post-title fs14"><a href="/post/3717925105/">上一篇：SpringBoot封装JedisUtils工具类</a></div></section></div>
+
+
+<div class="related-wrap" id="related-posts">
+    <section class="header">
+      <div class="title cap theme">您可能感兴趣的文章</div>
+    </section>
+    <section class="body">
+    <div class="related-posts"><a class="item" href="/post/2815697354/" title="Tomcat的三种接收请求处理方式"><div class="img"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2021/04/14194816180355881618035588178.png"></div><span class="title">Tomcat的三种接收请求处理方式</span><span class="excerpt">了解Tomcat的三种接收请求处理方式，提高服务器性能</span></a><a class="item" href="/post/3136136825/" title="SpringBoot自动部署脚本"><div class="img"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2021/04/14194816180355881618035588178.png"></div><span class="title">SpringBoot自动部署脚本</span></a><a class="item" href="/post/2348855541/" title="SpringBoot启动脚本"><div class="img"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2021/04/14194816180355881618035588178.png"></div><span class="title">SpringBoot启动脚本</span></a><a class="item" href="/post/2878379624/" title="SpringBoot文件上传异常处理"><div class="img"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://gitee.com/cayzlh/img-repo/raw/master/2021/02/10511616140486761614048676335.jpg"></div><span class="title">SpringBoot文件上传异常处理</span><span class="excerpt">SpringBoot文件上传异常处理：The temporary upload location xxx is not valid</span></a><a class="item" href="/post/1832342668/" title="SpringBoot单元测试"><div class="img"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2021/03/14044716155290871615529087504.jpg"></div><span class="title">SpringBoot单元测试</span></a></div></section></div>
+
+
+
+
+
+      
+<footer class="page-footer fs12"><hr><div><p>本博客所有文章除特别声明外，均采用 <a target="_blank" rel="external nofollow noopener noreferrer" href="https://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY-NC-SA 4.0</a> 许可协议，转载请注明出处。</p>
+<p>本站由 <a href="https://www.cayzlh.com/">@🐳Ant丶</a> 创建，使用 <a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/xaoxuu/hexo-theme-stellar/tree/1.1.0">Stellar</a> 作为主题。</p>
+<p><a target="_blank" rel="external nofollow noopener noreferrer" href="https://beian.miit.gov.cn/">粤ICP备20058712号</a></p>
+</div></footer>
+
+      <div class="float-panel mobile-only" style="display:none">
+  <button type="button" class="sidebar-toggle mobile" onclick="sidebar.toggle()">
+    <svg class="icon" viewbox="0 0 1228 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2849"><path d="M0 0m97.390199 0l973.901995 0q97.390199 0 97.390199 97.390199l0 0q0 97.390199-97.390199 97.3902l-973.901995 0q-97.390199 0-97.390199-97.3902l0 0q0-97.390199 97.390199-97.390199Z" p-id="2850"/><path d="M0 389.560798m97.390199 0l973.901995 0q97.390199 0 97.390199 97.390199l0 0q0 97.390199-97.390199 97.3902l-973.901995 0q-97.390199 0-97.390199-97.3902l0 0q0-97.390199 97.390199-97.390199Z" p-id="2851"/><path d="M0 779.121596m97.390199 0l973.901995 0q97.390199 0 97.390199 97.390199l0 0q0 97.390199-97.390199 97.390199l-973.901995 0q-97.390199 0-97.390199-97.390199l0 0q0-97.390199 97.390199-97.390199Z" p-id="2852"/></svg>
+  </button>
+</div>
+
+    </div>
+  </div>
+  <div class="scripts">
+    <script type="text/javascript">
+  stellar = {
+    // 懒加载 css https://github.com/filamentgroup/loadCSS
+    loadCSS: (href, before, media, attributes) => {
+      var doc = window.document;
+      var ss = doc.createElement("link");
+      var ref;
+      if (before) {
+        ref = before;
+      } else {
+        var refs = (doc.body || doc.getElementsByTagName("head")[0]).childNodes;
+        ref = refs[refs.length - 1];
+      }
+      var sheets = doc.styleSheets;
+      if (attributes) {
+        for (var attributeName in attributes) {
+          if (attributes.hasOwnProperty(attributeName)) {
+            ss.setAttribute(attributeName, attributes[attributeName]);
+          }
+        }
+      }
+      ss.rel = "stylesheet";
+      ss.href = href;
+      ss.media = "only x";
+      function ready(cb) {
+        if (doc.body) {
+          return cb();
+        }
+        setTimeout(function () {
+          ready(cb);
+        });
+      }
+      ready(function () {
+        ref.parentNode.insertBefore(ss, before ? ref : ref.nextSibling);
+      });
+      var onloadcssdefined = function (cb) {
+        var resolvedHref = ss.href;
+        var i = sheets.length;
+        while (i--) {
+          if (sheets[i].href === resolvedHref) {
+            return cb();
+          }
+        }
+        setTimeout(function () {
+          onloadcssdefined(cb);
+        });
+      };
+      function loadCB() {
+        if (ss.addEventListener) {
+          ss.removeEventListener("load", loadCB);
+        }
+        ss.media = media || "all";
+      }
+      if (ss.addEventListener) {
+        ss.addEventListener("load", loadCB);
+      }
+      ss.onloadcssdefined = onloadcssdefined;
+      onloadcssdefined(loadCB);
+      return ss;
+    },
+
+    // 从 butterfly 和 volantis 获得灵感
+    loadScript: (src, opt) => new Promise((resolve, reject) => {
+      var script = document.createElement('script')
+      script.src = src
+      if (opt) {
+        for (let key of Object.keys(opt)) {
+          script[key] = opt[key]
+        }
+      } else {
+        // 默认异步，如果需要同步，第二个参数传入 {} 即可
+        script.async = true
+      }
+      script.onerror = reject
+      script.onload = script.onreadystatechange = function() {
+        const loadState = this.readyState
+        if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+        script.onload = script.onreadystatechange = null
+        resolve()
+      }
+      document.head.appendChild(script)
+    }),
+
+    // https://github.com/jerryc127/hexo-theme-butterfly
+    jQuery: (fn) => {
+      if (typeof jQuery === 'undefined') {
+        stellar.loadScript(stellar.plugins.jQuery).then(fn)
+      } else {
+        fn()
+      }
+    }
+  };
+  stellar.github = 'https://github.com/xaoxuu/hexo-theme-stellar/tree/1.1.0';
+  stellar.config = {
+    date_suffix: {
+      just: '刚刚',
+      min: '分钟前',
+      hour: '小时前',
+      day: '天前',
+      month: '个月前',
+    },
+  };
+
+  // required plugins (only load if needs)
+  stellar.plugins = {
+    jQuery: 'https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js',
+    sitesjs: '/js/plugins/sites.js',
+    friendsjs: '/js/plugins/friends.js',
+  };
+
+  // optional plugins
+  if ('true' == 'true') {
+    stellar.plugins.lazyload = Object.assign({"enable":true,"js":"https://cdn.jsdelivr.net/npm/vanilla-lazyload@17.3.1/dist/lazyload.min.js","transition":"blur"});
+  }
+  if ('true' == 'true') {
+    stellar.plugins.swiper = Object.assign({"enable":true,"css":"https://unpkg.com/swiper/swiper-bundle.min.css","js":"https://unpkg.com/swiper/swiper-bundle.min.js"});
+  }
+  if ('' == 'true') {
+    stellar.plugins.scrollreveal = Object.assign({"enable":null,"js":"https://cdn.jsdelivr.net/npm/scrollreveal@4.0.9/dist/scrollreveal.min.js","distance":"8px","duration":500,"interval":100,"scale":1});
+  }
+  if ('true' == 'true') {
+    stellar.plugins.preload = Object.assign({"enable":true,"service":"flying_pages","instant_page":"https://cdn.jsdelivr.net/gh/volantis-x/cdn-volantis@4.1.2/js/instant_page.js","flying_pages":"https://cdn.jsdelivr.net/gh/gijo-varghese/flying-pages@2.1.2/flying-pages.min.js"});
+  }
+</script>
+
+<!-- required -->
+
+  
+<script src="/js/main.js" async></script>
+
+
+
+<!-- optional -->
+
+
+
+<!-- inject -->
+
+
+  </div>
+</body>
+</html>
