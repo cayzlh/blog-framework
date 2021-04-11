@@ -1925,11 +1925,11 @@
     
     
     <entry>
-      <title>JVM (虚拟机内存)</title>
-      <link href="post/b8276f2d/"/>
-      <url>post/b8276f2d/</url>
+      <title>JVM (对象访问内部实现过程)</title>
+      <link href="post/e43d0ef1/"/>
+      <url>post/e43d0ef1/</url>
       
-        <content type="html"><![CDATA[<blockquote><p>JAVA程序运行与虚拟机之上，运行时需要内存空间。虚拟机执行JAVA程序的过程中会把它管理的内存划分为不同的数据区域方便管理。</p></blockquote><p>虚拟机管理内存数据区域划分如下图：</p><p><img src="https://github.com/cayzlh/git-img-repository/raw/master/blog/Runtime-data-area.png" alt="虚拟机管理内存数据区域划分"></p><h3 id="数据区域分类"><a href="#数据区域分类" class="headerlink" title="数据区域分类:"></a>数据区域分类:</h3><ul><li>方法区：(Method Area)</li><li>虚拟机栈：(VM Stack)</li><li>本地方法栈 ：(Native Method Stack)</li><li>堆：(Heap)</li><li>程序计数器 ：(Program Counter Register)</li><li>直接内存：(Direct Memory)</li></ul><p>说明：</p><h4 id="程序计数器"><a href="#程序计数器" class="headerlink" title="程序计数器"></a>程序计数器</h4><p>行号指示器，字节码指令的分支、循环、跳转、异常处理、线程恢复(CPU切换)，每条线程都需要一个独立的计数器，线程私有内存互不影响,该区域不会发生内存溢出异常。</p><h4 id="虚拟机栈"><a href="#虚拟机栈" class="headerlink" title="虚拟机栈"></a>虚拟机栈</h4><p>是线程私有的，声明周期与线程相同，虚拟机栈是Java方法执行的内存模型，每个方法被执行时都会创建一个栈帧，即方法运行期间的基础数据结构。<br>栈帧用于存储：局部变量表、操作数栈、动态链接、方法出口等，每个方法执行中都对应虚拟机栈帧从入栈到处栈的过程。</p><p>是一种数据结构，是虚拟机中的局部变量表，对应物理层之上的程序数据模型。</p><p>局部变量表，是一种程序运行数据模型，存放了编译期可知的各种数据类型例如：</p><p>Boolean、byte、char、short、int、float、long、double、对象引用类型(对象内存地址变量，指针或句柄)。<br>程序运行时，根据局部变量表分配栈帧空间大小，在运行中，大小是不变的异常类型：stackOverFlowError 线程请求栈深度大于虚拟机允许深度 OutOfMemory 内存空间耗尽无法进行扩展。</p><h4 id="本地方法栈"><a href="#本地方法栈" class="headerlink" title="本地方法栈"></a>本地方法栈</h4><p>与虚拟机栈类似，虚拟机栈为Java程序服务，本地方法栈支持虚拟机的运行服务，具体实现由虚拟机厂商决定，也会抛出 stackOverFlowError、OutOfMemory异常。</p><h4 id="堆"><a href="#堆" class="headerlink" title="堆"></a>堆</h4><p>是虚拟机管理内存中最大的一部分，被所有线程共享，用于存放对象实例(对象、数组)，物理上不连续的内存空间，由于GC收集器，分代收集。<br>所以划分为：新生代 Eden、From SurVivor空间、To SurVivor空间，allot buffer(分配空间)，可能会划分出多个线程私有的缓冲区，老年代。</p><h4 id="方法区"><a href="#方法区" class="headerlink" title="方法区"></a>方法区</h4><p>与堆一样属于线程共享的内存区域，用于存储虚拟机加载的类信息、常量、静态变量、即时编译器编译后的代码（动态加载OSGI）等数据。理论上属于java虚拟机的一部分，为了区分开来叫做 Non-Heap非堆。</p><p>这个区域可以选择不进行垃圾回收，该区域回收目的主要是常量池的回收，及类型的卸载class,内存区不足时会抛出OutOfMemory异常</p><p>运行时常量池：</p><p>方法区的一部分，Class的版本、字段、接口、方法等，及编译期生成的各种字面量、符号引用，编译类加载后存放在该区域。会抛出OutOfMemory异常。</p><h4 id="直接内存"><a href="#直接内存" class="headerlink" title="直接内存"></a>直接内存</h4><p>直接内存不属于虚拟内存区域，是一种基于通道与缓冲区的IO方式，可以使用本地函数直接分配堆外内存，在堆中存储引用的外部内存地址，通过引用完成对直接引用内存的操作。<br>1.4之后提供的NIO显著提高效率，避免了堆内存与Native内存的来回复制操作，不受虚拟机内存控制，会抛出OUtOfMemory异常。</p>]]></content>
+        <content type="html"><![CDATA[<blockquote><p>对象访问 涉及到对象的地址变更状态变更，内存地址移动，变量、接口、实现类、方法、父类型等。</p></blockquote><h3 id="句柄方式-访问"><a href="#句柄方式-访问" class="headerlink" title="句柄方式 (访问)"></a>句柄方式 (访问)</h3><p><img src="https://github.com/cayzlh/git-img-repository/raw/master/blog/jubing.png" alt="句柄方式"></p><h3 id="指针方式-访问"><a href="#指针方式-访问" class="headerlink" title="指针方式 (访问)"></a>指针方式 (访问)</h3><p><img src="https://github.com/cayzlh/git-img-repository/raw/master/blog/zhizhen.png" alt="指针方式"></p><h3 id="优缺点"><a href="#优缺点" class="headerlink" title="优缺点"></a>优缺点</h3><p>句柄访问方式：reference中存储的是稳定的地址，对象变更时只会改变句柄实例数据指针，引用本身不需要修改。</p><p>指针访问方式：优点速度快，节省了指针定位时间开销。</p>]]></content>
       
       
       <categories>
@@ -1952,11 +1952,11 @@
     
     
     <entry>
-      <title>JVM (对象访问内部实现过程)</title>
-      <link href="post/e43d0ef1/"/>
-      <url>post/e43d0ef1/</url>
+      <title>JVM (虚拟机内存)</title>
+      <link href="post/b8276f2d/"/>
+      <url>post/b8276f2d/</url>
       
-        <content type="html"><![CDATA[<blockquote><p>对象访问 涉及到对象的地址变更状态变更，内存地址移动，变量、接口、实现类、方法、父类型等。</p></blockquote><h3 id="句柄方式-访问"><a href="#句柄方式-访问" class="headerlink" title="句柄方式 (访问)"></a>句柄方式 (访问)</h3><p><img src="https://github.com/cayzlh/git-img-repository/raw/master/blog/jubing.png" alt="句柄方式"></p><h3 id="指针方式-访问"><a href="#指针方式-访问" class="headerlink" title="指针方式 (访问)"></a>指针方式 (访问)</h3><p><img src="https://github.com/cayzlh/git-img-repository/raw/master/blog/zhizhen.png" alt="指针方式"></p><h3 id="优缺点"><a href="#优缺点" class="headerlink" title="优缺点"></a>优缺点</h3><p>句柄访问方式：reference中存储的是稳定的地址，对象变更时只会改变句柄实例数据指针，引用本身不需要修改。</p><p>指针访问方式：优点速度快，节省了指针定位时间开销。</p>]]></content>
+        <content type="html"><![CDATA[<blockquote><p>JAVA程序运行与虚拟机之上，运行时需要内存空间。虚拟机执行JAVA程序的过程中会把它管理的内存划分为不同的数据区域方便管理。</p></blockquote><p>虚拟机管理内存数据区域划分如下图：</p><p><img src="https://github.com/cayzlh/git-img-repository/raw/master/blog/Runtime-data-area.png" alt="虚拟机管理内存数据区域划分"></p><h3 id="数据区域分类"><a href="#数据区域分类" class="headerlink" title="数据区域分类:"></a>数据区域分类:</h3><ul><li>方法区：(Method Area)</li><li>虚拟机栈：(VM Stack)</li><li>本地方法栈 ：(Native Method Stack)</li><li>堆：(Heap)</li><li>程序计数器 ：(Program Counter Register)</li><li>直接内存：(Direct Memory)</li></ul><p>说明：</p><h4 id="程序计数器"><a href="#程序计数器" class="headerlink" title="程序计数器"></a>程序计数器</h4><p>行号指示器，字节码指令的分支、循环、跳转、异常处理、线程恢复(CPU切换)，每条线程都需要一个独立的计数器，线程私有内存互不影响,该区域不会发生内存溢出异常。</p><h4 id="虚拟机栈"><a href="#虚拟机栈" class="headerlink" title="虚拟机栈"></a>虚拟机栈</h4><p>是线程私有的，声明周期与线程相同，虚拟机栈是Java方法执行的内存模型，每个方法被执行时都会创建一个栈帧，即方法运行期间的基础数据结构。<br>栈帧用于存储：局部变量表、操作数栈、动态链接、方法出口等，每个方法执行中都对应虚拟机栈帧从入栈到处栈的过程。</p><p>是一种数据结构，是虚拟机中的局部变量表，对应物理层之上的程序数据模型。</p><p>局部变量表，是一种程序运行数据模型，存放了编译期可知的各种数据类型例如：</p><p>Boolean、byte、char、short、int、float、long、double、对象引用类型(对象内存地址变量，指针或句柄)。<br>程序运行时，根据局部变量表分配栈帧空间大小，在运行中，大小是不变的异常类型：stackOverFlowError 线程请求栈深度大于虚拟机允许深度 OutOfMemory 内存空间耗尽无法进行扩展。</p><h4 id="本地方法栈"><a href="#本地方法栈" class="headerlink" title="本地方法栈"></a>本地方法栈</h4><p>与虚拟机栈类似，虚拟机栈为Java程序服务，本地方法栈支持虚拟机的运行服务，具体实现由虚拟机厂商决定，也会抛出 stackOverFlowError、OutOfMemory异常。</p><h4 id="堆"><a href="#堆" class="headerlink" title="堆"></a>堆</h4><p>是虚拟机管理内存中最大的一部分，被所有线程共享，用于存放对象实例(对象、数组)，物理上不连续的内存空间，由于GC收集器，分代收集。<br>所以划分为：新生代 Eden、From SurVivor空间、To SurVivor空间，allot buffer(分配空间)，可能会划分出多个线程私有的缓冲区，老年代。</p><h4 id="方法区"><a href="#方法区" class="headerlink" title="方法区"></a>方法区</h4><p>与堆一样属于线程共享的内存区域，用于存储虚拟机加载的类信息、常量、静态变量、即时编译器编译后的代码（动态加载OSGI）等数据。理论上属于java虚拟机的一部分，为了区分开来叫做 Non-Heap非堆。</p><p>这个区域可以选择不进行垃圾回收，该区域回收目的主要是常量池的回收，及类型的卸载class,内存区不足时会抛出OutOfMemory异常</p><p>运行时常量池：</p><p>方法区的一部分，Class的版本、字段、接口、方法等，及编译期生成的各种字面量、符号引用，编译类加载后存放在该区域。会抛出OutOfMemory异常。</p><h4 id="直接内存"><a href="#直接内存" class="headerlink" title="直接内存"></a>直接内存</h4><p>直接内存不属于虚拟内存区域，是一种基于通道与缓冲区的IO方式，可以使用本地函数直接分配堆外内存，在堆中存储引用的外部内存地址，通过引用完成对直接引用内存的操作。<br>1.4之后提供的NIO显著提高效率，避免了堆内存与Native内存的来回复制操作，不受虚拟机内存控制，会抛出OUtOfMemory异常。</p>]]></content>
       
       
       <categories>
