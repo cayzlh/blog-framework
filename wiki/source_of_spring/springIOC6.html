@@ -1,0 +1,963 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta name="generator" content="Hexo 5.4.0">
+  <meta charset="utf-8">
+  
+
+  <meta http-equiv="x-dns-prefetch-control" content="on">
+  <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+
+  <meta name="renderer" content="webkit">
+  <meta name="force-rendering" content="webkit">
+  <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+  <meta name="HandheldFriendly" content="True">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <title>Spring源码分析：IoC之注册BeanDefinitions - CAYZLH</title>
+
+  
+  <meta name="description" content="
+本文作者：chenssy
+出处：http://cmsblogs.com/?p=2697
+在学习Spring源码的过程中发现的好站+好贴，感谢作者。Spring版本：Spring 5.0.6.RELEASE
+
+
+获取 Document 对象后，会根据该对象和 Resource 资源对象调用 r...">
+
+  <!-- feed -->
+  
+    <link rel="alternate" href="/atom.xml" title="CAYZLH" type="application/atom+xml">
+  
+
+  
+    
+<link rel="stylesheet" href="/css/main.css">
+
+  
+
+  
+    
+      <meta name="msapplication-TileColor" content="#2d89ef">
+    
+      <meta name="msapplication-config" content="/assets/favicon/browserconfig.xml">
+    
+      <meta name="theme-color" content="#ffffff">
+    
+      <link rel="shortcut icon" href="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/logo/favicon.ico">
+    
+      <link rel="icon" type="image/png" href="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/logo/favicon-192x192.png" sizes="192x192">
+    
+      <link rel="apple-touch-icon" sizes="180x180" href="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/logo/apple-touch-icon.png">
+    
+  
+</head>
+
+<body>
+  
+
+
+  <div class="l_body" id="start">
+    <aside class="l_left">
+    
+
+<header class="header">
+  <div class="logo-wrap">
+  
+    <a class="avatar" href="/">
+      
+        <img no-lazy class="bg" src="https://cdn.jsdelivr.net/gh/cdn-x/placeholder@1.0.2/avatar/round/rainbow64@3x.webp" onerror="javascript:this.classList.add('error');this.src='https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2021/04/16084216181285221618128522255.svg';">
+      
+      <img no-lazy class="avatar" src="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/image/IMG_4207.JPG" onerror="javascript:this.classList.add('error');this.src='https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2021/04/16084216181285221618128522255.svg';">
+    </a>
+  
+  
+    <a class="title" href="/">
+      CAYZLH
+    </a>
+  
+</div>
+
+  <nav class="menu dis-select"><a class="nav-item" href="/">文章</a><a class="nav-item active" href="/wiki/">文档</a><a class="nav-item" href="/talking/">动态</a><a class="nav-item" href="/about/">更多</a></nav>
+</header>
+
+<div class="widgets">
+  
+    
+      
+      
+<div class="widget-wrap" id="toc"><div class="widget-header h4 dis-select"><span class="name">本文目录</span></div><div class="widget-body fs14 wiki"><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/index.html"><span class="toc-text">Spring源码分析</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC1.html"><span class="toc-text">4张图带你读懂Spring IOC的世界</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC2.html"><span class="toc-text">IOC之深入理解SpringIoC</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC24.html"><span class="toc-text">IOC之深入分析PropertyPlaceholderConfigurer</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC25.html"><span class="toc-text">IOC之PropertyPlaceholderConfigurer的应用</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC2_5.html"><span class="toc-text">IOC之Spring统一资源加载策略</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC3.html"><span class="toc-text">IoC之加载BeanDefinition</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC4.html"><span class="toc-text">IOC之获取验证模型</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC5.html"><span class="toc-text">IOC之获取Document对象</span></a></div><div class="doc-tree active"><a class="doc-tree-link active" href="/wiki/source_of_spring/springIOC6.html"><span class="toc-text">IoC之注册BeanDefinitions</span></a>undefined</div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC7.html"><span class="toc-text">IoC之解析Bean：解析import标签</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC8.html"><span class="toc-text">IOC之解析bean标签：开启解析进程</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC9.html"><span class="toc-text">IOC之解析bean标签：BeanDefinition</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC10.html"><span class="toc-text">IoC之解析bean标签：meta、lookup-method、replace-method</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC11.html"><span class="toc-text">IOC之解析bean标签：constructor-arg、property子元素</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC12.html"><span class="toc-text">IoC之解析bean标签：解析自定义标签</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC13.html"><span class="toc-text">IoC之注册解析的BeanDefinitions</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC14.html"><span class="toc-text">IoC之装载BeanDefinitions总结</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC15.html"><span class="toc-text">IOC之开启bean的加载</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC16.html"><span class="toc-text">IOC之从单例缓存中获取单例bean</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC16_4.html"><span class="toc-text">IOC之parentBeanFactory与依赖处理</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC16_5.html"><span class="toc-text">IOC之分析各scope的bean创建</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC16_6.html"><span class="toc-text">IOC之开启Bean的实例化进程</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC16_7.html"><span class="toc-text">IOC之Factory实例化bean</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC16_8.html"><span class="toc-text">IOC之构造函数实例化bean</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC17.html"><span class="toc-text">IOC之属性填充</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC18.html"><span class="toc-text">IOC之循环依赖</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC19.html"><span class="toc-text">IOC之Bean的初始化</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC20.html"><span class="toc-text">IOC之加载Bean——总结篇</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC21.html"><span class="toc-text">IOC之深入分析Aware接口</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC22.html"><span class="toc-text">IOC之深入分析BeanPostProcessor</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC23.html"><span class="toc-text">IOC之深入分析InitializingBean和init-method</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC25_5.html"><span class="toc-text">IOC之深入分析BeanFactoryPostProcessor</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC26.html"><span class="toc-text">IOC之深入分析PropertyOverrideConfigurer</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC27.html"><span class="toc-text">IOC之深入分析Bean的类型转换体系</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC28.html"><span class="toc-text">IOC之自定义类型转换器</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC29.html"><span class="toc-text">IOC之分析BeanWrapper</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC30.html"><span class="toc-text">IOC之bean的实例化策略：InstantiationStrategy</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC31.html"><span class="toc-text">IOC之BeanDefinition注册机：BeanDefinitionRegistry</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC32.html"><span class="toc-text">Spring的环境&属性：PropertySource、Environment、Profile</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC33.html"><span class="toc-text">IOC之分析bean的生命周期</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC34.html"><span class="toc-text">ApplicationContext相关接口架构分析</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC35.html"><span class="toc-text">深入分析ApplicationContext的refresh()</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC36.html"><span class="toc-text">Spring AOP和Spring Transaction源码资料整理</span></a></div></div></div>
+
+    
+  
+    
+      
+      
+  
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+      <div class="widget-wrap" id="related">
+        <div class="widget-header h4 dis-select">
+          <span class="name">更多编程技术</span>
+        </div>
+        <div class="widget-body fs14">
+          
+            
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+                <div class="post-title">
+                  <a href="/wiki/design_patterns/index.html">
+                    设计模式
+                  </a>
+                </div>
+              
+            
+          
+            
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+          
+            
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+                <div class="post-title">
+                  <a href="/wiki/springcloud/index.html">
+                    SpringCloud
+                  </a>
+                </div>
+              
+            
+          
+        </div>
+      </div>
+    
+  
+
+
+    
+  
+</div>
+<footer class="footer"><div class="social-wrap dis-select"><a class="social" href="https://github.com/cayzlh" target="_blank" rel="external nofollow noopener noreferrer"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cdn-x/placeholder@1.0.1/social/08a41b181ce68.svg"></a><a class="social" href="https://telegram.me/Q2F5emxo" target="_blank" rel="external nofollow noopener noreferrer"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/image/guanyuwomen.svg"></a><a class="social" href="/about/#comments" rel="noopener noreferrer"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cdn-x/placeholder@1.0.1/social/942ebbf1a4b91.svg"></a></div></footer>
+
+    </aside>
+    <div class="l_main">
+      
+
+      
+
+  
+  
+  <div class="bread-nav fs12">
+  
+    
+    <div id="breadcrumb">
+      <a class="cap breadcrumb" href="/">主页</a>
+      <span class="sep"></span>
+      
+        <a class="cap breadcrumb" href="/wiki/">文档</a>
+      
+      
+        <span class="sep"></span>
+        <a class="cap breadcrumb" href="/wiki/categories/programmer/index.html">编程技术</a>
+      
+      
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        <span class="sep"></span>
+        <a class="cap breadcrumb" href="/wiki/source_of_spring/index.html">Spring源码分析</a>
+      
+    </div>
+    <div id="post-meta">
+      更新于&nbsp;<time datetime="2021-04-12T15:35:50.042Z">2021-04-12</time>
+    </div>
+  
+  </div>
+
+
+  <article class="content md wiki">
+  <h1 class="article-title"><span>IoC之注册BeanDefinitions</span></h1>
+  <blockquote>
+<p>本文作者：chenssy</p>
+<p>出处：<a target="_blank" rel="external nofollow noopener noreferrer" href="http://cmsblogs.com/?p=2697">http://cmsblogs.com/?p=2697</a></p>
+<p>在学习<code>Spring源码</code>的过程中发现的好站+好贴，感谢作者。Spring版本：<strong>Spring 5.0.6.RELEASE</strong></p>
+</blockquote>
+<hr>
+<p>获取 <code>Document</code> 对象后，会根据该对象和 <code>Resource</code> 资源对象调用 <code>registerBeanDefinitions()</code> 方法，开始注册 <code>BeanDefinitions</code> 之旅。如下：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">registerBeanDefinitions</span><span class="params">(Document doc, Resource resource)</span> <span class="keyword">throws</span> BeanDefinitionStoreException </span>&#123;</span><br><span class="line">  BeanDefinitionDocumentReader documentReader = createBeanDefinitionDocumentReader();</span><br><span class="line">  <span class="keyword">int</span> countBefore = getRegistry().getBeanDefinitionCount();</span><br><span class="line">  documentReader.registerBeanDefinitions(doc, createReaderContext(resource));</span><br><span class="line">  <span class="keyword">return</span> getRegistry().getBeanDefinitionCount() - countBefore;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>首先调用 <code>createBeanDefinitionDocumentReader()</code> 方法实例化 <code>BeanDefinitionDocumentReader</code> 对象，然后获取统计前 <code>BeanDefinition</code> 的个数，最后调用 <code>registerBeanDefinitions()</code> 注册 <code>BeanDefinition</code>。 实例化 <code>BeanDefinitionDocumentReader</code> 对象方法如下：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> BeanDefinitionDocumentReader <span class="title">createBeanDefinitionDocumentReader</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> BeanDefinitionDocumentReader.class.cast(BeanUtils</span><br><span class="line">                                  .instantiateClass(<span class="keyword">this</span>.documentReaderClass));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>注册 <code>BeanDefinition</code> 的方法 <code>registerBeanDefinitions()</code> 是在接口 <code>BeanDefinitionDocumentReader</code> 中定义，如下：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">registerBeanDefinitions</span><span class="params">(Document doc, XmlReaderContext readerContext)</span></span></span><br><span class="line"><span class="function">  <span class="keyword">throws</span> BeanDefinitionStoreException</span>;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p><strong>从给定的 Document 对象中解析定义的 BeanDefinition 并将他们注册到注册表中</strong>。</p>
+</blockquote>
+<p>方法接收两个参数，待解析的 <code>Document</code> 对象，以及解析器的当前上下文，包括目标注册表和被解析的资源。其中 <code>readerContext</code> 是根据 <code>Resource</code> 来创建的，如下：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> XmlReaderContext <span class="title">createReaderContext</span><span class="params">(Resource resource)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> <span class="keyword">new</span> XmlReaderContext(resource, <span class="keyword">this</span>.problemReporter, <span class="keyword">this</span>.eventListener,</span><br><span class="line">                              <span class="keyword">this</span>.sourceExtractor, <span class="keyword">this</span>, getNamespaceHandlerResolver());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>DefaultBeanDefinitionDocumentReader</code> 对该方法提供了实现：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">registerBeanDefinitions</span><span class="params">(Document doc, XmlReaderContext readerContext)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">this</span>.readerContext = readerContext;</span><br><span class="line">  logger.debug(<span class="string">&quot;Loading bean definitions&quot;</span>);</span><br><span class="line">  Element root = doc.getDocumentElement();</span><br><span class="line">  doRegisterBeanDefinitions(root);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>调用 <code>doRegisterBeanDefinitions()</code> 开启注册 <code>BeanDefinition</code> 之旅。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title">doRegisterBeanDefinitions</span><span class="params">(Element root)</span> </span>&#123;</span><br><span class="line">  BeanDefinitionParserDelegate parent = <span class="keyword">this</span>.delegate;</span><br><span class="line">  <span class="keyword">this</span>.delegate = createDelegate(getReaderContext(), root, parent);</span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> (<span class="keyword">this</span>.delegate.isDefaultNamespace(root)) &#123;</span><br><span class="line">    <span class="comment">// 处理 profile</span></span><br><span class="line">    String profileSpec = root.getAttribute(PROFILE_ATTRIBUTE);</span><br><span class="line">    <span class="keyword">if</span> (StringUtils.hasText(profileSpec)) &#123;</span><br><span class="line">      String[] specifiedProfiles = StringUtils.tokenizeToStringArray(</span><br><span class="line">        profileSpec, BeanDefinitionParserDelegate.MULTI_VALUE_ATTRIBUTE_DELIMITERS);</span><br><span class="line">      <span class="keyword">if</span> (!getReaderContext().getEnvironment().acceptsProfiles(specifiedProfiles)) &#123;</span><br><span class="line">        <span class="keyword">if</span> (logger.isInfoEnabled()) &#123;</span><br><span class="line">          logger.info(</span><br><span class="line">            <span class="string">&quot;Skipped XML bean definition file due to specified profiles [&quot;</span> </span><br><span class="line">            + profileSpec +</span><br><span class="line">                      <span class="string">&quot;] not matching: &quot;</span> + getReaderContext().getResource());</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 解析前处理</span></span><br><span class="line">  preProcessXml(root);</span><br><span class="line">  <span class="comment">// 解析</span></span><br><span class="line">  parseBeanDefinitions(root, <span class="keyword">this</span>.delegate);</span><br><span class="line">  <span class="comment">// 解析后处理</span></span><br><span class="line">  postProcessXml(root);</span><br><span class="line"></span><br><span class="line">  <span class="keyword">this</span>.delegate = parent;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>程序首先处理 <code>profile</code>属性，<code>profile</code>主要用于我们切换环境，比如切换开发、测试、生产环境，非常方便。然后调用 <code>parseBeanDefinitions()</code> 进行解析动作，不过在该方法之前之后分别调用 <code>preProcessXml()</code> 和 <code>postProcessXml()</code> 方法来进行前、后处理，目前这两个方法都是空实现，交由子类来实现。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title">preProcessXml</span><span class="params">(Element root)</span> </span>&#123;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title">postProcessXml</span><span class="params">(Element root)</span> </span>&#123;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>parseBeanDefinitions()</code> 定义如下：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title">parseBeanDefinitions</span><span class="params">(Element root, BeanDefinitionParserDelegate delegate)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (delegate.isDefaultNamespace(root)) &#123;</span><br><span class="line">    NodeList nl = root.getChildNodes();</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; nl.getLength(); i++) &#123;</span><br><span class="line">      Node node = nl.item(i);</span><br><span class="line">      <span class="keyword">if</span> (node <span class="keyword">instanceof</span> Element) &#123;</span><br><span class="line">        Element ele = (Element) node;</span><br><span class="line">        <span class="keyword">if</span> (delegate.isDefaultNamespace(ele)) &#123;</span><br><span class="line">          parseDefaultElement(ele, delegate);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">else</span> &#123;</span><br><span class="line">          delegate.parseCustomElement(ele);</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">else</span> &#123;</span><br><span class="line">    delegate.parseCustomElement(root);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>最终解析动作落地在两个方法处：<code>parseDefaultElement(ele, delegate)</code> 和 <code>delegate.parseCustomElement(root)</code>。我们知道在 Spring 有两种 Bean 声明方式：</p>
+<ul>
+<li>配置文件式声明：<code>&lt;bean id=&quot;studentService&quot; class=&quot;org.springframework.core.StudentService&quot;/&gt;</code></li>
+<li>自定义注解方式：<code>&lt;tx:annotation-driven&gt;</code></li>
+</ul>
+<p>两种方式的读取和解析都存在较大的差异，所以采用不同的解析方法，如果根节点或者子节点采用默认命名空间的话，则调用 <code>parseDefaultElement()</code> 进行解析，否则调用 <code>delegate.parseCustomElement()</code> 方法进行自定义解析。 至此，<code>doLoadBeanDefinitions()</code> 中做的三件事情已经全部分析完毕，下面将对 <code>Bean</code> 的解析过程做详细分析说明。</p>
+
+  
+
+
+  </article>
+  
+<div class="related-wrap" id="read-next"><section class="header cap theme"><span>接下来阅读</span></section><section class="body"><div class="post-title h2"><a href="/wiki/source_of_spring/springIOC7.html">IoC之解析Bean：解析import标签</a></div><div class="post-title fs14"><a href="/wiki/source_of_spring/springIOC5.html">上一篇：IOC之获取Document对象</a></div></section></div>
+
+  
+
+  <div class="related-wrap md" id="comments">
+    <div class="cmt-title cap theme">
+      快来参与讨论吧
+    </div>
+    <div class="cmt-body utterances">
+      
+
+<svg class="loading" style="vertical-align: middle;fill: currentColor;overflow: hidden;" viewbox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2709"><path d="M832 512c0-176-144-320-320-320V128c211.2 0 384 172.8 384 384h-64zM192 512c0 176 144 320 320 320v64C300.8 896 128 723.2 128 512h64z" p-id="2710"/></svg>
+
+<div id="utterances" repo="cayzlh/studious-barnacle" issue-term="Spring源码分析" theme="github-light"></div>
+
+    </div>
+  </div>
+
+
+
+
+      
+<footer class="page-footer fs12" style="text-align: center;"><hr><div><p><a href="https://www.cayzlh.com/">🐳Ant丶</a> ©️ 2017-2021</p>
+<p><a target="_blank" rel="external nofollow noopener noreferrer" href="https://beian.miit.gov.cn/">粤ICP备20058712号</a></p>
+</div></footer>
+
+      <div class="float-panel mobile-only" style="display:none">
+  <button type="button" class="sidebar-toggle mobile" onclick="sidebar.toggle()">
+    <svg class="icon" viewbox="0 0 1228 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2849"><path d="M0 0m97.390199 0l973.901995 0q97.390199 0 97.390199 97.390199l0 0q0 97.390199-97.390199 97.3902l-973.901995 0q-97.390199 0-97.390199-97.3902l0 0q0-97.390199 97.390199-97.390199Z" p-id="2850"/><path d="M0 389.560798m97.390199 0l973.901995 0q97.390199 0 97.390199 97.390199l0 0q0 97.390199-97.390199 97.3902l-973.901995 0q-97.390199 0-97.390199-97.3902l0 0q0-97.390199 97.390199-97.390199Z" p-id="2851"/><path d="M0 779.121596m97.390199 0l973.901995 0q97.390199 0 97.390199 97.390199l0 0q0 97.390199-97.390199 97.390199l-973.901995 0q-97.390199 0-97.390199-97.390199l0 0q0-97.390199 97.390199-97.390199Z" p-id="2852"/></svg>
+  </button>
+</div>
+
+    </div>
+  </div>
+  <div class="scripts">
+    <script type="text/javascript">
+  stellar = {
+    // 懒加载 css https://github.com/filamentgroup/loadCSS
+    loadCSS: (href, before, media, attributes) => {
+      var doc = window.document;
+      var ss = doc.createElement("link");
+      var ref;
+      if (before) {
+        ref = before;
+      } else {
+        var refs = (doc.body || doc.getElementsByTagName("head")[0]).childNodes;
+        ref = refs[refs.length - 1];
+      }
+      var sheets = doc.styleSheets;
+      if (attributes) {
+        for (var attributeName in attributes) {
+          if (attributes.hasOwnProperty(attributeName)) {
+            ss.setAttribute(attributeName, attributes[attributeName]);
+          }
+        }
+      }
+      ss.rel = "stylesheet";
+      ss.href = href;
+      ss.media = "only x";
+      function ready(cb) {
+        if (doc.body) {
+          return cb();
+        }
+        setTimeout(function () {
+          ready(cb);
+        });
+      }
+      ready(function () {
+        ref.parentNode.insertBefore(ss, before ? ref : ref.nextSibling);
+      });
+      var onloadcssdefined = function (cb) {
+        var resolvedHref = ss.href;
+        var i = sheets.length;
+        while (i--) {
+          if (sheets[i].href === resolvedHref) {
+            return cb();
+          }
+        }
+        setTimeout(function () {
+          onloadcssdefined(cb);
+        });
+      };
+      function loadCB() {
+        if (ss.addEventListener) {
+          ss.removeEventListener("load", loadCB);
+        }
+        ss.media = media || "all";
+      }
+      if (ss.addEventListener) {
+        ss.addEventListener("load", loadCB);
+      }
+      ss.onloadcssdefined = onloadcssdefined;
+      onloadcssdefined(loadCB);
+      return ss;
+    },
+
+    // 从 butterfly 和 volantis 获得灵感
+    loadScript: (src, opt) => new Promise((resolve, reject) => {
+      var script = document.createElement('script')
+      script.src = src
+      if (opt) {
+        for (let key of Object.keys(opt)) {
+          script[key] = opt[key]
+        }
+      } else {
+        // 默认异步，如果需要同步，第二个参数传入 {} 即可
+        script.async = true
+      }
+      script.onerror = reject
+      script.onload = script.onreadystatechange = function() {
+        const loadState = this.readyState
+        if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+        script.onload = script.onreadystatechange = null
+        resolve()
+      }
+      document.head.appendChild(script)
+    }),
+
+    // https://github.com/jerryc127/hexo-theme-butterfly
+    jQuery: (fn) => {
+      if (typeof jQuery === 'undefined') {
+        stellar.loadScript(stellar.plugins.jQuery).then(fn)
+      } else {
+        fn()
+      }
+    }
+  };
+  stellar.github = 'https://github.com/xaoxuu/hexo-theme-stellar/tree/1.1.0';
+  stellar.config = {
+    date_suffix: {
+      just: '刚刚',
+      min: '分钟前',
+      hour: '小时前',
+      day: '天前',
+      month: '个月前',
+    },
+  };
+
+  // required plugins (only load if needs)
+  stellar.plugins = {
+    jQuery: 'https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js',
+    sitesjs: '/js/plugins/sites.js',
+    friendsjs: '/js/plugins/friends.js',
+  };
+
+  // optional plugins
+  if ('true' == 'true') {
+    stellar.plugins.lazyload = Object.assign({"enable":true,"js":"https://cdn.jsdelivr.net/npm/vanilla-lazyload@17.3.1/dist/lazyload.min.js","transition":"blur"});
+  }
+  if ('true' == 'true') {
+    stellar.plugins.swiper = Object.assign({"enable":true,"css":"https://unpkg.com/swiper/swiper-bundle.min.css","js":"https://unpkg.com/swiper/swiper-bundle.min.js"});
+  }
+  if ('' == 'true') {
+    stellar.plugins.scrollreveal = Object.assign({"enable":null,"js":"https://cdn.jsdelivr.net/npm/scrollreveal@4.0.9/dist/scrollreveal.min.js","distance":"8px","duration":500,"interval":100,"scale":1});
+  }
+  if ('true' == 'true') {
+    stellar.plugins.preload = Object.assign({"enable":true,"service":"flying_pages","instant_page":"https://cdn.jsdelivr.net/gh/volantis-x/cdn-volantis@4.1.2/js/instant_page.js","flying_pages":"https://cdn.jsdelivr.net/gh/gijo-varghese/flying-pages@2.1.2/flying-pages.min.js"});
+  }
+</script>
+
+<!-- required -->
+
+  
+<script src="/js/main.js" async></script>
+
+
+
+<!-- optional -->
+
+  <script>
+  function utterances(){
+    if(!document.getElementById("utterances"))return;
+    setTimeout(function() {
+      var checkUtterances = setInterval(function () {
+        var el = document.getElementById("utterances");
+        if (!el) return
+        clearInterval(checkUtterances)
+        try {
+          el.innerHTML="";
+        } catch (error) {}
+        var script = document.createElement('script');
+        script.src = 'https://utteranc.es/client.js';
+        const keys = ['repo', 'issue-term', 'issue-number', 'theme', 'label', 'crossorigin'];
+        keys.forEach((key, i) => {
+          if (el.attributes[key] && el.attributes[key].value) {
+            script.setAttribute(key, el.attributes[key].value);
+          }
+        });
+        el.appendChild(script);
+       }, 200)
+    });
+  }
+  utterances();
+</script>
+
+
+
+
+<!-- inject -->
+
+
+  </div>
+</body>
+</html>

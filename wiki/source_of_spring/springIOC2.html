@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta name="generator" content="Hexo 5.4.0">
+  <meta charset="utf-8">
+  
+
+  <meta http-equiv="x-dns-prefetch-control" content="on">
+  <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+
+  <meta name="renderer" content="webkit">
+  <meta name="force-rendering" content="webkit">
+  <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+  <meta name="HandheldFriendly" content="True">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <title>Spring源码分析：IOC之深入理解SpringIoC - CAYZLH</title>
+
+  
+  <meta name="description" content="摘要
+本文作者：chenssy
+出处：http://cmsblogs.com/?p=2652
+在学习Spring源码的过程中发现的好站+好贴，感谢作者。Spring版本：Spring 5.0.6.RELEASE
+
+IOC 理论IoC 全称为 Inversion of Control，翻译为 “...">
+
+  <!-- feed -->
+  
+    <link rel="alternate" href="/atom.xml" title="CAYZLH" type="application/atom+xml">
+  
+
+  
+    
+<link rel="stylesheet" href="/css/main.css">
+
+  
+
+  
+    
+      <meta name="msapplication-TileColor" content="#2d89ef">
+    
+      <meta name="msapplication-config" content="/assets/favicon/browserconfig.xml">
+    
+      <meta name="theme-color" content="#ffffff">
+    
+      <link rel="shortcut icon" href="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/logo/favicon.ico">
+    
+      <link rel="icon" type="image/png" href="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/logo/favicon-192x192.png" sizes="192x192">
+    
+      <link rel="apple-touch-icon" sizes="180x180" href="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/logo/apple-touch-icon.png">
+    
+  
+</head>
+
+<body>
+  
+
+
+  <div class="l_body" id="start">
+    <aside class="l_left">
+    
+
+<header class="header">
+  <div class="logo-wrap">
+  
+    <a class="avatar" href="/">
+      
+        <img no-lazy class="bg" src="https://cdn.jsdelivr.net/gh/cdn-x/placeholder@1.0.2/avatar/round/rainbow64@3x.webp" onerror="javascript:this.classList.add('error');this.src='https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2021/04/16084216181285221618128522255.svg';">
+      
+      <img no-lazy class="avatar" src="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/image/IMG_4207.JPG" onerror="javascript:this.classList.add('error');this.src='https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2021/04/16084216181285221618128522255.svg';">
+    </a>
+  
+  
+    <a class="title" href="/">
+      CAYZLH
+    </a>
+  
+</div>
+
+  <nav class="menu dis-select"><a class="nav-item" href="/">文章</a><a class="nav-item active" href="/wiki/">文档</a><a class="nav-item" href="/talking/">动态</a><a class="nav-item" href="/about/">更多</a></nav>
+</header>
+
+<div class="widgets">
+  
+    
+      
+      
+<div class="widget-wrap" id="toc"><div class="widget-header h4 dis-select"><span class="name">本文目录</span></div><div class="widget-body fs14 wiki"><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/index.html"><span class="toc-text">Spring源码分析</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC1.html"><span class="toc-text">4张图带你读懂Spring IOC的世界</span></a></div><div class="doc-tree active"><a class="doc-tree-link active" href="/wiki/source_of_spring/springIOC2.html"><span class="toc-text">IOC之深入理解SpringIoC</span></a><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%91%98%E8%A6%81"><span class="toc-text">摘要</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#IOC-%E7%90%86%E8%AE%BA"><span class="toc-text">IOC 理论</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%9E%84%E9%80%A0%E5%99%A8%E6%B3%A8%E5%85%A5"><span class="toc-text">构造器注入</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#setter-%E6%96%B9%E6%B3%95%E6%B3%A8%E5%85%A5"><span class="toc-text">setter 方法注入</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%8E%A5%E5%8F%A3%E6%96%B9%E5%BC%8F%E6%B3%A8%E5%85%A5"><span class="toc-text">接口方式注入</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%90%84%E4%B8%AA%E7%BB%84%E4%BB%B6"><span class="toc-text">各个组件</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Resource%E4%BD%93%E7%B3%BB"><span class="toc-text">Resource体系</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#BeanFactory-%E4%BD%93%E7%B3%BB"><span class="toc-text">BeanFactory 体系</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Beandefinition-%E4%BD%93%E7%B3%BB"><span class="toc-text">Beandefinition 体系</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#BeandefinitionReader%E4%BD%93%E7%B3%BB"><span class="toc-text">BeandefinitionReader体系</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#ApplicationContext%E4%BD%93%E7%B3%BB"><span class="toc-text">ApplicationContext体系</span></a></li></ol></li></ol></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC24.html"><span class="toc-text">IOC之深入分析PropertyPlaceholderConfigurer</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC25.html"><span class="toc-text">IOC之PropertyPlaceholderConfigurer的应用</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC2_5.html"><span class="toc-text">IOC之Spring统一资源加载策略</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC3.html"><span class="toc-text">IoC之加载BeanDefinition</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC4.html"><span class="toc-text">IOC之获取验证模型</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC5.html"><span class="toc-text">IOC之获取Document对象</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC6.html"><span class="toc-text">IoC之注册BeanDefinitions</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC7.html"><span class="toc-text">IoC之解析Bean：解析import标签</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC8.html"><span class="toc-text">IOC之解析bean标签：开启解析进程</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC9.html"><span class="toc-text">IOC之解析bean标签：BeanDefinition</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC10.html"><span class="toc-text">IoC之解析bean标签：meta、lookup-method、replace-method</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC11.html"><span class="toc-text">IOC之解析bean标签：constructor-arg、property子元素</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC12.html"><span class="toc-text">IoC之解析bean标签：解析自定义标签</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC13.html"><span class="toc-text">IoC之注册解析的BeanDefinitions</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC14.html"><span class="toc-text">IoC之装载BeanDefinitions总结</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC15.html"><span class="toc-text">IOC之开启bean的加载</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC16.html"><span class="toc-text">IOC之从单例缓存中获取单例bean</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC16_4.html"><span class="toc-text">IOC之parentBeanFactory与依赖处理</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC16_5.html"><span class="toc-text">IOC之分析各scope的bean创建</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC16_6.html"><span class="toc-text">IOC之开启Bean的实例化进程</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC16_7.html"><span class="toc-text">IOC之Factory实例化bean</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC16_8.html"><span class="toc-text">IOC之构造函数实例化bean</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC17.html"><span class="toc-text">IOC之属性填充</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC18.html"><span class="toc-text">IOC之循环依赖</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC19.html"><span class="toc-text">IOC之Bean的初始化</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC20.html"><span class="toc-text">IOC之加载Bean——总结篇</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC21.html"><span class="toc-text">IOC之深入分析Aware接口</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC22.html"><span class="toc-text">IOC之深入分析BeanPostProcessor</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC23.html"><span class="toc-text">IOC之深入分析InitializingBean和init-method</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC25_5.html"><span class="toc-text">IOC之深入分析BeanFactoryPostProcessor</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC26.html"><span class="toc-text">IOC之深入分析PropertyOverrideConfigurer</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC27.html"><span class="toc-text">IOC之深入分析Bean的类型转换体系</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC28.html"><span class="toc-text">IOC之自定义类型转换器</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC29.html"><span class="toc-text">IOC之分析BeanWrapper</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC30.html"><span class="toc-text">IOC之bean的实例化策略：InstantiationStrategy</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC31.html"><span class="toc-text">IOC之BeanDefinition注册机：BeanDefinitionRegistry</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC32.html"><span class="toc-text">Spring的环境&属性：PropertySource、Environment、Profile</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC33.html"><span class="toc-text">IOC之分析bean的生命周期</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC34.html"><span class="toc-text">ApplicationContext相关接口架构分析</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC35.html"><span class="toc-text">深入分析ApplicationContext的refresh()</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC36.html"><span class="toc-text">Spring AOP和Spring Transaction源码资料整理</span></a></div></div></div>
+
+    
+  
+    
+      
+      
+  
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+      <div class="widget-wrap" id="related">
+        <div class="widget-header h4 dis-select">
+          <span class="name">更多编程技术</span>
+        </div>
+        <div class="widget-body fs14">
+          
+            
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+                <div class="post-title">
+                  <a href="/wiki/design_patterns/index.html">
+                    设计模式
+                  </a>
+                </div>
+              
+            
+          
+            
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+          
+            
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+                <div class="post-title">
+                  <a href="/wiki/springcloud/index.html">
+                    SpringCloud
+                  </a>
+                </div>
+              
+            
+          
+        </div>
+      </div>
+    
+  
+
+
+    
+  
+</div>
+<footer class="footer"><div class="social-wrap dis-select"><a class="social" href="https://github.com/cayzlh" target="_blank" rel="external nofollow noopener noreferrer"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cdn-x/placeholder@1.0.1/social/08a41b181ce68.svg"></a><a class="social" href="https://telegram.me/Q2F5emxo" target="_blank" rel="external nofollow noopener noreferrer"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/image/guanyuwomen.svg"></a><a class="social" href="/about/#comments" rel="noopener noreferrer"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cdn-x/placeholder@1.0.1/social/942ebbf1a4b91.svg"></a></div></footer>
+
+    </aside>
+    <div class="l_main">
+      
+
+      
+
+  
+  
+  <div class="bread-nav fs12">
+  
+    
+    <div id="breadcrumb">
+      <a class="cap breadcrumb" href="/">主页</a>
+      <span class="sep"></span>
+      
+        <a class="cap breadcrumb" href="/wiki/">文档</a>
+      
+      
+        <span class="sep"></span>
+        <a class="cap breadcrumb" href="/wiki/categories/programmer/index.html">编程技术</a>
+      
+      
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        <span class="sep"></span>
+        <a class="cap breadcrumb" href="/wiki/source_of_spring/index.html">Spring源码分析</a>
+      
+    </div>
+    <div id="post-meta">
+      更新于&nbsp;<time datetime="2021-04-12T15:35:50.042Z">2021-04-12</time>
+    </div>
+  
+  </div>
+
+
+  <article class="content md wiki">
+  <h1 class="article-title"><span>IOC之深入理解SpringIoC</span></h1>
+  <h2 id="摘要"><a href="#摘要" class="headerlink" title="摘要"></a>摘要</h2><blockquote>
+<p>本文作者：chenssy</p>
+<p>出处：<a target="_blank" rel="external nofollow noopener noreferrer" href="http://cmsblogs.com/?p=2652">http://cmsblogs.com/?p=2652</a></p>
+<p>在学习<code>Spring源码</code>的过程中发现的好站+好贴，感谢作者。Spring版本：<strong>Spring 5.0.6.RELEASE</strong></p>
+</blockquote>
+<h2 id="IOC-理论"><a href="#IOC-理论" class="headerlink" title="IOC 理论"></a>IOC 理论</h2><p>IoC 全称为 <code>Inversion of Control</code>，翻译为 “控制反转”，它还有一个别名为 DI（<code>Dependency Injection</code>）,即依赖注入。</p>
+<p>如何理解“控制反转”好呢？理解好它的关键在于我们需要回答如下四个问题：</p>
+<ol>
+<li><strong>谁控制谁</strong></li>
+<li><strong>控制什么</strong></li>
+<li><strong>为何是反转</strong></li>
+<li><strong>哪些方面反转了</strong></li>
+</ol>
+<p>在回答这四个问题之前，我们先看 IOC 的定义：</p>
+<blockquote>
+<p><strong>所谓 IOC ，就是由 Spring IOC 容器来负责对象的生命周期和对象之间的关系</strong></p>
+</blockquote>
+<p>上面这句话是整个 IoC 理论的核心。如何来理解这句话？我们引用一个例子来走阐述（看完该例子上面四个问题也就不是问题了）。</p>
+<p>以找女朋友为例（对于程序猿来说这个值得探究的问题）。一般情况下我们是如何来找女朋友的呢？首先我们需要根据自己的需求（漂亮、身材好、性格好）找一个妹子，然后到处打听她的兴趣爱好、微信、电话号码，然后各种投其所好送其所要，最后追到手。如下：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 年轻小伙子</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">YoungMan</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> BeautifulGirl beautifulGirl;</span><br><span class="line"></span><br><span class="line">    YoungMan()&#123;</span><br><span class="line">        <span class="comment">// 可能你比较牛逼，指腹为婚</span></span><br><span class="line">        <span class="comment">// beautifulGirl = new BeautifulGirl();</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">setBeautifulGirl</span><span class="params">(BeautifulGirl beautifulGirl)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">this</span>.beautifulGirl = beautifulGirl;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span></span>&#123;</span><br><span class="line">        YoungMan you = <span class="keyword">new</span> YoungMan();</span><br><span class="line">        BeautifulGirl beautifulGirl = <span class="keyword">new</span> BeautifulGirl(<span class="string">&quot;你的各种条件&quot;</span>);</span><br><span class="line">        beautifulGirl.setxxx(<span class="string">&quot;各种投其所好&quot;</span>);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 然后你有女票了</span></span><br><span class="line">        you.setBeautifulGirl(beautifulGirl);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这就是我们通常做事的方式，如果我们需要某个对象，一般都是采用这种直接创建的方式(<code>new BeautifulGirl()</code>)，这个过程复杂而又繁琐，而且我们必须要面对每个环节，同时使用完成之后我们还要负责销毁它，在这种情况下我们的对象与它所依赖的对象耦合在一起。</p>
+<p>其实我们需要思考一个问题？我们每次用到自己依赖的对象真的需要自己去创建吗？我们知道，我们依赖对象其实并不是依赖该对象本身，而是依赖它所提供的服务，只要在我们需要它的时候，它能够及时提供服务即可，至于它是我们主动去创建的还是别人送给我们的，其实并不是那么重要。再说了，相比于自己千辛万苦去创建它还要管理、善后而言，直接有人送过来是不是显得更加好呢？</p>
+<p>这个给我们送东西的“人” 就是 IoC，在上面的例子中，它就相当于一个婚介公司，作为一个婚介公司它管理着很多男男女女的资料，当我们需要一个女朋友的时候，直接跟婚介公司提出我们的需求，婚介公司则会根据我们的需求提供一个妹子给我们，我们只需要负责谈恋爱，生猴子就行了。你看，这样是不是很简单明了。</p>
+<p>诚然，作为婚介公司的 IoC 帮我们省略了找女朋友的繁杂过程，将原来的主动寻找变成了现在的被动接受（符合我们的要求），更加简洁轻便。你想啊，原来你还得鞍马前后，各种巴结，什么东西都需要自己去亲力亲为，现在好了，直接有人把现成的送过来，多么美妙的事情啊。所以，简单点说，IoC 的理念就是<strong>让别人为你服务</strong>，如下图（<strong>摘自Spring揭秘</strong>）：</p>
+<p><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/kJbaSJ.jpg" alt="kJbaSJ"></p>
+<p>在没有引入 IoC 的时候，被注入的对象直接依赖于被依赖的对象，有了 IoC 后，两者及其他们的关系都是通过 Ioc Service Provider 来统一管理维护的。被注入的对象需要什么，直接跟 IoC Service Provider 打声招呼，后者就会把相应的被依赖对象注入到被注入的对象中，从而达到 IOC Service Provider 为被注入对象服务的目的。<strong>所以 IoC 就是这么简单！原来是需要什么东西自己去拿，现在是需要什么东西让别人（IOC Service Provider）送过来</strong></p>
+<p>现在在看上面那四个问题，答案就显得非常明显了:</p>
+<ol>
+<li><strong>谁控制谁</strong>：在传统的开发模式下，我们都是采用直接 new 一个对象的方式来创建对象，也就是说你依赖的对象直接由你自己控制，但是有了 IOC 容器后，则直接由 IoC 容器来控制。所以“谁控制谁”，当然是 IoC 容器控制对象。</li>
+<li><strong>控制什么</strong>：控制对象。</li>
+<li><strong>为何是反转</strong>：没有 IoC 的时候我们都是在自己对象中主动去创建被依赖的对象，这是正转。但是有了 IoC 后，所依赖的对象直接由 IoC 容器创建后注入到被注入的对象中，依赖的对象由原来的主动获取变成被动接受，所以是反转。</li>
+<li><strong>哪些方面反转了</strong>：所依赖对象的获取被反转了。</li>
+</ol>
+<p>妹子有了，但是如何拥有妹子呢？这也是一门学问。</p>
+<ol>
+<li>可能你比较牛逼，刚刚出生的时候就指腹为婚了。</li>
+<li>大多数情况我们还是会考虑自己想要什么样的妹子，所以还是需要向婚介公司打招呼的。</li>
+<li>还有一种情况就是，你根本就不知道自己想要什么样的妹子，直接跟婚介公司说，我就要一个这样的妹子。</li>
+</ol>
+<p>所以，<code>IOC Service Provider</code> 为被注入对象提供被依赖对象也有如下几种方式：<code>构造方法注入</code>、<code>setter方法注入</code>、<code>接口注入</code>。</p>
+<h3 id="构造器注入"><a href="#构造器注入" class="headerlink" title="构造器注入"></a>构造器注入</h3><p>构造器注入，顾名思义就是被注入的对象通过在其构造方法中声明依赖对象的参数列表，让外部知道它需要哪些依赖对象。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">YoungMan(BeautifulGirl beautifulGirl)&#123;</span><br><span class="line">        <span class="keyword">this</span>.beautifulGirl = beautifulGirl;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>构造器注入方式比较直观，对象构造完毕后就可以直接使用，这就好比你出生你家里就给你指定了你媳妇。</p>
+<h3 id="setter-方法注入"><a href="#setter-方法注入" class="headerlink" title="setter 方法注入"></a>setter 方法注入</h3><p>对于 JavaBean 对象而言，我们一般都是通过 getter 和 setter 方法来访问和设置对象的属性。所以，当前对象只需要为其所依赖的对象提供相对应的 setter 方法，就可以通过该方法将相应的依赖对象设置到被注入对象中。如下：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">YoungMan</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> BeautifulGirl beautifulGirl;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">setBeautifulGirl</span><span class="params">(BeautifulGirl beautifulGirl)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">this</span>.beautifulGirl = beautifulGirl;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>相比于构造器注入，setter 方式注入会显得比较宽松灵活些，它可以在任何时候进行注入（当然是在使用依赖对象之前），这就好比你可以先把自己想要的妹子想好了，然后再跟婚介公司打招呼，你可以要林志玲款式的，赵丽颖款式的，甚至凤姐哪款的，随意性较强。</p>
+<h3 id="接口方式注入"><a href="#接口方式注入" class="headerlink" title="接口方式注入"></a>接口方式注入</h3><p>接口方式注入显得比较霸道，因为它需要被依赖的对象实现不必要的接口，带有侵入性。一般都不推荐这种方式。</p>
+<hr>
+<p>关于 IOC 理论部分，笔者不在阐述，这里推荐几篇博客阅读：</p>
+<ul>
+<li><a target="_blank" rel="external nofollow noopener noreferrer" href="http://www.cnblogs.com/xdp-gacl/p/4249939.html">谈谈对Spring IOC的理解</a>：<a target="_blank" rel="external nofollow noopener noreferrer" href="http://www.cnblogs.com/xdp-gacl/p/4249939.html">http://www.cnblogs.com/xdp-gacl/p/4249939.html</a></li>
+<li>[Spring的IOC原理<a target="_blank" rel="external nofollow noopener noreferrer" href="https://blog.csdn.net/m13666368773/article/details/7802126">通俗解释一下]</a>：<a target="_blank" rel="external nofollow noopener noreferrer" href="https://blog.csdn.net/m13666368773/article/details/7802126">https://blog.csdn.net/m13666368773/article/details/7802126</a></li>
+<li><a target="_blank" rel="external nofollow noopener noreferrer" href="https://blog.csdn.net/it_man/article/details/4402245">spring ioc原理（看完后大家可以自己写一个spring）</a>：<a target="_blank" rel="external nofollow noopener noreferrer" href="https://blog.csdn.net/it_man/article/details/4402245">https://blog.csdn.net/it_man/article/details/4402245</a></li>
+</ul>
+<h2 id="各个组件"><a href="#各个组件" class="headerlink" title="各个组件"></a>各个组件</h2><p>先看下图（摘自:<a target="_blank" rel="external nofollow noopener noreferrer" href="http://singleant.iteye.com/blog/1177358%EF%BC%89">http://singleant.iteye.com/blog/1177358）</a></p>
+<p><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/KyiN5i.jpg" alt="KyiN5i"></p>
+<p>该图为 <code>ClassPathXmlApplicationContext</code> 的类继承体系结构，虽然只有一部分，但是它基本上包含了 IOC 体系中大部分的核心类和接口。</p>
+<p>下面我们就针对这个图进行简单的拆分和补充说明。</p>
+<h3 id="Resource体系"><a href="#Resource体系" class="headerlink" title="Resource体系"></a>Resource体系</h3><p><code>Resource</code>，对资源的抽象，它的每一个实现类都代表了一种资源的访问策略，如<code>ClasspathResource</code> 、 <code>URLResource</code> ，<code>FileSystemResource</code> 等。</p>
+<p>[<img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/gUeoM5.jpg" alt="gUeoM5"></p>
+<p>有了资源，就应该有资源加载，<code>Spring</code> 利用 <code>ResourceLoader</code> 来进行统一资源加载，类图如下：</p>
+<p><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/FKcAl6.jpg" alt="FKcAl6"></p>
+<h3 id="BeanFactory-体系"><a href="#BeanFactory-体系" class="headerlink" title="BeanFactory 体系"></a>BeanFactory 体系</h3><p><code>BeanFactory</code> 是一个非常纯粹的 <code>bean</code> 容器，它是 <code>IOC</code> 必备的数据结构，其中 <code>BeanDefinition</code> 是她的基本结构，它内部维护着一个 <code>BeanDefinition map</code> ，并可根据 <code>BeanDefinition</code> 的描述进行 <code>bean</code> 的创建和管理。</p>
+<p><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/EXiivT.jpg" alt="EXiivT"></p>
+<p><code>BeanFacoty</code> 有三个直接子类 <code>ListableBeanFactory</code>、<code>HierarchicalBeanFactory</code> 和 <code>AutowireCapableBeanFactory</code>，<code>DefaultListableBeanFactory</code> 为最终默认实现，它实现了所有接口。</p>
+<h3 id="Beandefinition-体系"><a href="#Beandefinition-体系" class="headerlink" title="Beandefinition 体系"></a>Beandefinition 体系</h3><p><code>BeanDefinition</code> 用来描述 <code>Spring</code> 中的 <code>Bean</code> 对象。</p>
+<p><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/ROyten.jpg" alt="ROyten"></p>
+<h3 id="BeandefinitionReader体系"><a href="#BeandefinitionReader体系" class="headerlink" title="BeandefinitionReader体系"></a>BeandefinitionReader体系</h3><p><code>BeanDefinitionReader</code> 的作用是读取 <code>Spring</code> 的配置文件的内容，并将其转换成 <code>Ioc</code> 容器内部的数据结构：<code>BeanDefinition</code>。</p>
+<p>[<img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/le62Sh.jpg" alt="le62Sh"></p>
+<h3 id="ApplicationContext体系"><a href="#ApplicationContext体系" class="headerlink" title="ApplicationContext体系"></a>ApplicationContext体系</h3><p>这个就是大名鼎鼎的 <code>Spring</code> 容器，它叫做应用上下文，与我们应用息息相关，她继承 <code>BeanFactory</code>，所以它是 <code>BeanFactory</code> 的扩展升级版，如果<code>BeanFactory</code> 是屌丝的话，那么 <code>ApplicationContext</code> 则是名副其实的高富帅。由于 <code>ApplicationContext</code> 的结构就决定了它与 <code>BeanFactory</code> 的不同，其主要区别有：</p>
+<ol>
+<li>继承 <code>MessageSource</code>，提供国际化的标准访问策略。</li>
+<li>继承 <code>ApplicationEventPublisher</code> ，提供强大的事件机制。</li>
+<li>扩展 <code>ResourceLoader</code>，可以用来加载多个 <code>Resource</code>，可以灵活访问不同的资源。</li>
+<li>对 <code>Web</code> 应用的支持。</li>
+</ol>
+<p>下图来源：<a target="_blank" rel="external nofollow noopener noreferrer" href="https://blog.csdn.net/yujin753/article/details/47043143">https://blog.csdn.net/yujin753/article/details/47043143</a></p>
+<p><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/uPic/NFNQp8.jpg" alt="NFNQp8"></p>
+<p>上面五个体系可以说是<code>Spring IoC</code>中最核心的部分，后面博文也是针对这五个部分进行源码分析。其实 <code>IoC</code> 咋一看还是挺简单的，无非就是将配置文件（暂且认为是 <code>xml</code> 文件）进行解析（分析 <code>xml</code> 谁不会啊），然后放到一个 <code>Map</code> 里面就差不多了，初看有道理，其实要面临的问题还是有很多的，下面就劳烦各位看客跟着 LZ 博客来一步一步揭开 <code>Spring IoC</code> 的神秘面纱。</p>
+<blockquote>
+<p><strong>此系列博文为 LZ 学习、研究 Spring 机制和源码的学习笔记，会涉及参考别人的博文和书籍内容，如有雷同，纯属借鉴，当然 LZ 会标明参考来源。同时由于知识面和能力的问题，文章中难免会出现错误之处，如有，望各位大佬指出，不胜感激</strong>。 <strong>LZ 写此系列博客时，Spring 最新版本为 5.0.6.RELEASE ，所以此系列博客所有源码来源均为 5.0.6.RELEASE</strong>。</p>
+</blockquote>
+
+  
+
+
+  </article>
+  
+<div class="related-wrap" id="read-next"><section class="header cap theme"><span>接下来阅读</span></section><section class="body"><div class="post-title h2"><a href="/wiki/source_of_spring/springIOC24.html">IOC之深入分析PropertyPlaceholderConfigurer</a></div><div class="post-title fs14"><a href="/wiki/source_of_spring/springIOC1.html">上一篇：4张图带你读懂Spring IOC的世界</a></div></section></div>
+
+  
+
+  <div class="related-wrap md" id="comments">
+    <div class="cmt-title cap theme">
+      快来参与讨论吧
+    </div>
+    <div class="cmt-body utterances">
+      
+
+<svg class="loading" style="vertical-align: middle;fill: currentColor;overflow: hidden;" viewbox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2709"><path d="M832 512c0-176-144-320-320-320V128c211.2 0 384 172.8 384 384h-64zM192 512c0 176 144 320 320 320v64C300.8 896 128 723.2 128 512h64z" p-id="2710"/></svg>
+
+<div id="utterances" repo="cayzlh/studious-barnacle" issue-term="Spring源码分析" theme="github-light"></div>
+
+    </div>
+  </div>
+
+
+
+
+      
+<footer class="page-footer fs12" style="text-align: center;"><hr><div><p><a href="https://www.cayzlh.com/">🐳Ant丶</a> ©️ 2017-2021</p>
+<p><a target="_blank" rel="external nofollow noopener noreferrer" href="https://beian.miit.gov.cn/">粤ICP备20058712号</a></p>
+</div></footer>
+
+      <div class="float-panel mobile-only" style="display:none">
+  <button type="button" class="sidebar-toggle mobile" onclick="sidebar.toggle()">
+    <svg class="icon" viewbox="0 0 1228 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2849"><path d="M0 0m97.390199 0l973.901995 0q97.390199 0 97.390199 97.390199l0 0q0 97.390199-97.390199 97.3902l-973.901995 0q-97.390199 0-97.390199-97.3902l0 0q0-97.390199 97.390199-97.390199Z" p-id="2850"/><path d="M0 389.560798m97.390199 0l973.901995 0q97.390199 0 97.390199 97.390199l0 0q0 97.390199-97.390199 97.3902l-973.901995 0q-97.390199 0-97.390199-97.3902l0 0q0-97.390199 97.390199-97.390199Z" p-id="2851"/><path d="M0 779.121596m97.390199 0l973.901995 0q97.390199 0 97.390199 97.390199l0 0q0 97.390199-97.390199 97.390199l-973.901995 0q-97.390199 0-97.390199-97.390199l0 0q0-97.390199 97.390199-97.390199Z" p-id="2852"/></svg>
+  </button>
+</div>
+
+    </div>
+  </div>
+  <div class="scripts">
+    <script type="text/javascript">
+  stellar = {
+    // 懒加载 css https://github.com/filamentgroup/loadCSS
+    loadCSS: (href, before, media, attributes) => {
+      var doc = window.document;
+      var ss = doc.createElement("link");
+      var ref;
+      if (before) {
+        ref = before;
+      } else {
+        var refs = (doc.body || doc.getElementsByTagName("head")[0]).childNodes;
+        ref = refs[refs.length - 1];
+      }
+      var sheets = doc.styleSheets;
+      if (attributes) {
+        for (var attributeName in attributes) {
+          if (attributes.hasOwnProperty(attributeName)) {
+            ss.setAttribute(attributeName, attributes[attributeName]);
+          }
+        }
+      }
+      ss.rel = "stylesheet";
+      ss.href = href;
+      ss.media = "only x";
+      function ready(cb) {
+        if (doc.body) {
+          return cb();
+        }
+        setTimeout(function () {
+          ready(cb);
+        });
+      }
+      ready(function () {
+        ref.parentNode.insertBefore(ss, before ? ref : ref.nextSibling);
+      });
+      var onloadcssdefined = function (cb) {
+        var resolvedHref = ss.href;
+        var i = sheets.length;
+        while (i--) {
+          if (sheets[i].href === resolvedHref) {
+            return cb();
+          }
+        }
+        setTimeout(function () {
+          onloadcssdefined(cb);
+        });
+      };
+      function loadCB() {
+        if (ss.addEventListener) {
+          ss.removeEventListener("load", loadCB);
+        }
+        ss.media = media || "all";
+      }
+      if (ss.addEventListener) {
+        ss.addEventListener("load", loadCB);
+      }
+      ss.onloadcssdefined = onloadcssdefined;
+      onloadcssdefined(loadCB);
+      return ss;
+    },
+
+    // 从 butterfly 和 volantis 获得灵感
+    loadScript: (src, opt) => new Promise((resolve, reject) => {
+      var script = document.createElement('script')
+      script.src = src
+      if (opt) {
+        for (let key of Object.keys(opt)) {
+          script[key] = opt[key]
+        }
+      } else {
+        // 默认异步，如果需要同步，第二个参数传入 {} 即可
+        script.async = true
+      }
+      script.onerror = reject
+      script.onload = script.onreadystatechange = function() {
+        const loadState = this.readyState
+        if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+        script.onload = script.onreadystatechange = null
+        resolve()
+      }
+      document.head.appendChild(script)
+    }),
+
+    // https://github.com/jerryc127/hexo-theme-butterfly
+    jQuery: (fn) => {
+      if (typeof jQuery === 'undefined') {
+        stellar.loadScript(stellar.plugins.jQuery).then(fn)
+      } else {
+        fn()
+      }
+    }
+  };
+  stellar.github = 'https://github.com/xaoxuu/hexo-theme-stellar/tree/1.1.0';
+  stellar.config = {
+    date_suffix: {
+      just: '刚刚',
+      min: '分钟前',
+      hour: '小时前',
+      day: '天前',
+      month: '个月前',
+    },
+  };
+
+  // required plugins (only load if needs)
+  stellar.plugins = {
+    jQuery: 'https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js',
+    sitesjs: '/js/plugins/sites.js',
+    friendsjs: '/js/plugins/friends.js',
+  };
+
+  // optional plugins
+  if ('true' == 'true') {
+    stellar.plugins.lazyload = Object.assign({"enable":true,"js":"https://cdn.jsdelivr.net/npm/vanilla-lazyload@17.3.1/dist/lazyload.min.js","transition":"blur"});
+  }
+  if ('true' == 'true') {
+    stellar.plugins.swiper = Object.assign({"enable":true,"css":"https://unpkg.com/swiper/swiper-bundle.min.css","js":"https://unpkg.com/swiper/swiper-bundle.min.js"});
+  }
+  if ('' == 'true') {
+    stellar.plugins.scrollreveal = Object.assign({"enable":null,"js":"https://cdn.jsdelivr.net/npm/scrollreveal@4.0.9/dist/scrollreveal.min.js","distance":"8px","duration":500,"interval":100,"scale":1});
+  }
+  if ('true' == 'true') {
+    stellar.plugins.preload = Object.assign({"enable":true,"service":"flying_pages","instant_page":"https://cdn.jsdelivr.net/gh/volantis-x/cdn-volantis@4.1.2/js/instant_page.js","flying_pages":"https://cdn.jsdelivr.net/gh/gijo-varghese/flying-pages@2.1.2/flying-pages.min.js"});
+  }
+</script>
+
+<!-- required -->
+
+  
+<script src="/js/main.js" async></script>
+
+
+
+<!-- optional -->
+
+  <script>
+  function utterances(){
+    if(!document.getElementById("utterances"))return;
+    setTimeout(function() {
+      var checkUtterances = setInterval(function () {
+        var el = document.getElementById("utterances");
+        if (!el) return
+        clearInterval(checkUtterances)
+        try {
+          el.innerHTML="";
+        } catch (error) {}
+        var script = document.createElement('script');
+        script.src = 'https://utteranc.es/client.js';
+        const keys = ['repo', 'issue-term', 'issue-number', 'theme', 'label', 'crossorigin'];
+        keys.forEach((key, i) => {
+          if (el.attributes[key] && el.attributes[key].value) {
+            script.setAttribute(key, el.attributes[key].value);
+          }
+        });
+        el.appendChild(script);
+       }, 200)
+    });
+  }
+  utterances();
+</script>
+
+
+
+
+<!-- inject -->
+
+
+  </div>
+</body>
+</html>

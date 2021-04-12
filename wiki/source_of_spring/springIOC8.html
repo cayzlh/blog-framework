@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta name="generator" content="Hexo 5.4.0">
+  <meta charset="utf-8">
+  
+
+  <meta http-equiv="x-dns-prefetch-control" content="on">
+  <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+
+  <meta name="renderer" content="webkit">
+  <meta name="force-rendering" content="webkit">
+  <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+  <meta name="HandheldFriendly" content="True">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <title>Spring源码分析：IOC之解析bean标签：开启解析进程 - CAYZLH</title>
+
+  
+  <meta name="description" content="
+本文作者：chenssy
+出处：http://cmsblogs.com/?p=2731
+在学习Spring源码的过程中发现的好站+好贴，感谢作者。Spring版本：Spring 5.0.6.RELEASE
+
+
+import 标签解析完毕了，再看 Spring 中最复杂也是最重要的标签 bea...">
+
+  <!-- feed -->
+  
+    <link rel="alternate" href="/atom.xml" title="CAYZLH" type="application/atom+xml">
+  
+
+  
+    
+<link rel="stylesheet" href="/css/main.css">
+
+  
+
+  
+    
+      <meta name="msapplication-TileColor" content="#2d89ef">
+    
+      <meta name="msapplication-config" content="/assets/favicon/browserconfig.xml">
+    
+      <meta name="theme-color" content="#ffffff">
+    
+      <link rel="shortcut icon" href="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/logo/favicon.ico">
+    
+      <link rel="icon" type="image/png" href="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/logo/favicon-192x192.png" sizes="192x192">
+    
+      <link rel="apple-touch-icon" sizes="180x180" href="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/logo/apple-touch-icon.png">
+    
+  
+</head>
+
+<body>
+  
+
+
+  <div class="l_body" id="start">
+    <aside class="l_left">
+    
+
+<header class="header">
+  <div class="logo-wrap">
+  
+    <a class="avatar" href="/">
+      
+        <img no-lazy class="bg" src="https://cdn.jsdelivr.net/gh/cdn-x/placeholder@1.0.2/avatar/round/rainbow64@3x.webp" onerror="javascript:this.classList.add('error');this.src='https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2021/04/16084216181285221618128522255.svg';">
+      
+      <img no-lazy class="avatar" src="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/image/IMG_4207.JPG" onerror="javascript:this.classList.add('error');this.src='https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2021/04/16084216181285221618128522255.svg';">
+    </a>
+  
+  
+    <a class="title" href="/">
+      CAYZLH
+    </a>
+  
+</div>
+
+  <nav class="menu dis-select"><a class="nav-item" href="/">文章</a><a class="nav-item active" href="/wiki/">文档</a><a class="nav-item" href="/talking/">动态</a><a class="nav-item" href="/about/">更多</a></nav>
+</header>
+
+<div class="widgets">
+  
+    
+      
+      
+<div class="widget-wrap" id="toc"><div class="widget-header h4 dis-select"><span class="name">本文目录</span></div><div class="widget-body fs14 wiki"><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/index.html"><span class="toc-text">Spring源码分析</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC1.html"><span class="toc-text">4张图带你读懂Spring IOC的世界</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC2.html"><span class="toc-text">IOC之深入理解SpringIoC</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC24.html"><span class="toc-text">IOC之深入分析PropertyPlaceholderConfigurer</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC25.html"><span class="toc-text">IOC之PropertyPlaceholderConfigurer的应用</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC2_5.html"><span class="toc-text">IOC之Spring统一资源加载策略</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC3.html"><span class="toc-text">IoC之加载BeanDefinition</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC4.html"><span class="toc-text">IOC之获取验证模型</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC5.html"><span class="toc-text">IOC之获取Document对象</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC6.html"><span class="toc-text">IoC之注册BeanDefinitions</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC7.html"><span class="toc-text">IoC之解析Bean：解析import标签</span></a></div><div class="doc-tree active"><a class="doc-tree-link active" href="/wiki/source_of_spring/springIOC8.html"><span class="toc-text">IOC之解析bean标签：开启解析进程</span></a>undefined</div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC9.html"><span class="toc-text">IOC之解析bean标签：BeanDefinition</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC10.html"><span class="toc-text">IoC之解析bean标签：meta、lookup-method、replace-method</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC11.html"><span class="toc-text">IOC之解析bean标签：constructor-arg、property子元素</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC12.html"><span class="toc-text">IoC之解析bean标签：解析自定义标签</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC13.html"><span class="toc-text">IoC之注册解析的BeanDefinitions</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC14.html"><span class="toc-text">IoC之装载BeanDefinitions总结</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC15.html"><span class="toc-text">IOC之开启bean的加载</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC16.html"><span class="toc-text">IOC之从单例缓存中获取单例bean</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC16_4.html"><span class="toc-text">IOC之parentBeanFactory与依赖处理</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC16_5.html"><span class="toc-text">IOC之分析各scope的bean创建</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC16_6.html"><span class="toc-text">IOC之开启Bean的实例化进程</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC16_7.html"><span class="toc-text">IOC之Factory实例化bean</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC16_8.html"><span class="toc-text">IOC之构造函数实例化bean</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC17.html"><span class="toc-text">IOC之属性填充</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC18.html"><span class="toc-text">IOC之循环依赖</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC19.html"><span class="toc-text">IOC之Bean的初始化</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC20.html"><span class="toc-text">IOC之加载Bean——总结篇</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC21.html"><span class="toc-text">IOC之深入分析Aware接口</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC22.html"><span class="toc-text">IOC之深入分析BeanPostProcessor</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC23.html"><span class="toc-text">IOC之深入分析InitializingBean和init-method</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC25_5.html"><span class="toc-text">IOC之深入分析BeanFactoryPostProcessor</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC26.html"><span class="toc-text">IOC之深入分析PropertyOverrideConfigurer</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC27.html"><span class="toc-text">IOC之深入分析Bean的类型转换体系</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC28.html"><span class="toc-text">IOC之自定义类型转换器</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC29.html"><span class="toc-text">IOC之分析BeanWrapper</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC30.html"><span class="toc-text">IOC之bean的实例化策略：InstantiationStrategy</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC31.html"><span class="toc-text">IOC之BeanDefinition注册机：BeanDefinitionRegistry</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC32.html"><span class="toc-text">Spring的环境&属性：PropertySource、Environment、Profile</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC33.html"><span class="toc-text">IOC之分析bean的生命周期</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC34.html"><span class="toc-text">ApplicationContext相关接口架构分析</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC35.html"><span class="toc-text">深入分析ApplicationContext的refresh()</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC36.html"><span class="toc-text">Spring AOP和Spring Transaction源码资料整理</span></a></div></div></div>
+
+    
+  
+    
+      
+      
+  
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+      <div class="widget-wrap" id="related">
+        <div class="widget-header h4 dis-select">
+          <span class="name">更多编程技术</span>
+        </div>
+        <div class="widget-body fs14">
+          
+            
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+                <div class="post-title">
+                  <a href="/wiki/design_patterns/index.html">
+                    设计模式
+                  </a>
+                </div>
+              
+            
+          
+            
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+          
+            
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+                <div class="post-title">
+                  <a href="/wiki/springcloud/index.html">
+                    SpringCloud
+                  </a>
+                </div>
+              
+            
+          
+        </div>
+      </div>
+    
+  
+
+
+    
+  
+</div>
+<footer class="footer"><div class="social-wrap dis-select"><a class="social" href="https://github.com/cayzlh" target="_blank" rel="external nofollow noopener noreferrer"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cdn-x/placeholder@1.0.1/social/08a41b181ce68.svg"></a><a class="social" href="https://telegram.me/Q2F5emxo" target="_blank" rel="external nofollow noopener noreferrer"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/image/guanyuwomen.svg"></a><a class="social" href="/about/#comments" rel="noopener noreferrer"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cdn-x/placeholder@1.0.1/social/942ebbf1a4b91.svg"></a></div></footer>
+
+    </aside>
+    <div class="l_main">
+      
+
+      
+
+  
+  
+  <div class="bread-nav fs12">
+  
+    
+    <div id="breadcrumb">
+      <a class="cap breadcrumb" href="/">主页</a>
+      <span class="sep"></span>
+      
+        <a class="cap breadcrumb" href="/wiki/">文档</a>
+      
+      
+        <span class="sep"></span>
+        <a class="cap breadcrumb" href="/wiki/categories/programmer/index.html">编程技术</a>
+      
+      
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        <span class="sep"></span>
+        <a class="cap breadcrumb" href="/wiki/source_of_spring/index.html">Spring源码分析</a>
+      
+    </div>
+    <div id="post-meta">
+      更新于&nbsp;<time datetime="2021-04-12T15:35:50.042Z">2021-04-12</time>
+    </div>
+  
+  </div>
+
+
+  <article class="content md wiki">
+  <h1 class="article-title"><span>IOC之解析bean标签：开启解析进程</span></h1>
+  <blockquote>
+<p>本文作者：chenssy</p>
+<p>出处：<a target="_blank" rel="external nofollow noopener noreferrer" href="http://cmsblogs.com/?p=2731">http://cmsblogs.com/?p=2731</a></p>
+<p>在学习<code>Spring源码</code>的过程中发现的好站+好贴，感谢作者。Spring版本：<strong>Spring 5.0.6.RELEASE</strong></p>
+</blockquote>
+<hr>
+<p><code>import</code> 标签解析完毕了，再看 <code>Spring</code> 中最复杂也是最重要的标签 <code>bean</code> 标签的解析过程。 在方法 <code>parseDefaultElement()</code> 中，如果遇到标签 为 <code>bean</code> 则调用 <code>processBeanDefinition()</code> 方法进行 bean 标签解析，如下：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title">processBeanDefinition</span><span class="params">(Element ele, </span></span></span><br><span class="line"><span class="function"><span class="params">                                     BeanDefinitionParserDelegate delegate)</span> </span>&#123;</span><br><span class="line">  BeanDefinitionHolder bdHolder = delegate.parseBeanDefinitionElement(ele);</span><br><span class="line">  <span class="keyword">if</span> (bdHolder != <span class="keyword">null</span>) &#123;</span><br><span class="line">    bdHolder = delegate.decorateBeanDefinitionIfRequired(ele, bdHolder);</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">      <span class="comment">// Register the final decorated instance.</span></span><br><span class="line">      BeanDefinitionReaderUtils.registerBeanDefinition(bdHolder, </span><br><span class="line">                                                       getReaderContext().getRegistry());</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">catch</span> (BeanDefinitionStoreException ex) &#123;</span><br><span class="line">      getReaderContext().error(<span class="string">&quot;Failed to register bean definition with name &#x27;&quot;</span> </span><br><span class="line">                               +</span><br><span class="line">                               bdHolder.getBeanName() + <span class="string">&quot;&#x27;&quot;</span>, ele, ex);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// Send registration event.</span></span><br><span class="line">    getReaderContext().fireComponentRegistered(<span class="keyword">new</span> BeanComponentDefinition(bdHolder));</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>整个过程分为四个步骤</p>
+<ol>
+<li>调用 <code>BeanDefinitionParserDelegate.parseBeanDefinitionElement()</code> 进行元素解析，解析过程中如果失败，返回 <strong>null</strong>，错误由 <code>ProblemReporter</code> 处理。如果解析成功则返回 <code>BeanDefinitionHolder</code> 实例 <code>bdHolder</code>。<code>BeanDefinitionHolder</code> 为持有 <code>name</code> 和 <code>alias</code> 的 <code>BeanDefinition</code>。</li>
+<li>若实例 <code>bdHolder</code> 不为空，则调用 <code>BeanDefinitionParserDelegate.decorateBeanDefinitionIfRequired()</code> 进行自定义标签处理</li>
+<li>解析完成后，则调用 <code>BeanDefinitionReaderUtils.registerBeanDefinition()</code> 对 <code>bdHolder</code> 进行注册</li>
+<li>发出响应事件，通知相关的监听器，完成 <code>Bean</code> 标签解析</li>
+</ol>
+<p>先看方法 <code>parseBeanDefinitionElement()</code>，如下：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> BeanDefinitionHolder <span class="title">parseBeanDefinitionElement</span><span class="params">(Element ele, </span></span></span><br><span class="line"><span class="function"><span class="params">                                                       <span class="meta">@Nullable</span> BeanDefinition containingBean)</span> </span>&#123;</span><br><span class="line">  <span class="comment">// 解析 ID 属性</span></span><br><span class="line">  String id = ele.getAttribute(ID_ATTRIBUTE);</span><br><span class="line">  <span class="comment">// 解析 name 属性</span></span><br><span class="line">  String nameAttr = ele.getAttribute(NAME_ATTRIBUTE);</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 分割 name 属性</span></span><br><span class="line">  List&lt;String&gt; aliases = <span class="keyword">new</span> ArrayList&lt;&gt;();</span><br><span class="line">  <span class="keyword">if</span> (StringUtils.hasLength(nameAttr)) &#123;</span><br><span class="line">    String[] nameArr = StringUtils.tokenizeToStringArray(nameAttr, MULTI_VALUE_ATTRIBUTE_DELIMITERS);</span><br><span class="line">    aliases.addAll(Arrays.asList(nameArr));</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  String beanName = id;</span><br><span class="line">  <span class="keyword">if</span> (!StringUtils.hasText(beanName) &amp;&amp; !aliases.isEmpty()) &#123;</span><br><span class="line">    beanName = aliases.remove(<span class="number">0</span>);</span><br><span class="line">    <span class="keyword">if</span> (logger.isDebugEnabled()) &#123;</span><br><span class="line">      logger.debug(<span class="string">&quot;No XML &#x27;id&#x27; specified - using &#x27;&quot;</span> + beanName +</span><br><span class="line">                   <span class="string">&quot;&#x27; as bean name and &quot;</span> + aliases + <span class="string">&quot; as aliases&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 检查 name 的唯一性</span></span><br><span class="line">  <span class="keyword">if</span> (containingBean == <span class="keyword">null</span>) &#123;</span><br><span class="line">    checkNameUniqueness(beanName, aliases, ele);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 解析 属性，构造 AbstractBeanDefinition</span></span><br><span class="line">  AbstractBeanDefinition beanDefinition = parseBeanDefinitionElement(ele, beanName, containingBean);</span><br><span class="line">  <span class="keyword">if</span> (beanDefinition != <span class="keyword">null</span>) &#123;</span><br><span class="line">    <span class="comment">// 如果 beanName 不存在，则根据条件构造一个 beanName</span></span><br><span class="line">    <span class="keyword">if</span> (!StringUtils.hasText(beanName)) &#123;</span><br><span class="line">      <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> (containingBean != <span class="keyword">null</span>) &#123;</span><br><span class="line">          beanName = BeanDefinitionReaderUtils.generateBeanName(</span><br><span class="line">            beanDefinition, <span class="keyword">this</span>.readerContext.getRegistry(), <span class="keyword">true</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">else</span> &#123;</span><br><span class="line">          beanName = <span class="keyword">this</span>.readerContext.generateBeanName(beanDefinition);</span><br><span class="line">          String beanClassName = beanDefinition.getBeanClassName();</span><br><span class="line">          <span class="keyword">if</span> (beanClassName != <span class="keyword">null</span> &amp;&amp;</span><br><span class="line">              beanName.startsWith(beanClassName) &amp;&amp; beanName.length() </span><br><span class="line">              &gt; beanClassName.length() &amp;&amp;</span><br><span class="line">              !<span class="keyword">this</span>.readerContext.getRegistry().isBeanNameInUse(beanClassName)) &#123;</span><br><span class="line">            aliases.add(beanClassName);</span><br><span class="line">          &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (logger.isDebugEnabled()) &#123;</span><br><span class="line">          logger.debug(<span class="string">&quot;Neither XML &#x27;id&#x27; nor &#x27;name&#x27; specified - &quot;</span> +</span><br><span class="line">                       <span class="string">&quot;using generated bean name [&quot;</span> + beanName + <span class="string">&quot;]&quot;</span>);</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">catch</span> (Exception ex) &#123;</span><br><span class="line">        error(ex.getMessage(), ele);</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    String[] aliasesArray = StringUtils.toStringArray(aliases);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 封装 BeanDefinitionHolder</span></span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">new</span> BeanDefinitionHolder(beanDefinition, beanName, aliasesArray);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这个方法还没有对 <code>Bean</code> 标签进行解析，只是在解析动作之前做了一些功能架构，主要的工作有：</p>
+<ul>
+<li>解析 <code>id</code>、<code>name</code> 属性，确定 <code>alias</code> 集合，检测 <code>beanName</code> 是否唯一</li>
+<li>调用方法 <code>parseBeanDefinitionElement()</code> 对属性进行解析并封装成 <code>GenericBeanDefinition</code> 实例 <code>beanDefinition</code></li>
+<li>根据所获取的信息（<code>beanName</code>、<code>aliases</code>、<code>beanDefinition</code>）构造 <code>BeanDefinitionHolder</code> 实例对象并返回。</li>
+</ul>
+<p>这里有必要说下 <code>beanName</code> 的命名规则：如果 <code>id</code> 不为空，则 <code>beanName = id</code>；如果 <code>id</code> 为空，但是 <code>alias</code> 不空，则 <code>beanName</code> 为 <code>alias</code> 的第一个元素，如果两者都为空，则根据默认规则来设置 <code>beanName</code>。 上面三个步骤第二个步骤为核心方法，它主要承担解析 Bean 标签中所有的属性值。如下：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> AbstractBeanDefinition <span class="title">parseBeanDefinitionElement</span><span class="params">(</span></span></span><br><span class="line"><span class="function"><span class="params">  Element ele, String beanName, <span class="meta">@Nullable</span> BeanDefinition containingBean)</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">this</span>.parseState.push(<span class="keyword">new</span> BeanEntry(beanName));</span><br><span class="line"></span><br><span class="line">  String className = <span class="keyword">null</span>;</span><br><span class="line">  <span class="comment">// 解析 class 属性</span></span><br><span class="line">  <span class="keyword">if</span> (ele.hasAttribute(CLASS_ATTRIBUTE)) &#123;</span><br><span class="line">    className = ele.getAttribute(CLASS_ATTRIBUTE).trim();</span><br><span class="line">  &#125;</span><br><span class="line">  String parent = <span class="keyword">null</span>;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 解析 parent 属性</span></span><br><span class="line">  <span class="keyword">if</span> (ele.hasAttribute(PARENT_ATTRIBUTE)) &#123;</span><br><span class="line">    parent = ele.getAttribute(PARENT_ATTRIBUTE);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">try</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 创建用于承载属性的 GenericBeanDefinition 实例</span></span><br><span class="line">    AbstractBeanDefinition bd = createBeanDefinition(className, parent);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 解析默认 bean 的各种属性</span></span><br><span class="line">    parseBeanDefinitionAttributes(ele, beanName, containingBean, bd);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 提取 description</span></span><br><span class="line">    bd.setDescription(DomUtils.getChildElementValueByTagName(ele, </span><br><span class="line">                                                             DESCRIPTION_ELEMENT));</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 解析元数据</span></span><br><span class="line">    parseMetaElements(ele, bd);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 解析 lookup-method 属性</span></span><br><span class="line">    parseLookupOverrideSubElements(ele, bd.getMethodOverrides());</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 解析 replaced-method 属性</span></span><br><span class="line">    parseReplacedMethodSubElements(ele, bd.getMethodOverrides());</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 解析构造函数参数</span></span><br><span class="line">    parseConstructorArgElements(ele, bd);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 解析 property 子元素</span></span><br><span class="line">    parsePropertyElements(ele, bd);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 解析 qualifier 子元素</span></span><br><span class="line">    parseQualifierElements(ele, bd);</span><br><span class="line"></span><br><span class="line">    bd.setResource(<span class="keyword">this</span>.readerContext.getResource());</span><br><span class="line">    bd.setSource(extractSource(ele));</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> bd;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">catch</span> (ClassNotFoundException ex) &#123;</span><br><span class="line">    error(<span class="string">&quot;Bean class [&quot;</span> + className + <span class="string">&quot;] not found&quot;</span>, ele, ex);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">catch</span> (NoClassDefFoundError err) &#123;</span><br><span class="line">    error(<span class="string">&quot;Class that bean class [&quot;</span> + className </span><br><span class="line">          + <span class="string">&quot;] depends on not found&quot;</span>, ele, err);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">catch</span> (Throwable ex) &#123;</span><br><span class="line">    error(<span class="string">&quot;Unexpected failure during bean definition parsing&quot;</span>,</span><br><span class="line">          ele, ex);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">finally</span> &#123;</span><br><span class="line">    <span class="keyword">this</span>.parseState.pop();</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>到这里，<code>Bean</code> 标签的所有属性我们都可以看到其解析的过程，也就说到这里我们已经解析一个基本可用的 <code>BeanDefinition</code>。 由于解析过程较为漫长，篇幅较大，为了更好的观看体验，将这篇博文进行拆分。下篇博客主要介绍 <code>BeanDefinition</code>，以及解析默认 <code>Bean</code> 的过程（<code>parseBeanDefinitionAttributes()</code>） – - <a href="/2020/01/07/3f8e0ea3.html">IOC 之解析Bean：解析 import 标签</a></p>
+
+  
+
+
+  </article>
+  
+<div class="related-wrap" id="read-next"><section class="header cap theme"><span>接下来阅读</span></section><section class="body"><div class="post-title h2"><a href="/wiki/source_of_spring/springIOC9.html">IOC之解析bean标签：BeanDefinition</a></div><div class="post-title fs14"><a href="/wiki/source_of_spring/springIOC7.html">上一篇：IoC之解析Bean：解析import标签</a></div></section></div>
+
+  
+
+  <div class="related-wrap md" id="comments">
+    <div class="cmt-title cap theme">
+      快来参与讨论吧
+    </div>
+    <div class="cmt-body utterances">
+      
+
+<svg class="loading" style="vertical-align: middle;fill: currentColor;overflow: hidden;" viewbox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2709"><path d="M832 512c0-176-144-320-320-320V128c211.2 0 384 172.8 384 384h-64zM192 512c0 176 144 320 320 320v64C300.8 896 128 723.2 128 512h64z" p-id="2710"/></svg>
+
+<div id="utterances" repo="cayzlh/studious-barnacle" issue-term="Spring源码分析" theme="github-light"></div>
+
+    </div>
+  </div>
+
+
+
+
+      
+<footer class="page-footer fs12" style="text-align: center;"><hr><div><p><a href="https://www.cayzlh.com/">🐳Ant丶</a> ©️ 2017-2021</p>
+<p><a target="_blank" rel="external nofollow noopener noreferrer" href="https://beian.miit.gov.cn/">粤ICP备20058712号</a></p>
+</div></footer>
+
+      <div class="float-panel mobile-only" style="display:none">
+  <button type="button" class="sidebar-toggle mobile" onclick="sidebar.toggle()">
+    <svg class="icon" viewbox="0 0 1228 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2849"><path d="M0 0m97.390199 0l973.901995 0q97.390199 0 97.390199 97.390199l0 0q0 97.390199-97.390199 97.3902l-973.901995 0q-97.390199 0-97.390199-97.3902l0 0q0-97.390199 97.390199-97.390199Z" p-id="2850"/><path d="M0 389.560798m97.390199 0l973.901995 0q97.390199 0 97.390199 97.390199l0 0q0 97.390199-97.390199 97.3902l-973.901995 0q-97.390199 0-97.390199-97.3902l0 0q0-97.390199 97.390199-97.390199Z" p-id="2851"/><path d="M0 779.121596m97.390199 0l973.901995 0q97.390199 0 97.390199 97.390199l0 0q0 97.390199-97.390199 97.390199l-973.901995 0q-97.390199 0-97.390199-97.390199l0 0q0-97.390199 97.390199-97.390199Z" p-id="2852"/></svg>
+  </button>
+</div>
+
+    </div>
+  </div>
+  <div class="scripts">
+    <script type="text/javascript">
+  stellar = {
+    // 懒加载 css https://github.com/filamentgroup/loadCSS
+    loadCSS: (href, before, media, attributes) => {
+      var doc = window.document;
+      var ss = doc.createElement("link");
+      var ref;
+      if (before) {
+        ref = before;
+      } else {
+        var refs = (doc.body || doc.getElementsByTagName("head")[0]).childNodes;
+        ref = refs[refs.length - 1];
+      }
+      var sheets = doc.styleSheets;
+      if (attributes) {
+        for (var attributeName in attributes) {
+          if (attributes.hasOwnProperty(attributeName)) {
+            ss.setAttribute(attributeName, attributes[attributeName]);
+          }
+        }
+      }
+      ss.rel = "stylesheet";
+      ss.href = href;
+      ss.media = "only x";
+      function ready(cb) {
+        if (doc.body) {
+          return cb();
+        }
+        setTimeout(function () {
+          ready(cb);
+        });
+      }
+      ready(function () {
+        ref.parentNode.insertBefore(ss, before ? ref : ref.nextSibling);
+      });
+      var onloadcssdefined = function (cb) {
+        var resolvedHref = ss.href;
+        var i = sheets.length;
+        while (i--) {
+          if (sheets[i].href === resolvedHref) {
+            return cb();
+          }
+        }
+        setTimeout(function () {
+          onloadcssdefined(cb);
+        });
+      };
+      function loadCB() {
+        if (ss.addEventListener) {
+          ss.removeEventListener("load", loadCB);
+        }
+        ss.media = media || "all";
+      }
+      if (ss.addEventListener) {
+        ss.addEventListener("load", loadCB);
+      }
+      ss.onloadcssdefined = onloadcssdefined;
+      onloadcssdefined(loadCB);
+      return ss;
+    },
+
+    // 从 butterfly 和 volantis 获得灵感
+    loadScript: (src, opt) => new Promise((resolve, reject) => {
+      var script = document.createElement('script')
+      script.src = src
+      if (opt) {
+        for (let key of Object.keys(opt)) {
+          script[key] = opt[key]
+        }
+      } else {
+        // 默认异步，如果需要同步，第二个参数传入 {} 即可
+        script.async = true
+      }
+      script.onerror = reject
+      script.onload = script.onreadystatechange = function() {
+        const loadState = this.readyState
+        if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+        script.onload = script.onreadystatechange = null
+        resolve()
+      }
+      document.head.appendChild(script)
+    }),
+
+    // https://github.com/jerryc127/hexo-theme-butterfly
+    jQuery: (fn) => {
+      if (typeof jQuery === 'undefined') {
+        stellar.loadScript(stellar.plugins.jQuery).then(fn)
+      } else {
+        fn()
+      }
+    }
+  };
+  stellar.github = 'https://github.com/xaoxuu/hexo-theme-stellar/tree/1.1.0';
+  stellar.config = {
+    date_suffix: {
+      just: '刚刚',
+      min: '分钟前',
+      hour: '小时前',
+      day: '天前',
+      month: '个月前',
+    },
+  };
+
+  // required plugins (only load if needs)
+  stellar.plugins = {
+    jQuery: 'https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js',
+    sitesjs: '/js/plugins/sites.js',
+    friendsjs: '/js/plugins/friends.js',
+  };
+
+  // optional plugins
+  if ('true' == 'true') {
+    stellar.plugins.lazyload = Object.assign({"enable":true,"js":"https://cdn.jsdelivr.net/npm/vanilla-lazyload@17.3.1/dist/lazyload.min.js","transition":"blur"});
+  }
+  if ('true' == 'true') {
+    stellar.plugins.swiper = Object.assign({"enable":true,"css":"https://unpkg.com/swiper/swiper-bundle.min.css","js":"https://unpkg.com/swiper/swiper-bundle.min.js"});
+  }
+  if ('' == 'true') {
+    stellar.plugins.scrollreveal = Object.assign({"enable":null,"js":"https://cdn.jsdelivr.net/npm/scrollreveal@4.0.9/dist/scrollreveal.min.js","distance":"8px","duration":500,"interval":100,"scale":1});
+  }
+  if ('true' == 'true') {
+    stellar.plugins.preload = Object.assign({"enable":true,"service":"flying_pages","instant_page":"https://cdn.jsdelivr.net/gh/volantis-x/cdn-volantis@4.1.2/js/instant_page.js","flying_pages":"https://cdn.jsdelivr.net/gh/gijo-varghese/flying-pages@2.1.2/flying-pages.min.js"});
+  }
+</script>
+
+<!-- required -->
+
+  
+<script src="/js/main.js" async></script>
+
+
+
+<!-- optional -->
+
+  <script>
+  function utterances(){
+    if(!document.getElementById("utterances"))return;
+    setTimeout(function() {
+      var checkUtterances = setInterval(function () {
+        var el = document.getElementById("utterances");
+        if (!el) return
+        clearInterval(checkUtterances)
+        try {
+          el.innerHTML="";
+        } catch (error) {}
+        var script = document.createElement('script');
+        script.src = 'https://utteranc.es/client.js';
+        const keys = ['repo', 'issue-term', 'issue-number', 'theme', 'label', 'crossorigin'];
+        keys.forEach((key, i) => {
+          if (el.attributes[key] && el.attributes[key].value) {
+            script.setAttribute(key, el.attributes[key].value);
+          }
+        });
+        el.appendChild(script);
+       }, 200)
+    });
+  }
+  utterances();
+</script>
+
+
+
+
+<!-- inject -->
+
+
+  </div>
+</body>
+</html>

@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta name="generator" content="Hexo 5.4.0">
+  <meta charset="utf-8">
+  
+
+  <meta http-equiv="x-dns-prefetch-control" content="on">
+  <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+
+  <meta name="renderer" content="webkit">
+  <meta name="force-rendering" content="webkit">
+  <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+  <meta name="HandheldFriendly" content="True">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <title>记关于Consul的一点使用笔记 - CAYZLH</title>
+
+  
+  <meta name="description" content="记录一次使用Consul过程中遇到的坑以及解决办法">
+
+  <!-- feed -->
+  
+    <link rel="alternate" href="/atom.xml" title="CAYZLH" type="application/atom+xml">
+  
+
+  
+    
+<link rel="stylesheet" href="/css/main.css">
+
+  
+
+  
+    
+      <meta name="msapplication-TileColor" content="#2d89ef">
+    
+      <meta name="msapplication-config" content="/assets/favicon/browserconfig.xml">
+    
+      <meta name="theme-color" content="#ffffff">
+    
+      <link rel="shortcut icon" href="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/logo/favicon.ico">
+    
+      <link rel="icon" type="image/png" href="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/logo/favicon-192x192.png" sizes="192x192">
+    
+      <link rel="apple-touch-icon" sizes="180x180" href="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/logo/apple-touch-icon.png">
+    
+  
+</head>
+
+<body>
+  
+
+
+  <div class="l_body" id="start">
+    <aside class="l_left">
+    
+
+<header class="header">
+  <div class="logo-wrap">
+  
+    <a class="avatar" href="/">
+      
+        <img no-lazy class="bg" src="https://cdn.jsdelivr.net/gh/cdn-x/placeholder@1.0.2/avatar/round/rainbow64@3x.webp" onerror="javascript:this.classList.add('error');this.src='https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2021/04/16084216181285221618128522255.svg';">
+      
+      <img no-lazy class="avatar" src="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/image/IMG_4207.JPG" onerror="javascript:this.classList.add('error');this.src='https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2021/04/16084216181285221618128522255.svg';">
+    </a>
+  
+  
+    <a class="title" href="/">
+      CAYZLH
+    </a>
+  
+</div>
+
+  <nav class="menu dis-select"><a class="nav-item active" href="/">文章</a><a class="nav-item" href="/wiki/">文档</a><a class="nav-item" href="/talking/">动态</a><a class="nav-item" href="/about/">更多</a></nav>
+</header>
+
+<div class="widgets">
+  
+    
+      
+      
+<div class="widget-wrap" id="toc"><div class="widget-header h4 dis-select"><span class="name">本文目录</span></div><div class="widget-body fs14 post"><div class="doc-tree active"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#Docker%E6%90%AD%E5%BB%BAConsul%E9%9B%86%E7%BE%A4"><span class="toc-text">Docker搭建Consul集群</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%90%AD%E5%BB%BA%E9%9B%86%E7%BE%A4"><span class="toc-text">搭建集群</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%AF%BC%E5%85%A5kv"><span class="toc-text">导入kv</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#IDEA%E8%B7%91%E6%9C%8D%E5%8A%A1%E6%B3%A8%E5%86%8C%E5%88%B0Consul"><span class="toc-text">IDEA跑服务注册到Consul</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%81%87%E5%88%B0%E7%9A%84%E5%9D%91"><span class="toc-text">遇到的坑</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%A7%A3%E5%86%B3"><span class="toc-text">解决</span></a></li></ol></li></ol></div></div></div>
+
+    
+  
+</div>
+<footer class="footer"><div class="social-wrap dis-select"><a class="social" href="https://github.com/cayzlh" target="_blank" rel="external nofollow noopener noreferrer"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cdn-x/placeholder@1.0.1/social/08a41b181ce68.svg"></a><a class="social" href="https://telegram.me/Q2F5emxo" target="_blank" rel="external nofollow noopener noreferrer"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/image/guanyuwomen.svg"></a><a class="social" href="/about/#comments" rel="noopener noreferrer"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cdn-x/placeholder@1.0.1/social/942ebbf1a4b91.svg"></a></div></footer>
+
+    </aside>
+    <div class="l_main">
+      
+
+      
+
+
+  <div class="bread-nav fs12">
+  
+    
+    <div id="breadcrumb">
+      <a class="cap breadcrumb" href="/">主页</a>
+      <span class="sep"></span>
+      <a class="cap breadcrumb" href="/">文章</a>
+      
+        <span class="sep"></span>
+        <a class="cap breadcrumb-link" href="/categories/%E7%AC%94%E8%AE%B0%E6%9C%AC/">笔记本</a>
+      
+    </div>
+    <div id="post-meta">
+      发布于&nbsp;<time datetime="2020-10-30T16:07:20.000Z">2020-10-31</time>
+    </div>
+  
+  </div>
+
+
+<article class="content md post">
+<h1 class="article-title"><span>记关于Consul的一点使用笔记</span></h1>
+<blockquote>
+<p>由于开发需要，需要在本地运行一个Consul环境，由于电脑上已经有Docker环境了，于是就直接在Docker里面搭一套Consul集群。</p>
+</blockquote>
+<h2 id="Docker搭建Consul集群"><a href="#Docker搭建Consul集群" class="headerlink" title="Docker搭建Consul集群"></a>Docker搭建Consul集群</h2><blockquote>
+<p>集群要求要有<code>3</code>个<code>Server</code>，将容器<code>8500</code>端口映射到主机<code>8900</code>端口，同时开启管理界面</p>
+</blockquote>
+<h3 id="搭建集群"><a href="#搭建集群" class="headerlink" title="搭建集群"></a>搭建集群</h3><p><strong>1. 启动第1个Server节点</strong></p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">docker run -d --name=consul1 -p 8500:8500 -e CONSUL_BIND_INTERFACE=eth0 consul:1.6.2 agent --server=<span class="literal">true</span> --bootstrap-expect=3 --client=0.0.0.0 -ui</span><br></pre></td></tr></table></figure>
+
+<p><strong>2. 获取consul1的ip地址</strong></p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">JOIN_IP=<span class="string">&quot;<span class="subst">$(docker inspect -f &#x27;&#123;&#123;.NetworkSettings.IPAddress&#125;&#125;&#x27; do1_consul1)</span>&quot;</span>;</span><br></pre></td></tr></table></figure>
+
+<p><strong>3. 启动第2个Server节点，并加入集群</strong></p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">docker run -d --name=consul2 -e CONSUL_BIND_INTERFACE=eth0 consul:1.6.2 agent --server=<span class="literal">true</span> --client=0.0.0.0 --join <span class="variable">$JOIN_IP</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>4. 启动第3个Server节点，并加入集群</strong></p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">docker run -d --name=consul3 -e CONSUL_BIND_INTERFACE=eth0 consul:1.6.2 agent --server=<span class="literal">true</span> --client=0.0.0.0 --join <span class="variable">$JOIN_IP</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>5. 启动第4个Client节点，并加入集群</strong></p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">docker run -d --name=consul4 -e CONSUL_BIND_INTERFACE=eth0 consul:1.6.2 agent --server=<span class="literal">false</span> --client=0.0.0.0 --join <span class="variable">$JOIN_IP</span></span><br></pre></td></tr></table></figure>
+
+<p>浏览器访问 <a target="_blank" rel="external nofollow noopener noreferrer" href="http://localhost:8500/">http://localhost:8500</a>验证是否部署成功。</p>
+<h3 id="导入kv"><a href="#导入kv" class="headerlink" title="导入kv"></a>导入kv</h3><p><strong>1. 将kv.json复制到容器内</strong></p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">docker cp ~/Desktop/consul_kv.json consul1:/tmp</span><br></pre></td></tr></table></figure>
+
+<p><strong>2. 导入kv.json</strong></p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">docker <span class="built_in">exec</span> consul1 consul kv import @/tmp/consul_kv.json</span><br></pre></td></tr></table></figure>
+
+<h2 id="IDEA跑服务注册到Consul"><a href="#IDEA跑服务注册到Consul" class="headerlink" title="IDEA跑服务注册到Consul"></a>IDEA跑服务注册到Consul</h2><h3 id="遇到的坑"><a href="#遇到的坑" class="headerlink" title="遇到的坑"></a>遇到的坑</h3><p><code>consul</code>集群跑起来之后，于是在<code>IDEA</code>跑<code>SpringCloud</code>项目注册到部署好的<code>Consul</code>服务，当服务注册好之后，检查其健康状态，发现服务一直提示<code>All node checks passing</code>报了个小红叉❌。</p>
+<h3 id="解决"><a href="#解决" class="headerlink" title="解决"></a>解决</h3><p>通过各种尝试都发解决之后，发现是因为在容器内部调用容器外（宿主机）的相应服务的时候网络不通，导致健康检查一直处于失败的状态，于是，修改<code>SpringCloud</code>工程的配置文件，新增配置：</p>
+<figure class="highlight properties"><table><tr><td class="code"><pre><span class="line"><span class="meta">spring.cloud.consul.discovery.preferIpAddress</span>=<span class="string">true</span></span><br><span class="line"><span class="meta">spring.cloud.consul.discovery.ipAddress</span>=<span class="string">docker.for.mac.host.internal</span></span><br></pre></td></tr></table></figure>
+
+<p>重新启动服务，各项检查都正常了。</p>
+<ul>
+<li>以上操作环境是<code>macOS</code>，未在别的环境重现和解决这个问题。</li>
+<li>容器内可以通过<code>docker.for.mac.host.internal</code>访问宿主机网络和端口。</li>
+</ul>
+
+
+<div class="article-footer fs14"><section id="license"><div class="header"><span>许可协议</span></div><div class="body"><p>本文采用 <a target="_blank" rel="external nofollow noopener noreferrer" href="https://creativecommons.org/licenses/by-nc-sa/4.0/">署名-非商业性使用-相同方式共享 4.0 国际</a> 许可协议，转载请注明出处。</p>
+</div></section></div>
+
+</article>
+
+<div class="related-wrap" id="read-next"><section class="header cap theme"><span>接下来阅读</span></section><section class="body"><div class="post-title h2"><a href="/post/138fc827/">API签名验证方案</a></div><div class="post-title fs14"><a href="/post/2481829941/">上一篇：Docker部署elasticsearch</a></div></section></div>
+
+
+<div class="related-wrap" id="related-posts">
+    <section class="header">
+      <div class="title cap theme">您可能感兴趣的文章</div>
+    </section>
+    <section class="body">
+    <div class="related-posts"><a class="item" href="/post/3136136825/" title="SpringBoot自动部署脚本"><div class="img"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2021/04/22353816180653381618065338077.jpg"></div><span class="title">SpringBoot自动部署脚本</span><span class="excerpt">SpringBoot自动部署脚本</span></a><a class="item" href="/post/2348855541/" title="SpringBoot启动脚本"><div class="img"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2021/04/22353816180653381618065338077.jpg"></div><span class="title">SpringBoot启动脚本</span><span class="excerpt">SpringBoot启动脚本</span></a><a class="item" href="/post/2878379624/" title="SpringBoot文件上传异常处理"><div class="img"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://gitee.com/cayzlh/img-repo/raw/master/2021/02/10511616140486761614048676335.jpg"></div><span class="title">SpringBoot文件上传异常处理</span><span class="excerpt">SpringBoot文件上传异常处理：The temporary upload location xxx is not valid</span></a><a class="item" href="/post/138fc827/" title="API签名验证方案"><div class="img"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://gitee.com/cayzlh/img-repo/raw/master/2020/09/17024116013701611601370161045.png"></div><span class="title">API签名验证方案</span><span class="excerpt">开放API接口签名验证，让你的接口从此不再裸奔</span></a><a class="item" href="/post/20210402/" title="HomeBrew换源"><div class="img"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2021/04/22285116180649311618064931741.jpg"></div><span class="title">HomeBrew换源</span><span class="excerpt">HomeBrew换源</span></a></div></section></div>
+
+
+
+
+
+      
+<footer class="page-footer fs12" style="text-align: center;"><hr><div><p><a href="https://www.cayzlh.com/">🐳Ant丶</a> ©️ 2017-2021</p>
+<p><a target="_blank" rel="external nofollow noopener noreferrer" href="https://beian.miit.gov.cn/">粤ICP备20058712号</a></p>
+</div></footer>
+
+      <div class="float-panel mobile-only" style="display:none">
+  <button type="button" class="sidebar-toggle mobile" onclick="sidebar.toggle()">
+    <svg class="icon" viewbox="0 0 1228 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2849"><path d="M0 0m97.390199 0l973.901995 0q97.390199 0 97.390199 97.390199l0 0q0 97.390199-97.390199 97.3902l-973.901995 0q-97.390199 0-97.390199-97.3902l0 0q0-97.390199 97.390199-97.390199Z" p-id="2850"/><path d="M0 389.560798m97.390199 0l973.901995 0q97.390199 0 97.390199 97.390199l0 0q0 97.390199-97.390199 97.3902l-973.901995 0q-97.390199 0-97.390199-97.3902l0 0q0-97.390199 97.390199-97.390199Z" p-id="2851"/><path d="M0 779.121596m97.390199 0l973.901995 0q97.390199 0 97.390199 97.390199l0 0q0 97.390199-97.390199 97.390199l-973.901995 0q-97.390199 0-97.390199-97.390199l0 0q0-97.390199 97.390199-97.390199Z" p-id="2852"/></svg>
+  </button>
+</div>
+
+    </div>
+  </div>
+  <div class="scripts">
+    <script type="text/javascript">
+  stellar = {
+    // 懒加载 css https://github.com/filamentgroup/loadCSS
+    loadCSS: (href, before, media, attributes) => {
+      var doc = window.document;
+      var ss = doc.createElement("link");
+      var ref;
+      if (before) {
+        ref = before;
+      } else {
+        var refs = (doc.body || doc.getElementsByTagName("head")[0]).childNodes;
+        ref = refs[refs.length - 1];
+      }
+      var sheets = doc.styleSheets;
+      if (attributes) {
+        for (var attributeName in attributes) {
+          if (attributes.hasOwnProperty(attributeName)) {
+            ss.setAttribute(attributeName, attributes[attributeName]);
+          }
+        }
+      }
+      ss.rel = "stylesheet";
+      ss.href = href;
+      ss.media = "only x";
+      function ready(cb) {
+        if (doc.body) {
+          return cb();
+        }
+        setTimeout(function () {
+          ready(cb);
+        });
+      }
+      ready(function () {
+        ref.parentNode.insertBefore(ss, before ? ref : ref.nextSibling);
+      });
+      var onloadcssdefined = function (cb) {
+        var resolvedHref = ss.href;
+        var i = sheets.length;
+        while (i--) {
+          if (sheets[i].href === resolvedHref) {
+            return cb();
+          }
+        }
+        setTimeout(function () {
+          onloadcssdefined(cb);
+        });
+      };
+      function loadCB() {
+        if (ss.addEventListener) {
+          ss.removeEventListener("load", loadCB);
+        }
+        ss.media = media || "all";
+      }
+      if (ss.addEventListener) {
+        ss.addEventListener("load", loadCB);
+      }
+      ss.onloadcssdefined = onloadcssdefined;
+      onloadcssdefined(loadCB);
+      return ss;
+    },
+
+    // 从 butterfly 和 volantis 获得灵感
+    loadScript: (src, opt) => new Promise((resolve, reject) => {
+      var script = document.createElement('script')
+      script.src = src
+      if (opt) {
+        for (let key of Object.keys(opt)) {
+          script[key] = opt[key]
+        }
+      } else {
+        // 默认异步，如果需要同步，第二个参数传入 {} 即可
+        script.async = true
+      }
+      script.onerror = reject
+      script.onload = script.onreadystatechange = function() {
+        const loadState = this.readyState
+        if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+        script.onload = script.onreadystatechange = null
+        resolve()
+      }
+      document.head.appendChild(script)
+    }),
+
+    // https://github.com/jerryc127/hexo-theme-butterfly
+    jQuery: (fn) => {
+      if (typeof jQuery === 'undefined') {
+        stellar.loadScript(stellar.plugins.jQuery).then(fn)
+      } else {
+        fn()
+      }
+    }
+  };
+  stellar.github = 'https://github.com/xaoxuu/hexo-theme-stellar/tree/1.1.0';
+  stellar.config = {
+    date_suffix: {
+      just: '刚刚',
+      min: '分钟前',
+      hour: '小时前',
+      day: '天前',
+      month: '个月前',
+    },
+  };
+
+  // required plugins (only load if needs)
+  stellar.plugins = {
+    jQuery: 'https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js',
+    sitesjs: '/js/plugins/sites.js',
+    friendsjs: '/js/plugins/friends.js',
+  };
+
+  // optional plugins
+  if ('true' == 'true') {
+    stellar.plugins.lazyload = Object.assign({"enable":true,"js":"https://cdn.jsdelivr.net/npm/vanilla-lazyload@17.3.1/dist/lazyload.min.js","transition":"blur"});
+  }
+  if ('true' == 'true') {
+    stellar.plugins.swiper = Object.assign({"enable":true,"css":"https://unpkg.com/swiper/swiper-bundle.min.css","js":"https://unpkg.com/swiper/swiper-bundle.min.js"});
+  }
+  if ('' == 'true') {
+    stellar.plugins.scrollreveal = Object.assign({"enable":null,"js":"https://cdn.jsdelivr.net/npm/scrollreveal@4.0.9/dist/scrollreveal.min.js","distance":"8px","duration":500,"interval":100,"scale":1});
+  }
+  if ('true' == 'true') {
+    stellar.plugins.preload = Object.assign({"enable":true,"service":"flying_pages","instant_page":"https://cdn.jsdelivr.net/gh/volantis-x/cdn-volantis@4.1.2/js/instant_page.js","flying_pages":"https://cdn.jsdelivr.net/gh/gijo-varghese/flying-pages@2.1.2/flying-pages.min.js"});
+  }
+</script>
+
+<!-- required -->
+
+  
+<script src="/js/main.js" async></script>
+
+
+
+<!-- optional -->
+
+  <script>
+  function utterances(){
+    if(!document.getElementById("utterances"))return;
+    setTimeout(function() {
+      var checkUtterances = setInterval(function () {
+        var el = document.getElementById("utterances");
+        if (!el) return
+        clearInterval(checkUtterances)
+        try {
+          el.innerHTML="";
+        } catch (error) {}
+        var script = document.createElement('script');
+        script.src = 'https://utteranc.es/client.js';
+        const keys = ['repo', 'issue-term', 'issue-number', 'theme', 'label', 'crossorigin'];
+        keys.forEach((key, i) => {
+          if (el.attributes[key] && el.attributes[key].value) {
+            script.setAttribute(key, el.attributes[key].value);
+          }
+        });
+        el.appendChild(script);
+       }, 200)
+    });
+  }
+  utterances();
+</script>
+
+
+
+
+<!-- inject -->
+
+
+  </div>
+</body>
+</html>

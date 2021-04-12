@@ -1,0 +1,1060 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta name="generator" content="Hexo 5.4.0">
+  <meta charset="utf-8">
+  
+
+  <meta http-equiv="x-dns-prefetch-control" content="on">
+  <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+
+  <meta name="renderer" content="webkit">
+  <meta name="force-rendering" content="webkit">
+  <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+  <meta name="HandheldFriendly" content="True">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <title>深入理解Java虚拟机：Java内存模型与线程 - CAYZLH</title>
+
+  
+  <meta name="description" content="
+并发处理的广泛应用是使得Amdahl定律代替摩尔定律成为计算机性能发展源动力的根本原因，也是人类压榨计算机运算能力最有力的武器。
+
+概述除了充分利用计算机处理器的能力外，一个服务端同时对多个客户端提供服务是一个具体的并发应用的场景。衡量一个服务器性能的高低好坏，每秒事务处理数（Transac...">
+
+  <!-- feed -->
+  
+    <link rel="alternate" href="/atom.xml" title="CAYZLH" type="application/atom+xml">
+  
+
+  
+    
+<link rel="stylesheet" href="/css/main.css">
+
+  
+
+  
+    
+      <meta name="msapplication-TileColor" content="#2d89ef">
+    
+      <meta name="msapplication-config" content="/assets/favicon/browserconfig.xml">
+    
+      <meta name="theme-color" content="#ffffff">
+    
+      <link rel="shortcut icon" href="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/logo/favicon.ico">
+    
+      <link rel="icon" type="image/png" href="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/logo/favicon-192x192.png" sizes="192x192">
+    
+      <link rel="apple-touch-icon" sizes="180x180" href="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/logo/apple-touch-icon.png">
+    
+  
+</head>
+
+<body>
+  
+
+
+  <div class="l_body" id="start">
+    <aside class="l_left">
+    
+
+<header class="header">
+  <div class="logo-wrap">
+  
+    <a class="avatar" href="/">
+      
+        <img no-lazy class="bg" src="https://cdn.jsdelivr.net/gh/cdn-x/placeholder@1.0.2/avatar/round/rainbow64@3x.webp" onerror="javascript:this.classList.add('error');this.src='https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2021/04/16084216181285221618128522255.svg';">
+      
+      <img no-lazy class="avatar" src="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/image/IMG_4207.JPG" onerror="javascript:this.classList.add('error');this.src='https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2021/04/16084216181285221618128522255.svg';">
+    </a>
+  
+  
+    <a class="title" href="/">
+      CAYZLH
+    </a>
+  
+</div>
+
+  <nav class="menu dis-select"><a class="nav-item" href="/">文章</a><a class="nav-item active" href="/wiki/">文档</a><a class="nav-item" href="/talking/">动态</a><a class="nav-item" href="/about/">更多</a></nav>
+</header>
+
+<div class="widgets">
+  
+    
+      
+      
+<div class="widget-wrap" id="toc"><div class="widget-header h4 dis-select"><span class="name">本文目录</span></div><div class="widget-body fs14 wiki"><div class="doc-tree"><a class="doc-tree-link" href="/wiki/understanding_jvm/index.html"><span class="toc-text">深入理解Java虚拟机</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/understanding_jvm/part1.html"><span class="toc-text">Java内存区域内存溢出异常</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/understanding_jvm/part2.html"><span class="toc-text">垃圾收集器与内存分配策略</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/understanding_jvm/part3.html"><span class="toc-text">虚拟机性能监控与故障处理工具</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/understanding_jvm/part4.html"><span class="toc-text">虚拟机类加载机制</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/understanding_jvm/part5.html"><span class="toc-text">虚拟机字节码执行引擎</span></a></div><div class="doc-tree active"><a class="doc-tree-link active" href="/wiki/understanding_jvm/part6.html"><span class="toc-text">Java内存模型与线程</span></a><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%A6%82%E8%BF%B0"><span class="toc-text">概述</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%A1%AC%E4%BB%B6%E7%9A%84%E6%95%88%E7%8E%87%E4%B8%8E%E4%B8%80%E8%87%B4%E6%80%A7"><span class="toc-text">硬件的效率与一致性</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Java%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B"><span class="toc-text">Java内存模型</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%BB%E5%86%85%E5%AD%98%E4%B8%8E%E5%B7%A5%E4%BD%9C%E5%86%85%E5%AD%98"><span class="toc-text">主内存与工作内存</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%86%85%E5%AD%98%E9%97%B4%E4%BA%A4%E4%BA%92%E6%93%8D%E4%BD%9C"><span class="toc-text">内存间交互操作</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%AF%B9%E4%BA%8Evolatile%E5%9E%8B%E5%8F%98%E9%87%8F%E7%9A%84%E7%89%B9%E6%AE%8A%E8%A7%84%E5%88%99"><span class="toc-text">对于volatile型变量的特殊规则</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E7%AC%AC%E4%B8%80"><span class="toc-text">第一</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E7%AC%AC%E4%BA%8C"><span class="toc-text">第二</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Java%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B%E4%B8%AD%E5%AF%B9volatile%E5%8F%98%E9%87%8F%E5%AE%9A%E4%B9%89%E7%9A%84%E7%89%B9%E6%AE%8A%E8%A7%84%E5%88%99%E3%80%82"><span class="toc-text">Java内存模型中对volatile变量定义的特殊规则。</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%AF%B9%E4%BA%8Elong%E5%92%8Cdouble%E5%9E%8B%E5%8F%98%E9%87%8F%E7%9A%84%E7%89%B9%E6%AE%8A%E8%A7%84%E5%88%99"><span class="toc-text">对于long和double型变量的特殊规则</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%8E%9F%E5%AD%90%E6%80%A7%E3%80%81%E5%8F%AF%E8%A7%81%E6%80%A7%E4%B8%8E%E6%9C%89%E5%BA%8F%E6%80%A7"><span class="toc-text">原子性、可见性与有序性</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%8E%9F%E5%AD%90%E6%80%A7"><span class="toc-text">原子性</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%8F%AF%E8%A7%81%E6%80%A7"><span class="toc-text">可见性</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%9C%89%E5%BA%8F%E6%80%A7"><span class="toc-text">有序性</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%85%88%E8%A1%8C%E5%8F%91%E7%94%9F%E5%8E%9F%E5%88%99"><span class="toc-text">先行发生原则</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Java%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B%E4%B8%8B%E4%B8%80%E4%BA%9B%E5%A4%A9%E7%84%B6%E7%9A%84%E5%85%88%E8%A1%8C%E5%8F%91%E7%94%9F%E5%85%B3%E7%B3%BB%EF%BC%9A"><span class="toc-text">Java内存模型下一些天然的先行发生关系：</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Java%E4%B8%8E%E7%BA%BF%E7%A8%8B"><span class="toc-text">Java与线程</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%BA%BF%E7%A8%8B%E7%9A%84%E5%AE%9E%E7%8E%B0"><span class="toc-text">线程的实现</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E4%BD%BF%E7%94%A8%E5%86%85%E6%A0%B8%E7%BA%BF%E7%A8%8B%E5%AE%9E%E7%8E%B0"><span class="toc-text">使用内核线程实现</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E4%BD%BF%E7%94%A8%E7%94%A8%E6%88%B7%E7%BA%BF%E7%A8%8B%E5%AE%9E%E7%8E%B0"><span class="toc-text">使用用户线程实现</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%B7%B7%E5%90%88%E5%AE%9E%E7%8E%B0"><span class="toc-text">混合实现</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Java%E7%BA%BF%E7%A8%8B%E7%9A%84%E5%AE%9E%E7%8E%B0"><span class="toc-text">Java线程的实现</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Java%E7%BA%BF%E7%A8%8B%E8%B0%83%E5%BA%A6"><span class="toc-text">Java线程调度</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%8D%8F%E5%90%8C%E5%BC%8F%E8%B0%83%E5%BA%A6"><span class="toc-text">协同式调度</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%8A%A2%E5%8D%A0%E5%BC%8F%E8%B0%83%E5%BA%A6"><span class="toc-text">抢占式调度</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%8A%B6%E6%80%81%E8%BD%AC%E6%8D%A2"><span class="toc-text">状态转换</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%B0%8F%E7%BB%93"><span class="toc-text">小结</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8F%82%E8%80%83"><span class="toc-text">参考</span></a></li></ol></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/understanding_jvm/part7.html"><span class="toc-text">线程安全与锁优化</span></a></div></div></div>
+
+    
+  
+    
+      
+      
+  
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+      <div class="widget-wrap" id="related">
+        <div class="widget-header h4 dis-select">
+          <span class="name">更多读书笔记</span>
+        </div>
+        <div class="widget-body fs14">
+          
+            
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+                <div class="post-title">
+                  <a href="/wiki/mybatis_technology_insider/index.html">
+                    Mybatis技术内幕
+                  </a>
+                </div>
+              
+            
+          
+            
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+          
+            
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+                <div class="post-title">
+                  <a href="/wiki/how_to_reading/index.html">
+                    《如何阅读一本书》
+                  </a>
+                </div>
+              
+            
+          
+        </div>
+      </div>
+    
+  
+
+
+    
+  
+</div>
+<footer class="footer"><div class="social-wrap dis-select"><a class="social" href="https://github.com/cayzlh" target="_blank" rel="external nofollow noopener noreferrer"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cdn-x/placeholder@1.0.1/social/08a41b181ce68.svg"></a><a class="social" href="https://telegram.me/Q2F5emxo" target="_blank" rel="external nofollow noopener noreferrer"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/image/guanyuwomen.svg"></a><a class="social" href="/about/#comments" rel="noopener noreferrer"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cdn-x/placeholder@1.0.1/social/942ebbf1a4b91.svg"></a></div></footer>
+
+    </aside>
+    <div class="l_main">
+      
+
+      
+
+  
+  
+  <div class="bread-nav fs12">
+  
+    
+    <div id="breadcrumb">
+      <a class="cap breadcrumb" href="/">主页</a>
+      <span class="sep"></span>
+      
+        <a class="cap breadcrumb" href="/wiki/">文档</a>
+      
+      
+        <span class="sep"></span>
+        <a class="cap breadcrumb" href="/wiki/categories/reading/index.html">读书笔记</a>
+      
+      
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        <span class="sep"></span>
+        <a class="cap breadcrumb" href="/wiki/understanding_jvm/index.html">深入理解Java虚拟机</a>
+      
+    </div>
+    <div id="post-meta">
+      更新于&nbsp;<time datetime="2021-04-12T15:35:50.046Z">2021-04-12</time>
+    </div>
+  
+  </div>
+
+
+  <article class="content md wiki">
+  <h1 class="article-title"><span>Java内存模型与线程</span></h1>
+  <blockquote>
+<p>并发处理的广泛应用是使得Amdahl定律代替摩尔定律成为计算机性能发展源动力的根本原因，也是人类压榨计算机运算能力最有力的武器。</p>
+</blockquote>
+<h2 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h2><p>除了充分利用计算机处理器的能力外，一个服务端同时对多个客户端提供服务是一个具体的并发应用的场景。衡量一个服务器性能的高低好坏，每秒事务处理数（Transactions Per Second，TPS）是最重要的指标之一，它代表着一秒内服务端平均能响应的请求总数，二TPS值与程序的并发能力又有非常密切的关系。对于计算量相同的任务，程序线程并发协调得越有条不紊，效率自然就会越高；反之，线程之间频繁阻塞甚至死锁，将会大大降低程序的并发能力。</p>
+<p>服务端是Java语言最擅长的领域之一，这个领取的应用占了Java应用中最大的一块份额，不过如何写好并发应用程序确实程序开发的难点之一，处理好并发方面的问题通常需要更多的经验。<strong>无论语言、中间件和框架如何先进，我们都不能期望它们能独立完成并发处理的所有事情，了解并发的内幕也是不可缺少的课程。</strong></p>
+<h2 id="硬件的效率与一致性"><a href="#硬件的效率与一致性" class="headerlink" title="硬件的效率与一致性"></a>硬件的效率与一致性</h2><p>由于计算机的存储设备与处理器的运算速度之间有着几个数量级的差距，所以现代计算机系统都不得不加入一层读写尽可能接近处理器运算速度的高速缓存（Cache）来作为内存与处理器之间的缓冲：将运算需要使用的数据赋值到缓存中，让运算能快速进行，当运算结束后再从缓存同步回内存之中，这样处理器就无须等待缓慢的内存读写了。</p>
+<p>基于高速缓存的存储交互很好地解决了处理器与内存地速度矛盾，但是也引入了新的问题：<strong>缓存一致性（Cache Coherence）</strong>。每个处理器都有自己地高速缓存，而它们又共享同一主内存（Main Memory）。当多个处理器地运算任务都涉及同一块主内存区域时，将可能导致各自地缓存数据不一致地情况。为了解决一致性地问题，需要各个处理器访问缓存时都遵循一些协议，在读写时要根据协议来进行操作。<strong>Java虚拟机内存模型中定义地内存访问操作与硬件地缓存访问操作时具有可比性地。</strong></p>
+<p><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://gitee.com/cayzlh/img-repo/raw/master/2020/04/19/WEKuAO.png" alt="处理器、高速缓存、主内存之间地交互关系"></p>
+<p><strong>为了使得处理器内部地运算单元能尽量被充分利用，处理器可能会对输入代码进行乱序执行（Out-Of-Order Execution）优化，处理器会在计算之后将乱序执行地结果重组，保证该结果与顺序执行地结果是一致的，但并不保证程序中各个语句计算的先后顺序与输入代码的顺序一致，因此如果存在一个计算任务依赖另一个计算任务的中间结果，那么其顺序性并不能靠代码的先后顺序来保证。与处理器的乱序执行优化类似，Java虚拟机的即时编译器中也有类似的指令重排序（Instruction Reorder）优化。</strong></p>
+<h2 id="Java内存模型"><a href="#Java内存模型" class="headerlink" title="Java内存模型"></a>Java内存模型</h2><p>Java虚拟机规范中试图定义一种Java内存模型（Java Memory Model，JMM）来屏蔽掉各种硬件和操作系统的内存访问差异，以<strong>实现Java程序在各种平台下都能达到一致的并发效果。</strong></p>
+<h3 id="主内存与工作内存"><a href="#主内存与工作内存" class="headerlink" title="主内存与工作内存"></a>主内存与工作内存</h3><p>Java内存模型的主要目标是<strong>定义程序中各个变量的访问规则，即在虚拟机中将变量存储到内存和从内存中取出来变量这样的底层细节。</strong>此处的变量与Java编程中所说的变量有区别，它包括了实例字段、静态字段和构成数组对象的元素，<strong>但是不包括局部变量与方法参数，因为后者是线程私有的，</strong>不会被共享，自然就不存在竞争问题。</p>
+<blockquote>
+<p>为了获得较好的执行效能，Java内存模型并没有限制执行引擎使用处理器的特定寄存器或缓存来和主内存进行交互，也没有限制即时编译器调整代码执行顺序这类权利。</p>
+</blockquote>
+<p><strong>Java内存模型规定了所有变量都存储在主内存（Main Memory）中。</strong>每条线程还有自己的工作内存（Working Menory，类比高速缓存），<strong>线程的工作内存中保存了该线程使用到的变量的主内存副本拷贝，线程对变量的所有操作都必须在工作内存中进行，而不能直接读写主内存中的变量。</strong>不同的线程之间也无法直接访问对方工作内存中的变量，线程间变量的值传递均需要通过主内存来完成。</p>
+<p><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://gitee.com/cayzlh/img-repo/raw/master/2020/04/19/q9VXLj.png" alt="线程、主内存、工作内存三者的交互关系"></p>
+<p>这里所讲的主内存、工作内存与Java内存区域中的Java堆、栈、方法区等并不是同一个层次的内存划分。<strong>从变量、主内存、工作内存的定义来看，主内存主要对应Java堆中对象的实例数据部分，而工作内存则对应于虚拟机栈中的部分区域。</strong>从更低的层次来说，主内存就是硬件的内存，而为了获得更好的运行速度，虚拟机及硬件系统可能会让工作内存优先存储与寄存器和高速缓存中。</p>
+<h3 id="内存间交互操作"><a href="#内存间交互操作" class="headerlink" title="内存间交互操作"></a>内存间交互操作</h3><p>关于主内存与工作内存之间具体的交互协议，即一个变量如何从主内存拷贝到工作内存、如何从工作内存同步回主内存之类的实现细节，Java内存模型顶了八种操作来完成：</p>
+<ul>
+<li>lock（锁定）：作用于主内存的变量，它把一个变量标识为一条线程独占的状态。</li>
+<li>unlock（解锁）：作用于主内存的变量，它把一个处于锁定状态的变量释放出来，释放后的变量才可以被其他线程锁定。</li>
+<li>read（读取）：作用于主内存的变量，它把一个变量的值从主内存传输到线程的工作内存中，以便随后的load动作使用。</li>
+<li>load（载入）：作用于工作内存的变量，它把read操作从内主内存得到的变量值放入工作内存的变量副本中。</li>
+<li>use（使用）：作用于工作内存的变量，它把工作内存中一个变量的值传递给执行引擎，每当虚拟机遇到一个需要使用到变量的值的字节码指令时将会执行这个操作。</li>
+<li>assign（赋值）：作用于工作内存的变量，它把一个从执行引擎接收到的值赋值给工作内存的变量，每当虚拟机遇到一个给变量赋值的字节码指令时执行这个操作。</li>
+<li>store（存储）：作用于工作内存的变量，它把工作内存中一个变量的值传递到主内存中，以便随后的write操作使用。</li>
+<li>write（写入）：作用于主内存的变量，它把store操作从工作内存中得到的变量值放入主内存的变量中。</li>
+</ul>
+<p>如果要把一个变量从主内存复制到工作内存，那就要按顺序执行<code>read</code>和<code>load</code>操作，如果要把变量从工作内存同步回主内存，就要按顺序地执行<code>store</code>和<code>write</code>操作。</p>
+<blockquote>
+<p>Java内存模型只要求上述两个操作必须按顺序执行，而没有保证必须连续执行。</p>
+</blockquote>
+<p>Java内存模型还规定了在执行上述八种基本操作时必须满足：</p>
+<ul>
+<li>不允许<code>read</code>和<code>load</code>、<code>store</code>和<code>write</code>操作之一单独出现，即不允许一个变量从主内存读取了但工作内存不接受，或者从工作内存发起回写了但主内存不接受地情况出现。</li>
+<li>不允许一个线程丢弃它最忌你地<code>assign</code>操作，即变量在工作内存中改变了之后必须把该变化同步回主内存。</li>
+<li>不允许一个线程无原因地把数据从线程地工作内存同步回主内存中。</li>
+<li>一个新的变量只能在主内存中诞生，不允许在工作内存中直接使用一个未被初始化（<code>load</code>或<code>assign</code>）的变量，换句话说就是对一个变量实施<code>use</code>和<code>store</code>操作之前，必须先执行过了<code>assign</code>和<code>load</code>操作。</li>
+<li>一个变量在同一个时刻只允许一条线程对其进行<code>lock</code>操作，但lock操作可以被同一条线程重复执行多次，多次执行<code>lock</code>后，只有执行相同次数的<code>unlock</code>操作，变量才会被解锁。</li>
+<li>如果对一个变量执行<code>lock</code>操作，将会晴空工作内存中此变量的值，在执行引擎使用这个变量前，需要重新执行<code>load</code>或<code>assign</code>操作初始化变量的值。</li>
+<li>如果一个变量事先没有被<code>lock</code>操作锁定，则不允许对它执行<code>unlock</code>操作；也不允许<code>unlock</code>一个被其他线程锁定住的变量。</li>
+<li>对一个变量执行<code>unlock</code>操作之前，必须先把此变量同步回住内存中（执行<code>store</code>和<code>write</code>操作）。</li>
+</ul>
+<h3 id="对于volatile型变量的特殊规则"><a href="#对于volatile型变量的特殊规则" class="headerlink" title="对于volatile型变量的特殊规则"></a>对于volatile型变量的特殊规则</h3><blockquote>
+<p>关键字<code>volatile</code>可以说是Java虚拟机提供的最轻量级的同步机制，但是它并不容易被正确地、完整地理解，以至于很多时候都不去使用它，遇到需要处理多线程数据竞争的时候一律使用<code>synchronize</code>来进行同步。</p>
+</blockquote>
+<p><strong>当一个变量被定义成<code>volatile</code>之后，它将具备两种特性：</strong></p>
+<h4 id="第一"><a href="#第一" class="headerlink" title="第一"></a>第一</h4><p><strong>保证此变量对所有线程的可见性</strong>，这里的“可见性”是指当一条线程修改了这个变量的值，新值对于其他线程来说是可以立即得知的。而普通变量不能做到这一点，变量值在线程间传递均需要通过主内存来完成。</p>
+<p><em><code>volatile</code>变量在各个线程的工作内存中不存在一执行问题（在各个线程的工作内存中<code>volatile</code>变量也可以存在不一致的情况，但是由于每次使用之前都要先刷新，执行引擎看不到不一致的情况，因此可以认为不存在一执行问题），但是Java里面的运算并非原子操作，导致<code>volatile</code>变量的运算在并发下一样不是安全的。</em></p>
+<p>一条字节码指令在解释执行时，解释器将要运行许多行代码才能实现它的语义，如果是编译执行，一条字节码指令也可能转化成若干条本地机器码指令。</p>
+<p><strong>由于<code>volatile</code>变量只能保证可见性，在不符合以下两种规则的运算场景中，仍然要通过枷锁（使用<code>synchronized</code>或<code>java.util.concurrent</code>中的原子类）来保证原子性。</strong></p>
+<ol>
+<li>运算结果并不依赖变量的当前值，或者能够确保只有单一的线程修改变量的值。</li>
+<li>变量不需要与其他的状态变量共同参与不变约束。</li>
+</ol>
+<p>使用使用<code>volatile</code>来控制并发的代码：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">volatile</span> <span class="keyword">boolean</span> shutdownRequested;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">shutdown</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    shutdownRequested = <span class="keyword">false</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">doWork</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">while</span> (!shutdownRequested) &#123;</span><br><span class="line">        <span class="comment">// do stuff</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="第二"><a href="#第二" class="headerlink" title="第二"></a>第二</h4><p><strong>禁止指令重排序优化</strong>，普通的变量仅仅会保证在该方法的执行过程中所有依赖赋值结果的地方都能获取到正确的结果，而不能保证变量赋值操作的顺序与程序代码中的执行顺序一致。<strong>因为在一个线程的方法执行过程中无法感知到这点，这就是Java内存模型中描述的所谓的“线程内存表现为串行的语义”（Within-Thread As-If-Serial Semantics）。</strong></p>
+<p>指令重排序会干扰程序的并罚执行的例子：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">Map configOptions;</span><br><span class="line"><span class="keyword">char</span>[] configText;</span><br><span class="line"><span class="comment">// 此变量必须定义为volatile</span></span><br><span class="line"><span class="keyword">volatile</span> <span class="keyword">boolean</span> initialized = <span class="keyword">false</span>;</span><br><span class="line"><span class="comment">// 假设以下代码在线程A中执行</span></span><br><span class="line"><span class="comment">// 模拟读取配置信息，当读取完成后，将initialized设置为true来通知其他线程配置可用</span></span><br><span class="line">configOptions = <span class="keyword">new</span> HashMap();</span><br><span class="line">configText = readConfigFile(fileName);</span><br><span class="line">processConfigOptions(configText, configOptions);</span><br><span class="line">initialized = <span class="keyword">true</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 假设以下代码在线程B中执行</span></span><br><span class="line"><span class="comment">// 等待initialized为true，代表线程A已经把配置信息初始化完成　</span></span><br><span class="line"><span class="keyword">while</span> (!initialized) &#123;</span><br><span class="line">    sleep();</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// 使用线程A中初始化好的配置信息</span></span><br><span class="line">doSomethingWithConfig();</span><br></pre></td></tr></table></figure>
+
+<p>这段伪代码描述的场景十分常见，只是我们在处理配置文件时一般不会出现并发而已。如果<code>initialized</code>没有使用<code>volatile</code>修饰，就可能会由于指令重排序的优化，导致线程A中最后一句中的“initialized = true;”被提前执行，这样线程B中使用配置信息的代码就可能出现错误，而<code>volatile</code>可以避免这类情况的发生。</p>
+<h4 id="Java内存模型中对volatile变量定义的特殊规则。"><a href="#Java内存模型中对volatile变量定义的特殊规则。" class="headerlink" title="Java内存模型中对volatile变量定义的特殊规则。"></a>Java内存模型中对<code>volatile</code>变量定义的特殊规则。</h4><p>假定T表示一个线程，V和W分别表示两个<code>volatile</code>型变量，那么在进行<code>read</code>、<code>load</code>、<code>use</code>、<code>asign</code>、<code>store</code>和<code>write</code>操作时需要满足如下的规则：</p>
+<ul>
+<li>只有当线程T对变量V执行的前一个动作时load的时候，线程T才能对变量V执行<code>use</code>动作；并且，只有线程T对变量V执行的后一个动作时<code>use</code>的时候，线程T才能对V执行<code>load</code>动作。程序T对变量V的<code>use</code>动作可以认为是与线程T对变量V的<code>load</code>和<code>read</code>动作相关联的，必须一起连续出现。（<strong>这条规则要求在工作内存中，每次使用V前都必须从主内存刷新最先的值，用于保证能看见其他线程对变量V所做的修改后的值</strong>）。</li>
+<li>只有当线程T对变量V执行的前一个动作时<code>assign</code>的时候， 线程T才能对变量V执行<code>store</code>动作；并且，只有当线程T对变量执行的后一个动作时<code>store</code>的时候，线程T才能对变量V执行<code>assign</code>动作。线程T对变量V的<code>assign</code>动作可以认为是与线程T对变量V的<code>store</code>和<code>writy</code>动作相关联的，必须一起连续出现（<strong>这条规则要求在工作内存中，每次修改V后都必须立刻同步回主内存中，用于保证其他线程可以看到自己对变量V所做的的修改</strong>）。</li>
+<li>假定动作A是线程T对变量V实施的<code>use</code>或<code>assign</code>动作，假定动作F是与动作A相关联的<code>load</code>和<code>store</code>动作，假定动作P是与动作F相应的对变量V的<code>read</code>或<code>write</code>动作；类似的，假定动作B是线程T对变量W实施的<code>use</code>或<code>assign</code>动作，假定动作G是与动作B相关的<code>load</code>或<code>store</code>动作，假定动作Q是与动作G相应的对变量W的<code>read</code>或<code>write</code>动作。如果A先于B，那么P先于Q（<strong>这条规则要求<code>volatile</code>修饰的变量不回呗指令重排序优化，保证代码的执行顺序与程序的顺序相同</strong>）。</li>
+</ul>
+<h3 id="对于long和double型变量的特殊规则"><a href="#对于long和double型变量的特殊规则" class="headerlink" title="对于long和double型变量的特殊规则"></a>对于long和double型变量的特殊规则</h3><p>Java内存模型要求<code>lock</code>、<code>unlock</code>、<code>read</code>、<code>load</code>、<code>assign</code>、<code>use</code>、<code>store</code>和<code>write</code>这八个操作都具有原子性，但是对于64位的数据类型（<code>long</code>和<code>double</code>），在模型中特别定义了一条宽松的规定：允许虚拟机将没有被<code>volatile</code>修饰的64位数据的读写操作划分为两次32位的操作来进行，即允许虚拟机实现选择可以不保证64位数据类型的<code>load</code>、<code>store</code>、<code>read</code>和<code>write</code>这四个操作的原子性，这点就是所谓的<strong>long和double的非原子性协定</strong>。在编写代码时一般不需要将用到的long和double变量专门声明为<code>volatile</code>。</p>
+<h3 id="原子性、可见性与有序性"><a href="#原子性、可见性与有序性" class="headerlink" title="原子性、可见性与有序性"></a>原子性、可见性与有序性</h3><p>Java内存模型时围绕着在并发过程中如何处理<strong>原子性、可见性和有序性</strong>这三个特征来建立的。</p>
+<h4 id="原子性"><a href="#原子性" class="headerlink" title="原子性"></a>原子性</h4><p>由Java内存模型来直接保证的原子性变量操作包括<code>read</code>、<code>load</code>、<code>assign</code>、<code>use</code>、<code>store</code>和<code>write</code>这六个，大致可以认为基本数据类型的访问和读写时具备原子性的。</p>
+<blockquote>
+<p>如果需要一个更大范围的原子性保证，Java内存模型提供了<code>lock</code>和<code>unlock</code>操作来满足这种需求，尽管虚拟机未把<code>lock</code>和<code>unlock</code>操作直接开放给用户使用，但是却提供了更高层次的字节码指令<code>monitorenter</code>和<code>monitorexit</code>来隐式地使用这两个操作，这两个字节码反映到Java代码中就是痛不快——<code>synchronized</code>关键字，因此在<code>synchronized</code>块之间的操作也具备原子性。</p>
+</blockquote>
+<h4 id="可见性"><a href="#可见性" class="headerlink" title="可见性"></a>可见性</h4><p>可见性是指当一个线程修改了共享变量的值，其他线程能够立即得知这个修改。<strong>Java内存模型时通过在变量修改后将新值同步回主内存，在变量读取前从主内存刷新变量值这种依赖主内存作为传递媒介的方式来实现可见性的，无论是普通的变量还是<code>volatile</code>变量都是如此，普通变量与<code>volatile</code>变量的区别是<code>volatile</code>的特殊规则保证了新值能立即同步到主内存，以及每次使用前立即从主内存刷新。</strong></p>
+<blockquote>
+<p>除了<code>volatile</code>外，Java的<code>synchronized</code>和<code>final</code>关键字也能实现可见性。</p>
+</blockquote>
+<h4 id="有序性"><a href="#有序性" class="headerlink" title="有序性"></a>有序性</h4><p><strong>如果在本线程内观察，所有的操作都是有序的；如果在一个线程中观察另一个线程，所有的操作都是无序的。</strong>前半句是指“线程内表现为串行的语义”，后半句是指“指令重排序现象”和“工作内存与主内存同步延迟”现象。</p>
+<blockquote>
+<p>Java语言提供了<code>volatile</code>和<code>synchronized</code>两个关键字来保证线程之间的操作的有序性，<code>volatile</code>关键字本身就包含了禁止指令重排序的语义，而<code>synchronized</code>则是由“一个变量在同一个时刻只允许一条线程对其进行<code>lock</code>操作”这条规则获得的，这个规则决定了持有同一个锁的两个同步块只能串行地进入。</p>
+</blockquote>
+<h3 id="先行发生原则"><a href="#先行发生原则" class="headerlink" title="先行发生原则"></a>先行发生原则</h3><p><strong>先行发生时Java内存模型中定义的两项操作之间的偏序关系，如果说操作A先行发生与操作B，其实就是说在发生操作B之前，操作A产生的影响能呗操作B观察到</strong>，“影响”包括修改了内存中共享变量的值、发送了消息、调用了方法等。</p>
+<h4 id="Java内存模型下一些天然的先行发生关系："><a href="#Java内存模型下一些天然的先行发生关系：" class="headerlink" title="Java内存模型下一些天然的先行发生关系："></a>Java内存模型下一些天然的先行发生关系：</h4><ul>
+<li>程序次序规则：在一个线程内，按照程序代码顺序，书写在前面的操作先行发生与书写在后面的操作。准确的说应该是控制流顺序而不是程序代码顺序，因为要考虑分支、循环等结构。</li>
+<li>管程锁规则：一个unlock操作先行发生于后面对同一个锁的lock操作。这里必须强调的是同一个锁，而后面是指时间上的先后顺序。</li>
+<li><code>volatile</code>变量规则：对一个<code>volatile</code>变量的写操作先行发生于后面对这个变量的毒操作，这里的后面同样是指时间上的先后顺序。</li>
+<li>线程启动规则：<code>Thread</code>对象的<code>start()</code>方法先行发生于此线程的每一个动作。</li>
+<li>线程终止规则：线程的所有操作都先行发生于此线程的终止检测。</li>
+<li>线程中断规则：对线程<code>interrupt()</code>方法的调用先行发生于被中断线程的代码检测到中断事件的发生。</li>
+<li>对象终结规则：一个对象的初始化完成先行发生于它的<code>finalize()</code>方法的开始。</li>
+<li>传递性：如果操作A先行发生于操作B，操作B先行发生于C，那就可以得出A操作先行发生于操作C的结论。</li>
+</ul>
+<p><strong>事件上先后顺序与先行发生原则之间基本没有太大的关系，所以我们衡量并发安全问题时不要收到事件顺序的干扰，一切必须以先行发生原则为准。</strong></p>
+<h2 id="Java与线程"><a href="#Java与线程" class="headerlink" title="Java与线程"></a>Java与线程</h2><p><em>并发不一定要依赖多线程，但是在Java里面谈论并发，大多数都与线程脱不开关系。</em></p>
+<h3 id="线程的实现"><a href="#线程的实现" class="headerlink" title="线程的实现"></a>线程的实现</h3><p>主流的操作系统都提供了线程实现，<strong>Java语言则提供了在不同硬件和操作系统平台下对线程操作的统一处理，每个<code>java.lang.Thread</code>类的实例就代表了一个线程。</strong>不过Thread类与大部分的Java API有着显著的区别，它的所有关键方法都被声明为Native。在Java API中一个Native方法可能就以为着这个方法没有使用或无法使用平台无关的手段来实现。</p>
+<p>实现线程主要有三种方式：<strong>使用内核实现，使用用户线程实现，使用用户线程加轻量级进程混合实现。</strong></p>
+<h4 id="使用内核线程实现"><a href="#使用内核线程实现" class="headerlink" title="使用内核线程实现"></a>使用内核线程实现</h4><p>直接由操作系统内核支持的线程，这种线程由内核线程来完成切换，内核通过操纵调度器对线程进行调度，并负责将线程的任务映射到各个处理器上。<strong>程序一般不会直接去使用内核线程，而是使用内核线程的一种高级接口——轻量级进程，轻量级进程就是我们通常意义上所将的线程，由于每个轻量级进程都由一个内核线程支持，因此只有先支持内核线程，才能有轻量级进程。</strong></p>
+<p><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://gitee.com/cayzlh/img-repo/raw/master/2020/04/19/uzlRTG.png" alt="轻量级进程与内核线程之间1:1的关系"></p>
+<p>由于内核线程的支持，每个轻量级进程都成为一个独立的调度单元，即使有一个轻量级进程在系统调用中阻塞了，也不会影响整个进程继续工作，但是轻量级进程具有它的局限性：<strong>首先，由于是基于内核线程实现的，所以各种进程操作，如创建、析构及同步，都需要进行系统调用。</strong>而系统调用的代价相对较高，需要在用户态和内核态中来回切换。其次，每个轻量级进程都需要有一个内核线程的支持，因此轻量级进程要消耗一定的内核资源，因此一个系统支持轻量级进程的数量是有限的。</p>
+<h4 id="使用用户线程实现"><a href="#使用用户线程实现" class="headerlink" title="使用用户线程实现"></a>使用用户线程实现</h4><p>广义上来讲，一个线程只要不是内核线程，那就可以认为是用户线程，因此从这个定义上来讲轻量级进程也属于用户线程，但轻量级进程的实现始终是建立在内核之上的，许多操作都要进行系统嗲用，因此效率会收到限制。</p>
+<p>狭义上来讲，用户的线程指的是完全建立在用户空间的线程库上，系统内核不能感知到线程存在的实现。<strong>用户线程的建立、同步、销毁和调度完全在用户态中完成，不需要内核的帮助。</strong>如果程序实现得当，这种线程不需要切换到内核态，因此操作可以是非常快且低消耗的，也可以支持规模更大的线程数量，部分高性能数据库中的多线程就是由用户线程实现的。</p>
+<p><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://gitee.com/cayzlh/img-repo/raw/master/2020/04/19/eMtx7A.png" alt="进程与用户线程之间1:N的关系"></p>
+<p><em>使用用户线程的优势在于不需要系统内核支援，劣势在于没有系统内核的支援，所有的线程操作都需要用户程序自己处理。</em>线程的创建、切换和调度都是需要考虑问题。</p>
+<h4 id="混合实现"><a href="#混合实现" class="headerlink" title="混合实现"></a>混合实现</h4><p>线程除了依赖内核线程实现和完全由用户程序自己实现之外，还有一种将内核线程与用户线程一起使用的实现方式。在这种混合实现下，既有用户线程，也存在轻量级进程。用户县城还是完全建立在用户空间中，因此用户线程的创建、切换、析构等操作依然廉价，并且可以支持大规模的用户线程并发。而操作系统提供支持的轻量级进程则作为用户线程和内核线程之间的桥梁，这样可以使用内核提供的线程调度功能及处理器映射，并且用户线程的系统调用要通过轻量级线程来完成，大大降低了进程被阻塞的风险。</p>
+<p><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://gitee.com/cayzlh/img-repo/raw/master/2020/04/19/GMf8rD.png" alt="用户线程与轻量级进程之间M:N的关系"></p>
+<h4 id="Java线程的实现"><a href="#Java线程的实现" class="headerlink" title="Java线程的实现"></a>Java线程的实现</h4><p>操作系统支持怎样的线程模型，在很大成都上就决定了Java虚拟机的线程是怎么样映射的，这点在不同的平台上没有办法达成一致，虚拟机规范中也并未限定Java线程需要使用哪种线程模型来实现。</p>
+<h3 id="Java线程调度"><a href="#Java线程调度" class="headerlink" title="Java线程调度"></a>Java线程调度</h3><p>线程调度是指系统为线程分配处理器使用权的过程，主要调度方式有两种，分别是<strong>协同式线程调度和抢占式线程调度。</strong></p>
+<h4 id="协同式调度"><a href="#协同式调度" class="headerlink" title="协同式调度"></a>协同式调度</h4><p>线程的执行时间由线程本身来控制，线程把自己的工作执行完了之后，要主动通知系统切换到另外一个线程上去。协同式多线程的最大好处是实现简单，而且由于线程要把自己的事情干完后才会进行线程切换，切换操作对线程自己是可知的，所以没有什么线程同步的问题。</p>
+<h4 id="抢占式调度"><a href="#抢占式调度" class="headerlink" title="抢占式调度"></a>抢占式调度</h4><p>每个线程由系统来分配执行时间，线程的切换不由线程本身来决定。在这种实现线程调度的方式下，线程的执行时间是系统可控的，也不会有一个线程导致整个进程阻塞的问题，<strong>Java使用的线程调度方式就是抢占式调度。</strong></p>
+<h3 id="状态转换"><a href="#状态转换" class="headerlink" title="状态转换"></a>状态转换</h3><p>Java定义了5种进程状态，在任意一个时间点中，一个进程只能由且只有一种状态：</p>
+<ul>
+<li>新建：创建后尚未启动的线程处于这种状态</li>
+<li>运行：Runable包括了操作系统线程状态中的Running和Ready，也就是处于此状态的线程有可能正在执行，也有可能正在等待着CPU为它分配执行时间。</li>
+<li>无限期等待：处于这种状态的进程不会被分配CPU执行时间，它们要等待被其他线程显式地唤醒。以下方法会让线程陷入无限期等待状态：<ul>
+<li>没有设置Timeout参数地Object.wait()方法。</li>
+<li>没有设置Timeout参数地Thread.join()方法。</li>
+<li>LockSupport.park()方法。</li>
+</ul>
+</li>
+<li>限期等待：处于这种状态的进程也不会分配CPU执行时间，不过无须等待被其他线程显式唤醒，在一定时间之后他们会由系统自动唤醒。以下方法会让线程进入限期等待状态：<ul>
+<li>Thread.sleep()方法。</li>
+<li>设置了Timeout参数的Object.wait()方法。</li>
+<li>设置了Timeout参数的Thread.join()方法。</li>
+<li>LockSupport.parkNanos()方法。</li>
+<li>LockSupport.parkUntil()方法。</li>
+</ul>
+</li>
+<li>阻塞：进程被阻塞了，阻塞状态在等待着获取到一个排他锁，这个事件将在另外一个线程放弃这个锁的时候发生；等待状态则是在等待一段时间，或者唤醒动作的发生。在程序等待进入同步区域的时候， 线程将进入这种状态。</li>
+<li>结束：已终止线程的线程状态，线程已经结束执行。</li>
+</ul>
+<p>线程状态转换关系：</p>
+<p><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://gitee.com/cayzlh/img-repo/raw/master/2020/04/19/a34Lkz.png" alt="线程状态转换关系"></p>
+<h2 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h2><p>了解了虚拟机Java内存模型的结构及操作，讲解了原子性、可见性、有序性在Java内存模型中的体现，先行发生原则的规则及使用。还有线程在Java语言之中时如何实现的。</p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ul>
+<li>周志明，深入理解Java虚拟机：JVM高级特性与最佳实践，机械工业出版社</li>
+<li><a target="_blank" rel="external nofollow noopener noreferrer" href="https://www.google.com/imghp?hl=zh-CN&tab=wi">图片来源</a></li>
+</ul>
+
+  
+
+
+  </article>
+  
+<div class="related-wrap" id="read-next"><section class="header cap theme"><span>接下来阅读</span></section><section class="body"><div class="post-title h2"><a href="/wiki/understanding_jvm/part7.html">线程安全与锁优化</a></div><div class="post-title fs14"><a href="/wiki/understanding_jvm/part5.html">上一篇：虚拟机字节码执行引擎</a></div></section></div>
+
+  
+
+  <div class="related-wrap md" id="comments">
+    <div class="cmt-title cap theme">
+      快来参与讨论吧
+    </div>
+    <div class="cmt-body utterances">
+      
+
+<svg class="loading" style="vertical-align: middle;fill: currentColor;overflow: hidden;" viewbox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2709"><path d="M832 512c0-176-144-320-320-320V128c211.2 0 384 172.8 384 384h-64zM192 512c0 176 144 320 320 320v64C300.8 896 128 723.2 128 512h64z" p-id="2710"/></svg>
+
+<div id="utterances" repo="cayzlh/studious-barnacle" issue-term="深入理解Java虚拟机" theme="github-light"></div>
+
+    </div>
+  </div>
+
+
+
+
+      
+<footer class="page-footer fs12" style="text-align: center;"><hr><div><p><a href="https://www.cayzlh.com/">🐳Ant丶</a> ©️ 2017-2021</p>
+<p><a target="_blank" rel="external nofollow noopener noreferrer" href="https://beian.miit.gov.cn/">粤ICP备20058712号</a></p>
+</div></footer>
+
+      <div class="float-panel mobile-only" style="display:none">
+  <button type="button" class="sidebar-toggle mobile" onclick="sidebar.toggle()">
+    <svg class="icon" viewbox="0 0 1228 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2849"><path d="M0 0m97.390199 0l973.901995 0q97.390199 0 97.390199 97.390199l0 0q0 97.390199-97.390199 97.3902l-973.901995 0q-97.390199 0-97.390199-97.3902l0 0q0-97.390199 97.390199-97.390199Z" p-id="2850"/><path d="M0 389.560798m97.390199 0l973.901995 0q97.390199 0 97.390199 97.390199l0 0q0 97.390199-97.390199 97.3902l-973.901995 0q-97.390199 0-97.390199-97.3902l0 0q0-97.390199 97.390199-97.390199Z" p-id="2851"/><path d="M0 779.121596m97.390199 0l973.901995 0q97.390199 0 97.390199 97.390199l0 0q0 97.390199-97.390199 97.390199l-973.901995 0q-97.390199 0-97.390199-97.390199l0 0q0-97.390199 97.390199-97.390199Z" p-id="2852"/></svg>
+  </button>
+</div>
+
+    </div>
+  </div>
+  <div class="scripts">
+    <script type="text/javascript">
+  stellar = {
+    // 懒加载 css https://github.com/filamentgroup/loadCSS
+    loadCSS: (href, before, media, attributes) => {
+      var doc = window.document;
+      var ss = doc.createElement("link");
+      var ref;
+      if (before) {
+        ref = before;
+      } else {
+        var refs = (doc.body || doc.getElementsByTagName("head")[0]).childNodes;
+        ref = refs[refs.length - 1];
+      }
+      var sheets = doc.styleSheets;
+      if (attributes) {
+        for (var attributeName in attributes) {
+          if (attributes.hasOwnProperty(attributeName)) {
+            ss.setAttribute(attributeName, attributes[attributeName]);
+          }
+        }
+      }
+      ss.rel = "stylesheet";
+      ss.href = href;
+      ss.media = "only x";
+      function ready(cb) {
+        if (doc.body) {
+          return cb();
+        }
+        setTimeout(function () {
+          ready(cb);
+        });
+      }
+      ready(function () {
+        ref.parentNode.insertBefore(ss, before ? ref : ref.nextSibling);
+      });
+      var onloadcssdefined = function (cb) {
+        var resolvedHref = ss.href;
+        var i = sheets.length;
+        while (i--) {
+          if (sheets[i].href === resolvedHref) {
+            return cb();
+          }
+        }
+        setTimeout(function () {
+          onloadcssdefined(cb);
+        });
+      };
+      function loadCB() {
+        if (ss.addEventListener) {
+          ss.removeEventListener("load", loadCB);
+        }
+        ss.media = media || "all";
+      }
+      if (ss.addEventListener) {
+        ss.addEventListener("load", loadCB);
+      }
+      ss.onloadcssdefined = onloadcssdefined;
+      onloadcssdefined(loadCB);
+      return ss;
+    },
+
+    // 从 butterfly 和 volantis 获得灵感
+    loadScript: (src, opt) => new Promise((resolve, reject) => {
+      var script = document.createElement('script')
+      script.src = src
+      if (opt) {
+        for (let key of Object.keys(opt)) {
+          script[key] = opt[key]
+        }
+      } else {
+        // 默认异步，如果需要同步，第二个参数传入 {} 即可
+        script.async = true
+      }
+      script.onerror = reject
+      script.onload = script.onreadystatechange = function() {
+        const loadState = this.readyState
+        if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+        script.onload = script.onreadystatechange = null
+        resolve()
+      }
+      document.head.appendChild(script)
+    }),
+
+    // https://github.com/jerryc127/hexo-theme-butterfly
+    jQuery: (fn) => {
+      if (typeof jQuery === 'undefined') {
+        stellar.loadScript(stellar.plugins.jQuery).then(fn)
+      } else {
+        fn()
+      }
+    }
+  };
+  stellar.github = 'https://github.com/xaoxuu/hexo-theme-stellar/tree/1.1.0';
+  stellar.config = {
+    date_suffix: {
+      just: '刚刚',
+      min: '分钟前',
+      hour: '小时前',
+      day: '天前',
+      month: '个月前',
+    },
+  };
+
+  // required plugins (only load if needs)
+  stellar.plugins = {
+    jQuery: 'https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js',
+    sitesjs: '/js/plugins/sites.js',
+    friendsjs: '/js/plugins/friends.js',
+  };
+
+  // optional plugins
+  if ('true' == 'true') {
+    stellar.plugins.lazyload = Object.assign({"enable":true,"js":"https://cdn.jsdelivr.net/npm/vanilla-lazyload@17.3.1/dist/lazyload.min.js","transition":"blur"});
+  }
+  if ('true' == 'true') {
+    stellar.plugins.swiper = Object.assign({"enable":true,"css":"https://unpkg.com/swiper/swiper-bundle.min.css","js":"https://unpkg.com/swiper/swiper-bundle.min.js"});
+  }
+  if ('' == 'true') {
+    stellar.plugins.scrollreveal = Object.assign({"enable":null,"js":"https://cdn.jsdelivr.net/npm/scrollreveal@4.0.9/dist/scrollreveal.min.js","distance":"8px","duration":500,"interval":100,"scale":1});
+  }
+  if ('true' == 'true') {
+    stellar.plugins.preload = Object.assign({"enable":true,"service":"flying_pages","instant_page":"https://cdn.jsdelivr.net/gh/volantis-x/cdn-volantis@4.1.2/js/instant_page.js","flying_pages":"https://cdn.jsdelivr.net/gh/gijo-varghese/flying-pages@2.1.2/flying-pages.min.js"});
+  }
+</script>
+
+<!-- required -->
+
+  
+<script src="/js/main.js" async></script>
+
+
+
+<!-- optional -->
+
+  <script>
+  function utterances(){
+    if(!document.getElementById("utterances"))return;
+    setTimeout(function() {
+      var checkUtterances = setInterval(function () {
+        var el = document.getElementById("utterances");
+        if (!el) return
+        clearInterval(checkUtterances)
+        try {
+          el.innerHTML="";
+        } catch (error) {}
+        var script = document.createElement('script');
+        script.src = 'https://utteranc.es/client.js';
+        const keys = ['repo', 'issue-term', 'issue-number', 'theme', 'label', 'crossorigin'];
+        keys.forEach((key, i) => {
+          if (el.attributes[key] && el.attributes[key].value) {
+            script.setAttribute(key, el.attributes[key].value);
+          }
+        });
+        el.appendChild(script);
+       }, 200)
+    });
+  }
+  utterances();
+</script>
+
+
+
+
+<!-- inject -->
+
+
+  </div>
+</body>
+</html>

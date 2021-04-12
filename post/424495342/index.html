@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta name="generator" content="Hexo 5.4.0">
+  <meta charset="utf-8">
+  
+
+  <meta http-equiv="x-dns-prefetch-control" content="on">
+  <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+
+  <meta name="renderer" content="webkit">
+  <meta name="force-rendering" content="webkit">
+  <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+  <meta name="HandheldFriendly" content="True">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <title>Linux下find与exec的使用 - CAYZLH</title>
+
+  
+  <meta name="description" content="Linux下find与exec的使用，这两者结合起来可以做很多事情">
+
+  <!-- feed -->
+  
+    <link rel="alternate" href="/atom.xml" title="CAYZLH" type="application/atom+xml">
+  
+
+  
+    
+<link rel="stylesheet" href="/css/main.css">
+
+  
+
+  
+    
+      <meta name="msapplication-TileColor" content="#2d89ef">
+    
+      <meta name="msapplication-config" content="/assets/favicon/browserconfig.xml">
+    
+      <meta name="theme-color" content="#ffffff">
+    
+      <link rel="shortcut icon" href="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/logo/favicon.ico">
+    
+      <link rel="icon" type="image/png" href="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/logo/favicon-192x192.png" sizes="192x192">
+    
+      <link rel="apple-touch-icon" sizes="180x180" href="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/logo/apple-touch-icon.png">
+    
+  
+</head>
+
+<body>
+  
+
+
+  <div class="l_body" id="start">
+    <aside class="l_left">
+    
+
+<header class="header">
+  <div class="logo-wrap">
+  
+    <a class="avatar" href="/">
+      
+        <img no-lazy class="bg" src="https://cdn.jsdelivr.net/gh/cdn-x/placeholder@1.0.2/avatar/round/rainbow64@3x.webp" onerror="javascript:this.classList.add('error');this.src='https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2021/04/16084216181285221618128522255.svg';">
+      
+      <img no-lazy class="avatar" src="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/image/IMG_4207.JPG" onerror="javascript:this.classList.add('error');this.src='https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2021/04/16084216181285221618128522255.svg';">
+    </a>
+  
+  
+    <a class="title" href="/">
+      CAYZLH
+    </a>
+  
+</div>
+
+  <nav class="menu dis-select"><a class="nav-item active" href="/">文章</a><a class="nav-item" href="/wiki/">文档</a><a class="nav-item" href="/talking/">动态</a><a class="nav-item" href="/about/">更多</a></nav>
+</header>
+
+<div class="widgets">
+  
+    
+      
+      
+<div class="widget-wrap" id="toc"><div class="widget-header h4 dis-select"><span class="name">本文目录</span></div><div class="widget-body fs14 post"><div class="doc-tree active"><ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#exec%E7%9A%84%E5%9F%BA%E6%9C%AC%E7%94%A8%E6%B3%95"><span class="toc-text">exec的基本用法</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Example-1-%E4%BD%BF%E7%94%A8find%E5%91%BD%E4%BB%A4%E6%9F%A5%E6%89%BE%E7%9B%B8%E5%85%B3%E6%96%87%E4%BB%B6%E5%90%8E%EF%BC%8C%E5%86%8D%E4%BD%BF%E7%94%A8ls%E5%91%BD%E4%BB%A4%E5%B0%86%E5%AE%83%E4%BB%AC%E7%9A%84%E8%AF%A6%E7%BB%86%E4%BF%A1%E6%81%AF%E5%88%97%E5%87%BA%E6%9D%A5"><span class="toc-text">Example 1 使用find命令查找相关文件后，再使用ls命令将它们的详细信息列出来</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Example-2-%E4%BD%BF%E7%94%A8find%E5%91%BD%E4%BB%A4%E6%9F%A5%E6%89%BE%E7%9B%B8%E5%85%B3%E6%96%87%E4%BB%B6%E5%90%8E%EF%BC%8C%E5%86%8D%E4%BD%BF%E7%94%A8rm%E5%91%BD%E4%BB%A4%E5%B0%86%E5%AE%83%E4%BB%AC%E5%88%A0%E9%99%A4"><span class="toc-text">Example 2 使用find命令查找相关文件后，再使用rm命令将它们删除</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Example-3-%E4%BD%BF%E7%94%A8-exec%E9%80%89%E9%A1%B9%E7%9A%84%E5%AE%89%E5%85%A8%E6%A8%A1%E5%BC%8F%EF%BC%8C%E5%B0%86%E5%AF%B9%E6%AF%8F%E4%B8%AA%E5%8C%B9%E9%85%8D%E5%88%B0%E7%9A%84%E6%96%87%E4%BB%B6%E8%BF%9B%E8%A1%8C%E6%93%8D%E4%BD%9C%E4%B9%8B%E5%89%8D%E6%8F%90%E7%A4%BA%E7%94%A8%E6%88%B7"><span class="toc-text">Example 3 使用-exec选项的安全模式，将对每个匹配到的文件进行操作之前提示用户</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Example-4-%E6%90%9C%E7%B4%A2%E5%8C%B9%E9%85%8D%E5%88%B0%E7%9A%84%E6%96%87%E4%BB%B6%E4%B8%AD%E7%9A%84%E5%85%B3%E9%94%AE%E5%86%85%E5%AE%B9"><span class="toc-text">Example 4 搜索匹配到的文件中的关键内容</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Example-5-%E6%9F%A5%E6%89%BE%E6%96%87%E4%BB%B6%E5%B9%B6%E7%A7%BB%E5%8A%A8%E5%88%B0%E6%8C%87%E5%AE%9A%E7%9B%AE%E5%BD%95"><span class="toc-text">Example 5 查找文件并移动到指定目录</span></a></li></ol></div></div></div>
+
+    
+  
+</div>
+<footer class="footer"><div class="social-wrap dis-select"><a class="social" href="https://github.com/cayzlh" target="_blank" rel="external nofollow noopener noreferrer"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cdn-x/placeholder@1.0.1/social/08a41b181ce68.svg"></a><a class="social" href="https://telegram.me/Q2F5emxo" target="_blank" rel="external nofollow noopener noreferrer"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/image/guanyuwomen.svg"></a><a class="social" href="/about/#comments" rel="noopener noreferrer"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cdn-x/placeholder@1.0.1/social/942ebbf1a4b91.svg"></a></div></footer>
+
+    </aside>
+    <div class="l_main">
+      
+
+      
+
+
+  <div class="bread-nav fs12">
+  
+    
+    <div id="breadcrumb">
+      <a class="cap breadcrumb" href="/">主页</a>
+      <span class="sep"></span>
+      <a class="cap breadcrumb" href="/">文章</a>
+      
+        <span class="sep"></span>
+        <a class="cap breadcrumb-link" href="/categories/%E7%AC%94%E8%AE%B0%E6%9C%AC/">笔记本</a>
+      
+    </div>
+    <div id="post-meta">
+      发布于&nbsp;<time datetime="2018-11-25T08:51:42.000Z">2018-11-25</time>
+    </div>
+  
+  </div>
+
+
+<article class="content md post">
+<h1 class="article-title"><span>Linux下find与exec的使用</span></h1>
+<blockquote>
+<p><strong>exec命令</strong>用于调用并执行指令的命令。exec命令通常用在shell脚本程序中，可以调用其他的命令。如果在当前终端中使用命令，则当指定的命令执行完毕后会立即退出终端。</p>
+</blockquote>
+<h3 id="exec的基本用法"><a href="#exec的基本用法" class="headerlink" title="exec的基本用法"></a>exec的基本用法</h3><p><code>-exec</code>参数后面跟的就是我们想进一步操作的命令，比如<code>rm</code>，<code>mv</code>等等。<code>exec</code>是以分号”<code>;</code>“作为结束标识符的，考虑到各个系统平台对分号的不同解释，我们在分号前再加个反斜杠，便于移植。而在分号前，通常也会有一对花括号**{}**，代表前面<code>find</code>命令查找出来的文件名。</p>
+<h3 id="Example-1-使用find命令查找相关文件后，再使用ls命令将它们的详细信息列出来"><a href="#Example-1-使用find命令查找相关文件后，再使用ls命令将它们的详细信息列出来" class="headerlink" title="Example 1 使用find命令查找相关文件后，再使用ls命令将它们的详细信息列出来"></a>Example 1 使用find命令查找相关文件后，再使用ls命令将它们的详细信息列出来</h3><p>想把当前目录下所有的.o文件全部找出来，并用 <code>ls -l</code> 命令将它们列出来。实现这个需求的命令如下：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">find . -name &quot;*.o&quot; -type f -exec ls -l &#123;&#125; \;</span><br></pre></td></tr></table></figure>
+
+<p>在这里，我们用<code>find</code> 命令匹配到了当前目录下的所有<code>.o</code>文件，并在 <code>-exec</code> 选项中使用 <code>ls -l</code> 命令将它们的详细信息列出来。</p>
+<h3 id="Example-2-使用find命令查找相关文件后，再使用rm命令将它们删除"><a href="#Example-2-使用find命令查找相关文件后，再使用rm命令将它们删除" class="headerlink" title="Example 2 使用find命令查找相关文件后，再使用rm命令将它们删除"></a>Example 2 使用find命令查找相关文件后，再使用rm命令将它们删除</h3><p>想把当前目录下所有的.o文件全部找出来，并用rm命令将它们删除。实现这个需求的命令如下：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">find . -name &quot;*.o&quot; -exec rm &#123;&#125; \;</span><br></pre></td></tr></table></figure>
+
+<p>执行完这个命令后，该目录下所有的.o文件都被删除。</p>
+<h3 id="Example-3-使用-exec选项的安全模式，将对每个匹配到的文件进行操作之前提示用户"><a href="#Example-3-使用-exec选项的安全模式，将对每个匹配到的文件进行操作之前提示用户" class="headerlink" title="Example 3 使用-exec选项的安全模式，将对每个匹配到的文件进行操作之前提示用户"></a>Example 3 使用-exec选项的安全模式，将对每个匹配到的文件进行操作之前提示用户</h3><p>在实例2中，匹配到文件后就立刻执行<code>rm</code>命令，这样操作有些危险，因为如果一旦误操作，有可能会引起灾难性的后果。</p>
+<p><code>exec</code>的安全模式就是为了避免这个问题而产生。它会在匹配到某个文件后，在进行操作之前会先问一下你，经过确认它才会进行相应操作。</p>
+<p>同样的实例2的需求，如果采用安全模式的话，命令是这样的：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">find . -name &quot;*.o&quot; -ok rm &#123;&#125; \;</span><br></pre></td></tr></table></figure>
+
+<h3 id="Example-4-搜索匹配到的文件中的关键内容"><a href="#Example-4-搜索匹配到的文件中的关键内容" class="headerlink" title="Example 4 搜索匹配到的文件中的关键内容"></a>Example 4 搜索匹配到的文件中的关键内容</h3><p>假如现在有个很大型的项目（如<code>Linux</code>内核），想在里面搜索一个含有某关键字的文件。可以使用<code>grep</code>命令检索所有的文件。这样做肯定是可以的，但如果项目很大的话，这样太耗时了，效率太低。</p>
+<p>可以先用<code>find</code>命令找到所以相关文件，然后再用<code>grep</code>命令检索那些文件即可。因为已经使用<code>find</code>过滤一遍了，所以这样操作会节约很多时间，提高效率。</p>
+<p>命令如下：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">find . -name &quot;*.h&quot; -exec grep -rns &quot;hello&quot; &#123;&#125; \;</span><br></pre></td></tr></table></figure>
+
+<h3 id="Example-5-查找文件并移动到指定目录"><a href="#Example-5-查找文件并移动到指定目录" class="headerlink" title="Example 5 查找文件并移动到指定目录"></a>Example 5 查找文件并移动到指定目录</h3><p>这个需求就比较简单了。比如现在想把所有的<code>.o</code>文件找出来，然后新他们<code>mv</code>到<code>buil</code>目录。命令如下：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">find . -name &quot;*.o&quot; -exec cp &#123;&#125; build \;</span><br></pre></td></tr></table></figure>
+
+
+
+<div class="article-footer fs14"><section id="license"><div class="header"><span>许可协议</span></div><div class="body"><p>本文采用 <a target="_blank" rel="external nofollow noopener noreferrer" href="https://creativecommons.org/licenses/by-nc-sa/4.0/">署名-非商业性使用-相同方式共享 4.0 国际</a> 许可协议，转载请注明出处。</p>
+</div></section></div>
+
+</article>
+
+<div class="related-wrap" id="read-next"><section class="header cap theme"><span>接下来阅读</span></section><section class="body"><div class="post-title h2"><a href="/post/3451676695/">Java使用Optional优雅地判空</a></div><div class="post-title fs14"><a href="/post/3157433927/">上一篇：Maven中dependencyManagement的作用</a></div></section></div>
+
+
+<div class="related-wrap" id="related-posts">
+    <section class="header">
+      <div class="title cap theme">您可能感兴趣的文章</div>
+    </section>
+    <section class="body">
+    <div class="related-posts"><a class="item" href="/post/3136136825/" title="SpringBoot自动部署脚本"><div class="img"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2021/04/22353816180653381618065338077.jpg"></div><span class="title">SpringBoot自动部署脚本</span><span class="excerpt">SpringBoot自动部署脚本</span></a><a class="item" href="/post/2348855541/" title="SpringBoot启动脚本"><div class="img"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2021/04/22353816180653381618065338077.jpg"></div><span class="title">SpringBoot启动脚本</span><span class="excerpt">SpringBoot启动脚本</span></a><a class="item" href="/post/2487533199/" title="nginx简单配置示例"><div class="img"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2021/04/16092916181285691618128569411.jpg"></div><span class="title">nginx简单配置示例</span><span class="excerpt">nginx的基本配置</span></a><a class="item" href="/post/2012147641/" title="Linux排查Java问题工具单"><div class="img"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2021/04/16092916181285691618128569411.jpg"></div><span class="title">Linux排查Java问题工具单</span><span class="excerpt">Linux下排查Java问题小技巧和工具清单</span></a><a class="item" href="/post/20210402/" title="HomeBrew换源"><div class="img"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2021/04/22285116180649311618064931741.jpg"></div><span class="title">HomeBrew换源</span><span class="excerpt">HomeBrew换源</span></a></div></section></div>
+
+
+
+
+
+      
+<footer class="page-footer fs12" style="text-align: center;"><hr><div><p><a href="https://www.cayzlh.com/">🐳Ant丶</a> ©️ 2017-2021</p>
+<p><a target="_blank" rel="external nofollow noopener noreferrer" href="https://beian.miit.gov.cn/">粤ICP备20058712号</a></p>
+</div></footer>
+
+      <div class="float-panel mobile-only" style="display:none">
+  <button type="button" class="sidebar-toggle mobile" onclick="sidebar.toggle()">
+    <svg class="icon" viewbox="0 0 1228 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2849"><path d="M0 0m97.390199 0l973.901995 0q97.390199 0 97.390199 97.390199l0 0q0 97.390199-97.390199 97.3902l-973.901995 0q-97.390199 0-97.390199-97.3902l0 0q0-97.390199 97.390199-97.390199Z" p-id="2850"/><path d="M0 389.560798m97.390199 0l973.901995 0q97.390199 0 97.390199 97.390199l0 0q0 97.390199-97.390199 97.3902l-973.901995 0q-97.390199 0-97.390199-97.3902l0 0q0-97.390199 97.390199-97.390199Z" p-id="2851"/><path d="M0 779.121596m97.390199 0l973.901995 0q97.390199 0 97.390199 97.390199l0 0q0 97.390199-97.390199 97.390199l-973.901995 0q-97.390199 0-97.390199-97.390199l0 0q0-97.390199 97.390199-97.390199Z" p-id="2852"/></svg>
+  </button>
+</div>
+
+    </div>
+  </div>
+  <div class="scripts">
+    <script type="text/javascript">
+  stellar = {
+    // 懒加载 css https://github.com/filamentgroup/loadCSS
+    loadCSS: (href, before, media, attributes) => {
+      var doc = window.document;
+      var ss = doc.createElement("link");
+      var ref;
+      if (before) {
+        ref = before;
+      } else {
+        var refs = (doc.body || doc.getElementsByTagName("head")[0]).childNodes;
+        ref = refs[refs.length - 1];
+      }
+      var sheets = doc.styleSheets;
+      if (attributes) {
+        for (var attributeName in attributes) {
+          if (attributes.hasOwnProperty(attributeName)) {
+            ss.setAttribute(attributeName, attributes[attributeName]);
+          }
+        }
+      }
+      ss.rel = "stylesheet";
+      ss.href = href;
+      ss.media = "only x";
+      function ready(cb) {
+        if (doc.body) {
+          return cb();
+        }
+        setTimeout(function () {
+          ready(cb);
+        });
+      }
+      ready(function () {
+        ref.parentNode.insertBefore(ss, before ? ref : ref.nextSibling);
+      });
+      var onloadcssdefined = function (cb) {
+        var resolvedHref = ss.href;
+        var i = sheets.length;
+        while (i--) {
+          if (sheets[i].href === resolvedHref) {
+            return cb();
+          }
+        }
+        setTimeout(function () {
+          onloadcssdefined(cb);
+        });
+      };
+      function loadCB() {
+        if (ss.addEventListener) {
+          ss.removeEventListener("load", loadCB);
+        }
+        ss.media = media || "all";
+      }
+      if (ss.addEventListener) {
+        ss.addEventListener("load", loadCB);
+      }
+      ss.onloadcssdefined = onloadcssdefined;
+      onloadcssdefined(loadCB);
+      return ss;
+    },
+
+    // 从 butterfly 和 volantis 获得灵感
+    loadScript: (src, opt) => new Promise((resolve, reject) => {
+      var script = document.createElement('script')
+      script.src = src
+      if (opt) {
+        for (let key of Object.keys(opt)) {
+          script[key] = opt[key]
+        }
+      } else {
+        // 默认异步，如果需要同步，第二个参数传入 {} 即可
+        script.async = true
+      }
+      script.onerror = reject
+      script.onload = script.onreadystatechange = function() {
+        const loadState = this.readyState
+        if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+        script.onload = script.onreadystatechange = null
+        resolve()
+      }
+      document.head.appendChild(script)
+    }),
+
+    // https://github.com/jerryc127/hexo-theme-butterfly
+    jQuery: (fn) => {
+      if (typeof jQuery === 'undefined') {
+        stellar.loadScript(stellar.plugins.jQuery).then(fn)
+      } else {
+        fn()
+      }
+    }
+  };
+  stellar.github = 'https://github.com/xaoxuu/hexo-theme-stellar/tree/1.1.0';
+  stellar.config = {
+    date_suffix: {
+      just: '刚刚',
+      min: '分钟前',
+      hour: '小时前',
+      day: '天前',
+      month: '个月前',
+    },
+  };
+
+  // required plugins (only load if needs)
+  stellar.plugins = {
+    jQuery: 'https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js',
+    sitesjs: '/js/plugins/sites.js',
+    friendsjs: '/js/plugins/friends.js',
+  };
+
+  // optional plugins
+  if ('true' == 'true') {
+    stellar.plugins.lazyload = Object.assign({"enable":true,"js":"https://cdn.jsdelivr.net/npm/vanilla-lazyload@17.3.1/dist/lazyload.min.js","transition":"blur"});
+  }
+  if ('true' == 'true') {
+    stellar.plugins.swiper = Object.assign({"enable":true,"css":"https://unpkg.com/swiper/swiper-bundle.min.css","js":"https://unpkg.com/swiper/swiper-bundle.min.js"});
+  }
+  if ('' == 'true') {
+    stellar.plugins.scrollreveal = Object.assign({"enable":null,"js":"https://cdn.jsdelivr.net/npm/scrollreveal@4.0.9/dist/scrollreveal.min.js","distance":"8px","duration":500,"interval":100,"scale":1});
+  }
+  if ('true' == 'true') {
+    stellar.plugins.preload = Object.assign({"enable":true,"service":"flying_pages","instant_page":"https://cdn.jsdelivr.net/gh/volantis-x/cdn-volantis@4.1.2/js/instant_page.js","flying_pages":"https://cdn.jsdelivr.net/gh/gijo-varghese/flying-pages@2.1.2/flying-pages.min.js"});
+  }
+</script>
+
+<!-- required -->
+
+  
+<script src="/js/main.js" async></script>
+
+
+
+<!-- optional -->
+
+  <script>
+  function utterances(){
+    if(!document.getElementById("utterances"))return;
+    setTimeout(function() {
+      var checkUtterances = setInterval(function () {
+        var el = document.getElementById("utterances");
+        if (!el) return
+        clearInterval(checkUtterances)
+        try {
+          el.innerHTML="";
+        } catch (error) {}
+        var script = document.createElement('script');
+        script.src = 'https://utteranc.es/client.js';
+        const keys = ['repo', 'issue-term', 'issue-number', 'theme', 'label', 'crossorigin'];
+        keys.forEach((key, i) => {
+          if (el.attributes[key] && el.attributes[key].value) {
+            script.setAttribute(key, el.attributes[key].value);
+          }
+        });
+        el.appendChild(script);
+       }, 200)
+    });
+  }
+  utterances();
+</script>
+
+
+
+
+<!-- inject -->
+
+
+  </div>
+</body>
+</html>

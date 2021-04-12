@@ -1,0 +1,995 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta name="generator" content="Hexo 5.4.0">
+  <meta charset="utf-8">
+  
+
+  <meta http-equiv="x-dns-prefetch-control" content="on">
+  <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+
+  <meta name="renderer" content="webkit">
+  <meta name="force-rendering" content="webkit">
+  <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+  <meta name="HandheldFriendly" content="True">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <title>Spring源码分析：IOC之深入分析PropertyPlaceholderConfigurer - CAYZLH</title>
+
+  
+  <meta name="description" content="
+本文作者：chenssy
+出处：http://cmsblogs.com/?p=3837
+在学习Spring源码的过程中发现的好站+好贴，原创不易感谢作者。
+Spring版本：Spring 5.0.6.RELEASE
+
+在上文 IOC 之 深入分析 BeanFactoryPostProcess...">
+
+  <!-- feed -->
+  
+    <link rel="alternate" href="/atom.xml" title="CAYZLH" type="application/atom+xml">
+  
+
+  
+    
+<link rel="stylesheet" href="/css/main.css">
+
+  
+
+  
+    
+      <meta name="msapplication-TileColor" content="#2d89ef">
+    
+      <meta name="msapplication-config" content="/assets/favicon/browserconfig.xml">
+    
+      <meta name="theme-color" content="#ffffff">
+    
+      <link rel="shortcut icon" href="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/logo/favicon.ico">
+    
+      <link rel="icon" type="image/png" href="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/logo/favicon-192x192.png" sizes="192x192">
+    
+      <link rel="apple-touch-icon" sizes="180x180" href="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/logo/apple-touch-icon.png">
+    
+  
+</head>
+
+<body>
+  
+
+
+  <div class="l_body" id="start">
+    <aside class="l_left">
+    
+
+<header class="header">
+  <div class="logo-wrap">
+  
+    <a class="avatar" href="/">
+      
+        <img no-lazy class="bg" src="https://cdn.jsdelivr.net/gh/cdn-x/placeholder@1.0.2/avatar/round/rainbow64@3x.webp" onerror="javascript:this.classList.add('error');this.src='https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2021/04/16084216181285221618128522255.svg';">
+      
+      <img no-lazy class="avatar" src="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/image/IMG_4207.JPG" onerror="javascript:this.classList.add('error');this.src='https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2021/04/16084216181285221618128522255.svg';">
+    </a>
+  
+  
+    <a class="title" href="/">
+      CAYZLH
+    </a>
+  
+</div>
+
+  <nav class="menu dis-select"><a class="nav-item" href="/">文章</a><a class="nav-item active" href="/wiki/">文档</a><a class="nav-item" href="/talking/">动态</a><a class="nav-item" href="/about/">更多</a></nav>
+</header>
+
+<div class="widgets">
+  
+    
+      
+      
+<div class="widget-wrap" id="toc"><div class="widget-header h4 dis-select"><span class="name">本文目录</span></div><div class="widget-body fs14 wiki"><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/index.html"><span class="toc-text">Spring源码分析</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC1.html"><span class="toc-text">4张图带你读懂Spring IOC的世界</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC2.html"><span class="toc-text">IOC之深入理解SpringIoC</span></a></div><div class="doc-tree active"><a class="doc-tree-link active" href="/wiki/source_of_spring/springIOC24.html"><span class="toc-text">IOC之深入分析PropertyPlaceholderConfigurer</span></a>undefined</div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC25.html"><span class="toc-text">IOC之PropertyPlaceholderConfigurer的应用</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC2_5.html"><span class="toc-text">IOC之Spring统一资源加载策略</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC3.html"><span class="toc-text">IoC之加载BeanDefinition</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC4.html"><span class="toc-text">IOC之获取验证模型</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC5.html"><span class="toc-text">IOC之获取Document对象</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC6.html"><span class="toc-text">IoC之注册BeanDefinitions</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC7.html"><span class="toc-text">IoC之解析Bean：解析import标签</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC8.html"><span class="toc-text">IOC之解析bean标签：开启解析进程</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC9.html"><span class="toc-text">IOC之解析bean标签：BeanDefinition</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC10.html"><span class="toc-text">IoC之解析bean标签：meta、lookup-method、replace-method</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC11.html"><span class="toc-text">IOC之解析bean标签：constructor-arg、property子元素</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC12.html"><span class="toc-text">IoC之解析bean标签：解析自定义标签</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC13.html"><span class="toc-text">IoC之注册解析的BeanDefinitions</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC14.html"><span class="toc-text">IoC之装载BeanDefinitions总结</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC15.html"><span class="toc-text">IOC之开启bean的加载</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC16.html"><span class="toc-text">IOC之从单例缓存中获取单例bean</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC16_4.html"><span class="toc-text">IOC之parentBeanFactory与依赖处理</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC16_5.html"><span class="toc-text">IOC之分析各scope的bean创建</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC16_6.html"><span class="toc-text">IOC之开启Bean的实例化进程</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC16_7.html"><span class="toc-text">IOC之Factory实例化bean</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC16_8.html"><span class="toc-text">IOC之构造函数实例化bean</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC17.html"><span class="toc-text">IOC之属性填充</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC18.html"><span class="toc-text">IOC之循环依赖</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC19.html"><span class="toc-text">IOC之Bean的初始化</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC20.html"><span class="toc-text">IOC之加载Bean——总结篇</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC21.html"><span class="toc-text">IOC之深入分析Aware接口</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC22.html"><span class="toc-text">IOC之深入分析BeanPostProcessor</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC23.html"><span class="toc-text">IOC之深入分析InitializingBean和init-method</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC25_5.html"><span class="toc-text">IOC之深入分析BeanFactoryPostProcessor</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC26.html"><span class="toc-text">IOC之深入分析PropertyOverrideConfigurer</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC27.html"><span class="toc-text">IOC之深入分析Bean的类型转换体系</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC28.html"><span class="toc-text">IOC之自定义类型转换器</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC29.html"><span class="toc-text">IOC之分析BeanWrapper</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC30.html"><span class="toc-text">IOC之bean的实例化策略：InstantiationStrategy</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC31.html"><span class="toc-text">IOC之BeanDefinition注册机：BeanDefinitionRegistry</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC32.html"><span class="toc-text">Spring的环境&属性：PropertySource、Environment、Profile</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC33.html"><span class="toc-text">IOC之分析bean的生命周期</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC34.html"><span class="toc-text">ApplicationContext相关接口架构分析</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC35.html"><span class="toc-text">深入分析ApplicationContext的refresh()</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC36.html"><span class="toc-text">Spring AOP和Spring Transaction源码资料整理</span></a></div></div></div>
+
+    
+  
+    
+      
+      
+  
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+      <div class="widget-wrap" id="related">
+        <div class="widget-header h4 dis-select">
+          <span class="name">更多编程技术</span>
+        </div>
+        <div class="widget-body fs14">
+          
+            
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+                <div class="post-title">
+                  <a href="/wiki/design_patterns/index.html">
+                    设计模式
+                  </a>
+                </div>
+              
+            
+          
+            
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+          
+            
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+                <div class="post-title">
+                  <a href="/wiki/springcloud/index.html">
+                    SpringCloud
+                  </a>
+                </div>
+              
+            
+          
+        </div>
+      </div>
+    
+  
+
+
+    
+  
+</div>
+<footer class="footer"><div class="social-wrap dis-select"><a class="social" href="https://github.com/cayzlh" target="_blank" rel="external nofollow noopener noreferrer"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cdn-x/placeholder@1.0.1/social/08a41b181ce68.svg"></a><a class="social" href="https://telegram.me/Q2F5emxo" target="_blank" rel="external nofollow noopener noreferrer"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/image/guanyuwomen.svg"></a><a class="social" href="/about/#comments" rel="noopener noreferrer"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cdn-x/placeholder@1.0.1/social/942ebbf1a4b91.svg"></a></div></footer>
+
+    </aside>
+    <div class="l_main">
+      
+
+      
+
+  
+  
+  <div class="bread-nav fs12">
+  
+    
+    <div id="breadcrumb">
+      <a class="cap breadcrumb" href="/">主页</a>
+      <span class="sep"></span>
+      
+        <a class="cap breadcrumb" href="/wiki/">文档</a>
+      
+      
+        <span class="sep"></span>
+        <a class="cap breadcrumb" href="/wiki/categories/programmer/index.html">编程技术</a>
+      
+      
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        <span class="sep"></span>
+        <a class="cap breadcrumb" href="/wiki/source_of_spring/index.html">Spring源码分析</a>
+      
+    </div>
+    <div id="post-meta">
+      更新于&nbsp;<time datetime="2021-04-12T15:35:50.042Z">2021-04-12</time>
+    </div>
+  
+  </div>
+
+
+  <article class="content md wiki">
+  <h1 class="article-title"><span>IOC之深入分析PropertyPlaceholderConfigurer</span></h1>
+  <blockquote>
+<p>本文作者：chenssy</p>
+<p>出处：<a target="_blank" rel="external nofollow noopener noreferrer" href="http://cmsblogs.com/?p=3837">http://cmsblogs.com/?p=3837</a></p>
+<p>在学习<code>Spring源码</code>的过程中发现的好站+好贴，原创不易感谢作者。</p>
+<p>Spring版本：<strong>Spring 5.0.6.RELEASE</strong></p>
+</blockquote>
+<p>在上文 <a href="/2020/01/23/81b83a69.html">IOC 之 深入分析 BeanFactoryPostProcessor</a> 介绍了 BeanFactoryPostProcessor，知道 BeanFactoryPostProcessor 作用域容器启动阶段，可以对解析好的 BeanDefinition 进行定制化处理，而其中 PropertyPlaceholderConfigurer 是其一个非常重要的应用，也是其子类，介绍如下：</p>
+<blockquote>
+<p>PropertyPlaceholderConfigurer 允许我们用 Properties 文件中的属性来定义应用上下文（配置文件或者注解）</p>
+</blockquote>
+<p>什么意思，就是说我们在 XML 配置文件（或者其他方式，如注解方式）中使用占位符的方式来定义一些资源，并将这些占位符所代表的资源配置到 Properties 中，这样只需要对 Properties 文件进行修改即可，这个特性非常，在后面来介绍一种我们在项目中经常用到场景。</p>
+<p><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2020/05/26/201809161001_Jd3Eac_N7lPj5.png" alt="201809161001"></p>
+<p>从 PropertyPlaceholderConfigurer 的结构图可以看出，它间接实现了 Aware 和 BeanFactoryPostProcessor 两大扩展接口，这里只需要关注 BeanFactoryPostProcessor 即可。</p>
+<p>我们知道 BeanFactoryPostProcessor 提供了 <code>postProcessBeanFactory()</code>，在这个体系中该方法的是在 PropertyResourceConfigurer 中实现，该类为属性资源的配置类，他实现了 BeanFactoryPostProcessor 接口，如下：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">postProcessBeanFactory</span><span class="params">(ConfigurableListableBeanFactory beanFactory)</span> <span class="keyword">throws</span> BeansException </span>&#123;</span><br><span class="line"> <span class="keyword">try</span> &#123;</span><br><span class="line">  Properties mergedProps = mergeProperties();</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 转换合并属性</span></span><br><span class="line">  convertProperties(mergedProps);</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 子类处理</span></span><br><span class="line">  processProperties(beanFactory, mergedProps);</span><br><span class="line"> &#125;</span><br><span class="line"> <span class="keyword">catch</span> (IOException ex) &#123;</span><br><span class="line">  <span class="keyword">throw</span> <span class="keyword">new</span> BeanInitializationException(<span class="string">&quot;Could not load properties&quot;</span>, ex);</span><br><span class="line"> &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><code>mergeProperties()</code>：返回合并的 Properties 实例，Properties 实例维护这一组 key-value ，其实就是 Properties 配置文件中的内容。</li>
+<li><code>convertProperties()</code>：转换合并的值，其实就是将原始值替换为真正的值</li>
+<li><code>processProperties()</code>：前面两个步骤已经将配置文件中的值进行了处理，那么该方法就是真正的替换过程，该方法由子类实现。</li>
+</ul>
+<p>在 PropertyPlaceholderConfigurer 重写 <code>processProperties()</code>:</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title">processProperties</span><span class="params">(ConfigurableListableBeanFactory beanFactoryToProcess, Properties props)</span></span></span><br><span class="line"><span class="function">  <span class="keyword">throws</span> BeansException </span>&#123;</span><br><span class="line"></span><br><span class="line"> StringValueResolver valueResolver = <span class="keyword">new</span> PlaceholderResolvingStringValueResolver(props);</span><br><span class="line"> doProcessProperties(beanFactoryToProcess, valueResolver);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>首先构造一个 PlaceholderResolvingStringValueResolver 类型的 StringValueResolver 实例。StringValueResolver 为一个解析 String 类型值的策略接口，该接口提供了 <code>resolveStringValue()</code> 方法用于解析 String 值。PlaceholderResolvingStringValueResolver 为其一个解析策略，构造方法如下：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="title">PlaceholderResolvingStringValueResolver</span><span class="params">(Properties props)</span> </span>&#123;</span><br><span class="line"> <span class="keyword">this</span>.helper = <span class="keyword">new</span> PropertyPlaceholderHelper(</span><br><span class="line">   placeholderPrefix, placeholderSuffix, valueSeparator, ignoreUnresolvablePlaceholders);</span><br><span class="line"> <span class="keyword">this</span>.resolver = <span class="keyword">new</span> PropertyPlaceholderConfigurerResolver(props);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在构造 String 值解析器 StringValueResolver 时，将已经解析的 Properties 实例对象封装在 PlaceholderResolver 实例 resolver 中。PlaceholderResolver 是一个用于解析字符串中包含占位符的替换值的策略接口，该接口有一个 <code>resolvePlaceholder()</code> 方法，用于返回占位符的替换值。还有一个 PropertyPlaceholderHelper 工具，从名字上面看应该是进行替换的。</p>
+<p>得到 String 解析器的实例 valueResolver 后，则会调用 <code>doProcessProperties()</code> 方法来进行诊治的替换操作，该方法在父类 PlaceholderConfigurerSupport 中实现，如下：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title">doProcessProperties</span><span class="params">(ConfigurableListableBeanFactory beanFactoryToProcess,</span></span></span><br><span class="line"><span class="function"><span class="params">  StringValueResolver valueResolver)</span> </span>&#123;</span><br><span class="line"></span><br><span class="line"> BeanDefinitionVisitor visitor = <span class="keyword">new</span> BeanDefinitionVisitor(valueResolver);</span><br><span class="line"></span><br><span class="line"> String[] beanNames = beanFactoryToProcess.getBeanDefinitionNames();</span><br><span class="line"> <span class="keyword">for</span> (String curName : beanNames) &#123;</span><br><span class="line">  <span class="comment">// 校验</span></span><br><span class="line">  <span class="comment">// 1. 当前实例 PlaceholderConfigurerSupport 不在解析范围内</span></span><br><span class="line">     <span class="comment">// 2. 同一个 Spring 容器</span></span><br><span class="line">  <span class="keyword">if</span> (!(curName.equals(<span class="keyword">this</span>.beanName) &amp;&amp; beanFactoryToProcess.equals(<span class="keyword">this</span>.beanFactory))) &#123;</span><br><span class="line">   BeanDefinition bd = beanFactoryToProcess.getBeanDefinition(curName);</span><br><span class="line">   <span class="keyword">try</span> &#123;</span><br><span class="line">    visitor.visitBeanDefinition(bd);</span><br><span class="line">   &#125;</span><br><span class="line">   <span class="keyword">catch</span> (Exception ex) &#123;</span><br><span class="line">    <span class="keyword">throw</span> <span class="keyword">new</span> BeanDefinitionStoreException(bd.getResourceDescription(), curName, ex.getMessage(), ex);</span><br><span class="line">   &#125;</span><br><span class="line">  &#125;</span><br><span class="line"> &#125;</span><br><span class="line"></span><br><span class="line"> <span class="comment">// 别名的占位符</span></span><br><span class="line"> beanFactoryToProcess.resolveAliases(valueResolver);</span><br><span class="line"></span><br><span class="line"> <span class="comment">// 解析嵌入值的占位符，例如注释属性</span></span><br><span class="line">       beanFactoryToProcess.addEmbeddedValueResolver(valueResolver);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>流程如下：</p>
+<ol>
+<li>根据 String 值解析策略 valueResolver 得到 BeanDefinitionVisitor 实例。BeanDefinitionVisitor 是 BeanDefinition 的访问者，我们通过它可以实现对 BeanDefinition 内容的进行访问，内容很多，例如Scope、PropertyValues、FactoryMethodName 等等。</li>
+<li>得到该容器的所有 BeanName，然后对其进行访问（<code>visitBeanDefinition()</code>）。</li>
+<li>解析别名的占位符</li>
+<li>解析嵌入值的占位符，例如注释属性</li>
+</ol>
+<p>这个方法核心在于 <code>visitBeanDefinition()</code> 的调用，如下：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">visitBeanDefinition</span><span class="params">(BeanDefinition beanDefinition)</span> </span>&#123;</span><br><span class="line"> visitParentName(beanDefinition);</span><br><span class="line"> visitBeanClassName(beanDefinition);</span><br><span class="line"> visitFactoryBeanName(beanDefinition);</span><br><span class="line"> visitFactoryMethodName(beanDefinition);</span><br><span class="line"> visitScope(beanDefinition);</span><br><span class="line"> <span class="keyword">if</span> (beanDefinition.hasPropertyValues()) &#123;</span><br><span class="line">  visitPropertyValues(beanDefinition.getPropertyValues());</span><br><span class="line"> &#125;</span><br><span class="line"> <span class="keyword">if</span> (beanDefinition.hasConstructorArgumentValues()) &#123;</span><br><span class="line">  ConstructorArgumentValues cas = beanDefinition.getConstructorArgumentValues();</span><br><span class="line">  visitIndexedArgumentValues(cas.getIndexedArgumentValues());</span><br><span class="line">  visitGenericArgumentValues(cas.getGenericArgumentValues());</span><br><span class="line"> &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>我们可以看到该方法基本访问了 BeanDefinition 中所有值得访问的东西了，包括 parent 、class 、factory-bean 、factory-method 、scope 、property 、constructor-arg ，本篇文章的主题是 property，所以关注 <code>visitPropertyValues()</code> 即可。如下：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title">visitPropertyValues</span><span class="params">(MutablePropertyValues pvs)</span> </span>&#123;</span><br><span class="line"> PropertyValue[] pvArray = pvs.getPropertyValues();</span><br><span class="line"> <span class="keyword">for</span> (PropertyValue pv : pvArray) &#123;</span><br><span class="line">  Object newVal = resolveValue(pv.getValue());</span><br><span class="line">  <span class="keyword">if</span> (!ObjectUtils.nullSafeEquals(newVal, pv.getValue())) &#123;</span><br><span class="line">   pvs.add(pv.getName(), newVal);</span><br><span class="line">  &#125;</span><br><span class="line"> &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>过程就是对属性数组进行遍历，调用 <code>resolveValue()</code> 对属性进行解析获取最新值，如果新值和旧值不等，则用新值替换旧值。<code>resolveValue()</code> 实现如下：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> Object <span class="title">resolveValue</span><span class="params">(<span class="meta">@Nullable</span> Object value)</span> </span>&#123;</span><br><span class="line"> <span class="comment">// 由于 Properties 中的是 String，所以把前面一堆 if 去掉</span></span><br><span class="line"> <span class="keyword">else</span> <span class="keyword">if</span> (value <span class="keyword">instanceof</span> String) &#123;</span><br><span class="line">  <span class="keyword">return</span> resolveStringValue((String) value);</span><br><span class="line"> &#125;</span><br><span class="line"> <span class="keyword">return</span> value;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>由于配置的是 String 类型，所以只需要看 String 相关的，<code>resolveStringValue()</code> 实现如下：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"> <span class="function"><span class="keyword">protected</span> String <span class="title">resolveStringValue</span><span class="params">(String strVal)</span> </span>&#123;</span><br><span class="line"> <span class="keyword">if</span> (<span class="keyword">this</span>.valueResolver == <span class="keyword">null</span>) &#123;</span><br><span class="line">  <span class="keyword">throw</span> <span class="keyword">new</span> IllegalStateException(<span class="string">&quot;No StringValueResolver specified - pass a resolver &quot;</span> +</span><br><span class="line">    <span class="string">&quot;object into the constructor or override the &#x27;resolveStringValue&#x27; method&quot;</span>);</span><br><span class="line"> &#125;</span><br><span class="line"> String resolvedValue = <span class="keyword">this</span>.valueResolver.resolveStringValue(strVal);</span><br><span class="line"> <span class="keyword">return</span> (strVal.equals(resolvedValue) ? strVal : resolvedValue);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>valueResolver 是我们在构造 BeanDefinitionVisitor 实例时传入的 String 类型解析器 PlaceholderResolvingStringValueResolver，调用其 <code>resolveStringValue()</code> 如下：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> String <span class="title">resolveStringValue</span><span class="params">(String strVal)</span> <span class="keyword">throws</span> BeansException </span>&#123;</span><br><span class="line"> String resolved = <span class="keyword">this</span>.helper.replacePlaceholders(strVal, <span class="keyword">this</span>.resolver);</span><br><span class="line"> <span class="keyword">if</span> (trimValues) &#123;</span><br><span class="line">  resolved = resolved.trim();</span><br><span class="line"> &#125;</span><br><span class="line"> <span class="keyword">return</span> (resolved.equals(nullValue) ? <span class="keyword">null</span> : resolved);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>helper 为 PropertyPlaceholderHelper 实例对象，而 PropertyPlaceholderHelper 则是处理应用程序中包含占位符的字符串工具类。在构造 helper 实例对象时需要传入了几个参数：placeholderPrefix、placeholderSuffix、valueSeparator，这些值在 PlaceholderConfigurerSupport 中定义如下：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">protected</span> String placeholderPrefix = <span class="string">&quot;$&#123;&quot;</span>;</span><br><span class="line"><span class="keyword">protected</span> String placeholderSuffix = <span class="string">&quot;&#125;&quot;</span>;</span><br><span class="line"><span class="keyword">protected</span> String valueSeparator = <span class="string">&quot;:&quot;</span>;</span><br></pre></td></tr></table></figure>
+
+<p>调用 <code>replacePlaceholders()</code> 进行占位符替换，如下：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> String <span class="title">replacePlaceholders</span><span class="params">(String value, PlaceholderResolver placeholderResolver)</span> </span>&#123;</span><br><span class="line"> Assert.notNull(value, <span class="string">&quot;&#x27;value&#x27; must not be null&quot;</span>);</span><br><span class="line"> <span class="keyword">return</span> parseStringValue(value, placeholderResolver, <span class="keyword">new</span> HashSet&lt;&gt;());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>调用 <code>parseStringValue()</code>，这个方法是这篇博客最核心的地方，<code>$&#123;&#125;</code> 占位符的替换：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> String <span class="title">parseStringValue</span><span class="params">(</span></span></span><br><span class="line"><span class="function"><span class="params">  String value, PlaceholderResolver placeholderResolver, Set&lt;String&gt; visitedPlaceholders)</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">  StringBuilder result = <span class="keyword">new</span> StringBuilder(value);</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 获取前缀 &quot;$&#123;&quot; 的索引位置</span></span><br><span class="line">  <span class="keyword">int</span> startIndex = value.indexOf(<span class="keyword">this</span>.placeholderPrefix);</span><br><span class="line">  <span class="keyword">while</span> (startIndex != -<span class="number">1</span>) &#123;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 获取 后缀 &quot;&#125;&quot; 的索引位置</span></span><br><span class="line">    <span class="keyword">int</span> endIndex = findPlaceholderEndIndex(result, startIndex);</span><br><span class="line">    <span class="keyword">if</span> (endIndex != -<span class="number">1</span>) &#123;</span><br><span class="line"></span><br><span class="line">      <span class="comment">// 截取 &quot;$&#123;&quot; 和 &quot;&#125;&quot; 中间的内容，这也就是我们在配置文件中对应的值</span></span><br><span class="line">      String placeholder = result.substring(startIndex + <span class="keyword">this</span>.placeholderPrefix.length(), endIndex);</span><br><span class="line">      String originalPlaceholder = placeholder;</span><br><span class="line">      <span class="keyword">if</span> (!visitedPlaceholders.add(originalPlaceholder)) &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> IllegalArgumentException(</span><br><span class="line">          <span class="string">&quot;Circular placeholder reference &#x27;&quot;</span> + originalPlaceholder + <span class="string">&quot;&#x27; in property definitions&quot;</span>);</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="comment">// 解析占位符键中包含的占位符，真正的值</span></span><br><span class="line">      placeholder = parseStringValue(placeholder, placeholderResolver, visitedPlaceholders);</span><br><span class="line">      <span class="comment">// 从 Properties 中获取 placeHolder 对应的值 propVal</span></span><br><span class="line">      String propVal = placeholderResolver.resolvePlaceholder(placeholder);</span><br><span class="line">      <span class="comment">// 如果不存在</span></span><br><span class="line">      <span class="keyword">if</span> (propVal == <span class="keyword">null</span> &amp;&amp; <span class="keyword">this</span>.valueSeparator != <span class="keyword">null</span>) &#123;</span><br><span class="line">        <span class="comment">// 查询 : 的位置</span></span><br><span class="line">        <span class="keyword">int</span> separatorIndex = placeholder.indexOf(<span class="keyword">this</span>.valueSeparator);</span><br><span class="line">        <span class="comment">// 如果存在 :</span></span><br><span class="line">        <span class="keyword">if</span> (separatorIndex != -<span class="number">1</span>) &#123;</span><br><span class="line">          <span class="comment">// 获取 : 前面部分 actualPlaceholder</span></span><br><span class="line">          String actualPlaceholder = placeholder.substring(<span class="number">0</span>, separatorIndex);</span><br><span class="line">          <span class="comment">// 获取 : 后面部分 defaultValue</span></span><br><span class="line">          String defaultValue = placeholder.substring(separatorIndex + <span class="keyword">this</span>.valueSeparator.length());</span><br><span class="line"></span><br><span class="line">          <span class="comment">// 从 Properties 中获取 actualPlaceholder 对应的值</span></span><br><span class="line">          propVal = placeholderResolver.resolvePlaceholder(actualPlaceholder);</span><br><span class="line">          <span class="comment">// 如果不存在 则返回 defaultValue</span></span><br><span class="line">          <span class="keyword">if</span> (propVal == <span class="keyword">null</span>) &#123;</span><br><span class="line">            propVal = defaultValue;</span><br><span class="line">          &#125;</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">if</span> (propVal != <span class="keyword">null</span>) &#123;</span><br><span class="line">        propVal = parseStringValue(propVal, placeholderResolver, visitedPlaceholders);</span><br><span class="line">        result.replace(startIndex, endIndex + <span class="keyword">this</span>.placeholderSuffix.length(), propVal);</span><br><span class="line">        <span class="keyword">if</span> (logger.isTraceEnabled()) &#123;</span><br><span class="line">          logger.trace(<span class="string">&quot;Resolved placeholder &#x27;&quot;</span> + placeholder + <span class="string">&quot;&#x27;&quot;</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        startIndex = result.indexOf(<span class="keyword">this</span>.placeholderPrefix, startIndex + propVal.length());</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">else</span> <span class="keyword">if</span> (<span class="keyword">this</span>.ignoreUnresolvablePlaceholders) &#123;</span><br><span class="line">        <span class="comment">// 忽略值</span></span><br><span class="line">        startIndex = result.indexOf(<span class="keyword">this</span>.placeholderPrefix, endIndex + <span class="keyword">this</span>.placeholderSuffix.length());</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> IllegalArgumentException(<span class="string">&quot;Could not resolve placeholder &#x27;&quot;</span> +</span><br><span class="line">                                           placeholder + <span class="string">&quot;&#x27;&quot;</span> + <span class="string">&quot; in value \&quot;&quot;</span> + value + <span class="string">&quot;\&quot;&quot;</span>);</span><br><span class="line">      &#125;</span><br><span class="line"></span><br><span class="line">      <span class="comment">//</span></span><br><span class="line">      visitedPlaceholders.remove(originalPlaceholder);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span> &#123;</span><br><span class="line">      startIndex = -<span class="number">1</span>;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 返回propVal，就是替换之后的值</span></span><br><span class="line">  <span class="keyword">return</span> result.toString();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>流程如下</p>
+<ol>
+<li>获取占位符前缀 “${“ 的索引位置 startIndex</li>
+<li>如果前缀 “${“ 存在，则从 “{” 后面开始获取占位符后缀 “}” 的索引位置 endIndex</li>
+<li>如果前缀 “${” 和后缀 “}” 都存在，则截取中间部分 placeholder</li>
+<li>从 Properties 中获取 placeHolder 对应的值 propVal</li>
+<li>如果 propVal 为空，则判断占位符中是否存在 “:”，如果存在则对占位符进行分割处理，全面部分为 actualPlaceholder，后面部分 defaultValue，尝试从 Properties 中获取 actualPlaceholder 对应的值 propVal，如果不存在，则将 defaultValue 的值赋值给 propVal</li>
+<li>返回 propVal，也就是 Properties 中对应的值</li>
+</ol>
+
+  
+
+
+  </article>
+  
+<div class="related-wrap" id="read-next"><section class="header cap theme"><span>接下来阅读</span></section><section class="body"><div class="post-title h2"><a href="/wiki/source_of_spring/springIOC25.html">IOC之PropertyPlaceholderConfigurer的应用</a></div><div class="post-title fs14"><a href="/wiki/source_of_spring/springIOC2.html">上一篇：IOC之深入理解SpringIoC</a></div></section></div>
+
+  
+
+  <div class="related-wrap md" id="comments">
+    <div class="cmt-title cap theme">
+      快来参与讨论吧
+    </div>
+    <div class="cmt-body utterances">
+      
+
+<svg class="loading" style="vertical-align: middle;fill: currentColor;overflow: hidden;" viewbox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2709"><path d="M832 512c0-176-144-320-320-320V128c211.2 0 384 172.8 384 384h-64zM192 512c0 176 144 320 320 320v64C300.8 896 128 723.2 128 512h64z" p-id="2710"/></svg>
+
+<div id="utterances" repo="cayzlh/studious-barnacle" issue-term="Spring源码分析" theme="github-light"></div>
+
+    </div>
+  </div>
+
+
+
+
+      
+<footer class="page-footer fs12" style="text-align: center;"><hr><div><p><a href="https://www.cayzlh.com/">🐳Ant丶</a> ©️ 2017-2021</p>
+<p><a target="_blank" rel="external nofollow noopener noreferrer" href="https://beian.miit.gov.cn/">粤ICP备20058712号</a></p>
+</div></footer>
+
+      <div class="float-panel mobile-only" style="display:none">
+  <button type="button" class="sidebar-toggle mobile" onclick="sidebar.toggle()">
+    <svg class="icon" viewbox="0 0 1228 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2849"><path d="M0 0m97.390199 0l973.901995 0q97.390199 0 97.390199 97.390199l0 0q0 97.390199-97.390199 97.3902l-973.901995 0q-97.390199 0-97.390199-97.3902l0 0q0-97.390199 97.390199-97.390199Z" p-id="2850"/><path d="M0 389.560798m97.390199 0l973.901995 0q97.390199 0 97.390199 97.390199l0 0q0 97.390199-97.390199 97.3902l-973.901995 0q-97.390199 0-97.390199-97.3902l0 0q0-97.390199 97.390199-97.390199Z" p-id="2851"/><path d="M0 779.121596m97.390199 0l973.901995 0q97.390199 0 97.390199 97.390199l0 0q0 97.390199-97.390199 97.390199l-973.901995 0q-97.390199 0-97.390199-97.390199l0 0q0-97.390199 97.390199-97.390199Z" p-id="2852"/></svg>
+  </button>
+</div>
+
+    </div>
+  </div>
+  <div class="scripts">
+    <script type="text/javascript">
+  stellar = {
+    // 懒加载 css https://github.com/filamentgroup/loadCSS
+    loadCSS: (href, before, media, attributes) => {
+      var doc = window.document;
+      var ss = doc.createElement("link");
+      var ref;
+      if (before) {
+        ref = before;
+      } else {
+        var refs = (doc.body || doc.getElementsByTagName("head")[0]).childNodes;
+        ref = refs[refs.length - 1];
+      }
+      var sheets = doc.styleSheets;
+      if (attributes) {
+        for (var attributeName in attributes) {
+          if (attributes.hasOwnProperty(attributeName)) {
+            ss.setAttribute(attributeName, attributes[attributeName]);
+          }
+        }
+      }
+      ss.rel = "stylesheet";
+      ss.href = href;
+      ss.media = "only x";
+      function ready(cb) {
+        if (doc.body) {
+          return cb();
+        }
+        setTimeout(function () {
+          ready(cb);
+        });
+      }
+      ready(function () {
+        ref.parentNode.insertBefore(ss, before ? ref : ref.nextSibling);
+      });
+      var onloadcssdefined = function (cb) {
+        var resolvedHref = ss.href;
+        var i = sheets.length;
+        while (i--) {
+          if (sheets[i].href === resolvedHref) {
+            return cb();
+          }
+        }
+        setTimeout(function () {
+          onloadcssdefined(cb);
+        });
+      };
+      function loadCB() {
+        if (ss.addEventListener) {
+          ss.removeEventListener("load", loadCB);
+        }
+        ss.media = media || "all";
+      }
+      if (ss.addEventListener) {
+        ss.addEventListener("load", loadCB);
+      }
+      ss.onloadcssdefined = onloadcssdefined;
+      onloadcssdefined(loadCB);
+      return ss;
+    },
+
+    // 从 butterfly 和 volantis 获得灵感
+    loadScript: (src, opt) => new Promise((resolve, reject) => {
+      var script = document.createElement('script')
+      script.src = src
+      if (opt) {
+        for (let key of Object.keys(opt)) {
+          script[key] = opt[key]
+        }
+      } else {
+        // 默认异步，如果需要同步，第二个参数传入 {} 即可
+        script.async = true
+      }
+      script.onerror = reject
+      script.onload = script.onreadystatechange = function() {
+        const loadState = this.readyState
+        if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+        script.onload = script.onreadystatechange = null
+        resolve()
+      }
+      document.head.appendChild(script)
+    }),
+
+    // https://github.com/jerryc127/hexo-theme-butterfly
+    jQuery: (fn) => {
+      if (typeof jQuery === 'undefined') {
+        stellar.loadScript(stellar.plugins.jQuery).then(fn)
+      } else {
+        fn()
+      }
+    }
+  };
+  stellar.github = 'https://github.com/xaoxuu/hexo-theme-stellar/tree/1.1.0';
+  stellar.config = {
+    date_suffix: {
+      just: '刚刚',
+      min: '分钟前',
+      hour: '小时前',
+      day: '天前',
+      month: '个月前',
+    },
+  };
+
+  // required plugins (only load if needs)
+  stellar.plugins = {
+    jQuery: 'https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js',
+    sitesjs: '/js/plugins/sites.js',
+    friendsjs: '/js/plugins/friends.js',
+  };
+
+  // optional plugins
+  if ('true' == 'true') {
+    stellar.plugins.lazyload = Object.assign({"enable":true,"js":"https://cdn.jsdelivr.net/npm/vanilla-lazyload@17.3.1/dist/lazyload.min.js","transition":"blur"});
+  }
+  if ('true' == 'true') {
+    stellar.plugins.swiper = Object.assign({"enable":true,"css":"https://unpkg.com/swiper/swiper-bundle.min.css","js":"https://unpkg.com/swiper/swiper-bundle.min.js"});
+  }
+  if ('' == 'true') {
+    stellar.plugins.scrollreveal = Object.assign({"enable":null,"js":"https://cdn.jsdelivr.net/npm/scrollreveal@4.0.9/dist/scrollreveal.min.js","distance":"8px","duration":500,"interval":100,"scale":1});
+  }
+  if ('true' == 'true') {
+    stellar.plugins.preload = Object.assign({"enable":true,"service":"flying_pages","instant_page":"https://cdn.jsdelivr.net/gh/volantis-x/cdn-volantis@4.1.2/js/instant_page.js","flying_pages":"https://cdn.jsdelivr.net/gh/gijo-varghese/flying-pages@2.1.2/flying-pages.min.js"});
+  }
+</script>
+
+<!-- required -->
+
+  
+<script src="/js/main.js" async></script>
+
+
+
+<!-- optional -->
+
+  <script>
+  function utterances(){
+    if(!document.getElementById("utterances"))return;
+    setTimeout(function() {
+      var checkUtterances = setInterval(function () {
+        var el = document.getElementById("utterances");
+        if (!el) return
+        clearInterval(checkUtterances)
+        try {
+          el.innerHTML="";
+        } catch (error) {}
+        var script = document.createElement('script');
+        script.src = 'https://utteranc.es/client.js';
+        const keys = ['repo', 'issue-term', 'issue-number', 'theme', 'label', 'crossorigin'];
+        keys.forEach((key, i) => {
+          if (el.attributes[key] && el.attributes[key].value) {
+            script.setAttribute(key, el.attributes[key].value);
+          }
+        });
+        el.appendChild(script);
+       }, 200)
+    });
+  }
+  utterances();
+</script>
+
+
+
+
+<!-- inject -->
+
+
+  </div>
+</body>
+</html>

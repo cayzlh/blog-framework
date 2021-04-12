@@ -1,0 +1,1042 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta name="generator" content="Hexo 5.4.0">
+  <meta charset="utf-8">
+  
+
+  <meta http-equiv="x-dns-prefetch-control" content="on">
+  <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+
+  <meta name="renderer" content="webkit">
+  <meta name="force-rendering" content="webkit">
+  <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+  <meta name="HandheldFriendly" content="True">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <title>Spring源码分析：ApplicationContext相关接口架构分析 - CAYZLH</title>
+
+  
+  <meta name="description" content="
+本文作者：chenssy
+出处：http://cmsblogs.com/?p=4036
+在学习Spring源码的过程中发现的好站+好贴，原创不易感谢作者。
+Spring版本：Spring 5.0.6.RELEASE
+
+前面的文章都是基于 BeanFactory 这个容器来进行分析的，Bean...">
+
+  <!-- feed -->
+  
+    <link rel="alternate" href="/atom.xml" title="CAYZLH" type="application/atom+xml">
+  
+
+  
+    
+<link rel="stylesheet" href="/css/main.css">
+
+  
+
+  
+    
+      <meta name="msapplication-TileColor" content="#2d89ef">
+    
+      <meta name="msapplication-config" content="/assets/favicon/browserconfig.xml">
+    
+      <meta name="theme-color" content="#ffffff">
+    
+      <link rel="shortcut icon" href="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/logo/favicon.ico">
+    
+      <link rel="icon" type="image/png" href="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/logo/favicon-192x192.png" sizes="192x192">
+    
+      <link rel="apple-touch-icon" sizes="180x180" href="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/logo/apple-touch-icon.png">
+    
+  
+</head>
+
+<body>
+  
+
+
+  <div class="l_body" id="start">
+    <aside class="l_left">
+    
+
+<header class="header">
+  <div class="logo-wrap">
+  
+    <a class="avatar" href="/">
+      
+        <img no-lazy class="bg" src="https://cdn.jsdelivr.net/gh/cdn-x/placeholder@1.0.2/avatar/round/rainbow64@3x.webp" onerror="javascript:this.classList.add('error');this.src='https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2021/04/16084216181285221618128522255.svg';">
+      
+      <img no-lazy class="avatar" src="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/image/IMG_4207.JPG" onerror="javascript:this.classList.add('error');this.src='https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2021/04/16084216181285221618128522255.svg';">
+    </a>
+  
+  
+    <a class="title" href="/">
+      CAYZLH
+    </a>
+  
+</div>
+
+  <nav class="menu dis-select"><a class="nav-item" href="/">文章</a><a class="nav-item active" href="/wiki/">文档</a><a class="nav-item" href="/talking/">动态</a><a class="nav-item" href="/about/">更多</a></nav>
+</header>
+
+<div class="widgets">
+  
+    
+      
+      
+<div class="widget-wrap" id="toc"><div class="widget-header h4 dis-select"><span class="name">本文目录</span></div><div class="widget-body fs14 wiki"><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/index.html"><span class="toc-text">Spring源码分析</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC1.html"><span class="toc-text">4张图带你读懂Spring IOC的世界</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC2.html"><span class="toc-text">IOC之深入理解SpringIoC</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC24.html"><span class="toc-text">IOC之深入分析PropertyPlaceholderConfigurer</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC25.html"><span class="toc-text">IOC之PropertyPlaceholderConfigurer的应用</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC2_5.html"><span class="toc-text">IOC之Spring统一资源加载策略</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC3.html"><span class="toc-text">IoC之加载BeanDefinition</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC4.html"><span class="toc-text">IOC之获取验证模型</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC5.html"><span class="toc-text">IOC之获取Document对象</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC6.html"><span class="toc-text">IoC之注册BeanDefinitions</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC7.html"><span class="toc-text">IoC之解析Bean：解析import标签</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC8.html"><span class="toc-text">IOC之解析bean标签：开启解析进程</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC9.html"><span class="toc-text">IOC之解析bean标签：BeanDefinition</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC10.html"><span class="toc-text">IoC之解析bean标签：meta、lookup-method、replace-method</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC11.html"><span class="toc-text">IOC之解析bean标签：constructor-arg、property子元素</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC12.html"><span class="toc-text">IoC之解析bean标签：解析自定义标签</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC13.html"><span class="toc-text">IoC之注册解析的BeanDefinitions</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC14.html"><span class="toc-text">IoC之装载BeanDefinitions总结</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC15.html"><span class="toc-text">IOC之开启bean的加载</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC16.html"><span class="toc-text">IOC之从单例缓存中获取单例bean</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC16_4.html"><span class="toc-text">IOC之parentBeanFactory与依赖处理</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC16_5.html"><span class="toc-text">IOC之分析各scope的bean创建</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC16_6.html"><span class="toc-text">IOC之开启Bean的实例化进程</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC16_7.html"><span class="toc-text">IOC之Factory实例化bean</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC16_8.html"><span class="toc-text">IOC之构造函数实例化bean</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC17.html"><span class="toc-text">IOC之属性填充</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC18.html"><span class="toc-text">IOC之循环依赖</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC19.html"><span class="toc-text">IOC之Bean的初始化</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC20.html"><span class="toc-text">IOC之加载Bean——总结篇</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC21.html"><span class="toc-text">IOC之深入分析Aware接口</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC22.html"><span class="toc-text">IOC之深入分析BeanPostProcessor</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC23.html"><span class="toc-text">IOC之深入分析InitializingBean和init-method</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC25_5.html"><span class="toc-text">IOC之深入分析BeanFactoryPostProcessor</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC26.html"><span class="toc-text">IOC之深入分析PropertyOverrideConfigurer</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC27.html"><span class="toc-text">IOC之深入分析Bean的类型转换体系</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC28.html"><span class="toc-text">IOC之自定义类型转换器</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC29.html"><span class="toc-text">IOC之分析BeanWrapper</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC30.html"><span class="toc-text">IOC之bean的实例化策略：InstantiationStrategy</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC31.html"><span class="toc-text">IOC之BeanDefinition注册机：BeanDefinitionRegistry</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC32.html"><span class="toc-text">Spring的环境&属性：PropertySource、Environment、Profile</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC33.html"><span class="toc-text">IOC之分析bean的生命周期</span></a></div><div class="doc-tree active"><a class="doc-tree-link active" href="/wiki/source_of_spring/springIOC34.html"><span class="toc-text">ApplicationContext相关接口架构分析</span></a><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#ApplicationContext"><span class="toc-text">ApplicationContext</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#ApplicationContext-%E7%9A%84%E5%AD%90%E6%8E%A5%E5%8F%A3"><span class="toc-text">ApplicationContext 的子接口</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#WebApplicationContext"><span class="toc-text">WebApplicationContext</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#ConfigurableApplicationContext"><span class="toc-text">ConfigurableApplicationContext</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#ClassPathXmlApplicationContext"><span class="toc-text">ClassPathXmlApplicationContext</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#MessageSource"><span class="toc-text">MessageSource</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#ApplicationEventPublisher"><span class="toc-text">ApplicationEventPublisher</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#ResourcePatternResolver"><span class="toc-text">ResourcePatternResolver</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#EnvironmentCapable"><span class="toc-text">EnvironmentCapable</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Lifecycle"><span class="toc-text">Lifecycle</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Closeable"><span class="toc-text">Closeable</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#InitializingBean"><span class="toc-text">InitializingBean</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#BeanNameAware"><span class="toc-text">BeanNameAware</span></a></li></ol></li></ol></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC35.html"><span class="toc-text">深入分析ApplicationContext的refresh()</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC36.html"><span class="toc-text">Spring AOP和Spring Transaction源码资料整理</span></a></div></div></div>
+
+    
+  
+    
+      
+      
+  
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+      <div class="widget-wrap" id="related">
+        <div class="widget-header h4 dis-select">
+          <span class="name">更多编程技术</span>
+        </div>
+        <div class="widget-body fs14">
+          
+            
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+                <div class="post-title">
+                  <a href="/wiki/design_patterns/index.html">
+                    设计模式
+                  </a>
+                </div>
+              
+            
+          
+            
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+          
+            
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+                <div class="post-title">
+                  <a href="/wiki/springcloud/index.html">
+                    SpringCloud
+                  </a>
+                </div>
+              
+            
+          
+        </div>
+      </div>
+    
+  
+
+
+    
+  
+</div>
+<footer class="footer"><div class="social-wrap dis-select"><a class="social" href="https://github.com/cayzlh" target="_blank" rel="external nofollow noopener noreferrer"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cdn-x/placeholder@1.0.1/social/08a41b181ce68.svg"></a><a class="social" href="https://telegram.me/Q2F5emxo" target="_blank" rel="external nofollow noopener noreferrer"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/image/guanyuwomen.svg"></a><a class="social" href="/about/#comments" rel="noopener noreferrer"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cdn-x/placeholder@1.0.1/social/942ebbf1a4b91.svg"></a></div></footer>
+
+    </aside>
+    <div class="l_main">
+      
+
+      
+
+  
+  
+  <div class="bread-nav fs12">
+  
+    
+    <div id="breadcrumb">
+      <a class="cap breadcrumb" href="/">主页</a>
+      <span class="sep"></span>
+      
+        <a class="cap breadcrumb" href="/wiki/">文档</a>
+      
+      
+        <span class="sep"></span>
+        <a class="cap breadcrumb" href="/wiki/categories/programmer/index.html">编程技术</a>
+      
+      
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        <span class="sep"></span>
+        <a class="cap breadcrumb" href="/wiki/source_of_spring/index.html">Spring源码分析</a>
+      
+    </div>
+    <div id="post-meta">
+      更新于&nbsp;<time datetime="2021-04-12T15:35:50.042Z">2021-04-12</time>
+    </div>
+  
+  </div>
+
+
+  <article class="content md wiki">
+  <h1 class="article-title"><span>ApplicationContext相关接口架构分析</span></h1>
+  <blockquote>
+<p>本文作者：chenssy</p>
+<p>出处：<a target="_blank" rel="external nofollow noopener noreferrer" href="http://cmsblogs.com/?p=4036">http://cmsblogs.com/?p=4036</a></p>
+<p>在学习<code>Spring源码</code>的过程中发现的好站+好贴，原创不易感谢作者。</p>
+<p>Spring版本：<strong>Spring 5.0.6.RELEASE</strong></p>
+</blockquote>
+<p>前面的文章都是基于 BeanFactory 这个容器来进行分析的，BeanFactory 容器有点儿简单，并不适用于我们生产环境，在生产环境我们通常会选择 ApplicationContext ，相对于大多数人而言，它才是正规军，相比于 BeanFactory 这个杂牌军而言，它由如下几个区别：</p>
+<ol>
+<li>继承 MessageSource，提供国际化的标准访问策略。</li>
+<li>继承 ApplicationEventPublisher ，提供强大的事件机制。</li>
+<li>扩展 ResourceLoader，可以用来加载多个 Resource，可以灵活访问不同的资源。</li>
+<li>对 Web 应用的支持。</li>
+</ol>
+<h2 id="ApplicationContext"><a href="#ApplicationContext" class="headerlink" title="ApplicationContext"></a>ApplicationContext</h2><p>下图是 ApplicationContext 结构类图：</p>
+<p><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2020/05/28/15409479819725_t0jF0z_flFIsn.jpg" alt="img"></p>
+<ul>
+<li><p><strong>BeanFactory</strong>：Spring 管理 Bean 的顶层接口，我们可以认为他是一个简易版的 Spring 容器。</p>
+<p>ApplicationContext 继承 BeanFactory 的两个子类：HierarchicalBeanFactory 和 ListableBeanFactory。HierarchicalBeanFactory 是一个具有层级关系的 BeanFactory，拥有属性 parentBeanFactory。ListableBeanFactory 实现了枚举方法可以列举出当前 BeanFactory 中所有的 bean 对象而不必根据 name 一个一个的获取。</p>
+</li>
+<li><p><strong>ApplicationEventPublisher</strong>：用于封装事件发布功能的接口，向事件监听器（Listener）发送事件消息。</p>
+</li>
+<li><p><strong>ResourceLoader</strong>：Spring 加载资源的顶层接口，用于从一个源加载资源文件。</p>
+<p>ApplicationContext 继承 ResourceLoader 的子类 ResourcePatternResolver，该接口是将 location 解析为 Resource 对象的策略接口。</p>
+</li>
+<li><p><strong>MessageSource</strong>：解析 message 的策略接口，用不支撑国际化等功能。</p>
+</li>
+<li><p><strong>EnvironmentCapable</strong>：用于获取 Environment 的接口。</p>
+</li>
+</ul>
+<h2 id="ApplicationContext-的子接口"><a href="#ApplicationContext-的子接口" class="headerlink" title="ApplicationContext 的子接口"></a>ApplicationContext 的子接口</h2><p>ApplicationContext 有两个直接子类：WebApplicationContext 和 ConfigurableApplicationContext。</p>
+<h3 id="WebApplicationContext"><a href="#WebApplicationContext" class="headerlink" title="WebApplicationContext"></a><strong>WebApplicationContext</strong></h3><figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">WebApplicationContext</span> <span class="keyword">extends</span> <span class="title">ApplicationContext</span> </span>&#123;</span><br><span class="line">    <span class="function">ServletContext <span class="title">getServletContext</span><span class="params">()</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>该接口只有一个 <code>getServletContext()</code> ，用于给 servlet 提供上下文信息。</p>
+<h3 id="ConfigurableApplicationContext"><a href="#ConfigurableApplicationContext" class="headerlink" title="ConfigurableApplicationContext"></a><strong>ConfigurableApplicationContext</strong></h3><figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">ConfigurableApplicationContext</span> <span class="keyword">extends</span> <span class="title">ApplicationContext</span>, <span class="title">Lifecycle</span>, <span class="title">Closeable</span> </span>&#123;</span><br><span class="line"> <span class="comment">// 为 ApplicationContext 设置唯一 ID</span></span><br><span class="line"> <span class="function"><span class="keyword">void</span> <span class="title">setId</span><span class="params">(String id)</span></span>;</span><br><span class="line"></span><br><span class="line"> <span class="comment">// 为 ApplicationContext 设置 parent</span></span><br><span class="line"> <span class="comment">// 父类不应该被修改：如果创建的对象不可用时，则应该在构造函数外部设置它</span></span><br><span class="line"> <span class="function"><span class="keyword">void</span> <span class="title">setParent</span><span class="params">(<span class="meta">@Nullable</span> ApplicationContext parent)</span></span>;</span><br><span class="line"></span><br><span class="line"> <span class="comment">// 设置 Environment</span></span><br><span class="line"> <span class="function"><span class="keyword">void</span> <span class="title">setEnvironment</span><span class="params">(ConfigurableEnvironment environment)</span></span>;</span><br><span class="line"></span><br><span class="line"> <span class="comment">// 获取 Environment</span></span><br><span class="line"> <span class="meta">@Override</span></span><br><span class="line"> <span class="function">ConfigurableEnvironment <span class="title">getEnvironment</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line"> <span class="comment">// 添加 BeanFactoryPostProcessor</span></span><br><span class="line"> <span class="function"><span class="keyword">void</span> <span class="title">addBeanFactoryPostProcessor</span><span class="params">(BeanFactoryPostProcessor postProcessor)</span></span>;</span><br><span class="line"></span><br><span class="line"> <span class="comment">// 添加 ApplicationListener</span></span><br><span class="line"> <span class="function"><span class="keyword">void</span> <span class="title">addApplicationListener</span><span class="params">(ApplicationListener&lt;?&gt; listener)</span></span>;</span><br><span class="line"></span><br><span class="line"> <span class="comment">// 添加 ProtocolResolver</span></span><br><span class="line"> <span class="function"><span class="keyword">void</span> <span class="title">addProtocolResolver</span><span class="params">(ProtocolResolver resolver)</span></span>;</span><br><span class="line"></span><br><span class="line"> <span class="comment">// 加载或者刷新配置</span></span><br><span class="line"> <span class="comment">// 这是一个非常重要的方法</span></span><br><span class="line"> <span class="function"><span class="keyword">void</span> <span class="title">refresh</span><span class="params">()</span> <span class="keyword">throws</span> BeansException, IllegalStateException</span>;</span><br><span class="line"></span><br><span class="line"> <span class="comment">// 注册 shutdown hook</span></span><br><span class="line"> <span class="function"><span class="keyword">void</span> <span class="title">registerShutdownHook</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line"> <span class="comment">// 关闭 ApplicationContext</span></span><br><span class="line"> <span class="meta">@Override</span></span><br><span class="line"> <span class="function"><span class="keyword">void</span> <span class="title">close</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line"> <span class="comment">// ApplicationContext 是否处于激活状态</span></span><br><span class="line"> <span class="function"><span class="keyword">boolean</span> <span class="title">isActive</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line"> <span class="comment">// 获取当前上下文的 BeanFactory</span></span><br><span class="line"> <span class="function">ConfigurableListableBeanFactory <span class="title">getBeanFactory</span><span class="params">()</span> <span class="keyword">throws</span> IllegalStateException</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>从上面代码可以看到 ConfigurableApplicationContext 接口提供的方法都是对 ApplicationContext 进行配置的，例如 <code>setEnvironment()</code>、<code>addBeanFactoryPostProcessor</code>，同时它还继承了如下两个接口：</p>
+<ul>
+<li>Lifecycle：对 context 生命周期的管理，它提供 <code>start()</code> 和 <code>stop()</code> 方法启动和暂停组件。</li>
+<li>Closeable：标准 JDK 所提供的一个接口，用于最后关闭组件释放资源等。</li>
+</ul>
+<p><code>WebApplicationContext</code> 接口和 <code>ConfigurableApplicationContext</code> 接口有一个共同的子类接口 <code>ConfigurableWebApplicationContext</code>，该接口将这两个接口进行合并，提供了一个可配置、可管理、可关闭的WebApplicationContext，同时该接口还增加了 <code>setServletContext()</code>，<code>setServletConfig()</code>等方法，用于装配WebApplicationContext。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">ConfigurableWebApplicationContext</span> <span class="keyword">extends</span> <span class="title">WebApplicationContext</span>, <span class="title">ConfigurableApplicationContext</span> </span>&#123;</span><br><span class="line"> <span class="function"><span class="keyword">void</span> <span class="title">setServletContext</span><span class="params">(<span class="meta">@Nullable</span> ServletContext servletContext)</span></span>;</span><br><span class="line"></span><br><span class="line"> <span class="function"><span class="keyword">void</span> <span class="title">setServletConfig</span><span class="params">(<span class="meta">@Nullable</span> ServletConfig servletConfig)</span></span>;</span><br><span class="line"></span><br><span class="line"> <span class="function">ServletConfig <span class="title">getServletConfig</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line"> <span class="function"><span class="keyword">void</span> <span class="title">setNamespace</span><span class="params">(<span class="meta">@Nullable</span> String namespace)</span></span>;</span><br><span class="line"></span><br><span class="line"> <span class="function">String <span class="title">getNamespace</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line"> <span class="function"><span class="keyword">void</span> <span class="title">setConfigLocation</span><span class="params">(String configLocation)</span></span>;</span><br><span class="line"></span><br><span class="line"> <span class="function"><span class="keyword">void</span> <span class="title">setConfigLocations</span><span class="params">(String... configLocations)</span></span>;</span><br><span class="line"></span><br><span class="line"> String[] getConfigLocations();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>上面三个接口就可以构成一个比较完整的 Spring 容器，整个 Spring 容器体系涉及的接口较多，所以下面小编就一个具体的实现类来看看 ApplicationContext 的实现（其实在前面一系列的文章中，小编对涉及的大部分接口都已经分析了其原理），当然不可能每个方法都涉及到，但小编会把其中最为重要的实现方法贴出来分析。</p>
+<blockquote>
+<p>ApplicationContext 的实现类较多，就以 ClassPathXmlApplicationContext 来分析 ApplicationContext。</p>
+</blockquote>
+<h2 id="ClassPathXmlApplicationContext"><a href="#ClassPathXmlApplicationContext" class="headerlink" title="ClassPathXmlApplicationContext"></a>ClassPathXmlApplicationContext</h2><p><code>ClassPathXmlApplicationContext</code> 是我们在学习 Spring 过程中用的非常多的一个类，很多人第一个接触的 Spring 容器就是它，包括小编自己，下面代码我想很多人依然还记得吧。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">ApplicationContext ac = <span class="keyword">new</span> ClassPathXmlApplicationContext(<span class="string">&quot;applicationContext.xml&quot;</span>);</span><br><span class="line">StudentService studentService = (StudentService)ac.getBean(<span class="string">&quot;studentService&quot;</span>);</span><br></pre></td></tr></table></figure>
+
+<p>下图是 ClassPathXmlApplicationContext 的结构类图：</p>
+<p><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2020/05/28/15410421887266-20200528144153812_tzVVcv.jpg" alt="img"></p>
+<p>主要的的类层级关系如下：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">org.springframework.context.support.AbstractApplicationContext</span><br><span class="line">      org.springframework.context.support.AbstractRefreshableApplicationContext</span><br><span class="line">            org.springframework.context.support.AbstractRefreshableConfigApplicationContext</span><br><span class="line">                  org.springframework.context.support.AbstractXmlApplicationContext</span><br><span class="line">                        org.springframework.context.support.ClassPathXmlApplicationContext</span><br></pre></td></tr></table></figure>
+
+<p>这种设计是模板方法模式典型的应用，AbstractApplicationContext 实现了 ConfigurableApplicationContext 这个全家桶接口，其子类 AbstractRefreshableConfigApplicationContext 又实现了 BeanNameAware 和 InitializingBean 接口。所以 ClassPathXmlApplicationContext 设计的顶级接口有：</p>
+<ul>
+<li><code>BeanFactory</code>：Spring 容器 Bean 的管理</li>
+<li><code>MessageSource</code>：管理 message ，实现国际化等功能</li>
+<li><code>ApplicationEventPublisher</code>：事件发布</li>
+<li><code>ResourcePatternResolver</code>：资源加载</li>
+<li><code>EnvironmentCapable</code>：系统 Environment（profile + Properties） 相关</li>
+<li><code>Lifecycle</code>：管理生命周期</li>
+<li><code>Closeable</code>：关闭，释放资源</li>
+<li><code>InitializingBean</code>：自定义初始化</li>
+<li><code>BeanNameAware</code>：设置 beanName 的 Aware 接口</li>
+</ul>
+<p>下面就这些接口来一一分析。</p>
+<h3 id="MessageSource"><a href="#MessageSource" class="headerlink" title="MessageSource"></a>MessageSource</h3><p>MessageSource 定义了获取 message 的策略方法 <code>getMessage()</code>，在 ApplicationContext 体系中，该方法 AbstractApplicationContext 实现，在 AbstractApplicationContext 中，它持有一个 MessageSource 实例，将 <code>getMessage()</code> 的实现给该实例来实现，如下：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">private</span> MessageSource messageSource;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 实现 getMessage()</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> String <span class="title">getMessage</span><span class="params">(String code, <span class="meta">@Nullable</span> Object[] args, <span class="meta">@Nullable</span> String defaultMessage, Locale locale)</span> </span>&#123;</span><br><span class="line">   <span class="comment">// 委托给 messageSource 实现</span></span><br><span class="line"> <span class="keyword">return</span> getMessageSource().getMessage(code, args, defaultMessage, locale);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">private</span> MessageSource <span class="title">getMessageSource</span><span class="params">()</span> <span class="keyword">throws</span> IllegalStateException </span>&#123;</span><br><span class="line"> <span class="keyword">if</span> (<span class="keyword">this</span>.messageSource == <span class="keyword">null</span>) &#123;</span><br><span class="line">  <span class="keyword">throw</span> <span class="keyword">new</span> IllegalStateException(<span class="string">&quot;MessageSource not initialized - &quot;</span> +</span><br><span class="line">    <span class="string">&quot;call &#x27;refresh&#x27; before accessing messages via the context: &quot;</span> + <span class="keyword">this</span>);</span><br><span class="line"> &#125;</span><br><span class="line"> <span class="keyword">return</span> <span class="keyword">this</span>.messageSource;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>真正实现 是在 <code>AbstractMessageSource</code> 中，如下：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">final</span> String <span class="title">getMessage</span><span class="params">(String code, <span class="meta">@Nullable</span> Object[] args, <span class="meta">@Nullable</span> String defaultMessage, Locale locale)</span> </span>&#123;</span><br><span class="line"> String msg = getMessageInternal(code, args, locale);</span><br><span class="line"> <span class="keyword">if</span> (msg != <span class="keyword">null</span>) &#123;</span><br><span class="line">  <span class="keyword">return</span> msg;</span><br><span class="line"> &#125;</span><br><span class="line"> <span class="keyword">if</span> (defaultMessage == <span class="keyword">null</span>) &#123;</span><br><span class="line">  <span class="keyword">return</span> getDefaultMessage(code);</span><br><span class="line"> &#125;</span><br><span class="line"> <span class="keyword">return</span> renderDefaultMessage(defaultMessage, args, locale);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>具体的实现这里就不分析了。</p>
+<h3 id="ApplicationEventPublisher"><a href="#ApplicationEventPublisher" class="headerlink" title="ApplicationEventPublisher"></a>ApplicationEventPublisher</h3><p>用于封装事件发布功能的接口，向事件监听器（Listener）发送事件消息。</p>
+<p>该接口提供了一个 <code>publishEvent()</code> 用于通知在此应用程序中注册的所有的监听器。</p>
+<p>该方法在 AbstractApplicationContext 中实现。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">publishEvent</span><span class="params">(Object event)</span> </span>&#123;</span><br><span class="line">  publishEvent(event, <span class="keyword">null</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title">publishEvent</span><span class="params">(Object event, <span class="meta">@Nullable</span> ResolvableType eventType)</span> </span>&#123;</span><br><span class="line">  Assert.notNull(event, <span class="string">&quot;Event must not be null&quot;</span>);</span><br><span class="line">  <span class="keyword">if</span> (logger.isTraceEnabled()) &#123;</span><br><span class="line">    logger.trace(<span class="string">&quot;Publishing event in &quot;</span> + getDisplayName() + <span class="string">&quot;: &quot;</span> + event);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  ApplicationEvent applicationEvent;</span><br><span class="line">  <span class="keyword">if</span> (event <span class="keyword">instanceof</span> ApplicationEvent) &#123;</span><br><span class="line">    applicationEvent = (ApplicationEvent) event;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">else</span> &#123;</span><br><span class="line">    applicationEvent = <span class="keyword">new</span> PayloadApplicationEvent&lt;&gt;(<span class="keyword">this</span>, event);</span><br><span class="line">    <span class="keyword">if</span> (eventType == <span class="keyword">null</span>) &#123;</span><br><span class="line">      eventType = ((PayloadApplicationEvent) applicationEvent).getResolvableType();</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> (<span class="keyword">this</span>.earlyApplicationEvents != <span class="keyword">null</span>) &#123;</span><br><span class="line">    <span class="keyword">this</span>.earlyApplicationEvents.add(applicationEvent);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">else</span> &#123;</span><br><span class="line">    getApplicationEventMulticaster().multicastEvent(applicationEvent, eventType);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> (<span class="keyword">this</span>.parent != <span class="keyword">null</span>) &#123;</span><br><span class="line">    <span class="keyword">if</span> (<span class="keyword">this</span>.parent <span class="keyword">instanceof</span> AbstractApplicationContext) &#123;</span><br><span class="line">      ((AbstractApplicationContext) <span class="keyword">this</span>.parent).publishEvent(event, eventType);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span> &#123;</span><br><span class="line">      <span class="keyword">this</span>.parent.publishEvent(event);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>如果指定的事件不是ApplicationEvent，则它将包装在PayloadApplicationEvent中。如果存在父级 ApplicationContext ，则同样要将 event 发布给父级 ApplicationContext。</p>
+<h3 id="ResourcePatternResolver"><a href="#ResourcePatternResolver" class="headerlink" title="ResourcePatternResolver"></a>ResourcePatternResolver</h3><p>ResourcePatternResolver 接口继承 ResourceLoader 接口，为将 location 解析为 Resource 对象的策略接口。他提供的 <code>getResources()</code> 在 AbstractApplicationContext 中实现，在 AbstractApplicationContext 中他持有一个 ResourcePatternResolver 的实例对象。</p>
+<p>如下：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> Resource[] getResources(String locationPattern) <span class="keyword">throws</span> IOException &#123;</span><br><span class="line"> <span class="keyword">return</span> <span class="keyword">this</span>.resourcePatternResolver.getResources(locationPattern);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>如果小伙伴对 Spring 的 ResourceLoader 比较熟悉的话，你会发现最终是在 PathMatchingResourcePatternResolver 中实现，该类是 ResourcePatternResolver 接口的实现者。</p>
+<h3 id="EnvironmentCapable"><a href="#EnvironmentCapable" class="headerlink" title="EnvironmentCapable"></a>EnvironmentCapable</h3><p>提供当前系统环境 Environment 组件。提供了一个 <code>getEnvironment()</code> 用于返回 Environment 实例对象，该方法在 AbstractApplicationContext 实现。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> ConfigurableEnvironment <span class="title">getEnvironment</span><span class="params">()</span> </span>&#123;</span><br><span class="line"> <span class="keyword">if</span> (<span class="keyword">this</span>.environment == <span class="keyword">null</span>) &#123;</span><br><span class="line">  <span class="keyword">this</span>.environment = createEnvironment();</span><br><span class="line"> &#125;</span><br><span class="line"> <span class="keyword">return</span> <span class="keyword">this</span>.environment;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>如果持有的 environment 实例对象为空，则调用 <code>createEnvironment()</code> 创建一个。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> ConfigurableEnvironment <span class="title">createEnvironment</span><span class="params">()</span> </span>&#123;</span><br><span class="line"> <span class="keyword">return</span> <span class="keyword">new</span> StandardEnvironment();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>StandardEnvironment 是一个适用于非 WEB 应用的 Environment。</p>
+<h3 id="Lifecycle"><a href="#Lifecycle" class="headerlink" title="Lifecycle"></a>Lifecycle</h3><p>一个用于管理声明周期的接口。</p>
+<p>在 AbstractApplicationContext 中存在一个 LifecycleProcessor 类型的实例对象 lifecycleProcessor，AbstractApplicationContext 中关于 Lifecycle 接口的实现都是委托给 lifecycleProcessor 实现的。如下：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">start</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  getLifecycleProcessor().start();</span><br><span class="line">  publishEvent(<span class="keyword">new</span> ContextStartedEvent(<span class="keyword">this</span>));</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">stop</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  getLifecycleProcessor().stop();</span><br><span class="line">  publishEvent(<span class="keyword">new</span> ContextStoppedEvent(<span class="keyword">this</span>));</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">isRunning</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> (<span class="keyword">this</span>.lifecycleProcessor != <span class="keyword">null</span> &amp;&amp; <span class="keyword">this</span>.lifecycleProcessor.isRunning());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在启动、停止的时候会分别发布 ContextStartedEvent 和 ContextStoppedEvent 事件。</p>
+<h3 id="Closeable"><a href="#Closeable" class="headerlink" title="Closeable"></a>Closeable</h3><p>Closeable 接口用于关闭和释放资源，提供了 <code>close()</code> 以释放对象所持有的资源。在 ApplicationContext 体系中由AbstractApplicationContext 实现，用于关闭 ApplicationContext 销毁所有 bean ，此外如果注册有 JVM shutdown hook，同样要将其移除。如下：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">close</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="keyword">synchronized</span> (<span class="keyword">this</span>.startupShutdownMonitor) &#123;</span><br><span class="line">    doClose();</span><br><span class="line">    <span class="comment">// If we registered a JVM shutdown hook, we don&#x27;t need it anymore now:</span></span><br><span class="line">    <span class="comment">// We&#x27;ve already explicitly closed the context.</span></span><br><span class="line">    <span class="keyword">if</span> (<span class="keyword">this</span>.shutdownHook != <span class="keyword">null</span>) &#123;</span><br><span class="line">      <span class="keyword">try</span> &#123;</span><br><span class="line">        Runtime.getRuntime().removeShutdownHook(<span class="keyword">this</span>.shutdownHook);</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">catch</span> (IllegalStateException ex) &#123;</span><br><span class="line">        <span class="comment">// ignore - VM is already shutting down</span></span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>调用 <code>doClose()</code> 发布 ContextClosedEvent 事件，销毁所有 bean（单例），关闭 BeanFactory 。如下：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title">doClose</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="comment">// 省略部分代码</span></span><br><span class="line">  <span class="keyword">try</span> &#123;</span><br><span class="line">    <span class="comment">// Publish shutdown event.</span></span><br><span class="line">    publishEvent(<span class="keyword">new</span> ContextClosedEvent(<span class="keyword">this</span>));</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">catch</span> (Throwable ex) &#123;</span><br><span class="line">    logger.warn(<span class="string">&quot;Exception thrown from ApplicationListener handling ContextClosedEvent&quot;</span>, ex);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 省略部分代码</span></span><br><span class="line">  destroyBeans();</span><br><span class="line">  closeBeanFactory();</span><br><span class="line">  onClose();</span><br><span class="line"></span><br><span class="line">  <span class="keyword">this</span>.active.set(<span class="keyword">false</span>);</span><br><span class="line">&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="InitializingBean"><a href="#InitializingBean" class="headerlink" title="InitializingBean"></a>InitializingBean</h3><p>InitializingBean 为 bean 提供了初始化方法的方式，它提供的 <code>afterPropertiesSet()</code> 用于执行初始化动作。在 ApplicationContext 体系中，该方法由 AbstractRefreshableConfigApplicationContext 实现，如下：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">afterPropertiesSet</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (!isActive()) &#123;</span><br><span class="line">    refresh();</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>执行 <code>refresh()</code> ，该方法在 AbstractApplicationContext 中执行，执行整个 Spring 容器的初始化过程。该方法将在下篇文章进行详细分析说明。</p>
+<h3 id="BeanNameAware"><a href="#BeanNameAware" class="headerlink" title="BeanNameAware"></a>BeanNameAware</h3><p>设置 bean name 的接口。接口在 AbstractRefreshableConfigApplicationContext 中实现。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">setBeanName</span><span class="params">(String name)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (!<span class="keyword">this</span>.setIdCalled) &#123;</span><br><span class="line">    <span class="keyword">super</span>.setId(name);</span><br><span class="line">    setDisplayName(<span class="string">&quot;ApplicationContext &#x27;&quot;</span> + name + <span class="string">&quot;&#x27;&quot;</span>);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<hr>
+<p>由于篇幅问题再加上大部分接口都已经在前面文章进行了详细的阐述，所以本文主要是以 Spring Framework 的 ApplicationContext 为中心，对其结构和功能的实现进行了简要的说明。</p>
+<p><strong>这里不得不说 Spring 真的是一个非常优秀的框架，具有良好的结构设计和接口抽象，它的每一个接口职能单一，且都是具体功能到各个模块的高度抽象，且几乎每套接口都提供了一个默认的实现（defaultXXX）。</strong></p>
+<p>对于 ApplicationContext 体系而言，他继承 Spring 中众多的核心接口，能够为客户端提供一个相对完整的 Spring 容器，接口 ConfigurableApplicationContext 对 ApplicationContext 接口再次进行扩展，提供了生命周期的管理功能。</p>
+<p>抽象类 ApplicationContext 对整套接口提供了大部分的默认实现，将其中“不易变动”的部分进行了封装，通过“组合”的方式将“容易变动”的功能委托给其他类来实现，同时利用模板方法模式将一些方法的实现开放出去由子类实现，从而实现“**<u>对扩展开放，对修改封闭</u>**”的设计原则。</p>
+<p>最后我们再来领略下图的风采：</p>
+<p><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2020/05/28/15410421887266-20200528145142270_hlq2Td.jpg" alt="img"></p>
+
+  
+
+
+  </article>
+  
+<div class="related-wrap" id="read-next"><section class="header cap theme"><span>接下来阅读</span></section><section class="body"><div class="post-title h2"><a href="/wiki/source_of_spring/springIOC35.html">深入分析ApplicationContext的refresh()</a></div><div class="post-title fs14"><a href="/wiki/source_of_spring/springIOC33.html">上一篇：IOC之分析bean的生命周期</a></div></section></div>
+
+  
+
+  <div class="related-wrap md" id="comments">
+    <div class="cmt-title cap theme">
+      快来参与讨论吧
+    </div>
+    <div class="cmt-body utterances">
+      
+
+<svg class="loading" style="vertical-align: middle;fill: currentColor;overflow: hidden;" viewbox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2709"><path d="M832 512c0-176-144-320-320-320V128c211.2 0 384 172.8 384 384h-64zM192 512c0 176 144 320 320 320v64C300.8 896 128 723.2 128 512h64z" p-id="2710"/></svg>
+
+<div id="utterances" repo="cayzlh/studious-barnacle" issue-term="Spring源码分析" theme="github-light"></div>
+
+    </div>
+  </div>
+
+
+
+
+      
+<footer class="page-footer fs12" style="text-align: center;"><hr><div><p><a href="https://www.cayzlh.com/">🐳Ant丶</a> ©️ 2017-2021</p>
+<p><a target="_blank" rel="external nofollow noopener noreferrer" href="https://beian.miit.gov.cn/">粤ICP备20058712号</a></p>
+</div></footer>
+
+      <div class="float-panel mobile-only" style="display:none">
+  <button type="button" class="sidebar-toggle mobile" onclick="sidebar.toggle()">
+    <svg class="icon" viewbox="0 0 1228 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2849"><path d="M0 0m97.390199 0l973.901995 0q97.390199 0 97.390199 97.390199l0 0q0 97.390199-97.390199 97.3902l-973.901995 0q-97.390199 0-97.390199-97.3902l0 0q0-97.390199 97.390199-97.390199Z" p-id="2850"/><path d="M0 389.560798m97.390199 0l973.901995 0q97.390199 0 97.390199 97.390199l0 0q0 97.390199-97.390199 97.3902l-973.901995 0q-97.390199 0-97.390199-97.3902l0 0q0-97.390199 97.390199-97.390199Z" p-id="2851"/><path d="M0 779.121596m97.390199 0l973.901995 0q97.390199 0 97.390199 97.390199l0 0q0 97.390199-97.390199 97.390199l-973.901995 0q-97.390199 0-97.390199-97.390199l0 0q0-97.390199 97.390199-97.390199Z" p-id="2852"/></svg>
+  </button>
+</div>
+
+    </div>
+  </div>
+  <div class="scripts">
+    <script type="text/javascript">
+  stellar = {
+    // 懒加载 css https://github.com/filamentgroup/loadCSS
+    loadCSS: (href, before, media, attributes) => {
+      var doc = window.document;
+      var ss = doc.createElement("link");
+      var ref;
+      if (before) {
+        ref = before;
+      } else {
+        var refs = (doc.body || doc.getElementsByTagName("head")[0]).childNodes;
+        ref = refs[refs.length - 1];
+      }
+      var sheets = doc.styleSheets;
+      if (attributes) {
+        for (var attributeName in attributes) {
+          if (attributes.hasOwnProperty(attributeName)) {
+            ss.setAttribute(attributeName, attributes[attributeName]);
+          }
+        }
+      }
+      ss.rel = "stylesheet";
+      ss.href = href;
+      ss.media = "only x";
+      function ready(cb) {
+        if (doc.body) {
+          return cb();
+        }
+        setTimeout(function () {
+          ready(cb);
+        });
+      }
+      ready(function () {
+        ref.parentNode.insertBefore(ss, before ? ref : ref.nextSibling);
+      });
+      var onloadcssdefined = function (cb) {
+        var resolvedHref = ss.href;
+        var i = sheets.length;
+        while (i--) {
+          if (sheets[i].href === resolvedHref) {
+            return cb();
+          }
+        }
+        setTimeout(function () {
+          onloadcssdefined(cb);
+        });
+      };
+      function loadCB() {
+        if (ss.addEventListener) {
+          ss.removeEventListener("load", loadCB);
+        }
+        ss.media = media || "all";
+      }
+      if (ss.addEventListener) {
+        ss.addEventListener("load", loadCB);
+      }
+      ss.onloadcssdefined = onloadcssdefined;
+      onloadcssdefined(loadCB);
+      return ss;
+    },
+
+    // 从 butterfly 和 volantis 获得灵感
+    loadScript: (src, opt) => new Promise((resolve, reject) => {
+      var script = document.createElement('script')
+      script.src = src
+      if (opt) {
+        for (let key of Object.keys(opt)) {
+          script[key] = opt[key]
+        }
+      } else {
+        // 默认异步，如果需要同步，第二个参数传入 {} 即可
+        script.async = true
+      }
+      script.onerror = reject
+      script.onload = script.onreadystatechange = function() {
+        const loadState = this.readyState
+        if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+        script.onload = script.onreadystatechange = null
+        resolve()
+      }
+      document.head.appendChild(script)
+    }),
+
+    // https://github.com/jerryc127/hexo-theme-butterfly
+    jQuery: (fn) => {
+      if (typeof jQuery === 'undefined') {
+        stellar.loadScript(stellar.plugins.jQuery).then(fn)
+      } else {
+        fn()
+      }
+    }
+  };
+  stellar.github = 'https://github.com/xaoxuu/hexo-theme-stellar/tree/1.1.0';
+  stellar.config = {
+    date_suffix: {
+      just: '刚刚',
+      min: '分钟前',
+      hour: '小时前',
+      day: '天前',
+      month: '个月前',
+    },
+  };
+
+  // required plugins (only load if needs)
+  stellar.plugins = {
+    jQuery: 'https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js',
+    sitesjs: '/js/plugins/sites.js',
+    friendsjs: '/js/plugins/friends.js',
+  };
+
+  // optional plugins
+  if ('true' == 'true') {
+    stellar.plugins.lazyload = Object.assign({"enable":true,"js":"https://cdn.jsdelivr.net/npm/vanilla-lazyload@17.3.1/dist/lazyload.min.js","transition":"blur"});
+  }
+  if ('true' == 'true') {
+    stellar.plugins.swiper = Object.assign({"enable":true,"css":"https://unpkg.com/swiper/swiper-bundle.min.css","js":"https://unpkg.com/swiper/swiper-bundle.min.js"});
+  }
+  if ('' == 'true') {
+    stellar.plugins.scrollreveal = Object.assign({"enable":null,"js":"https://cdn.jsdelivr.net/npm/scrollreveal@4.0.9/dist/scrollreveal.min.js","distance":"8px","duration":500,"interval":100,"scale":1});
+  }
+  if ('true' == 'true') {
+    stellar.plugins.preload = Object.assign({"enable":true,"service":"flying_pages","instant_page":"https://cdn.jsdelivr.net/gh/volantis-x/cdn-volantis@4.1.2/js/instant_page.js","flying_pages":"https://cdn.jsdelivr.net/gh/gijo-varghese/flying-pages@2.1.2/flying-pages.min.js"});
+  }
+</script>
+
+<!-- required -->
+
+  
+<script src="/js/main.js" async></script>
+
+
+
+<!-- optional -->
+
+  <script>
+  function utterances(){
+    if(!document.getElementById("utterances"))return;
+    setTimeout(function() {
+      var checkUtterances = setInterval(function () {
+        var el = document.getElementById("utterances");
+        if (!el) return
+        clearInterval(checkUtterances)
+        try {
+          el.innerHTML="";
+        } catch (error) {}
+        var script = document.createElement('script');
+        script.src = 'https://utteranc.es/client.js';
+        const keys = ['repo', 'issue-term', 'issue-number', 'theme', 'label', 'crossorigin'];
+        keys.forEach((key, i) => {
+          if (el.attributes[key] && el.attributes[key].value) {
+            script.setAttribute(key, el.attributes[key].value);
+          }
+        });
+        el.appendChild(script);
+       }, 200)
+    });
+  }
+  utterances();
+</script>
+
+
+
+
+<!-- inject -->
+
+
+  </div>
+</body>
+</html>

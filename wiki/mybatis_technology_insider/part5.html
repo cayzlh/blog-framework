@@ -1,0 +1,981 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta name="generator" content="Hexo 5.4.0">
+  <meta charset="utf-8">
+  
+
+  <meta http-equiv="x-dns-prefetch-control" content="on">
+  <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+
+  <meta name="renderer" content="webkit">
+  <meta name="force-rendering" content="webkit">
+  <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+  <meta name="HandheldFriendly" content="True">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <title>Mybatis技术内幕：基础支持层——资源加载 - CAYZLH</title>
+
+  
+  <meta name="description" content="MyBatis基础支持层位于 Mybatis 整体架构的最底层，支撑着 Mybatis 的核心处理层，是整个框架的基石。基础支持层中封装了多个较为通用的、独立的模块，不仅仅为 Mybatis 提供基础支撑，也可以在合适的场景中直接复用。
+
+
+这篇文章介绍MyBatis的资源加载模块
+
+类加载器...">
+
+  <!-- feed -->
+  
+    <link rel="alternate" href="/atom.xml" title="CAYZLH" type="application/atom+xml">
+  
+
+  
+    
+<link rel="stylesheet" href="/css/main.css">
+
+  
+
+  
+    
+      <meta name="msapplication-TileColor" content="#2d89ef">
+    
+      <meta name="msapplication-config" content="/assets/favicon/browserconfig.xml">
+    
+      <meta name="theme-color" content="#ffffff">
+    
+      <link rel="shortcut icon" href="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/logo/favicon.ico">
+    
+      <link rel="icon" type="image/png" href="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/logo/favicon-192x192.png" sizes="192x192">
+    
+      <link rel="apple-touch-icon" sizes="180x180" href="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/logo/apple-touch-icon.png">
+    
+  
+</head>
+
+<body>
+  
+
+
+  <div class="l_body" id="start">
+    <aside class="l_left">
+    
+
+<header class="header">
+  <div class="logo-wrap">
+  
+    <a class="avatar" href="/">
+      
+        <img no-lazy class="bg" src="https://cdn.jsdelivr.net/gh/cdn-x/placeholder@1.0.2/avatar/round/rainbow64@3x.webp" onerror="javascript:this.classList.add('error');this.src='https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2021/04/16084216181285221618128522255.svg';">
+      
+      <img no-lazy class="avatar" src="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/image/IMG_4207.JPG" onerror="javascript:this.classList.add('error');this.src='https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2021/04/16084216181285221618128522255.svg';">
+    </a>
+  
+  
+    <a class="title" href="/">
+      CAYZLH
+    </a>
+  
+</div>
+
+  <nav class="menu dis-select"><a class="nav-item" href="/">文章</a><a class="nav-item active" href="/wiki/">文档</a><a class="nav-item" href="/talking/">动态</a><a class="nav-item" href="/about/">更多</a></nav>
+</header>
+
+<div class="widgets">
+  
+    
+      
+      
+<div class="widget-wrap" id="toc"><div class="widget-header h4 dis-select"><span class="name">本文目录</span></div><div class="widget-body fs14 wiki"><div class="doc-tree"><a class="doc-tree-link" href="/wiki/mybatis_technology_insider/index.html"><span class="toc-text">Mybatis技术内幕</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/mybatis_technology_insider/part1.html"><span class="toc-text">MyBatis快速入门</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/mybatis_technology_insider/part2.html"><span class="toc-text">基础支持层——解析器模块</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/mybatis_technology_insider/part3.html"><span class="toc-text">基础支持层——反射模块</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/mybatis_technology_insider/part4.html"><span class="toc-text">基础支持层——日志模块</span></a></div><div class="doc-tree active"><a class="doc-tree-link active" href="/wiki/mybatis_technology_insider/part5.html"><span class="toc-text">基础支持层——资源加载</span></a><ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%B1%BB%E5%8A%A0%E8%BD%BD%E5%99%A8"><span class="toc-text">类加载器</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#ClassLoaderWrapper"><span class="toc-text">ClassLoaderWrapper</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#ResolverUtil"><span class="toc-text">ResolverUtil</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#VFS"><span class="toc-text">VFS</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%8F%82%E8%80%83"><span class="toc-text">参考</span></a></li></ol></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/mybatis_technology_insider/part6.html"><span class="toc-text">基础支持层——DataSource</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/mybatis_technology_insider/part7.html"><span class="toc-text">基础支持层——Transaction</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/mybatis_technology_insider/part8.html"><span class="toc-text">基础支持层——binding模块</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/mybatis_technology_insider/part9.html"><span class="toc-text">基础支持层——缓存模块</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/mybatis_technology_insider/part10.html"><span class="toc-text">核心处理层-MyBatis初始化</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/mybatis_technology_insider/part11.html"><span class="toc-text">核心处理层-SqlNode&SqlSource</span></a></div></div></div>
+
+    
+  
+    
+      
+      
+  
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+      <div class="widget-wrap" id="related">
+        <div class="widget-header h4 dis-select">
+          <span class="name">更多读书笔记</span>
+        </div>
+        <div class="widget-body fs14">
+          
+            
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+          
+            
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+                <div class="post-title">
+                  <a href="/wiki/understanding_jvm/index.html">
+                    深入理解Java虚拟机
+                  </a>
+                </div>
+              
+            
+          
+            
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+                <div class="post-title">
+                  <a href="/wiki/how_to_reading/index.html">
+                    《如何阅读一本书》
+                  </a>
+                </div>
+              
+            
+          
+        </div>
+      </div>
+    
+  
+
+
+    
+  
+</div>
+<footer class="footer"><div class="social-wrap dis-select"><a class="social" href="https://github.com/cayzlh" target="_blank" rel="external nofollow noopener noreferrer"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cdn-x/placeholder@1.0.1/social/08a41b181ce68.svg"></a><a class="social" href="https://telegram.me/Q2F5emxo" target="_blank" rel="external nofollow noopener noreferrer"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/image/guanyuwomen.svg"></a><a class="social" href="/about/#comments" rel="noopener noreferrer"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cdn-x/placeholder@1.0.1/social/942ebbf1a4b91.svg"></a></div></footer>
+
+    </aside>
+    <div class="l_main">
+      
+
+      
+
+  
+  
+  <div class="bread-nav fs12">
+  
+    
+    <div id="breadcrumb">
+      <a class="cap breadcrumb" href="/">主页</a>
+      <span class="sep"></span>
+      
+        <a class="cap breadcrumb" href="/wiki/">文档</a>
+      
+      
+        <span class="sep"></span>
+        <a class="cap breadcrumb" href="/wiki/categories/reading/index.html">读书笔记</a>
+      
+      
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        <span class="sep"></span>
+        <a class="cap breadcrumb" href="/wiki/mybatis_technology_insider/index.html">Mybatis技术内幕</a>
+      
+    </div>
+    <div id="post-meta">
+      更新于&nbsp;<time datetime="2021-04-12T15:35:50.038Z">2021-04-12</time>
+    </div>
+  
+  </div>
+
+
+  <article class="content md wiki">
+  <h1 class="article-title"><span>基础支持层——资源加载</span></h1>
+  <p>MyBatis基础支持层位于 Mybatis 整体架构的最底层，支撑着 Mybatis 的核心处理层，是整个框架的基石。基础支持层中封装了多个较为通用的、独立的模块，不仅仅为 Mybatis 提供基础支撑，也可以在合适的场景中直接复用。</p>
+<p><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2020/05/21/2_c5SKkm.png" alt="整体架构"></p>
+<blockquote>
+<p>这篇文章介绍MyBatis的资源加载模块</p>
+</blockquote>
+<h3 id="类加载器"><a href="#类加载器" class="headerlink" title="类加载器"></a>类加载器</h3><p>Java虚 拟 机中的类 加载 器(ClassLoader)负 责 加载 来 自文件系统 、网 络 或其他来 源的类 文 件。Java虚 拟 机中的类 加载 器默认 使用的是<strong>双 亲 委派模式</strong>，如图所示，其中有三种 默认 使 用 的 类 加 载 器 ，分 别 是 <code>Bootstrap ClassLoader</code>、<code>Extension ClassLoader</code> 和 <code>System ClassLoader</code> (也 被称 为 <code>ApplicationClassLoader</code>)，每种 类 加载 器都己经 确 定从 哪 个 位置加载 类 文件。</p>
+<p><code>BootstrapClassLoader</code>负 责 加载 JDK自带 的<code>rt.jar</code>包中的类 文件，它 是所有类 加载 器的父加载 器，<code>Bootstrap ClassLoader</code>没 有任何父类 加载 器。<code>Extension ClassLoader</code>负 责 加 载 Java的扩 展类 库 ，也就是从 <code>jre/lib/ext</code>目录 下或者<code>java.ext.dirs</code>系统 属 性指定的目录 下加载 类 。</p>
+<p><code>SystemClassLoader</code>负 责 从 <code>classpath</code>环 境变 量中加载 类 文件，<code>classpath</code>环 境变 量通常由<code>-classpath</code>或 <code>-cp</code>命令行选 项 来 定义 ，或 是 由 JAR中 Manifest文 件 的 classpath属 性指定。<code>System ClassLoader</code>是<code>ExtensionClassLoader</code>的子加载 器。</p>
+<p><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/08/image-20200608173325045_78JEcv.png" alt="image-20200608173325045"></p>
+<p>根据双亲委派模式，在加载类文件时，子加载器首先会将加载请求委托给它的父加载器。</p>
+<p>父加载器会检测自己是否已经加载过该类，如果己加载则加载过程结束;如果未加载则请求继 续 向上传 递 ，直到BootstrapClassLoader。</p>
+<p>如果在请 求向上委托的过 程中，始终 未检 测 到该 类 己 加载 ，则 从 BootstrapClassLoader开 始尝 试 从 其对 应 路径 中加载 该 类 文件，如果加载 失败 则 由 子加载器继续尝试加载，直至发起加载请求的子加载器位为止。</p>
+<blockquote>
+<p>双 亲 委派模式可以保证 两 点:</p>
+<p>一是子加载 器可以使用父加载 器己加载 的类 ，而父加载 器无 法使用子加载 器已加载 的类 ;</p>
+<p>二是父加载 器已加载 过 的类 无法被子加载 器再次加载 。</p>
+<p>这 样 就可以保证 JVM的安全性和稳 定性。</p>
+</blockquote>
+<h3 id="ClassLoaderWrapper"><a href="#ClassLoaderWrapper" class="headerlink" title="ClassLoaderWrapper"></a>ClassLoaderWrapper</h3><p>上上一小节中了解了类 加载 器的常见 使用方式。在 MyBatis的 <code>IO</code> 包中封装 了 ClassLoader以及读 取资 源文件的相关 API。</p>
+<p>在 <code>IO</code>包 中 提 供 的 <code>ClassLoaderWrapper</code>是 一 个 <code>ClassLoader</code>的包装 器，其中包含了多个<code>ClassLoader</code>对 象。</p>
+<p>通过 调 整多个 类 加载 器的使用顺 序，<code>ClassLoaderWrapper</code>可以确 保返回给 系 统 使用的是正确 的类 加载 器。</p>
+<p>使 用 <code>ClassLoaderWrapper</code>就如同使用一个 <code>ClassLoader</code>对 象， <code>ClassLoaderWrapper</code>会 按照指定的顺 序依次检 测 其中封装 的<code>ClassLoader</code>对 象，并 从 中选 取第一 个 可用的<code>ClassLoader</code>完成相关 功能。</p>
+<p><code>ClassLoaderWrapper</code>的 主 要 功 能 可 以 分 为 三 类 ， 分 别 是 <code>getResourceAsURL()方 法</code> 、 <code>classForName()方法</code>、<code>getResourceAsStream()方法</code>，这 三个 方法都有多个 重载 ，这 三类 方法最终 都会 调 用参 数 为 <code>String</code>和<code>ClassLoader[]</code>的重载 。</p>
+<p><code>getResourceAsURL()</code>代码如下，其他的类似：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> URL <span class="title">getResourceAsURL</span><span class="params">(String resource, ClassLoader classLoader)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> getResourceAsURL(resource, getClassLoaders(classLoader));</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 返回ClassLoader[], 该方法指明类加载器的使用顺序</span></span><br><span class="line">ClassLoader[] getClassLoaders(ClassLoader classLoader) &#123;</span><br><span class="line">  <span class="keyword">return</span> <span class="keyword">new</span> ClassLoader[]&#123;</span><br><span class="line">    classLoader,</span><br><span class="line">    defaultClassLoader,</span><br><span class="line">    Thread.currentThread().getContextClassLoader(),</span><br><span class="line">    getClass().getClassLoader(),</span><br><span class="line">    systemClassLoader&#125;;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function">URL <span class="title">getResourceAsURL</span><span class="params">(String resource, ClassLoader[] classLoader)</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">  URL url;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">for</span> (ClassLoader cl : classLoader) &#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (<span class="keyword">null</span> != cl) &#123;</span><br><span class="line"></span><br><span class="line">      <span class="comment">// look for the resource as passed in...</span></span><br><span class="line">      url = cl.getResource(resource);</span><br><span class="line"></span><br><span class="line">      <span class="comment">// ...but some class loaders want this leading &quot;/&quot;, so we&#x27;ll add it</span></span><br><span class="line">      <span class="comment">// and try again if we didn&#x27;t find the resource</span></span><br><span class="line">      <span class="keyword">if</span> (<span class="keyword">null</span> == url) &#123;</span><br><span class="line">        url = cl.getResource(<span class="string">&quot;/&quot;</span> + resource);</span><br><span class="line">      &#125;</span><br><span class="line"></span><br><span class="line">      <span class="comment">// &quot;It&#x27;s always in the last place I look for it!&quot;</span></span><br><span class="line">      <span class="comment">// ... because only an idiot would keep looking for it after finding it, so stop looking already.</span></span><br><span class="line">      <span class="keyword">if</span> (<span class="keyword">null</span> != url) &#123;</span><br><span class="line">        <span class="keyword">return</span> url;</span><br><span class="line">      &#125;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// didn&#x27;t find it anywhere.</span></span><br><span class="line">  <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Resources是一个 提供了多个 静 态 方法的工具类 ，其中封装 了一个 ClassLoaderWrapper类 型 的静 态 字段，Resources提供的这 些静 态 工具都是通过 调 用该 ClassLoaderWrapper对 象的相应 方 法实 现 的。</p>
+<h3 id="ResolverUtil"><a href="#ResolverUtil" class="headerlink" title="ResolverUtil"></a>ResolverUtil</h3><p><code>ResolverUtil</code>可以根据指定的条件查找指定包下的类 ，其中使用的条件由Test接口表示。 </p>
+<p><code>ResolverUtil</code>中使用<code>classLoader</code>字 段 (<code>ClassLoader</code>类 型)记 录 了当 前使用的类 加载 器，默认 情 况 下，使用的是当 前线 程上下文绑 定的<code>ClassLoader</code>，我们 可以通过 <code>setClassLoader()</code>方法修改使 用类加载器。</p>
+<p>MyBatis提供了两 个 常用的<code>Test</code>接口实 现 ，分别 是<code>IsA</code>和<code>AnnotatedWith</code>,如图 所示。 <code>IsA</code>用于检 测 类 是否继 承了指定的类 或接口，<code>AnnotatedWith</code>用于检 测 类 是否添加了指定的注解。 开 发 人员 也可以自己实 现 <code>Test</code>接口，实 现 指定条 件的检 测 。</p>
+<p><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/08/image-20200608175854576_mu9XKh.png" alt="image-20200608175854576"></p>
+<p>Test接口中定义 了 matches()方法，它 用于检 测 指定类 是否符合条 件:</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">Test</span> </span>&#123;</span><br><span class="line">  <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * Will be called repeatedly with candidate classes. Must return True if a class</span></span><br><span class="line"><span class="comment">     * is to be included in the results, false otherwise.</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">  <span class="function"><span class="keyword">boolean</span> <span class="title">matches</span><span class="params">(Class&lt;?&gt; type)</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>IsA</code>和 <code>AnnotatedWith</code>的具体 实 现 如下</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">IsA</span> <span class="keyword">implements</span> <span class="title">Test</span> </span>&#123;</span><br><span class="line">  <span class="keyword">private</span> Class&lt;?&gt; parent;</span><br><span class="line"></span><br><span class="line">  <span class="comment">/** Constructs an IsA test using the supplied Class as the parent class/interface. */</span></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="title">IsA</span><span class="params">(Class&lt;?&gt; parentType)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">this</span>.parent = parentType;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">/** Returns true if type is assignable to the parent type supplied in the constructor. */</span></span><br><span class="line">  <span class="meta">@Override</span></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">matches</span><span class="params">(Class&lt;?&gt; type)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> type != <span class="keyword">null</span> &amp;&amp; parent.isAssignableFrom(type);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="meta">@Override</span></span><br><span class="line">  <span class="function"><span class="keyword">public</span> String <span class="title">toString</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="string">&quot;is assignable to &quot;</span> + parent.getSimpleName();</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">AnnotatedWith</span> <span class="keyword">implements</span> <span class="title">Test</span> </span>&#123;</span><br><span class="line">  <span class="keyword">private</span> Class&lt;? extends Annotation&gt; annotation;</span><br><span class="line"></span><br><span class="line">  <span class="comment">/** Constructs an AnnotatedWith test for the specified annotation type. */</span></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="title">AnnotatedWith</span><span class="params">(Class&lt;? extends Annotation&gt; annotation)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">this</span>.annotation = annotation;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">/** Returns true if the type is annotated with the class provided to the constructor. */</span></span><br><span class="line">  <span class="meta">@Override</span></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">matches</span><span class="params">(Class&lt;?&gt; type)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> type != <span class="keyword">null</span> &amp;&amp; type.isAnnotationPresent(annotation);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="meta">@Override</span></span><br><span class="line">  <span class="function"><span class="keyword">public</span> String <span class="title">toString</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="string">&quot;annotated with @&quot;</span> + annotation.getSimpleName();</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>默认 情况 下，使用<code>Thread.currentThread().getContextClassLoader()</code>这 个 类 加载 器加载 符合条 件的类 ，我们 可以在调 用<code>find()</code>方法之前，调 用 <code>setClassLoader(ClassLoader)</code>设 置需要使用的 <code>ClassLoader</code>，这 个 <code>ClassLoader</code>可 以 从 <code>ClassLoaderWrapper</code>中 获 取 合 适 的 类 加 载 器 。</p>
+</blockquote>
+<p>ResolverUtil的使用案例：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">ResolverUtil&lt;ActionBean&gt; resolver = <span class="keyword">new</span> ResolverUtil&lt;ActionBean&gt;();</span><br><span class="line"><span class="comment">// 在pkg1和pkg2这个包下查找实现了ActionBean这个接口的类</span></span><br><span class="line">resolver.findImplementation(ActionBean.class,  pkg1, pkg2);</span><br><span class="line"><span class="comment">// 在pkg1包下查找符合CustomerTest条件的类</span></span><br><span class="line">resolver.find(<span class="keyword">new</span> CustomTest(), pkg1);</span><br><span class="line"><span class="comment">// 在pkg2包下查找符合CustomerTest条件的类</span></span><br><span class="line">resolver.find(<span class="keyword">new</span> CustomTest(), pkg2);</span><br><span class="line"><span class="comment">// 获取上面三次查找的结果</span></span><br><span class="line">Collection&lt;ActionBean&gt; beans = resolver.getClasses();</span><br></pre></td></tr></table></figure>
+
+<p><code>ResolverUtil.findImplementations()</code>方法和<code>ResolverUtil.findAnnotated()</code>方法都是依赖<code>RescolverUtil.find()</code>方法实现的，<code>findImplementations()</code>方法会创建<code>IsA</code>对象作为检测条件，<code>findAnnotated()</code>方法会创建<code>AnnotatedWith</code>对象作为检测条件。</p>
+<p><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/08/image-20200608214416619_RmQAqH.png" alt="image-20200608214416619"></p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> ResolverUtil&lt;T&gt; <span class="title">find</span><span class="params">(Test test, String packageName)</span> </span>&#123;</span><br><span class="line">  String path = getPackagePath(packageName);</span><br><span class="line"></span><br><span class="line">  <span class="keyword">try</span> &#123;</span><br><span class="line">    List&lt;String&gt; children = VFS.getInstance().list(path);</span><br><span class="line">    <span class="keyword">for</span> (String child : children) &#123;</span><br><span class="line">      <span class="keyword">if</span> (child.endsWith(<span class="string">&quot;.class&quot;</span>)) &#123;</span><br><span class="line">        addIfMatching(test, child);</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125; <span class="keyword">catch</span> (IOException ioe) &#123;</span><br><span class="line">    log.error(<span class="string">&quot;Could not read package: &quot;</span> + packageName, ioe);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> <span class="keyword">this</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title">addIfMatching</span><span class="params">(Test test, String fqn)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">try</span> &#123;</span><br><span class="line">    <span class="comment">// fqn是类所在完全限定名，即包括其所在包的包名</span></span><br><span class="line">    String externalName = fqn.substring(<span class="number">0</span>, fqn.indexOf(<span class="string">&#x27;.&#x27;</span>)).replace(<span class="string">&#x27;/&#x27;</span>, <span class="string">&#x27;.&#x27;</span>);</span><br><span class="line">    ClassLoader loader = getClassLoader();</span><br><span class="line">    <span class="keyword">if</span> (log.isDebugEnabled()) &#123;</span><br><span class="line">      log.debug(<span class="string">&quot;...&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    Class&lt;?&gt; type = loader.loadClass(externalName);</span><br><span class="line">    <span class="keyword">if</span> (test.matches(type)) &#123;</span><br><span class="line">      matches.add((Class&lt;T&gt;) type);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125; <span class="keyword">catch</span> (Throwable t) &#123;</span><br><span class="line">    log.warn(<span class="string">&quot;...&quot;</span>);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="VFS"><a href="#VFS" class="headerlink" title="VFS"></a>VFS</h3><p>VFS表示虚 拟 文件系统 (VirtualFileSystem),它 用来 査找 指定路径 下的资 源。VFS是一个 抽象类 ，MyBatis中提供了 JBoss6VFS和 DefaultVFS两 个 VFS的实 现 ，如图所示。用户 也可以提供自定义 的VFS实 现 类 。</p>
+<blockquote>
+<p>VFS采用单例模式实现</p>
+</blockquote>
+<p><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/08/image-20200608220219508_W9RlCv.png" alt="image-20200608220219508"></p>
+<h3 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h3><ul>
+<li><p><strong>《MyBatis技术内幕》</strong></p>
+</li>
+<li><p>部分图片来源——<strong>《MyBatis技术内幕》</strong></p>
+</li>
+</ul>
+
+  
+
+
+  </article>
+  
+<div class="related-wrap" id="read-next"><section class="header cap theme"><span>接下来阅读</span></section><section class="body"><div class="post-title h2"><a href="/wiki/mybatis_technology_insider/part6.html">基础支持层——DataSource</a></div><div class="post-title fs14"><a href="/wiki/mybatis_technology_insider/part4.html">上一篇：基础支持层——日志模块</a></div></section></div>
+
+  
+
+  <div class="related-wrap md" id="comments">
+    <div class="cmt-title cap theme">
+      快来参与讨论吧
+    </div>
+    <div class="cmt-body utterances">
+      
+
+<svg class="loading" style="vertical-align: middle;fill: currentColor;overflow: hidden;" viewbox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2709"><path d="M832 512c0-176-144-320-320-320V128c211.2 0 384 172.8 384 384h-64zM192 512c0 176 144 320 320 320v64C300.8 896 128 723.2 128 512h64z" p-id="2710"/></svg>
+
+<div id="utterances" repo="cayzlh/studious-barnacle" issue-term="Mybatis技术内幕" theme="github-light"></div>
+
+    </div>
+  </div>
+
+
+
+
+      
+<footer class="page-footer fs12" style="text-align: center;"><hr><div><p><a href="https://www.cayzlh.com/">🐳Ant丶</a> ©️ 2017-2021</p>
+<p><a target="_blank" rel="external nofollow noopener noreferrer" href="https://beian.miit.gov.cn/">粤ICP备20058712号</a></p>
+</div></footer>
+
+      <div class="float-panel mobile-only" style="display:none">
+  <button type="button" class="sidebar-toggle mobile" onclick="sidebar.toggle()">
+    <svg class="icon" viewbox="0 0 1228 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2849"><path d="M0 0m97.390199 0l973.901995 0q97.390199 0 97.390199 97.390199l0 0q0 97.390199-97.390199 97.3902l-973.901995 0q-97.390199 0-97.390199-97.3902l0 0q0-97.390199 97.390199-97.390199Z" p-id="2850"/><path d="M0 389.560798m97.390199 0l973.901995 0q97.390199 0 97.390199 97.390199l0 0q0 97.390199-97.390199 97.3902l-973.901995 0q-97.390199 0-97.390199-97.3902l0 0q0-97.390199 97.390199-97.390199Z" p-id="2851"/><path d="M0 779.121596m97.390199 0l973.901995 0q97.390199 0 97.390199 97.390199l0 0q0 97.390199-97.390199 97.390199l-973.901995 0q-97.390199 0-97.390199-97.390199l0 0q0-97.390199 97.390199-97.390199Z" p-id="2852"/></svg>
+  </button>
+</div>
+
+    </div>
+  </div>
+  <div class="scripts">
+    <script type="text/javascript">
+  stellar = {
+    // 懒加载 css https://github.com/filamentgroup/loadCSS
+    loadCSS: (href, before, media, attributes) => {
+      var doc = window.document;
+      var ss = doc.createElement("link");
+      var ref;
+      if (before) {
+        ref = before;
+      } else {
+        var refs = (doc.body || doc.getElementsByTagName("head")[0]).childNodes;
+        ref = refs[refs.length - 1];
+      }
+      var sheets = doc.styleSheets;
+      if (attributes) {
+        for (var attributeName in attributes) {
+          if (attributes.hasOwnProperty(attributeName)) {
+            ss.setAttribute(attributeName, attributes[attributeName]);
+          }
+        }
+      }
+      ss.rel = "stylesheet";
+      ss.href = href;
+      ss.media = "only x";
+      function ready(cb) {
+        if (doc.body) {
+          return cb();
+        }
+        setTimeout(function () {
+          ready(cb);
+        });
+      }
+      ready(function () {
+        ref.parentNode.insertBefore(ss, before ? ref : ref.nextSibling);
+      });
+      var onloadcssdefined = function (cb) {
+        var resolvedHref = ss.href;
+        var i = sheets.length;
+        while (i--) {
+          if (sheets[i].href === resolvedHref) {
+            return cb();
+          }
+        }
+        setTimeout(function () {
+          onloadcssdefined(cb);
+        });
+      };
+      function loadCB() {
+        if (ss.addEventListener) {
+          ss.removeEventListener("load", loadCB);
+        }
+        ss.media = media || "all";
+      }
+      if (ss.addEventListener) {
+        ss.addEventListener("load", loadCB);
+      }
+      ss.onloadcssdefined = onloadcssdefined;
+      onloadcssdefined(loadCB);
+      return ss;
+    },
+
+    // 从 butterfly 和 volantis 获得灵感
+    loadScript: (src, opt) => new Promise((resolve, reject) => {
+      var script = document.createElement('script')
+      script.src = src
+      if (opt) {
+        for (let key of Object.keys(opt)) {
+          script[key] = opt[key]
+        }
+      } else {
+        // 默认异步，如果需要同步，第二个参数传入 {} 即可
+        script.async = true
+      }
+      script.onerror = reject
+      script.onload = script.onreadystatechange = function() {
+        const loadState = this.readyState
+        if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+        script.onload = script.onreadystatechange = null
+        resolve()
+      }
+      document.head.appendChild(script)
+    }),
+
+    // https://github.com/jerryc127/hexo-theme-butterfly
+    jQuery: (fn) => {
+      if (typeof jQuery === 'undefined') {
+        stellar.loadScript(stellar.plugins.jQuery).then(fn)
+      } else {
+        fn()
+      }
+    }
+  };
+  stellar.github = 'https://github.com/xaoxuu/hexo-theme-stellar/tree/1.1.0';
+  stellar.config = {
+    date_suffix: {
+      just: '刚刚',
+      min: '分钟前',
+      hour: '小时前',
+      day: '天前',
+      month: '个月前',
+    },
+  };
+
+  // required plugins (only load if needs)
+  stellar.plugins = {
+    jQuery: 'https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js',
+    sitesjs: '/js/plugins/sites.js',
+    friendsjs: '/js/plugins/friends.js',
+  };
+
+  // optional plugins
+  if ('true' == 'true') {
+    stellar.plugins.lazyload = Object.assign({"enable":true,"js":"https://cdn.jsdelivr.net/npm/vanilla-lazyload@17.3.1/dist/lazyload.min.js","transition":"blur"});
+  }
+  if ('true' == 'true') {
+    stellar.plugins.swiper = Object.assign({"enable":true,"css":"https://unpkg.com/swiper/swiper-bundle.min.css","js":"https://unpkg.com/swiper/swiper-bundle.min.js"});
+  }
+  if ('' == 'true') {
+    stellar.plugins.scrollreveal = Object.assign({"enable":null,"js":"https://cdn.jsdelivr.net/npm/scrollreveal@4.0.9/dist/scrollreveal.min.js","distance":"8px","duration":500,"interval":100,"scale":1});
+  }
+  if ('true' == 'true') {
+    stellar.plugins.preload = Object.assign({"enable":true,"service":"flying_pages","instant_page":"https://cdn.jsdelivr.net/gh/volantis-x/cdn-volantis@4.1.2/js/instant_page.js","flying_pages":"https://cdn.jsdelivr.net/gh/gijo-varghese/flying-pages@2.1.2/flying-pages.min.js"});
+  }
+</script>
+
+<!-- required -->
+
+  
+<script src="/js/main.js" async></script>
+
+
+
+<!-- optional -->
+
+  <script>
+  function utterances(){
+    if(!document.getElementById("utterances"))return;
+    setTimeout(function() {
+      var checkUtterances = setInterval(function () {
+        var el = document.getElementById("utterances");
+        if (!el) return
+        clearInterval(checkUtterances)
+        try {
+          el.innerHTML="";
+        } catch (error) {}
+        var script = document.createElement('script');
+        script.src = 'https://utteranc.es/client.js';
+        const keys = ['repo', 'issue-term', 'issue-number', 'theme', 'label', 'crossorigin'];
+        keys.forEach((key, i) => {
+          if (el.attributes[key] && el.attributes[key].value) {
+            script.setAttribute(key, el.attributes[key].value);
+          }
+        });
+        el.appendChild(script);
+       }, 200)
+    });
+  }
+  utterances();
+</script>
+
+
+
+
+<!-- inject -->
+
+
+  </div>
+</body>
+</html>
