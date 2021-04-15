@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta name="generator" content="Hexo 5.4.0">
+  <meta charset="utf-8">
+  
+
+  <meta http-equiv="x-dns-prefetch-control" content="on">
+  <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+
+  <meta name="renderer" content="webkit">
+  <meta name="force-rendering" content="webkit">
+  <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+  <meta name="HandheldFriendly" content="True">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <title>Redis的使用场景 - CAYZLH</title>
+
+  
+  <meta name="description" content="整理Redis的使用场景">
+
+  <!-- feed -->
+  
+    <link rel="alternate" href="/atom.xml" title="CAYZLH" type="application/atom+xml">
+  
+
+  
+    
+<link rel="stylesheet" href="/css/main.css">
+
+  
+
+  
+    
+      <meta name="msapplication-TileColor" content="#2d89ef">
+    
+      <meta name="msapplication-config" content="/assets/favicon/browserconfig.xml">
+    
+      <meta name="theme-color" content="#ffffff">
+    
+      <link rel="shortcut icon" href="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/logo/favicon.ico">
+    
+      <link rel="icon" type="image/png" href="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/logo/favicon-192x192.png" sizes="192x192">
+    
+      <link rel="apple-touch-icon" sizes="180x180" href="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/logo/apple-touch-icon.png">
+    
+  
+</head>
+
+<body>
+  
+
+
+  <div class="l_body" id="start">
+    <aside class="l_left">
+    
+
+<header class="header">
+  <div class="logo-wrap">
+  
+    <a class="avatar" href="/">
+      
+        <img no-lazy class="bg" src="https://cdn.jsdelivr.net/gh/cdn-x/placeholder@1.0.2/avatar/round/rainbow64@3x.webp" onerror="javascript:this.classList.add('error');this.src='https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2021/04/16084216181285221618128522255.svg';">
+      
+      <img no-lazy class="avatar" src="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/image/IMG_4207.JPG" onerror="javascript:this.classList.add('error');this.src='https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2021/04/16084216181285221618128522255.svg';">
+    </a>
+  
+  
+    <a class="title" href="/">
+      CAYZLH
+    </a>
+  
+</div>
+
+  <nav class="menu dis-select"><a class="nav-item active" href="/">文章</a><a class="nav-item" href="/wiki/">文档</a><a class="nav-item" href="/talking/">动态</a><a class="nav-item" href="/about/">更多</a></nav>
+</header>
+
+<div class="widgets">
+  
+    
+      
+      
+<div class="widget-wrap" id="toc"><div class="widget-header h4 dis-select"><span class="name">本文目录</span></div><div class="widget-body fs14 post"><div class="doc-tree active"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AD%97%E7%AC%A6%E4%B8%B2%E7%BC%93%E5%AD%98"><span class="toc-text">字符串缓存</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%98%9F%E5%88%97"><span class="toc-text">队列</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8F%91%E5%B8%83%E8%AE%A2%E9%98%85"><span class="toc-text">发布订阅</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%AE%A1%E6%95%B0%E5%99%A8"><span class="toc-text">计数器</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%8E%92%E8%A1%8C%E6%A6%9C"><span class="toc-text">排行榜</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%9B%86%E5%90%88%E9%97%B4%E6%93%8D%E4%BD%9C"><span class="toc-text">集合间操作</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%82%B2%E8%A7%82%E9%94%81"><span class="toc-text">悲观锁</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B9%90%E8%A7%82%E9%94%81"><span class="toc-text">乐观锁</span></a></li></ol></div></div></div>
+
+    
+  
+</div>
+<footer class="footer"><div class="social-wrap dis-select"><a class="social" href="https://github.com/cayzlh" target="_blank" rel="external nofollow noopener noreferrer"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cdn-x/placeholder@1.0.1/social/08a41b181ce68.svg"></a><a class="social" href="https://telegram.me/Q2F5emxo" target="_blank" rel="external nofollow noopener noreferrer"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/image/guanyuwomen.svg"></a><a class="social" href="/about/#comments" rel="noopener noreferrer"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cdn-x/placeholder@1.0.1/social/942ebbf1a4b91.svg"></a></div></footer>
+
+    </aside>
+    <div class="l_main">
+      
+
+      
+
+
+  <div class="bread-nav fs12">
+  
+    
+    <div id="breadcrumb">
+      <a class="cap breadcrumb" href="/">主页</a>
+      <span class="sep"></span>
+      <a class="cap breadcrumb" href="/">文章</a>
+      
+        <span class="sep"></span>
+        <a class="cap breadcrumb-link" href="/categories/%E7%AC%94%E8%AE%B0%E6%9C%AC/">笔记本</a>
+      
+    </div>
+    <div id="post-meta">
+      发布于&nbsp;<time datetime="2019-01-29T01:48:53.000Z">2019-01-29</time>
+    </div>
+  
+  </div>
+
+
+<article class="content md post">
+<h1 class="article-title"><span>Redis的使用场景</span></h1>
+<blockquote>
+<p>转自：<a target="_blank" rel="external nofollow noopener noreferrer" href="https://juejin.im/entry/5c4e6153e51d452d7b70daf9?utm_source=gold_browser_extension">使用过Redis，我竟然还不知道Rdb</a></p>
+</blockquote>
+<p>整理Redis的使用场景</p>
+<h2 id="字符串缓存"><a href="#字符串缓存" class="headerlink" title="字符串缓存"></a>字符串缓存</h2><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash">redis-&gt;<span class="built_in">set</span>();</span></span><br><span class="line"></span><br><span class="line"><span class="meta">$</span><span class="bash">redis-&gt;get();</span></span><br><span class="line"></span><br><span class="line"><span class="meta">$</span><span class="bash">redis-&gt;hset();</span></span><br><span class="line"></span><br><span class="line"><span class="meta">$</span><span class="bash">redis-&gt;hget();</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="队列"><a href="#队列" class="headerlink" title="队列"></a>队列</h2><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash">redis-&gt;rpush();</span></span><br><span class="line"></span><br><span class="line"><span class="meta">$</span><span class="bash">redis-&gt;lpop();</span></span><br><span class="line"></span><br><span class="line"><span class="meta">$</span><span class="bash">redis-&gt;lrange();</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="发布订阅"><a href="#发布订阅" class="headerlink" title="发布订阅"></a>发布订阅</h2><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash">redis-&gt;publish();</span></span><br><span class="line"></span><br><span class="line"><span class="meta">$</span><span class="bash">redis-&gt;subscribe();</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="计数器"><a href="#计数器" class="headerlink" title="计数器"></a>计数器</h2><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash">redis-&gt;<span class="built_in">set</span>();</span></span><br><span class="line"></span><br><span class="line"><span class="meta">$</span><span class="bash">redis-&gt;incr();</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="排行榜"><a href="#排行榜" class="headerlink" title="排行榜"></a>排行榜</h2><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash">redis-&gt;zadd();</span></span><br><span class="line"></span><br><span class="line"><span class="meta">$</span><span class="bash">redis-&gt;zrevrange();</span></span><br><span class="line"></span><br><span class="line"><span class="meta">$</span><span class="bash">redis-&gt;zrange();</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="集合间操作"><a href="#集合间操作" class="headerlink" title="集合间操作"></a>集合间操作</h2><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash">redis-&gt;sadd();</span></span><br><span class="line"></span><br><span class="line"><span class="meta">$</span><span class="bash">redis-&gt;spop();</span></span><br><span class="line"></span><br><span class="line"><span class="meta">$</span><span class="bash">redis-&gt;sinter();</span></span><br><span class="line"></span><br><span class="line"><span class="meta">$</span><span class="bash">redis-&gt;sunion();</span></span><br><span class="line"></span><br><span class="line"><span class="meta">$</span><span class="bash">redis-&gt;sdiff();</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="悲观锁"><a href="#悲观锁" class="headerlink" title="悲观锁"></a>悲观锁</h2><p>解释：悲观锁(Pessimistic Lock), 顾名思义，就是很悲观。</p>
+<p>每次去拿数据的时候都认为别人会修改，所以每次在拿数据的时候都会上锁。</p>
+<p>场景：如果项目中使用了缓存且对缓存设置了超时时间。</p>
+<p>当并发量比较大的时候，如果没有锁机制，那么缓存过期的瞬间，</p>
+<p>大量并发请求会穿透缓存直接查询数据库，造成雪崩效应。</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">/**</span><br><span class="line"></span><br><span class="line"> * 获取锁</span><br><span class="line"></span><br><span class="line"> * @param  String  $key    锁标识</span><br><span class="line"></span><br><span class="line"> * @param  Int     $expire 锁过期时间</span><br><span class="line"></span><br><span class="line"> * @return Boolean</span><br><span class="line"></span><br><span class="line"> */</span><br><span class="line"></span><br><span class="line">public function lock($key = &#x27;&#x27;, $expire = 5) &#123;</span><br><span class="line"></span><br><span class="line">    $is_lock = $this-&gt;_redis-&gt;setnx($key, time()+$expire);</span><br><span class="line"></span><br><span class="line">    //不能获取锁</span><br><span class="line"></span><br><span class="line">    if(!$is_lock)&#123;</span><br><span class="line"></span><br><span class="line">        //判断锁是否过期</span><br><span class="line"></span><br><span class="line">        $lock_time = $this-&gt;_redis-&gt;get($key);</span><br><span class="line"></span><br><span class="line">        //锁已过期，删除锁，重新获取</span><br><span class="line"></span><br><span class="line">        if (time() &gt; $lock_time) &#123;</span><br><span class="line"></span><br><span class="line">            unlock($key);</span><br><span class="line"></span><br><span class="line">            $is_lock = $this-&gt;_redis-&gt;setnx($key, time() + $expire);</span><br><span class="line"></span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    return $is_lock? true : false;</span><br><span class="line"></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">/**</span><br><span class="line"></span><br><span class="line"> * 释放锁</span><br><span class="line"></span><br><span class="line"> * @param  String  $key 锁标识</span><br><span class="line"></span><br><span class="line"> * @return Boolean</span><br><span class="line"></span><br><span class="line"> */</span><br><span class="line"></span><br><span class="line">public function unlock($key = &#x27;&#x27;)&#123;</span><br><span class="line"></span><br><span class="line">    return $this-&gt;_redis-&gt;del($key);</span><br><span class="line"></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">// 定义锁标识</span><br><span class="line"></span><br><span class="line"><span class="meta">$</span><span class="bash">key = <span class="string">&#x27;test_lock&#x27;</span>;</span></span><br><span class="line"></span><br><span class="line">// 获取锁</span><br><span class="line"></span><br><span class="line"><span class="meta">$</span><span class="bash">is_lock = lock(<span class="variable">$key</span>, 10);</span></span><br><span class="line"></span><br><span class="line">if ($is_lock) &#123;</span><br><span class="line"></span><br><span class="line">    echo &#x27;get lock success&lt;br&gt;&#x27;;</span><br><span class="line"></span><br><span class="line">    echo &#x27;do sth..&lt;br&gt;&#x27;;</span><br><span class="line"></span><br><span class="line">    sleep(5);</span><br><span class="line"></span><br><span class="line">    echo &#x27;success&lt;br&gt;&#x27;;</span><br><span class="line"></span><br><span class="line">    unlock($key);</span><br><span class="line"></span><br><span class="line">&#125; else &#123; //获取锁失败</span><br><span class="line"></span><br><span class="line">    echo &#x27;request too frequently&lt;br&gt;&#x27;;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="乐观锁"><a href="#乐观锁" class="headerlink" title="乐观锁"></a>乐观锁</h2><p>解释：乐观锁(Optimistic Lock), 顾名思义，就是很乐观。</p>
+<p>每次去拿数据的时候都认为别人不会修改，所以不会上锁。</p>
+<p>watch命令会监视给定的key，当exec时候如果监视的key从调用watch后发生过变化，则整个事务会失败。</p>
+<p>也可以调用watch多次监视多个key。这样就可以对指定的key加乐观锁了。</p>
+<p>注意watch的key是对整个连接有效的，事务也一样。</p>
+<p>如果连接断开，监视和事务都会被自动清除。</p>
+<p>当然了exec，discard，unwatch命令都会清除连接中的所有监视。</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash">strKey = <span class="string">&#x27;test_age&#x27;</span>;</span></span><br><span class="line"></span><br><span class="line"><span class="meta">$</span><span class="bash">redis-&gt;<span class="built_in">set</span>(<span class="variable">$strKey</span>,10);</span></span><br><span class="line"></span><br><span class="line"><span class="meta">$</span><span class="bash">age = <span class="variable">$redis</span>-&gt;get(<span class="variable">$strKey</span>);</span></span><br><span class="line"></span><br><span class="line">echo &quot;---- Current Age:&#123;$age&#125; ---- &lt;br/&gt;&lt;br/&gt;&quot;;</span><br><span class="line"></span><br><span class="line"><span class="meta">$</span><span class="bash">redis-&gt;watch(<span class="variable">$strKey</span>);</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 开启事务</span></span><br><span class="line"></span><br><span class="line"><span class="meta">$</span><span class="bash">redis-&gt;multi();</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 在这个时候新开了一个新会话执行</span></span><br><span class="line"></span><br><span class="line"><span class="meta">$</span><span class="bash">redis-&gt;<span class="built_in">set</span>(<span class="variable">$strKey</span>,30);  <span class="comment">#新会话</span></span></span><br><span class="line"></span><br><span class="line">echo &quot;---- Current Age:&#123;$age&#125; ---- &lt;br/&gt;&lt;br/&gt;&quot;; # 30</span><br><span class="line"></span><br><span class="line"><span class="meta">$</span><span class="bash">redis-&gt;<span class="built_in">set</span>(<span class="variable">$strKey</span>,20);</span></span><br><span class="line"></span><br><span class="line"><span class="meta">$</span><span class="bash">redis-&gt;<span class="built_in">exec</span>();</span></span><br><span class="line"></span><br><span class="line"><span class="meta">$</span><span class="bash">age = <span class="variable">$redis</span>-&gt;get(<span class="variable">$strKey</span>);</span></span><br><span class="line"></span><br><span class="line">echo &quot;---- Current Age:&#123;$age&#125; ---- &lt;br/&gt;&lt;br/&gt;&quot;; # 30</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 当<span class="built_in">exec</span>时候如果监视的key从调用watch后发生过变化，则整个事务会失败</span></span><br></pre></td></tr></table></figure>
+
+
+
+<div class="article-footer fs14"><section id="license"><div class="header"><span>许可协议</span></div><div class="body"><p>本文采用 <a target="_blank" rel="external nofollow noopener noreferrer" href="https://creativecommons.org/licenses/by-nc-sa/4.0/">署名-非商业性使用-相同方式共享 4.0 国际</a> 许可协议，转载请注明出处。</p>
+</div></section></div>
+
+</article>
+
+<div class="related-wrap" id="read-next"><section class="header cap theme"><span>接下来阅读</span></section><section class="body"><div class="post-title h2"><a href="/post/1abc3648/">JDK8特性一览</a></div><div class="post-title fs14"><a href="/post/c15a63a5/">上一篇：Dockerfile使用介绍</a></div></section></div>
+
+
+<div class="related-wrap" id="related-posts">
+    <section class="header">
+      <div class="title cap theme">您可能感兴趣的文章</div>
+    </section>
+    <section class="body">
+    <div class="related-posts"><a class="item" href="/post/3697040241/" title="关于Redis中的过期时间"><div class="img"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2021/04/16092916181285691618128569411.jpg"></div><span class="title">关于Redis中的过期时间</span><span class="excerpt">讨论一下关于redis中的过期时间</span></a><a class="item" href="/post/506775304/" title="正确访问redis中的海量数据，避免事故产生"><div class="img"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2021/04/16092916181285691618128569411.jpg"></div><span class="title">正确访问redis中的海量数据，避免事故产生</span><span class="excerpt">有时候我们需要知道线上的redis的使用情况，尤其需要知道一些前缀的key值，让我们怎么去查看呢？</span></a><a class="item" href="/post/3795648683/" title="Docker使用redis镜像"><div class="img"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2021/04/16092916181285691618128569411.jpg"></div><span class="title">Docker使用redis镜像</span><span class="excerpt">Docker中使用redis镜像</span></a><a class="item" href="/post/4134566530/" title="Redis高逼格指令"><div class="img"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2021/04/16092916181285691618128569411.jpg"></div><span class="title">Redis高逼格指令</span><span class="excerpt">提升逼格的 Redis 命令</span></a><a class="item" href="/post/20210402/" title="HomeBrew换源"><div class="img"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://7.dusays.com/2021/04/13/9deb48fe1deac.svg"></div><span class="title">HomeBrew换源</span><span class="excerpt">HomeBrew换源</span></a></div></section></div>
+
+
+
+
+
+      
+<footer class="page-footer fs12"><hr><div><p>本站所有文章除特别声明外，均采用 <a target="_blank" rel="external nofollow noopener noreferrer" href="https://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY-NC-SA 4.0</a> 许可协议，转载请注明出处</p>
+<p>本站由 <a href="https://www.cayzlh.com/">@chen anyu</a> 创建，使用 <a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/xaoxuu/hexo-theme-stellar/tree/1.1.0">Stellar</a> 作为主题，您可以在 <a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/cayzlh/cayzlh.github.io">GitHub</a> 找到本站源码</p>
+<p>本站托管于 <a target="_blank" rel="external nofollow noopener noreferrer" href="https://cloudbase.net/">云开发CloudBase</a> &amp; <a target="_blank" rel="external nofollow noopener noreferrer" href="https://pages.github.com/">Github Pages</a>，粤ICP备<a target="_blank" rel="external nofollow noopener noreferrer" href="https://beian.miit.gov.cn/">20058712</a>号</p>
+<div><span id="timeDate">载入天数...</span><span id="times">载入时分秒...</span>，<span id="busuanzi_container_site_pv">总访问量: <span id="busuanzi_value_site_pv"></span>次</span>，<span id="busuanzi_container_site_uv">访客数: <span id="busuanzi_value_site_uv"></span>人</span></div><p><a target="_blank" rel="external nofollow noopener noreferrer" href="https://travellings.now.sh/"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://travellings.vercel.app/assets/logo.gif" alt="开往-友链接力" width="100"></a></p>
+</div></footer>
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<script>
+  function createtime() {
+    var now = new Date();
+    var grt= new Date("05/26/2019 04:40:00");
+    now.setTime(now.getTime()+250);
+    days = (now - grt ) / 1000 / 60 / 60 / 24; dnum = Math.floor(days);
+    hours = (now - grt ) / 1000 / 60 / 60 - (24 * dnum); hnum = Math.floor(hours);
+    if(String(hnum).length ==1 ){hnum = "0" + hnum;} minutes = (now - grt ) / 1000 /60 - (24 * 60 * dnum) - (60 * hnum);
+    mnum = Math.floor(minutes); if(String(mnum).length ==1 ){mnum = "0" + mnum;}
+    seconds = (now - grt ) / 1000 - (24 * 60 * 60 * dnum) - (60 * 60 * hnum) - (60 * mnum);
+    snum = Math.round(seconds); if(String(snum).length ==1 ){snum = "0" + snum;}
+    document.getElementById("timeDate").innerHTML = "本站已运行 "+dnum+" 天 ";
+    document.getElementById("times").innerHTML = hnum + " 小时 " + mnum + " 分 " + snum + " 秒";
+  };
+  setInterval("createtime()",250);
+</script>
+      <div class="float-panel mobile-only" style="display:none">
+  <button type="button" class="sidebar-toggle mobile" onclick="sidebar.toggle()">
+    <svg class="icon" viewbox="0 0 1228 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2849"><path d="M0 0m97.390199 0l973.901995 0q97.390199 0 97.390199 97.390199l0 0q0 97.390199-97.390199 97.3902l-973.901995 0q-97.390199 0-97.390199-97.3902l0 0q0-97.390199 97.390199-97.390199Z" p-id="2850"/><path d="M0 389.560798m97.390199 0l973.901995 0q97.390199 0 97.390199 97.390199l0 0q0 97.390199-97.390199 97.3902l-973.901995 0q-97.390199 0-97.390199-97.3902l0 0q0-97.390199 97.390199-97.390199Z" p-id="2851"/><path d="M0 779.121596m97.390199 0l973.901995 0q97.390199 0 97.390199 97.390199l0 0q0 97.390199-97.390199 97.390199l-973.901995 0q-97.390199 0-97.390199-97.390199l0 0q0-97.390199 97.390199-97.390199Z" p-id="2852"/></svg>
+  </button>
+</div>
+
+    </div>
+  </div>
+  <div class="scripts">
+    <script type="text/javascript">
+  stellar = {
+    // 懒加载 css https://github.com/filamentgroup/loadCSS
+    loadCSS: (href, before, media, attributes) => {
+      var doc = window.document;
+      var ss = doc.createElement("link");
+      var ref;
+      if (before) {
+        ref = before;
+      } else {
+        var refs = (doc.body || doc.getElementsByTagName("head")[0]).childNodes;
+        ref = refs[refs.length - 1];
+      }
+      var sheets = doc.styleSheets;
+      if (attributes) {
+        for (var attributeName in attributes) {
+          if (attributes.hasOwnProperty(attributeName)) {
+            ss.setAttribute(attributeName, attributes[attributeName]);
+          }
+        }
+      }
+      ss.rel = "stylesheet";
+      ss.href = href;
+      ss.media = "only x";
+      function ready(cb) {
+        if (doc.body) {
+          return cb();
+        }
+        setTimeout(function () {
+          ready(cb);
+        });
+      }
+      ready(function () {
+        ref.parentNode.insertBefore(ss, before ? ref : ref.nextSibling);
+      });
+      var onloadcssdefined = function (cb) {
+        var resolvedHref = ss.href;
+        var i = sheets.length;
+        while (i--) {
+          if (sheets[i].href === resolvedHref) {
+            return cb();
+          }
+        }
+        setTimeout(function () {
+          onloadcssdefined(cb);
+        });
+      };
+      function loadCB() {
+        if (ss.addEventListener) {
+          ss.removeEventListener("load", loadCB);
+        }
+        ss.media = media || "all";
+      }
+      if (ss.addEventListener) {
+        ss.addEventListener("load", loadCB);
+      }
+      ss.onloadcssdefined = onloadcssdefined;
+      onloadcssdefined(loadCB);
+      return ss;
+    },
+
+    // 从 butterfly 和 volantis 获得灵感
+    loadScript: (src, opt) => new Promise((resolve, reject) => {
+      var script = document.createElement('script')
+      script.src = src
+      if (opt) {
+        for (let key of Object.keys(opt)) {
+          script[key] = opt[key]
+        }
+      } else {
+        // 默认异步，如果需要同步，第二个参数传入 {} 即可
+        script.async = true
+      }
+      script.onerror = reject
+      script.onload = script.onreadystatechange = function() {
+        const loadState = this.readyState
+        if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+        script.onload = script.onreadystatechange = null
+        resolve()
+      }
+      document.head.appendChild(script)
+    }),
+
+    // https://github.com/jerryc127/hexo-theme-butterfly
+    jQuery: (fn) => {
+      if (typeof jQuery === 'undefined') {
+        stellar.loadScript(stellar.plugins.jQuery).then(fn)
+      } else {
+        fn()
+      }
+    }
+  };
+  stellar.github = 'https://github.com/xaoxuu/hexo-theme-stellar/tree/1.1.0';
+  stellar.config = {
+    date_suffix: {
+      just: '刚刚',
+      min: '分钟前',
+      hour: '小时前',
+      day: '天前',
+      month: '个月前',
+    },
+  };
+
+  // required plugins (only load if needs)
+  stellar.plugins = {
+    jQuery: 'https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js',
+    sitesjs: '/js/plugins/sites.js',
+    friendsjs: '/js/plugins/friends.js',
+  };
+
+  // optional plugins
+  if ('true' == 'true') {
+    stellar.plugins.lazyload = Object.assign({"enable":true,"js":"https://cdn.jsdelivr.net/npm/vanilla-lazyload@17.3.1/dist/lazyload.min.js","transition":"blur"});
+  }
+  if ('true' == 'true') {
+    stellar.plugins.swiper = Object.assign({"enable":true,"css":"https://unpkg.com/swiper/swiper-bundle.min.css","js":"https://unpkg.com/swiper/swiper-bundle.min.js"});
+  }
+  if ('' == 'true') {
+    stellar.plugins.scrollreveal = Object.assign({"enable":null,"js":"https://cdn.jsdelivr.net/npm/scrollreveal@4.0.9/dist/scrollreveal.min.js","distance":"8px","duration":500,"interval":100,"scale":1});
+  }
+  if ('true' == 'true') {
+    stellar.plugins.preload = Object.assign({"enable":true,"service":"flying_pages","instant_page":"https://cdn.jsdelivr.net/gh/volantis-x/cdn-volantis@4.1.2/js/instant_page.js","flying_pages":"https://cdn.jsdelivr.net/gh/gijo-varghese/flying-pages@2.1.2/flying-pages.min.js"});
+  }
+</script>
+
+<!-- required -->
+
+  
+<script src="/js/main.js" async></script>
+
+
+
+<!-- optional -->
+
+  <script>
+  function utterances(){
+    if(!document.getElementById("utterances"))return;
+    setTimeout(function() {
+      var checkUtterances = setInterval(function () {
+        var el = document.getElementById("utterances");
+        if (!el) return
+        clearInterval(checkUtterances)
+        try {
+          el.innerHTML="";
+        } catch (error) {}
+        var script = document.createElement('script');
+        script.src = 'https://utteranc.es/client.js';
+        const keys = ['repo', 'issue-term', 'issue-number', 'theme', 'label', 'crossorigin'];
+        keys.forEach((key, i) => {
+          if (el.attributes[key] && el.attributes[key].value) {
+            script.setAttribute(key, el.attributes[key].value);
+          }
+        });
+        el.appendChild(script);
+       }, 200)
+    });
+  }
+  utterances();
+</script>
+
+
+
+
+<!-- inject -->
+
+
+  </div>
+</body>
+</html>

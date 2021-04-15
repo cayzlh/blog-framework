@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta name="generator" content="Hexo 5.4.0">
+  <meta charset="utf-8">
+  
+
+  <meta http-equiv="x-dns-prefetch-control" content="on">
+  <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+
+  <meta name="renderer" content="webkit">
+  <meta name="force-rendering" content="webkit">
+  <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+  <meta name="HandheldFriendly" content="True">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <title>Spring源码分析：IOC之bean的实例化策略：InstantiationStrategy - CAYZLH</title>
+
+  
+  <meta name="description" content="
+本文作者：chenssy
+出处：http://cmsblogs.com/?p=4022
+在学习Spring源码的过程中发现的好站+好贴，原创不易感谢作者。
+Spring版本：Spring 5.0.6.RELEASE
+
+在开始分析 InstantiationStrategy 之前，我们先来简单...">
+
+  <!-- feed -->
+  
+    <link rel="alternate" href="/atom.xml" title="CAYZLH" type="application/atom+xml">
+  
+
+  
+    
+<link rel="stylesheet" href="/css/main.css">
+
+  
+
+  
+    
+      <meta name="msapplication-TileColor" content="#2d89ef">
+    
+      <meta name="msapplication-config" content="/assets/favicon/browserconfig.xml">
+    
+      <meta name="theme-color" content="#ffffff">
+    
+      <link rel="shortcut icon" href="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/logo/favicon.ico">
+    
+      <link rel="icon" type="image/png" href="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/logo/favicon-192x192.png" sizes="192x192">
+    
+      <link rel="apple-touch-icon" sizes="180x180" href="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/logo/apple-touch-icon.png">
+    
+  
+</head>
+
+<body>
+  
+
+
+  <div class="l_body" id="start">
+    <aside class="l_left">
+    
+
+<header class="header">
+  <div class="logo-wrap">
+  
+    <a class="avatar" href="/">
+      
+        <img no-lazy class="bg" src="https://cdn.jsdelivr.net/gh/cdn-x/placeholder@1.0.2/avatar/round/rainbow64@3x.webp" onerror="javascript:this.classList.add('error');this.src='https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2021/04/16084216181285221618128522255.svg';">
+      
+      <img no-lazy class="avatar" src="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/image/IMG_4207.JPG" onerror="javascript:this.classList.add('error');this.src='https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2021/04/16084216181285221618128522255.svg';">
+    </a>
+  
+  
+    <a class="title" href="/">
+      CAYZLH
+    </a>
+  
+</div>
+
+  <nav class="menu dis-select"><a class="nav-item" href="/">文章</a><a class="nav-item active" href="/wiki/">文档</a><a class="nav-item" href="/talking/">动态</a><a class="nav-item" href="/about/">更多</a></nav>
+</header>
+
+<div class="widgets">
+  
+    
+      
+      
+<div class="widget-wrap" id="toc"><div class="widget-header h4 dis-select"><span class="name">本文目录</span></div><div class="widget-body fs14 wiki"><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/index.html"><span class="toc-text">Spring源码分析</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC1.html"><span class="toc-text">4张图带你读懂Spring IOC的世界</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC2.html"><span class="toc-text">IOC之深入理解SpringIoC</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC24.html"><span class="toc-text">IOC之深入分析PropertyPlaceholderConfigurer</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC25.html"><span class="toc-text">IOC之PropertyPlaceholderConfigurer的应用</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC2_5.html"><span class="toc-text">IOC之Spring统一资源加载策略</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC3.html"><span class="toc-text">IoC之加载BeanDefinition</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC4.html"><span class="toc-text">IOC之获取验证模型</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC5.html"><span class="toc-text">IOC之获取Document对象</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC6.html"><span class="toc-text">IoC之注册BeanDefinitions</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC7.html"><span class="toc-text">IoC之解析Bean：解析import标签</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC8.html"><span class="toc-text">IOC之解析bean标签：开启解析进程</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC9.html"><span class="toc-text">IOC之解析bean标签：BeanDefinition</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC10.html"><span class="toc-text">IoC之解析bean标签：meta、lookup-method、replace-method</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC11.html"><span class="toc-text">IOC之解析bean标签：constructor-arg、property子元素</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC12.html"><span class="toc-text">IoC之解析bean标签：解析自定义标签</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC13.html"><span class="toc-text">IoC之注册解析的BeanDefinitions</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC14.html"><span class="toc-text">IoC之装载BeanDefinitions总结</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC15.html"><span class="toc-text">IOC之开启bean的加载</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC16.html"><span class="toc-text">IOC之从单例缓存中获取单例bean</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC16_4.html"><span class="toc-text">IOC之parentBeanFactory与依赖处理</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC16_5.html"><span class="toc-text">IOC之分析各scope的bean创建</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC16_6.html"><span class="toc-text">IOC之开启Bean的实例化进程</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC16_7.html"><span class="toc-text">IOC之Factory实例化bean</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC16_8.html"><span class="toc-text">IOC之构造函数实例化bean</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC17.html"><span class="toc-text">IOC之属性填充</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC18.html"><span class="toc-text">IOC之循环依赖</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC19.html"><span class="toc-text">IOC之Bean的初始化</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC20.html"><span class="toc-text">IOC之加载Bean——总结篇</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC21.html"><span class="toc-text">IOC之深入分析Aware接口</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC22.html"><span class="toc-text">IOC之深入分析BeanPostProcessor</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC23.html"><span class="toc-text">IOC之深入分析InitializingBean和init-method</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC25_5.html"><span class="toc-text">IOC之深入分析BeanFactoryPostProcessor</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC26.html"><span class="toc-text">IOC之深入分析PropertyOverrideConfigurer</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC27.html"><span class="toc-text">IOC之深入分析Bean的类型转换体系</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC28.html"><span class="toc-text">IOC之自定义类型转换器</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC29.html"><span class="toc-text">IOC之分析BeanWrapper</span></a></div><div class="doc-tree active"><a class="doc-tree-link active" href="/wiki/source_of_spring/springIOC30.html"><span class="toc-text">IOC之bean的实例化策略：InstantiationStrategy</span></a><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#InstantiationStrategy"><span class="toc-text">InstantiationStrategy</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#SimpleInstantiationStrategy"><span class="toc-text">SimpleInstantiationStrategy</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#MethodOverrides"><span class="toc-text">MethodOverrides</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#CGLIB-%E5%AE%9E%E4%BE%8B%E5%8C%96%E7%AD%96%E7%95%A5"><span class="toc-text">CGLIB 实例化策略</span></a></li></ol></li></ol></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC31.html"><span class="toc-text">IOC之BeanDefinition注册机：BeanDefinitionRegistry</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC32.html"><span class="toc-text">Spring的环境&属性：PropertySource、Environment、Profile</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC33.html"><span class="toc-text">IOC之分析bean的生命周期</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC34.html"><span class="toc-text">ApplicationContext相关接口架构分析</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC35.html"><span class="toc-text">深入分析ApplicationContext的refresh()</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC36.html"><span class="toc-text">Spring AOP和Spring Transaction源码资料整理</span></a></div></div></div>
+
+    
+  
+    
+      
+      
+  
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+      <div class="widget-wrap" id="related">
+        <div class="widget-header h4 dis-select">
+          <span class="name">更多编程技术</span>
+        </div>
+        <div class="widget-body fs14">
+          
+            
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+                <div class="post-title">
+                  <a href="/wiki/design_patterns/index.html">
+                    设计模式
+                  </a>
+                </div>
+              
+            
+          
+            
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+          
+            
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+                <div class="post-title">
+                  <a href="/wiki/springcloud/index.html">
+                    SpringCloud
+                  </a>
+                </div>
+              
+            
+          
+        </div>
+      </div>
+    
+  
+
+
+    
+  
+</div>
+<footer class="footer"><div class="social-wrap dis-select"><a class="social" href="https://github.com/cayzlh" target="_blank" rel="external nofollow noopener noreferrer"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cdn-x/placeholder@1.0.1/social/08a41b181ce68.svg"></a><a class="social" href="https://telegram.me/Q2F5emxo" target="_blank" rel="external nofollow noopener noreferrer"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/image/guanyuwomen.svg"></a><a class="social" href="/about/#comments" rel="noopener noreferrer"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cdn-x/placeholder@1.0.1/social/942ebbf1a4b91.svg"></a></div></footer>
+
+    </aside>
+    <div class="l_main">
+      
+
+      
+
+  
+  
+  <div class="bread-nav fs12">
+  
+    
+    <div id="breadcrumb">
+      <a class="cap breadcrumb" href="/">主页</a>
+      <span class="sep"></span>
+      
+        <a class="cap breadcrumb" href="/wiki/">文档</a>
+      
+      
+        <span class="sep"></span>
+        <a class="cap breadcrumb" href="/wiki/categories/programmer/index.html">编程技术</a>
+      
+      
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        <span class="sep"></span>
+        <a class="cap breadcrumb" href="/wiki/source_of_spring/index.html">Spring源码分析</a>
+      
+    </div>
+    <div id="post-meta">
+      更新于&nbsp;<time datetime="2021-04-15T04:55:46.849Z">2021-04-15</time>
+    </div>
+  
+  </div>
+
+
+  <article class="content md wiki">
+  <h1 class="article-title"><span>IOC之bean的实例化策略：InstantiationStrategy</span></h1>
+  <blockquote>
+<p>本文作者：chenssy</p>
+<p>出处：<a target="_blank" rel="external nofollow noopener noreferrer" href="http://cmsblogs.com/?p=4022">http://cmsblogs.com/?p=4022</a></p>
+<p>在学习<code>Spring源码</code>的过程中发现的好站+好贴，原创不易感谢作者。</p>
+<p>Spring版本：<strong>Spring 5.0.6.RELEASE</strong></p>
+</blockquote>
+<p>在开始分析 InstantiationStrategy 之前，我们先来简单回顾下 bean 的实例化过程：</p>
+<ol>
+<li>bean 的创建，主要是 <code>AbstractAutowireCapableBeanFactory.doCreateBean()</code> ，在这个方法中有 bean 的实例化、属性注入和初始化过程，对于 bean 的实例化过程这是根据 bean 的类型来判断的，如果是单例模式，则直接从 factoryBeanInstanceCache 缓存中获取，否则调用 <code>createBeanInstance()</code> 创建。</li>
+<li>在 <code>createBeanInstance()</code> 中，如果 Supplier 不为空，则调用 <code>obtainFromSupplier()</code> 实例化 bean。如果 factory 不为空，则调用 <code>instantiateUsingFactoryMethod()</code> 实例化 bean ，如果都不是则调用 <code>instantiateBean()</code> 实例化bean 。但是无论是 <code>instantiateUsingFactoryMethod()</code> 还是 <code>instantiateBean()</code> 最后都一定会调用到 InstantiationStrategy 接口的 <code>instantiate()</code>。</li>
+</ol>
+<h2 id="InstantiationStrategy"><a href="#InstantiationStrategy" class="headerlink" title="InstantiationStrategy"></a>InstantiationStrategy</h2><p>InstantiationStrategy 接口定义了 Spring Bean 实例化的策略，根据创建对象情况的不同，提供了三种策略：<strong>无参构造方法</strong>、<strong>有参构造方法</strong>、<strong>工厂方法</strong>。如下：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">InstantiationStrategy</span> </span>&#123;</span><br><span class="line"></span><br><span class="line"> <span class="comment">/**</span></span><br><span class="line"><span class="comment">  * 默认构造方法</span></span><br><span class="line"><span class="comment">  */</span></span><br><span class="line"> <span class="function">Object <span class="title">instantiate</span><span class="params">(RootBeanDefinition bd, <span class="meta">@Nullable</span> String beanName, BeanFactory owner)</span></span></span><br><span class="line"><span class="function">   <span class="keyword">throws</span> BeansException</span>;</span><br><span class="line"></span><br><span class="line"> <span class="comment">/**</span></span><br><span class="line"><span class="comment">  * 指定构造方法</span></span><br><span class="line"><span class="comment">  */</span></span><br><span class="line"> <span class="function">Object <span class="title">instantiate</span><span class="params">(RootBeanDefinition bd, <span class="meta">@Nullable</span> String beanName, BeanFactory owner,</span></span></span><br><span class="line"><span class="function"><span class="params">   Constructor&lt;?&gt; ctor, <span class="meta">@Nullable</span> Object... args)</span> <span class="keyword">throws</span> BeansException</span>;</span><br><span class="line"></span><br><span class="line"> <span class="comment">/**</span></span><br><span class="line"><span class="comment">  * 工厂方法</span></span><br><span class="line"><span class="comment">  */</span></span><br><span class="line"> <span class="function">Object <span class="title">instantiate</span><span class="params">(RootBeanDefinition bd, <span class="meta">@Nullable</span> String beanName, BeanFactory owner,</span></span></span><br><span class="line"><span class="function"><span class="params">   <span class="meta">@Nullable</span> Object factoryBean, Method factoryMethod, <span class="meta">@Nullable</span> Object... args)</span></span></span><br><span class="line"><span class="function">   <span class="keyword">throws</span> BeansException</span>;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="SimpleInstantiationStrategy"><a href="#SimpleInstantiationStrategy" class="headerlink" title="SimpleInstantiationStrategy"></a>SimpleInstantiationStrategy</h3><p><code>InstantiationStrategy</code> 接口有两个实现类：<code>SimpleInstantiationStrategy</code> 和 <code>CglibSubclassingInstantiationStrategy</code>。</p>
+<p><code>SimpleInstantiationStrategy</code> 对以上三个方法都做了简单的实现。</p>
+<p>如果是工厂方法实例化，则直接使用反射创建对象，如下：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> Object <span class="title">instantiate</span><span class="params">(RootBeanDefinition bd, <span class="meta">@Nullable</span> String beanName, BeanFactory owner,</span></span></span><br><span class="line"><span class="function"><span class="params">                          <span class="meta">@Nullable</span> Object factoryBean, <span class="keyword">final</span> Method factoryMethod, <span class="meta">@Nullable</span> Object... args)</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">try</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (System.getSecurityManager() != <span class="keyword">null</span>) &#123;</span><br><span class="line">      AccessController.doPrivileged((PrivilegedAction&lt;Object&gt;) () -&gt; &#123;</span><br><span class="line">        ReflectionUtils.makeAccessible(factoryMethod);</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">      &#125;);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span> &#123;</span><br><span class="line">      ReflectionUtils.makeAccessible(factoryMethod);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    Method priorInvokedFactoryMethod = currentlyInvokedFactoryMethod.get();</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">      currentlyInvokedFactoryMethod.set(factoryMethod);</span><br><span class="line">      Object result = factoryMethod.invoke(factoryBean, args);</span><br><span class="line">      <span class="keyword">if</span> (result == <span class="keyword">null</span>) &#123;</span><br><span class="line">        result = <span class="keyword">new</span> NullBean();</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">return</span> result;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">finally</span> &#123;</span><br><span class="line">      <span class="keyword">if</span> (priorInvokedFactoryMethod != <span class="keyword">null</span>) &#123;</span><br><span class="line">        currentlyInvokedFactoryMethod.set(priorInvokedFactoryMethod);</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">else</span> &#123;</span><br><span class="line">        currentlyInvokedFactoryMethod.remove();</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="comment">// 省略 catch</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>如果是构造方法实例化，则是先判断是否有 MethodOverrides，如果没有则是直接使用反射，如果有则就需要 CGLIB 实例化对象。如下：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> Object <span class="title">instantiate</span><span class="params">(RootBeanDefinition bd, <span class="meta">@Nullable</span> String beanName, BeanFactory owner)</span> </span>&#123;</span><br><span class="line">  <span class="comment">// Don&#x27;t override the class with CGLIB if no overrides.</span></span><br><span class="line">  <span class="keyword">if</span> (!bd.hasMethodOverrides()) &#123;</span><br><span class="line">    Constructor&lt;?&gt; constructorToUse;</span><br><span class="line">    <span class="keyword">synchronized</span> (bd.constructorArgumentLock) &#123;</span><br><span class="line">      constructorToUse = (Constructor&lt;?&gt;) bd.resolvedConstructorOrFactoryMethod;</span><br><span class="line">      <span class="keyword">if</span> (constructorToUse == <span class="keyword">null</span>) &#123;</span><br><span class="line">        <span class="keyword">final</span> Class&lt;?&gt; clazz = bd.getBeanClass();</span><br><span class="line">        <span class="keyword">if</span> (clazz.isInterface()) &#123;</span><br><span class="line">          <span class="keyword">throw</span> <span class="keyword">new</span> BeanInstantiationException(clazz, <span class="string">&quot;Specified class is an interface&quot;</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">          <span class="keyword">if</span> (System.getSecurityManager() != <span class="keyword">null</span>) &#123;</span><br><span class="line">            constructorToUse = AccessController.doPrivileged(</span><br><span class="line">              (PrivilegedExceptionAction&lt;Constructor&lt;?&gt;&gt;) clazz::getDeclaredConstructor);</span><br><span class="line">          &#125;</span><br><span class="line">          <span class="keyword">else</span> &#123;</span><br><span class="line">            constructorToUse =   clazz.getDeclaredConstructor();</span><br><span class="line">          &#125;</span><br><span class="line">          bd.resolvedConstructorOrFactoryMethod = constructorToUse;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">catch</span> (Throwable ex) &#123;</span><br><span class="line">          <span class="keyword">throw</span> <span class="keyword">new</span> BeanInstantiationException(clazz, <span class="string">&quot;No default constructor found&quot;</span>, ex);</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> BeanUtils.instantiateClass(constructorToUse);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="comment">// Must generate CGLIB subclass.</span></span><br><span class="line">    <span class="keyword">return</span> instantiateWithMethodInjection(bd, beanName, owner);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">public</span> Object <span class="title">instantiate</span><span class="params">(RootBeanDefinition bd, <span class="meta">@Nullable</span> String beanName, BeanFactory owner,</span></span></span><br><span class="line"><span class="function"><span class="params">                          <span class="keyword">final</span> Constructor&lt;?&gt; ctor, <span class="meta">@Nullable</span> Object... args)</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> (!bd.hasMethodOverrides()) &#123;</span><br><span class="line">    <span class="keyword">if</span> (System.getSecurityManager() != <span class="keyword">null</span>) &#123;</span><br><span class="line">      <span class="comment">// use own privileged to change accessibility (when security is on)</span></span><br><span class="line">      AccessController.doPrivileged((PrivilegedAction&lt;Object&gt;) () -&gt; &#123;</span><br><span class="line">        ReflectionUtils.makeAccessible(ctor);</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">      &#125;);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> (args != <span class="keyword">null</span> ? BeanUtils.instantiateClass(ctor, args) : BeanUtils.instantiateClass(ctor));</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> instantiateWithMethodInjection(bd, beanName, owner, ctor, args);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>SimpleInstantiationStrategy 对 <code>instantiateWithMethodInjection()</code> 的实现任务交给了子类 CglibSubclassingInstantiationStrategy。</p>
+<h3 id="MethodOverrides"><a href="#MethodOverrides" class="headerlink" title="MethodOverrides"></a>MethodOverrides</h3><p>对于 MethodOverrides，在 BeanDefinitionParserDelegate 类解析 <code>&lt;bean/&gt;</code> 的时候是否还记得这两个方法：<code>parseLookupOverrideSubElements()</code> 和 <code>parseReplacedMethodSubElements()</code> 这两个方法分别用于解析 lookup-method 和 replaced-method。<code>parseLookupOverrideSubElements()</code> 源码如下：</p>
+<p><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://gitee.com/cayzlh/img-repo/raw/master/2020/05/27/15395929815414_38Okah_ZrNViV.jpg" alt="img"></p>
+<p>更多关于 lookup-method 和 replaced-method 请看：<a href="/2020/01/24/fa973ffe.html">IOC 之解析 bean 标签：meta、lookup-method、replace-method</a></p>
+<h3 id="CGLIB-实例化策略"><a href="#CGLIB-实例化策略" class="headerlink" title="CGLIB 实例化策略"></a>CGLIB 实例化策略</h3><p>类 CglibSubclassingInstantiationStrategy 为 Spring 实例化 bean 的默认实例化策略，其主要功能还是对父类功能进行补充：其父类将 CGLIB 的实例化策略委托其实现。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="comment">// SimpleInstantiationStrategy</span></span><br><span class="line"><span class="function"><span class="keyword">protected</span> Object <span class="title">instantiateWithMethodInjection</span><span class="params">(RootBeanDefinition bd, <span class="meta">@Nullable</span> String beanName, BeanFactory owner)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">throw</span> <span class="keyword">new</span> UnsupportedOperationException(<span class="string">&quot;Method Injection not supported in SimpleInstantiationStrategy&quot;</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// CglibSubclassingInstantiationStrategy</span></span><br><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">protected</span> Object <span class="title">instantiateWithMethodInjection</span><span class="params">(RootBeanDefinition bd, <span class="meta">@Nullable</span> String beanName, BeanFactory owner)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> instantiateWithMethodInjection(bd, beanName, owner, <span class="keyword">null</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>CglibSubclassingInstantiationStrategy 实例化 bean 策略是通过其内部类 CglibSubclassCreator 来实现的。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> Object <span class="title">instantiateWithMethodInjection</span><span class="params">(RootBeanDefinition bd, <span class="meta">@Nullable</span> String beanName, BeanFactory owner,</span></span></span><br><span class="line"><span class="function"><span class="params">                                                <span class="meta">@Nullable</span> Constructor&lt;?&gt; ctor, <span class="meta">@Nullable</span> Object... args)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> <span class="keyword">new</span> CglibSubclassCreator(bd, owner).instantiate(ctor, args);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>创建 CglibSubclassCreator 实例然后调用其 <code>instantiate()</code>，该方法用于动态创建子类实例，同时实现所需要的 lookups（lookup-method、replace-method）。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> Object <span class="title">instantiate</span><span class="params">(<span class="meta">@Nullable</span> Constructor&lt;?&gt; ctor, <span class="meta">@Nullable</span> Object... args)</span> </span>&#123;</span><br><span class="line">  Class&lt;?&gt; subclass = createEnhancedSubclass(<span class="keyword">this</span>.beanDefinition);</span><br><span class="line">  Object instance;</span><br><span class="line">  <span class="keyword">if</span> (ctor == <span class="keyword">null</span>) &#123;</span><br><span class="line">    instance = BeanUtils.instantiateClass(subclass);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">      Constructor&lt;?&gt; enhancedSubclassConstructor = subclass.getConstructor(ctor.getParameterTypes());</span><br><span class="line">      instance = enhancedSubclassConstructor.newInstance(args);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">catch</span> (Exception ex) &#123;</span><br><span class="line">      <span class="keyword">throw</span> <span class="keyword">new</span> BeanInstantiationException(<span class="keyword">this</span>.beanDefinition.getBeanClass(),</span><br><span class="line">                                           <span class="string">&quot;Failed to invoke constructor for CGLIB enhanced subclass [&quot;</span> + subclass.getName() + <span class="string">&quot;]&quot;</span>, ex);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">//这个地方解决一个bug，bug提交报告https://jira.spring.io/browse/SPR-10785</span></span><br><span class="line">  <span class="comment">// SPR-10785: set callbacks directly on the instance instead of in the</span></span><br><span class="line">  <span class="comment">// enhanced class (via the Enhancer) in order to avoid memory leaks.</span></span><br><span class="line">  Factory factory = (Factory) instance;</span><br><span class="line">  factory.setCallbacks(<span class="keyword">new</span> Callback[] &#123;NoOp.INSTANCE,</span><br><span class="line">                                       <span class="keyword">new</span> LookupOverrideMethodInterceptor(<span class="keyword">this</span>.beanDefinition, <span class="keyword">this</span>.owner),</span><br><span class="line">                                       <span class="keyword">new</span> ReplaceOverrideMethodInterceptor(<span class="keyword">this</span>.beanDefinition, <span class="keyword">this</span>.owner)&#125;);</span><br><span class="line">  <span class="keyword">return</span> instance;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>调用 <code>createEnhancedSubclass()</code> 为提供的 BeanDefinition 创建 bean 类的增强子类。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">private</span> Class&lt;?&gt; createEnhancedSubclass(RootBeanDefinition beanDefinition) &#123;</span><br><span class="line"> <span class="comment">// cglib里面的用法，对原始class进行增强，并设置callback</span></span><br><span class="line"> Enhancer enhancer = <span class="keyword">new</span> Enhancer();</span><br><span class="line"> enhancer.setSuperclass(beanDefinition.getBeanClass());</span><br><span class="line"> enhancer.setNamingPolicy(SpringNamingPolicy.INSTANCE);</span><br><span class="line"> <span class="keyword">if</span> (<span class="keyword">this</span>.owner <span class="keyword">instanceof</span> ConfigurableBeanFactory) &#123;</span><br><span class="line">  ClassLoader cl = ((ConfigurableBeanFactory) <span class="keyword">this</span>.owner).getBeanClassLoader();</span><br><span class="line">  enhancer.setStrategy(<span class="keyword">new</span> ClassLoaderAwareGeneratorStrategy(cl));</span><br><span class="line"> &#125;</span><br><span class="line"> <span class="comment">// 过滤，自定义逻辑来指定调用的callback下标</span></span><br><span class="line"> enhancer.setCallbackFilter(<span class="keyword">new</span> MethodOverrideCallbackFilter(beanDefinition));</span><br><span class="line"> enhancer.setCallbackTypes(CALLBACK_TYPES);</span><br><span class="line"> <span class="keyword">return</span> enhancer.createClass();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>获取子类增强 class 后，如果 Constructor 实例 ctr 为空，则调用默认构造函数（<code>BeanUtils.instantiateClass()</code>）来实例化类，否则则根据构造函数类型获取具体的构造器，调用 <code>newInstance()</code> 实例化类。在 <code>createEnhancedSubclass()</code> 我们注意两行代码：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">enhancer.setCallbackFilter(<span class="keyword">new</span> MethodOverrideCallbackFilter(beanDefinition));</span><br><span class="line">enhancer.setCallbackTypes(CALLBACK_TYPES);</span><br></pre></td></tr></table></figure>
+
+<p>通过 MethodOverrideCallbackFilter 来定义调用 callback 类型，MethodOverrideCallbackFilter 是用来定义 CGLIB 回调过滤方法的拦截器行为，它继承 CglibIdentitySupport 实现 CallbackFilter 接口， CallbackFilter 是 CGLIB 的一个回调过滤器，CglibIdentitySupport 则为 CGLIB 提供 <code>hashCode()</code> 和 <code>equals()</code> 方法，以确保 CGLIB 不会为每个 bean 生成不同的类。MethodOverrideCallbackFilter 实现 CallbackFilter <code>accept()</code>：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">accept</span><span class="params">(Method method)</span> </span>&#123;</span><br><span class="line">  MethodOverride methodOverride = getBeanDefinition().getMethodOverrides().getOverride(method);</span><br><span class="line">  <span class="keyword">if</span> (logger.isTraceEnabled()) &#123;</span><br><span class="line">    logger.trace(<span class="string">&quot;Override for &#x27;&quot;</span> + method.getName() + <span class="string">&quot;&#x27; is [&quot;</span> + methodOverride + <span class="string">&quot;]&quot;</span>);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">if</span> (methodOverride == <span class="keyword">null</span>) &#123;</span><br><span class="line">    <span class="keyword">return</span> PASSTHROUGH;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">else</span> <span class="keyword">if</span> (methodOverride <span class="keyword">instanceof</span> LookupOverride) &#123;</span><br><span class="line">    <span class="keyword">return</span> LOOKUP_OVERRIDE;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">else</span> <span class="keyword">if</span> (methodOverride <span class="keyword">instanceof</span> ReplaceOverride) &#123;</span><br><span class="line">    <span class="keyword">return</span> METHOD_REPLACER;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">throw</span> <span class="keyword">new</span> UnsupportedOperationException(<span class="string">&quot;Unexpected MethodOverride subclass: &quot;</span> +</span><br><span class="line">                                          methodOverride.getClass().getName());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>根据 BeanDefinition 中定义的 MethodOverride 不同，返回不同的值， 这里返回的 PASSTHROUGH 、LOOKUP_OVERRIDE、METHOD_REPLACER 都是 Callbak 数组的下标，这里对应的数组为 CALLBACK_TYPES 数组，如下：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> Class&lt;?&gt;[] CALLBACK_TYPES </span><br><span class="line">  = <span class="keyword">new</span> Class&lt;?&gt;[] &#123;NoOp.class, LookupOverrideMethodInterceptor.class, ReplaceOverrideMethodInterceptor.class&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>这里又定义了两个熟悉的拦截器 ：LookupOverrideMethodInterceptor 和 ReplaceOverrideMethodInterceptor，两个拦截器分别对应两个不同的 callback 业务：</p>
+<p><strong>LookupOverrideMethodInterceptor</strong></p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">LookupOverrideMethodInterceptor</span> </span></span><br><span class="line"><span class="class">  <span class="keyword">extends</span> <span class="title">CglibIdentitySupport</span> <span class="keyword">implements</span> <span class="title">MethodInterceptor</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">final</span> BeanFactory owner;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="title">LookupOverrideMethodInterceptor</span><span class="params">(RootBeanDefinition beanDefinition, BeanFactory owner)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">super</span>(beanDefinition);</span><br><span class="line">    <span class="keyword">this</span>.owner = owner;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="meta">@Override</span></span><br><span class="line">  <span class="function"><span class="keyword">public</span> Object <span class="title">intercept</span><span class="params">(Object obj, Method method, Object[] args, MethodProxy mp)</span> <span class="keyword">throws</span> Throwable </span>&#123;</span><br><span class="line">    <span class="comment">// Cast is safe, as CallbackFilter filters are used selectively.</span></span><br><span class="line">    LookupOverride lo = (LookupOverride) getBeanDefinition().getMethodOverrides().getOverride(method);</span><br><span class="line">    Assert.state(lo != <span class="keyword">null</span>, <span class="string">&quot;LookupOverride not found&quot;</span>);</span><br><span class="line">    Object[] argsToUse = (args.length &gt; <span class="number">0</span> ? args : <span class="keyword">null</span>); <span class="comment">// if no-arg, don&#x27;t insist on args at all</span></span><br><span class="line">    <span class="keyword">if</span> (StringUtils.hasText(lo.getBeanName())) &#123;</span><br><span class="line">      <span class="keyword">return</span> (argsToUse != <span class="keyword">null</span> ? <span class="keyword">this</span>.owner.getBean(lo.getBeanName(), argsToUse) :</span><br><span class="line">              <span class="keyword">this</span>.owner.getBean(lo.getBeanName()));</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span> &#123;</span><br><span class="line">      <span class="keyword">return</span> (argsToUse != <span class="keyword">null</span> ? <span class="keyword">this</span>.owner.getBean(method.getReturnType(), argsToUse) :</span><br><span class="line">              <span class="keyword">this</span>.owner.getBean(method.getReturnType()));</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>ReplaceOverrideMethodInterceptor</strong></p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">ReplaceOverrideMethodInterceptor</span> </span></span><br><span class="line"><span class="class">  <span class="keyword">extends</span> <span class="title">CglibIdentitySupport</span> <span class="keyword">implements</span> <span class="title">MethodInterceptor</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">final</span> BeanFactory owner;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="title">ReplaceOverrideMethodInterceptor</span><span class="params">(RootBeanDefinition beanDefinition, BeanFactory owner)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">super</span>(beanDefinition);</span><br><span class="line">    <span class="keyword">this</span>.owner = owner;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="meta">@Override</span></span><br><span class="line">  <span class="function"><span class="keyword">public</span> Object <span class="title">intercept</span><span class="params">(Object obj, Method method, Object[] args, MethodProxy mp)</span> <span class="keyword">throws</span> Throwable </span>&#123;</span><br><span class="line">    ReplaceOverride ro = (ReplaceOverride) getBeanDefinition().getMethodOverrides().getOverride(method);</span><br><span class="line">    Assert.state(ro != <span class="keyword">null</span>, <span class="string">&quot;ReplaceOverride not found&quot;</span>);</span><br><span class="line">    <span class="comment">// TODO could cache if a singleton for minor performance optimization</span></span><br><span class="line">    MethodReplacer mr = <span class="keyword">this</span>.owner.getBean(ro.getMethodReplacerBeanName(), MethodReplacer.class);</span><br><span class="line">    <span class="keyword">return</span> mr.reimplement(obj, method, args);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>通过这两个拦截器，再加上这篇博客：<a href="/2020/01/fa973ffe.html">IOC 之解析 bean 标签：meta、lookup-method、replace-method</a>，是不是一道绝佳的美食。</p>
+
+  
+
+
+  </article>
+  
+<div class="related-wrap" id="read-next"><section class="header cap theme"><span>接下来阅读</span></section><section class="body"><div class="post-title h2"><a href="/wiki/source_of_spring/springIOC31.html">IOC之BeanDefinition注册机：BeanDefinitionRegistry</a></div><div class="post-title fs14"><a href="/wiki/source_of_spring/springIOC29.html">上一篇：IOC之分析BeanWrapper</a></div></section></div>
+
+  
+
+  <div class="related-wrap md" id="comments">
+    <div class="cmt-title cap theme">
+      快来参与讨论吧
+    </div>
+    <div class="cmt-body utterances">
+      
+
+<svg class="loading" style="vertical-align: middle;fill: currentColor;overflow: hidden;" viewbox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2709"><path d="M832 512c0-176-144-320-320-320V128c211.2 0 384 172.8 384 384h-64zM192 512c0 176 144 320 320 320v64C300.8 896 128 723.2 128 512h64z" p-id="2710"/></svg>
+
+<div id="utterances" repo="cayzlh/studious-barnacle" issue-term="Spring源码分析" theme="github-light"></div>
+
+    </div>
+  </div>
+
+
+
+
+      
+<footer class="page-footer fs12"><hr><div><p>本站所有文章除特别声明外，均采用 <a target="_blank" rel="external nofollow noopener noreferrer" href="https://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY-NC-SA 4.0</a> 许可协议，转载请注明出处</p>
+<p>本站由 <a href="https://www.cayzlh.com/">@chen anyu</a> 创建，使用 <a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/xaoxuu/hexo-theme-stellar/tree/1.1.0">Stellar</a> 作为主题，您可以在 <a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/cayzlh/cayzlh.github.io">GitHub</a> 找到本站源码</p>
+<p>本站托管于 <a target="_blank" rel="external nofollow noopener noreferrer" href="https://cloudbase.net/">云开发CloudBase</a> &amp; <a target="_blank" rel="external nofollow noopener noreferrer" href="https://pages.github.com/">Github Pages</a>，粤ICP备<a target="_blank" rel="external nofollow noopener noreferrer" href="https://beian.miit.gov.cn/">20058712</a>号</p>
+<div><span id="timeDate">载入天数...</span><span id="times">载入时分秒...</span>，<span id="busuanzi_container_site_pv">总访问量: <span id="busuanzi_value_site_pv"></span>次</span>，<span id="busuanzi_container_site_uv">访客数: <span id="busuanzi_value_site_uv"></span>人</span></div><p><a target="_blank" rel="external nofollow noopener noreferrer" href="https://travellings.now.sh/"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://travellings.vercel.app/assets/logo.gif" alt="开往-友链接力" width="100"></a></p>
+</div></footer>
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<script>
+  function createtime() {
+    var now = new Date();
+    var grt= new Date("05/26/2019 04:40:00");
+    now.setTime(now.getTime()+250);
+    days = (now - grt ) / 1000 / 60 / 60 / 24; dnum = Math.floor(days);
+    hours = (now - grt ) / 1000 / 60 / 60 - (24 * dnum); hnum = Math.floor(hours);
+    if(String(hnum).length ==1 ){hnum = "0" + hnum;} minutes = (now - grt ) / 1000 /60 - (24 * 60 * dnum) - (60 * hnum);
+    mnum = Math.floor(minutes); if(String(mnum).length ==1 ){mnum = "0" + mnum;}
+    seconds = (now - grt ) / 1000 - (24 * 60 * 60 * dnum) - (60 * 60 * hnum) - (60 * mnum);
+    snum = Math.round(seconds); if(String(snum).length ==1 ){snum = "0" + snum;}
+    document.getElementById("timeDate").innerHTML = "本站已运行 "+dnum+" 天 ";
+    document.getElementById("times").innerHTML = hnum + " 小时 " + mnum + " 分 " + snum + " 秒";
+  };
+  setInterval("createtime()",250);
+</script>
+      <div class="float-panel mobile-only" style="display:none">
+  <button type="button" class="sidebar-toggle mobile" onclick="sidebar.toggle()">
+    <svg class="icon" viewbox="0 0 1228 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2849"><path d="M0 0m97.390199 0l973.901995 0q97.390199 0 97.390199 97.390199l0 0q0 97.390199-97.390199 97.3902l-973.901995 0q-97.390199 0-97.390199-97.3902l0 0q0-97.390199 97.390199-97.390199Z" p-id="2850"/><path d="M0 389.560798m97.390199 0l973.901995 0q97.390199 0 97.390199 97.390199l0 0q0 97.390199-97.390199 97.3902l-973.901995 0q-97.390199 0-97.390199-97.3902l0 0q0-97.390199 97.390199-97.390199Z" p-id="2851"/><path d="M0 779.121596m97.390199 0l973.901995 0q97.390199 0 97.390199 97.390199l0 0q0 97.390199-97.390199 97.390199l-973.901995 0q-97.390199 0-97.390199-97.390199l0 0q0-97.390199 97.390199-97.390199Z" p-id="2852"/></svg>
+  </button>
+</div>
+
+    </div>
+  </div>
+  <div class="scripts">
+    <script type="text/javascript">
+  stellar = {
+    // 懒加载 css https://github.com/filamentgroup/loadCSS
+    loadCSS: (href, before, media, attributes) => {
+      var doc = window.document;
+      var ss = doc.createElement("link");
+      var ref;
+      if (before) {
+        ref = before;
+      } else {
+        var refs = (doc.body || doc.getElementsByTagName("head")[0]).childNodes;
+        ref = refs[refs.length - 1];
+      }
+      var sheets = doc.styleSheets;
+      if (attributes) {
+        for (var attributeName in attributes) {
+          if (attributes.hasOwnProperty(attributeName)) {
+            ss.setAttribute(attributeName, attributes[attributeName]);
+          }
+        }
+      }
+      ss.rel = "stylesheet";
+      ss.href = href;
+      ss.media = "only x";
+      function ready(cb) {
+        if (doc.body) {
+          return cb();
+        }
+        setTimeout(function () {
+          ready(cb);
+        });
+      }
+      ready(function () {
+        ref.parentNode.insertBefore(ss, before ? ref : ref.nextSibling);
+      });
+      var onloadcssdefined = function (cb) {
+        var resolvedHref = ss.href;
+        var i = sheets.length;
+        while (i--) {
+          if (sheets[i].href === resolvedHref) {
+            return cb();
+          }
+        }
+        setTimeout(function () {
+          onloadcssdefined(cb);
+        });
+      };
+      function loadCB() {
+        if (ss.addEventListener) {
+          ss.removeEventListener("load", loadCB);
+        }
+        ss.media = media || "all";
+      }
+      if (ss.addEventListener) {
+        ss.addEventListener("load", loadCB);
+      }
+      ss.onloadcssdefined = onloadcssdefined;
+      onloadcssdefined(loadCB);
+      return ss;
+    },
+
+    // 从 butterfly 和 volantis 获得灵感
+    loadScript: (src, opt) => new Promise((resolve, reject) => {
+      var script = document.createElement('script')
+      script.src = src
+      if (opt) {
+        for (let key of Object.keys(opt)) {
+          script[key] = opt[key]
+        }
+      } else {
+        // 默认异步，如果需要同步，第二个参数传入 {} 即可
+        script.async = true
+      }
+      script.onerror = reject
+      script.onload = script.onreadystatechange = function() {
+        const loadState = this.readyState
+        if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+        script.onload = script.onreadystatechange = null
+        resolve()
+      }
+      document.head.appendChild(script)
+    }),
+
+    // https://github.com/jerryc127/hexo-theme-butterfly
+    jQuery: (fn) => {
+      if (typeof jQuery === 'undefined') {
+        stellar.loadScript(stellar.plugins.jQuery).then(fn)
+      } else {
+        fn()
+      }
+    }
+  };
+  stellar.github = 'https://github.com/xaoxuu/hexo-theme-stellar/tree/1.1.0';
+  stellar.config = {
+    date_suffix: {
+      just: '刚刚',
+      min: '分钟前',
+      hour: '小时前',
+      day: '天前',
+      month: '个月前',
+    },
+  };
+
+  // required plugins (only load if needs)
+  stellar.plugins = {
+    jQuery: 'https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js',
+    sitesjs: '/js/plugins/sites.js',
+    friendsjs: '/js/plugins/friends.js',
+  };
+
+  // optional plugins
+  if ('true' == 'true') {
+    stellar.plugins.lazyload = Object.assign({"enable":true,"js":"https://cdn.jsdelivr.net/npm/vanilla-lazyload@17.3.1/dist/lazyload.min.js","transition":"blur"});
+  }
+  if ('true' == 'true') {
+    stellar.plugins.swiper = Object.assign({"enable":true,"css":"https://unpkg.com/swiper/swiper-bundle.min.css","js":"https://unpkg.com/swiper/swiper-bundle.min.js"});
+  }
+  if ('' == 'true') {
+    stellar.plugins.scrollreveal = Object.assign({"enable":null,"js":"https://cdn.jsdelivr.net/npm/scrollreveal@4.0.9/dist/scrollreveal.min.js","distance":"8px","duration":500,"interval":100,"scale":1});
+  }
+  if ('true' == 'true') {
+    stellar.plugins.preload = Object.assign({"enable":true,"service":"flying_pages","instant_page":"https://cdn.jsdelivr.net/gh/volantis-x/cdn-volantis@4.1.2/js/instant_page.js","flying_pages":"https://cdn.jsdelivr.net/gh/gijo-varghese/flying-pages@2.1.2/flying-pages.min.js"});
+  }
+</script>
+
+<!-- required -->
+
+  
+<script src="/js/main.js" async></script>
+
+
+
+<!-- optional -->
+
+  <script>
+  function utterances(){
+    if(!document.getElementById("utterances"))return;
+    setTimeout(function() {
+      var checkUtterances = setInterval(function () {
+        var el = document.getElementById("utterances");
+        if (!el) return
+        clearInterval(checkUtterances)
+        try {
+          el.innerHTML="";
+        } catch (error) {}
+        var script = document.createElement('script');
+        script.src = 'https://utteranc.es/client.js';
+        const keys = ['repo', 'issue-term', 'issue-number', 'theme', 'label', 'crossorigin'];
+        keys.forEach((key, i) => {
+          if (el.attributes[key] && el.attributes[key].value) {
+            script.setAttribute(key, el.attributes[key].value);
+          }
+        });
+        el.appendChild(script);
+       }, 200)
+    });
+  }
+  utterances();
+</script>
+
+
+
+
+<!-- inject -->
+
+
+  </div>
+</body>
+</html>

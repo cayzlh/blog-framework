@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta name="generator" content="Hexo 5.4.0">
+  <meta charset="utf-8">
+  
+
+  <meta http-equiv="x-dns-prefetch-control" content="on">
+  <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+
+  <meta name="renderer" content="webkit">
+  <meta name="force-rendering" content="webkit">
+  <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+  <meta name="HandheldFriendly" content="True">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <title>Redis基础知识总结 - CAYZLH</title>
+
+  
+  <meta name="description" content="Redis的一些常见的问题">
+
+  <!-- feed -->
+  
+    <link rel="alternate" href="/atom.xml" title="CAYZLH" type="application/atom+xml">
+  
+
+  
+    
+<link rel="stylesheet" href="/css/main.css">
+
+  
+
+  
+    
+      <meta name="msapplication-TileColor" content="#2d89ef">
+    
+      <meta name="msapplication-config" content="/assets/favicon/browserconfig.xml">
+    
+      <meta name="theme-color" content="#ffffff">
+    
+      <link rel="shortcut icon" href="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/logo/favicon.ico">
+    
+      <link rel="icon" type="image/png" href="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/logo/favicon-192x192.png" sizes="192x192">
+    
+      <link rel="apple-touch-icon" sizes="180x180" href="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/logo/apple-touch-icon.png">
+    
+  
+</head>
+
+<body>
+  
+
+
+  <div class="l_body" id="start">
+    <aside class="l_left">
+    
+
+<header class="header">
+  <div class="logo-wrap">
+  
+    <a class="avatar" href="/">
+      
+        <img no-lazy class="bg" src="https://cdn.jsdelivr.net/gh/cdn-x/placeholder@1.0.2/avatar/round/rainbow64@3x.webp" onerror="javascript:this.classList.add('error');this.src='https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2021/04/16084216181285221618128522255.svg';">
+      
+      <img no-lazy class="avatar" src="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/image/IMG_4207.JPG" onerror="javascript:this.classList.add('error');this.src='https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2021/04/16084216181285221618128522255.svg';">
+    </a>
+  
+  
+    <a class="title" href="/">
+      CAYZLH
+    </a>
+  
+</div>
+
+  <nav class="menu dis-select"><a class="nav-item active" href="/">文章</a><a class="nav-item" href="/wiki/">文档</a><a class="nav-item" href="/talking/">动态</a><a class="nav-item" href="/about/">更多</a></nav>
+</header>
+
+<div class="widgets">
+  
+    
+      
+      
+<div class="widget-wrap" id="toc"><div class="widget-header h4 dis-select"><span class="name">本文目录</span></div><div class="widget-body fs14 post"><div class="doc-tree active"><ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BB%80%E4%B9%88%E6%98%AFredis"><span class="toc-text">什么是redis?</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Reids%E7%9A%84%E7%89%B9%E7%82%B9"><span class="toc-text">Reids的特点</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BD%BF%E7%94%A8redis%E6%9C%89%E5%93%AA%E4%BA%9B%E5%A5%BD%E5%A4%84"><span class="toc-text">使用redis有哪些好处</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#redis-%E6%94%AF%E6%8C%81%E5%93%AA%E4%BA%9B%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84"><span class="toc-text">redis 支持哪些数据结构</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Java%E4%B8%AD%E5%AF%B9Redis%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B%E7%9A%84%E6%93%8D%E4%BD%9C"><span class="toc-text">Java中对Redis数据类型的操作</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#String"><span class="toc-text">String</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#Hash"><span class="toc-text">Hash</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#List%E6%93%8D%E4%BD%9C"><span class="toc-text">List操作</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#Set%E6%93%8D%E4%BD%9C"><span class="toc-text">Set操作</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#SortedSet-%E6%93%8D%E4%BD%9C"><span class="toc-text">SortedSet 操作</span></a></li></ol></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#redis%E7%9B%B8%E6%AF%94memcached%E6%9C%89%E5%93%AA%E4%BA%9B%E4%BC%98%E5%8A%BF"><span class="toc-text">redis相比memcached有哪些优势</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Memcache%E4%B8%8ERedis%E7%9A%84%E5%8C%BA%E5%88%AB%E9%83%BD%E6%9C%89%E5%93%AA%E4%BA%9B"><span class="toc-text">Memcache与Redis的区别都有哪些</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#redis%E5%B8%B8%E8%A7%81%E6%80%A7%E8%83%BD%E9%97%AE%E9%A2%98%E5%92%8C%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88"><span class="toc-text">redis常见性能问题和解决方案:</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#mySQL%E9%87%8C%E6%9C%892000w%E6%95%B0%E6%8D%AE%EF%BC%8Credis%E4%B8%AD%E5%8F%AA%E5%AD%9820w%E7%9A%84%E6%95%B0%E6%8D%AE%EF%BC%8C%E5%A6%82%E4%BD%95%E4%BF%9D%E8%AF%81redis%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE%E9%83%BD%E6%98%AF%E7%83%AD%E7%82%B9%E6%95%B0%E6%8D%AE"><span class="toc-text">mySQL里有2000w数据，redis中只存20w的数据，如何保证redis中的数据都是热点数据</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88redis%E9%9C%80%E8%A6%81%E6%8A%8A%E6%89%80%E6%9C%89%E6%95%B0%E6%8D%AE%E6%94%BE%E5%88%B0%E5%86%85%E5%AD%98%E4%B8%AD"><span class="toc-text">为什么redis需要把所有数据放到内存中</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Redis%E6%98%AF%E5%8D%95%E8%BF%9B%E7%A8%8B%E5%8D%95%E7%BA%BF%E7%A8%8B%E7%9A%84"><span class="toc-text">Redis是单进程单线程的</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#redis%E7%9A%84%E5%B9%B6%E5%8F%91%E7%AB%9E%E4%BA%89%E9%97%AE%E9%A2%98%E5%A6%82%E4%BD%95%E8%A7%A3%E5%86%B3"><span class="toc-text">redis的并发竞争问题如何解决</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#redis%E6%8C%81%E4%B9%85%E5%8C%96%E7%9A%84%E5%87%A0%E7%A7%8D%E6%96%B9%E5%BC%8F"><span class="toc-text">redis持久化的几种方式</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%BF%AB%E7%85%A7%EF%BC%88snapshots%EF%BC%89"><span class="toc-text">快照（snapshots）</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#AOF"><span class="toc-text">AOF</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E8%99%9A%E6%8B%9F%E5%86%85%E5%AD%98%E6%96%B9%E5%BC%8F"><span class="toc-text">虚拟内存方式</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#redis%E7%9A%84%E7%BC%93%E5%AD%98%E5%A4%B1%E6%95%88%E7%AD%96%E7%95%A5%E5%92%8C%E4%B8%BB%E9%94%AE%E5%A4%B1%E6%95%88%E6%9C%BA%E5%88%B6"><span class="toc-text">redis的缓存失效策略和主键失效机制</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#1%E3%80%81%E5%BD%B1%E5%93%8D%E7%94%9F%E5%AD%98%E6%97%B6%E9%97%B4%E7%9A%84%E4%B8%80%E4%BA%9B%E6%93%8D%E4%BD%9C"><span class="toc-text">1、影响生存时间的一些操作</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%A6%82%E4%BD%95%E6%9B%B4%E6%96%B0%E7%94%9F%E5%AD%98%E6%97%B6%E9%97%B4"><span class="toc-text">如何更新生存时间</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%9C%80%E5%A4%A7%E7%BC%93%E5%AD%98%E9%85%8D%E7%BD%AE%EF%BC%9A"><span class="toc-text">最大缓存配置：</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E4%B8%89%E7%A7%8D%E6%95%B0%E6%8D%AE%E6%B7%98%E6%B1%B0%E7%AD%96%E7%95%A5%EF%BC%9A"><span class="toc-text">三种数据淘汰策略：</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#redis-%E9%80%82%E5%90%88%E7%9A%84%E5%9C%BA%E6%99%AF"><span class="toc-text">redis 适合的场景</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E4%BC%9A%E8%AF%9D%E7%BC%93%E5%AD%98%EF%BC%88Session-Cache%EF%BC%89"><span class="toc-text">会话缓存（Session Cache）</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%85%A8%E9%A1%B5%E7%BC%93%E5%AD%98%EF%BC%88FPC%EF%BC%89"><span class="toc-text">全页缓存（FPC）</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E9%98%9F%E5%88%97"><span class="toc-text">队列</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%8E%92%E8%A1%8C%E6%A6%9C-%E8%AE%A1%E6%95%B0%E5%99%A8"><span class="toc-text">排行榜&#x2F;计数器</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%8F%91%E5%B8%83-%E8%AE%A2%E9%98%85"><span class="toc-text">发布&#x2F;订阅</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%8F%82%E8%80%83%E6%96%87%E7%8C%AE"><span class="toc-text">参考文献</span></a></li></ol></div></div></div>
+
+    
+  
+</div>
+<footer class="footer"><div class="social-wrap dis-select"><a class="social" href="https://github.com/cayzlh" target="_blank" rel="external nofollow noopener noreferrer"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cdn-x/placeholder@1.0.1/social/08a41b181ce68.svg"></a><a class="social" href="https://telegram.me/Q2F5emxo" target="_blank" rel="external nofollow noopener noreferrer"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/image/guanyuwomen.svg"></a><a class="social" href="/about/#comments" rel="noopener noreferrer"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cdn-x/placeholder@1.0.1/social/942ebbf1a4b91.svg"></a></div></footer>
+
+    </aside>
+    <div class="l_main">
+      
+
+      
+
+
+  <div class="bread-nav fs12">
+  
+    
+    <div id="breadcrumb">
+      <a class="cap breadcrumb" href="/">主页</a>
+      <span class="sep"></span>
+      <a class="cap breadcrumb" href="/">文章</a>
+      
+        <span class="sep"></span>
+        <a class="cap breadcrumb-link" href="/categories/%E7%AC%94%E8%AE%B0%E6%9C%AC/">笔记本</a>
+      
+    </div>
+    <div id="post-meta">
+      发布于&nbsp;<time datetime="2018-09-04T07:21:32.000Z">2018-09-04</time>
+    </div>
+  
+  </div>
+
+
+<article class="content md post">
+<h1 class="article-title"><span>Redis基础知识总结</span></h1>
+<h3 id="什么是redis"><a href="#什么是redis" class="headerlink" title="什么是redis?"></a>什么是redis?</h3><p>Redis 是一个基于内存的高性能key-value数据库。 </p>
+<h3 id="Reids的特点"><a href="#Reids的特点" class="headerlink" title="Reids的特点"></a>Reids的特点</h3><p><code>Redis</code>本质上是一个<code>Key-Value</code>类型的内存数据库，很像<code>memcached</code>，整个数据库统统加载在内存当中进行操作，定期通过异步操作把数据库数据flush到硬盘上进行保存。</p>
+<p>因为是纯内存操作，<code>Redis</code>的性能非常出色，每秒可以处理超过 10万次读写操作，是已知性能最快的<code>Key-Value DB</code>。</p>
+<p>Redis的出色之处不仅仅是性能，Redis最大的魅力是支持保存多种数据结构，此外单个value的最大限制是1GB，不像 memcached只能保存1MB的数据，因此Redis可以用来实现很多有用的功能。</p>
+<p>比方说用他的List来做FIFO双向链表，实现一个轻量级的高性 能消息队列服务，用他的Set可以做高性能的tag系统等等。另外Redis也可以对存入的Key-Value设置expire时间，因此也可以被当作一 个功能加强版的memcached来用。</p>
+<p>Redis的主要缺点是数据库容量受到物理内存的限制，不能用作海量数据的高性能读写，因此Redis适合的场景主要局限在较小数据量的高性能操作和运算上。</p>
+<h3 id="使用redis有哪些好处"><a href="#使用redis有哪些好处" class="headerlink" title="使用redis有哪些好处"></a>使用redis有哪些好处</h3><ol>
+<li>速度快，因为数据存在内存中，类似于HashMap，HashMap的优势就是查找和操作的时间复杂度都是O(1) </li>
+<li>支持丰富数据类型，支持string，list，set，sorted set，hash </li>
+<li>支持事务，操作都是原子性，所谓的原子性就是对数据的更改要么全部执行，要么全部不执行 </li>
+<li>丰富的特性：可用于缓存，消息，按key设置过期时间，过期后将会自动删除</li>
+</ol>
+<h3 id="redis-支持哪些数据结构"><a href="#redis-支持哪些数据结构" class="headerlink" title="redis 支持哪些数据结构"></a>redis 支持哪些数据结构</h3><p>支持多种类型的数据结构，如字符串（String），散列（Hash），列表（List），集合（Set），有序集合（Sorted Set或者是ZSet）与范围查询，Bitmaps，Hyperloglogs 和地理空间（Geospatial）索引半径查询。其中常见的数据结构类型有：String、List、Set、Hash、ZSet这5种。</p>
+<h4 id="Java中对Redis数据类型的操作"><a href="#Java中对Redis数据类型的操作" class="headerlink" title="Java中对Redis数据类型的操作"></a>Java中对Redis数据类型的操作</h4><h5 id="String"><a href="#String" class="headerlink" title="String"></a>String</h5><figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">StringTest</span> </span>&#123;</span><br><span class="line">    <span class="keyword">public</span>  Jedis jedis = JedisPoolUtil.getJedis();</span><br><span class="line">    <span class="meta">@Test</span></span><br><span class="line">    <span class="comment">//添加和获取</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">fun</span><span class="params">()</span></span>&#123;</span><br><span class="line">        jedis.set(<span class="string">&quot;num&quot;</span>,<span class="string">&quot;1&quot;</span>);</span><br><span class="line">        System.out.println(jedis.get(<span class="string">&quot;num&quot;</span>));</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="meta">@Test</span></span><br><span class="line">    <span class="comment">//删除值</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">fun1</span><span class="params">()</span></span>&#123;</span><br><span class="line">        jedis.del(<span class="string">&quot;num&quot;</span>);</span><br><span class="line">        System.out.println(jedis.get(<span class="string">&quot;num&quot;</span>));</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="meta">@Test</span></span><br><span class="line">    <span class="comment">//自减和自减</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">fun2</span><span class="params">()</span></span>&#123;</span><br><span class="line">        jedis.set(<span class="string">&quot;num&quot;</span>,<span class="string">&quot;1&quot;</span>);</span><br><span class="line">        System.out.println(jedis.get(<span class="string">&quot;num&quot;</span>));</span><br><span class="line">        jedis.decr(<span class="string">&quot;num&quot;</span>);</span><br><span class="line">        System.out.println(jedis.get(<span class="string">&quot;num&quot;</span>));</span><br><span class="line">        jedis.incr(<span class="string">&quot;num&quot;</span>);</span><br><span class="line">        jedis.incr(<span class="string">&quot;num&quot;</span>);</span><br><span class="line">        System.out.println(jedis.get(<span class="string">&quot;num&quot;</span>));</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="meta">@Test</span></span><br><span class="line">    <span class="comment">//加上/减去 一个数</span></span><br><span class="line">    <span class="comment">//incrBy 返回的是修改之后的值如果原值是字符串不是数字，则会抛出异常</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">fun3</span><span class="params">()</span></span>&#123;</span><br><span class="line">        Long num = jedis.incrBy(<span class="string">&quot;num&quot;</span>, <span class="number">3</span>);</span><br><span class="line">        System.out.println(num);</span><br><span class="line">        jedis.decrBy(<span class="string">&quot;num&quot;</span>,<span class="number">10</span>);</span><br><span class="line"></span><br><span class="line">        System.out.println(jedis.get(<span class="string">&quot;num&quot;</span>));</span><br><span class="line">        jedis.set(<span class="string">&quot;name&quot;</span>,<span class="string">&quot;caopengfei&quot;</span>);</span><br><span class="line">        <span class="comment">//jedis.decrBy(&quot;name&quot;,1);</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="meta">@Test</span></span><br><span class="line">    <span class="comment">//字符串拼接</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">fun4</span><span class="params">()</span></span>&#123;</span><br><span class="line">        Long len = jedis.append(<span class="string">&quot;name&quot;</span>, <span class="string">&quot;123&quot;</span>);</span><br><span class="line">        System.out.println(len);</span><br><span class="line">        System.out.println(jedis.get(<span class="string">&quot;name&quot;</span>));</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h5 id="Hash"><a href="#Hash" class="headerlink" title="Hash"></a>Hash</h5><figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">HashTest</span> </span>&#123;</span><br><span class="line">    <span class="keyword">public</span> Jedis jedis = JedisPoolUtil.getJedis();</span><br><span class="line"></span><br><span class="line">    <span class="comment">//    hash 操作的是map对象</span></span><br><span class="line"><span class="comment">//    适合存储键值对象的信息</span></span><br><span class="line">    <span class="meta">@Test</span></span><br><span class="line">    <span class="comment">//存值 参数第一个变量的名称， map键名(key)， map键值(value)</span></span><br><span class="line"><span class="comment">//    调用hset</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">fun</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        Long num = jedis.hset(<span class="string">&quot;hash1&quot;</span>, <span class="string">&quot;username&quot;</span>, <span class="string">&quot;caopengfei&quot;</span>);</span><br><span class="line">        System.out.println(num);</span><br><span class="line">        String hget = jedis.hget(<span class="string">&quot;hash1&quot;</span>, <span class="string">&quot;username&quot;</span>);</span><br><span class="line">        System.out.println(hget);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Test</span></span><br><span class="line">    <span class="comment">//也可以存多个key</span></span><br><span class="line"><span class="comment">//    调用hmset</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">fun1</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        Map&lt;String, String&gt; map = <span class="keyword">new</span> HashMap&lt;String, String&gt;();</span><br><span class="line">        map.put(<span class="string">&quot;username&quot;</span>, <span class="string">&quot;caopengfei&quot;</span>);</span><br><span class="line">        map.put(<span class="string">&quot;age&quot;</span>, <span class="string">&quot;25&quot;</span>);</span><br><span class="line">        map.put(<span class="string">&quot;sex&quot;</span>, <span class="string">&quot;男&quot;</span>);</span><br><span class="line">        String res = jedis.hmset(<span class="string">&quot;hash2&quot;</span>, map);</span><br><span class="line">        System.out.println(res);<span class="comment">//ok</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Test</span></span><br><span class="line">    <span class="comment">//获取hash中所有的值</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">fun2</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        Map&lt;String, String&gt; map2 = <span class="keyword">new</span> HashMap&lt;String, String&gt;();</span><br><span class="line">        map2 = jedis.hgetAll(<span class="string">&quot;hash2&quot;</span>);</span><br><span class="line">        System.out.println(map2);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Test</span></span><br><span class="line"><span class="comment">//    删除hash中的键 可以删除一个也可以删除多个，返回的是删除的个数</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">fun3</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        Long num = jedis.hdel(<span class="string">&quot;hash2&quot;</span>, <span class="string">&quot;username&quot;</span>, <span class="string">&quot;age&quot;</span>);</span><br><span class="line">        System.out.println(num);</span><br><span class="line">        Map&lt;String, String&gt; map2 = <span class="keyword">new</span> HashMap&lt;String, String&gt;();</span><br><span class="line">        map2 = jedis.hgetAll(<span class="string">&quot;hash2&quot;</span>);</span><br><span class="line">        System.out.println(map2);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Test</span></span><br><span class="line">    <span class="comment">//增加hash中的键值对</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">fun4</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        Map&lt;String, String&gt; map2 = <span class="keyword">new</span> HashMap&lt;String, String&gt;();</span><br><span class="line">        map2 = jedis.hgetAll(<span class="string">&quot;hash2&quot;</span>);</span><br><span class="line">        System.out.println(map2);</span><br><span class="line">        jedis.hincrBy(<span class="string">&quot;hash2&quot;</span>, <span class="string">&quot;age&quot;</span>, <span class="number">10</span>);</span><br><span class="line">        map2 = jedis.hgetAll(<span class="string">&quot;hash2&quot;</span>);</span><br><span class="line">        System.out.println(map2);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Test</span></span><br><span class="line">    <span class="comment">//判断hash是否存在某个值</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">fun5</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        System.out.println(jedis.hexists(<span class="string">&quot;hash2&quot;</span>, <span class="string">&quot;username&quot;</span>));</span><br><span class="line">        System.out.println(jedis.hexists(<span class="string">&quot;hash2&quot;</span>, <span class="string">&quot;age&quot;</span>));</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Test</span></span><br><span class="line">    <span class="comment">//获取hash中键值对的个数</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">fun6</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        System.out.println(jedis.hlen(<span class="string">&quot;hash2&quot;</span>));</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">//    获取一个hash中所有的key值</span></span><br><span class="line">    <span class="meta">@Test</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">fun7</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        Set&lt;String&gt; hash2 = jedis.hkeys(<span class="string">&quot;hash2&quot;</span>);</span><br><span class="line">        System.out.println(hash2);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">//    获取所有的value值</span></span><br><span class="line">    <span class="meta">@Test</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">fun8</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        List&lt;String&gt; hash2 = jedis.hvals(<span class="string">&quot;hash2&quot;</span>);</span><br><span class="line">        System.out.println(hash2);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h5 id="List操作"><a href="#List操作" class="headerlink" title="List操作"></a>List操作</h5><figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">testList</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    jedis.flushDB();</span><br><span class="line">    System.out.println(<span class="string">&quot;===========添加一个list===========&quot;</span>);</span><br><span class="line">    jedis.lpush(<span class="string">&quot;collections&quot;</span>, <span class="string">&quot;ArrayList&quot;</span>, <span class="string">&quot;Vector&quot;</span>, <span class="string">&quot;Stack&quot;</span>, <span class="string">&quot;HashMap&quot;</span>, <span class="string">&quot;WeakHashMap&quot;</span>, <span class="string">&quot;LinkedHashMap&quot;</span>);</span><br><span class="line">    jedis.lpush(<span class="string">&quot;collections&quot;</span>, <span class="string">&quot;HashSet&quot;</span>);</span><br><span class="line">    jedis.lpush(<span class="string">&quot;collections&quot;</span>, <span class="string">&quot;TreeSet&quot;</span>);</span><br><span class="line">    jedis.lpush(<span class="string">&quot;collections&quot;</span>, <span class="string">&quot;TreeMap&quot;</span>);</span><br><span class="line">    System.out.println(<span class="string">&quot;collections的内容：&quot;</span>+jedis.lrange(<span class="string">&quot;collections&quot;</span>, <span class="number">0</span>, -<span class="number">1</span>));<span class="comment">//-1代表倒数第一个元素，-2代表倒数第二个元素</span></span><br><span class="line">    System.out.println(<span class="string">&quot;collections区间0-3的元素：&quot;</span>+jedis.lrange(<span class="string">&quot;collections&quot;</span>,<span class="number">0</span>,<span class="number">3</span>));</span><br><span class="line">    System.out.println(<span class="string">&quot;===============================&quot;</span>);</span><br><span class="line">    <span class="comment">// 删除列表指定的值 ，第二个参数为删除的个数（有重复时），后add进去的值先被删，类似于出栈</span></span><br><span class="line">    System.out.println(<span class="string">&quot;删除指定元素个数：&quot;</span>+jedis.lrem(<span class="string">&quot;collections&quot;</span>, <span class="number">2</span>, <span class="string">&quot;HashMap&quot;</span>));</span><br><span class="line">    System.out.println(<span class="string">&quot;collections的内容：&quot;</span>+jedis.lrange(<span class="string">&quot;collections&quot;</span>, <span class="number">0</span>, -<span class="number">1</span>));</span><br><span class="line">    System.out.println(<span class="string">&quot;删除下表0-3区间之外的元素：&quot;</span>+jedis.ltrim(<span class="string">&quot;collections&quot;</span>, <span class="number">0</span>, <span class="number">3</span>));</span><br><span class="line">    System.out.println(<span class="string">&quot;collections的内容：&quot;</span>+jedis.lrange(<span class="string">&quot;collections&quot;</span>, <span class="number">0</span>, -<span class="number">1</span>));</span><br><span class="line">    System.out.println(<span class="string">&quot;collections列表出栈（左端）：&quot;</span>+jedis.lpop(<span class="string">&quot;collections&quot;</span>));</span><br><span class="line">    System.out.println(<span class="string">&quot;collections的内容：&quot;</span>+jedis.lrange(<span class="string">&quot;collections&quot;</span>, <span class="number">0</span>, -<span class="number">1</span>));</span><br><span class="line">    System.out.println(<span class="string">&quot;collections添加元素，从列表右端，与lpush相对应：&quot;</span>+jedis.rpush(<span class="string">&quot;collections&quot;</span>, <span class="string">&quot;EnumMap&quot;</span>));</span><br><span class="line">    System.out.println(<span class="string">&quot;collections的内容：&quot;</span>+jedis.lrange(<span class="string">&quot;collections&quot;</span>, <span class="number">0</span>, -<span class="number">1</span>));</span><br><span class="line">    System.out.println(<span class="string">&quot;collections列表出栈（右端）：&quot;</span>+jedis.rpop(<span class="string">&quot;collections&quot;</span>));</span><br><span class="line">    System.out.println(<span class="string">&quot;collections的内容：&quot;</span>+jedis.lrange(<span class="string">&quot;collections&quot;</span>, <span class="number">0</span>, -<span class="number">1</span>));</span><br><span class="line">    System.out.println(<span class="string">&quot;修改collections指定下标1的内容：&quot;</span>+jedis.lset(<span class="string">&quot;collections&quot;</span>, <span class="number">1</span>, <span class="string">&quot;LinkedArrayList&quot;</span>));</span><br><span class="line">    System.out.println(<span class="string">&quot;collections的内容：&quot;</span>+jedis.lrange(<span class="string">&quot;collections&quot;</span>, <span class="number">0</span>, -<span class="number">1</span>));</span><br><span class="line">    System.out.println(<span class="string">&quot;===============================&quot;</span>);</span><br><span class="line">    System.out.println(<span class="string">&quot;collections的长度：&quot;</span>+jedis.llen(<span class="string">&quot;collections&quot;</span>));</span><br><span class="line">    System.out.println(<span class="string">&quot;获取collections下标为2的元素：&quot;</span>+jedis.lindex(<span class="string">&quot;collections&quot;</span>, <span class="number">2</span>));</span><br><span class="line">    System.out.println(<span class="string">&quot;===============================&quot;</span>);</span><br><span class="line">    jedis.lpush(<span class="string">&quot;sortedList&quot;</span>, <span class="string">&quot;3&quot;</span>,<span class="string">&quot;6&quot;</span>,<span class="string">&quot;2&quot;</span>,<span class="string">&quot;0&quot;</span>,<span class="string">&quot;7&quot;</span>,<span class="string">&quot;4&quot;</span>);</span><br><span class="line">    System.out.println(<span class="string">&quot;sortedList排序前：&quot;</span>+jedis.lrange(<span class="string">&quot;sortedList&quot;</span>, <span class="number">0</span>, -<span class="number">1</span>));</span><br><span class="line">    System.out.println(jedis.sort(<span class="string">&quot;sortedList&quot;</span>));</span><br><span class="line">    System.out.println(<span class="string">&quot;sortedList排序后：&quot;</span>+jedis.lrange(<span class="string">&quot;sortedList&quot;</span>, <span class="number">0</span>, -<span class="number">1</span>));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h5 id="Set操作"><a href="#Set操作" class="headerlink" title="Set操作"></a>Set操作</h5><figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment">* Set集合，和List类的区别就是</span></span><br><span class="line"><span class="comment">* set中不会出现重复的数据</span></span><br><span class="line"><span class="comment">* 他可以进行聚合操作效率比较高</span></span><br><span class="line"><span class="comment">* 其余的操作基本上和list相同</span></span><br><span class="line"><span class="comment">*</span></span><br><span class="line"><span class="comment">* */</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">SetTest</span> </span>&#123;</span><br><span class="line">    <span class="keyword">public</span>  Jedis jedis = JedisPoolUtil.getJedis();</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Test</span></span><br><span class="line">    <span class="comment">/*添加元素删除元素*/</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">fun</span><span class="params">()</span></span>&#123;</span><br><span class="line">        Long num = jedis.sadd(<span class="string">&quot;myset&quot;</span>, <span class="string">&quot;a&quot;</span>, <span class="string">&quot;a&quot;</span>, <span class="string">&quot;b&quot;</span>,<span class="string">&quot;abc&quot;</span>);</span><br><span class="line">        System.out.println(num);</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="meta">@Test</span></span><br><span class="line">    <span class="comment">/*获得元素*/</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">fun1</span><span class="params">()</span></span>&#123;</span><br><span class="line">        Set&lt;String&gt; myset = jedis.smembers(<span class="string">&quot;myset&quot;</span>);</span><br><span class="line">        System.out.println(myset);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="meta">@Test</span></span><br><span class="line">    <span class="comment">/*移除元素*/</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">fun2</span><span class="params">()</span></span>&#123;</span><br><span class="line">        jedis.srem(<span class="string">&quot;myset&quot;</span>,<span class="string">&quot;a&quot;</span>,<span class="string">&quot;b&quot;</span>);</span><br><span class="line">        Set&lt;String&gt; myset = jedis.smembers(<span class="string">&quot;myset&quot;</span>);</span><br><span class="line">        System.out.println(myset);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="meta">@Test</span></span><br><span class="line">    <span class="comment">//判断是否这个set中存在某个值</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">fun3</span><span class="params">()</span></span>&#123;</span><br><span class="line">        Boolean sismember = jedis.sismember(<span class="string">&quot;myset&quot;</span>, <span class="string">&quot;a&quot;</span>);</span><br><span class="line">        System.out.println(sismember);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="meta">@Test</span></span><br><span class="line">    <span class="comment">//获得A-B 获得差集合</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">fun4</span><span class="params">()</span></span>&#123;</span><br><span class="line">        jedis.sadd(<span class="string">&quot;myset1&quot;</span>,<span class="string">&quot;123&quot;</span>,<span class="string">&quot;32&quot;</span>,<span class="string">&quot;abc&quot;</span>,<span class="string">&quot;def&quot;</span>,<span class="string">&quot;123456&quot;</span>,<span class="string">&quot;sdfasd&quot;</span>);</span><br><span class="line">        jedis.sadd(<span class="string">&quot;myset2&quot;</span>,<span class="string">&quot;abc&quot;</span>,<span class="string">&quot;345&quot;</span>,<span class="string">&quot;123&quot;</span>,<span class="string">&quot;fda&quot;</span>);</span><br><span class="line">        Set&lt;String&gt; sdiff = jedis.sdiff(<span class="string">&quot;myset1&quot;</span>, <span class="string">&quot;myset2&quot;</span>);</span><br><span class="line">        System.out.println(sdiff);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="meta">@Test</span></span><br><span class="line">    <span class="comment">//获得交集</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">fun5</span><span class="params">()</span></span>&#123;</span><br><span class="line">        Set&lt;String&gt; sinter = jedis.sinter(<span class="string">&quot;myset1&quot;</span>, <span class="string">&quot;myset2&quot;</span>);</span><br><span class="line">        System.out.println(sinter);</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="meta">@Test</span></span><br><span class="line"><span class="comment">//    获得并集合</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">fun6</span><span class="params">()</span></span>&#123;</span><br><span class="line">        Set&lt;String&gt; sunion = jedis.sunion(<span class="string">&quot;myset1&quot;</span>, <span class="string">&quot;myset2&quot;</span>);</span><br><span class="line">        System.out.println(sunion);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="meta">@Test</span></span><br><span class="line"><span class="comment">//    成员数量</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">fun7</span><span class="params">()</span></span>&#123;</span><br><span class="line">        System.out.println(jedis.scard(<span class="string">&quot;myset1&quot;</span>));</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="meta">@Test</span></span><br><span class="line"><span class="comment">//    获得随机的一个成员</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">fun8</span><span class="params">()</span></span>&#123;</span><br><span class="line">        System.out.println(jedis.srandmember(<span class="string">&quot;myset1&quot;</span>));</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="meta">@Test</span></span><br><span class="line"><span class="comment">//    将相差的成员放到一个新的set中同理交集和并集都可以后面均</span></span><br><span class="line"><span class="comment">//    加上一个store即可</span></span><br><span class="line"><span class="comment">//    并返回新的长度</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">fun9</span><span class="params">()</span></span>&#123;</span><br><span class="line">        System.out.println(jedis.sdiffstore(<span class="string">&quot;myset3&quot;</span>,<span class="string">&quot;myset1&quot;</span>,<span class="string">&quot;myset2&quot;</span>));</span><br><span class="line">        System.out.println(jedis.smembers(<span class="string">&quot;myset3&quot;</span>));</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h5 id="SortedSet-操作"><a href="#SortedSet-操作" class="headerlink" title="SortedSet 操作"></a>SortedSet 操作</h5><figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment">和set极为的类似，他们是字符串的集合，没有重复的数据</span></span><br><span class="line"><span class="comment">差别是sortedset每个成员中都会有一个分数（score）与之关联</span></span><br><span class="line"><span class="comment">，redis正是通过分数来为集合中的成员进行从小到大的排序</span></span><br><span class="line"><span class="comment">sortedset中数据必须单一但是他的score可以是重复的</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">SortedsetTest</span> </span>&#123;</span><br><span class="line">    <span class="keyword">public</span>  Jedis jedis = JedisPoolUtil.getJedis();</span><br><span class="line"><span class="comment">//    添加元素</span></span><br><span class="line">    <span class="meta">@Test</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">fun</span><span class="params">()</span></span>&#123;</span><br><span class="line">        jedis.zadd(<span class="string">&quot;mysort&quot;</span>,<span class="number">100.0</span>, <span class="string">&quot;zhangsan&quot;</span>);</span><br><span class="line">        jedis.zadd(<span class="string">&quot;mysort&quot;</span>,<span class="number">200.0</span>,<span class="string">&quot;lisi&quot;</span>);</span><br><span class="line">        jedis.zadd(<span class="string">&quot;mysort&quot;</span>,<span class="number">50.0</span>,<span class="string">&quot;wangwu&quot;</span>);</span><br><span class="line">        Map&lt;String ,Double&gt;map = <span class="keyword">new</span> HashMap&lt;String ,Double&gt;();</span><br><span class="line">        map.put(<span class="string">&quot;mutouliu&quot;</span>,<span class="number">70.0</span>);</span><br><span class="line"></span><br><span class="line">        jedis.zadd(<span class="string">&quot;mysort&quot;</span>,map);</span><br><span class="line">        Set&lt;String&gt; mysort = jedis.zrange(<span class="string">&quot;mysort&quot;</span>, <span class="number">0</span>, -<span class="number">1</span>);</span><br><span class="line">        System.out.println(mysort);</span><br><span class="line">        Set&lt;String&gt; mysort1 = jedis.zrange(<span class="string">&quot;mysort&quot;</span>, <span class="number">1</span>, <span class="number">2</span>);</span><br><span class="line">        System.out.println(mysort1);</span><br><span class="line">    &#125;</span><br><span class="line">&#125; </span><br></pre></td></tr></table></figure>
+
+<h3 id="redis相比memcached有哪些优势"><a href="#redis相比memcached有哪些优势" class="headerlink" title="redis相比memcached有哪些优势"></a>redis相比memcached有哪些优势</h3><ol>
+<li>memcached所有的值均是简单的字符串，redis作为其替代者，支持更为丰富的数据类型 </li>
+<li>redis的速度比memcached快很多</li>
+<li>redis可以持久化其数据</li>
+</ol>
+<h3 id="Memcache与Redis的区别都有哪些"><a href="#Memcache与Redis的区别都有哪些" class="headerlink" title="Memcache与Redis的区别都有哪些"></a>Memcache与Redis的区别都有哪些</h3><ol>
+<li>存储方式 Memecache把数据全部存在内存之中，断电后会挂掉，数据不能超过内存大小。 Redis有部份存在硬盘上，这样能保证数据的持久性。 </li>
+<li>数据支持类型 Memcache对数据类型支持相对简单。 Redis有复杂的数据类型。 </li>
+<li>使用底层模型不同 它们之间底层实现方式 以及与客户端之间通信的应用协议不一样。 Redis直接自己构建了VM 机制 ，因为一般的系统调用系统函数的话，会浪费一定的时间去移动和请求。 </li>
+</ol>
+<h3 id="redis常见性能问题和解决方案"><a href="#redis常见性能问题和解决方案" class="headerlink" title="redis常见性能问题和解决方案:"></a>redis常见性能问题和解决方案:</h3><ol>
+<li>Master写内存快照，save命令调度rdbSave函数，会阻塞主线程的工作，当快照比较大时对性能影响是非常大的，会间断性暂停服务，所以Master最好不要写内存快照。</li>
+<li>Master AOF持久化，如果不重写AOF文件，这个持久化方式对性能的影响是最小的，但是AOF文件会不断增大，AOF文件过大会影响Master重启的恢复速度。Master最好不要做任何持久化工作，包括内存快照和AOF日志文件，特别是不要启用内存快照做持久化,如果数据比较关键，某个Slave开启AOF备份数据，策略为每秒同步一次。</li>
+<li>Master调用BGREWRITEAOF重写AOF文件，AOF在重写的时候会占大量的CPU和内存资源，导致服务load过高，出现短暂服务暂停现象。</li>
+<li>Redis主从复制的性能问题，为了主从复制的速度和连接的稳定性，Slave和Master最好在同一个局域网内</li>
+</ol>
+<h3 id="mySQL里有2000w数据，redis中只存20w的数据，如何保证redis中的数据都是热点数据"><a href="#mySQL里有2000w数据，redis中只存20w的数据，如何保证redis中的数据都是热点数据" class="headerlink" title="mySQL里有2000w数据，redis中只存20w的数据，如何保证redis中的数据都是热点数据"></a>mySQL里有2000w数据，redis中只存20w的数据，如何保证redis中的数据都是热点数据</h3><blockquote>
+<p><em>redis 内存数据集大小上升到一定大小的时候，就会施行数据淘汰策略（回收策略）。</em></p>
+</blockquote>
+<p><strong>redis 提供 6种数据淘汰策略：</strong></p>
+<ol>
+<li>volatile-lru：从已设置过期时间的数据集（server.db[i].expires）中挑选最近最少使用的数据淘汰</li>
+<li>volatile-ttl：从已设置过期时间的数据集（server.db[i].expires）中挑选将要过期的数据淘汰</li>
+<li>volatile-random：从已设置过期时间的数据集（server.db[i].expires）中任意选择数据淘汰</li>
+<li>allkeys-lru：从数据集（server.db[i].dict）中挑选最近最少使用的数据淘汰</li>
+<li>allkeys-random：从数据集（server.db[i].dict）中任意选择数据淘汰</li>
+<li>no-enviction（驱逐）：禁止驱逐数据</li>
+</ol>
+<h3 id="为什么redis需要把所有数据放到内存中"><a href="#为什么redis需要把所有数据放到内存中" class="headerlink" title="为什么redis需要把所有数据放到内存中"></a>为什么redis需要把所有数据放到内存中</h3><p>Redis为了达到最快的读写速度将数据都读到内存中，并通过异步的方式将数据写入磁盘。所以redis具有快速和数据持久化的特征。如果不将数据放在内存中，磁盘I/O速度为严重影响redis的性能。在内存越来越便宜的今天，redis将会越来越受欢迎。</p>
+<p><strong>如果设置了最大使用的内存，则数据已有记录数达到内存限值后不能继续插入新值。</strong></p>
+<h3 id="Redis是单进程单线程的"><a href="#Redis是单进程单线程的" class="headerlink" title="Redis是单进程单线程的"></a>Redis是单进程单线程的</h3><p>redis利用队列技术将并发访问变为串行访问，消除了传统数据库串行控制的开销</p>
+<h3 id="redis的并发竞争问题如何解决"><a href="#redis的并发竞争问题如何解决" class="headerlink" title="redis的并发竞争问题如何解决"></a>redis的并发竞争问题如何解决</h3><p>Redis为单进程单线程模式，采用队列模式将并发访问变为串行访问。Redis本身没有锁的概念，Redis对于多个客户端连接并不存在竞争，但是在Jedis客户端对Redis进行并发访问时会发生连接超时、数据转换错误、阻塞、客户端关闭连接等问题，这些问题均是由于客户端连接混乱造成。</p>
+<p><strong>对此有2种解决方法：</strong></p>
+<p>1.客户端角度，为保证每个客户端间正常有序与Redis进行通信，对连接进行池化，同时对客户端读写Redis操作采用内部锁synchronized。</p>
+<p>2.服务器角度，利用setnx实现锁。</p>
+<blockquote>
+<p> <em>注：对于第一种，需要应用程序自己处理资源的同步，可以使用的方法比较通俗，可以使用synchronized也可以使用lock；第二种需要用到Redis的setnx命令，但是需要注意一些问题。</em></p>
+</blockquote>
+<h3 id="redis持久化的几种方式"><a href="#redis持久化的几种方式" class="headerlink" title="redis持久化的几种方式"></a>redis持久化的几种方式</h3><h4 id="快照（snapshots）"><a href="#快照（snapshots）" class="headerlink" title="快照（snapshots）"></a><strong>快照（snapshots）</strong></h4><p>缺省情况情况下，Redis把数据快照存放在磁盘上的二进制文件中，文件名为dump.rdb。你可以配置Redis的持久化策略，例如数据集中每N秒钟有超过M次更新，就将数据写入磁盘；或者你可以手工调用命令SAVE或BGSAVE。</p>
+<p><strong>工作原理</strong></p>
+<ul>
+<li>Redis forks.</li>
+<li>子进程开始将数据写到临时RDB文件中。</li>
+<li>当子进程完成写RDB文件，用新文件替换老文件。</li>
+<li>这种方式可以使Redis使用copy-on-write技术。</li>
+</ul>
+<h4 id="AOF"><a href="#AOF" class="headerlink" title="AOF"></a><strong>AOF</strong></h4><p>快照模式并不十分健壮，当系统停止，或者无意中Redis被kill掉，最后写入Redis的数据就会丢失。</p>
+<p>这对某些应用也许不是大问题，但对于要求高可靠性的应用来说，Redis就不是一个合适的选择。Append-only文件模式是另一种选择。你可以在配置文件中打开AOF模式</p>
+<h4 id="虚拟内存方式"><a href="#虚拟内存方式" class="headerlink" title="虚拟内存方式"></a><strong>虚拟内存方式</strong></h4><p>当你的key很小而value很大时,使用VM的效果会比较好.因为这样节约的内存比较大.</p>
+<p>当你的key不小时,可以考虑使用一些非常方法将很大的key变成很大的value,比如你可以考虑将key,value组合成一个新的value.</p>
+<p>vm-max-threads这个参数,可以设置访问swap文件的线程数,设置最好不要超过机器的核数,如果设置为0,那么所有对swap文件的操作都是串行的.可能会造成比较长时间的延迟,但是对数据完整性有很好的保证.</p>
+<p>自己测试的时候发现用虚拟内存性能也不错。如果数据量很大，可以考虑分布式或者其他数据库。</p>
+<h3 id="redis的缓存失效策略和主键失效机制"><a href="#redis的缓存失效策略和主键失效机制" class="headerlink" title="redis的缓存失效策略和主键失效机制"></a><strong>redis的缓存失效策略和主键失效机制</strong></h3><p>作为缓存系统都要定期清理无效数据，就需要一个主键失效和淘汰策略.</p>
+<p>在Redis当中，有生存期的key被称为volatile。在创建缓存时，要为给定的key设置生存期，当key过期的时候（生存期为0），它可能会被删除。</p>
+<h4 id="1、影响生存时间的一些操作"><a href="#1、影响生存时间的一些操作" class="headerlink" title="1、影响生存时间的一些操作"></a><strong>1、影响生存时间的一些操作</strong></h4><p>生存时间可以通过使用 DEL 命令来删除整个 key 来移除，或者被 SET 和 GETSET 命令覆盖原来的数据，也就是说，修改key对应的value和使用另外相同的key和value来覆盖以后，当前数据的生存时间不同。</p>
+<p>比如说，对一个 key 执行INCR命令，对一个列表进行LPUSH命令，或者对一个哈希表执行HSET命令，这类操作都不会修改 key 本身的生存时间。另一方面，如果使用RENAME对一个 key 进行改名，那么改名后的 key的生存时间和改名前一样。</p>
+<p>RENAME命令的另一种可能是，尝试将一个带生存时间的 key 改名成另一个带生存时间的 another_key ，这时旧的 another_key (以及它的生存时间)会被删除，然后旧的 key 会改名为 another_key ，因此，新的 another_key 的生存时间也和原本的 key 一样。使用PERSIST命令可以在不删除 key 的情况下，移除 key 的生存时间，让 key 重新成为一个persistent key 。</p>
+<h4 id="如何更新生存时间"><a href="#如何更新生存时间" class="headerlink" title="如何更新生存时间"></a><strong>如何更新生存时间</strong></h4><p>可以对一个已经带有生存时间的 key 执行EXPIRE命令，新指定的生存时间会取代旧的生存时间。过期时间的精度已经被控制在1ms之内，主键失效的时间复杂度是O（1），EXPIRE和TTL命令搭配使用，TTL可以查看key的当前生存时间。设置成功返回 1；当 key 不存在或者不能为 key 设置生存时间时，返回 0 。</p>
+<h4 id="最大缓存配置："><a href="#最大缓存配置：" class="headerlink" title="最大缓存配置："></a><strong>最大缓存配置：</strong></h4><p>在 redis 中，允许用户设置最大使用内存大小，server.maxmemory默认为0，没有指定最大缓存，如果有新的数据添加，超过最大内存，则会使redis崩溃，所以一定要设置。redis 内存数据集大小上升到一定大小的时候，就会实行数据淘汰策略。</p>
+<p><strong>redis 提供 6种数据淘汰策略：</strong></p>
+<ol>
+<li>volatile-lru：从已设置过期时间的数据集（server.db[i].expires）中挑选最近最少使用的数据淘汰</li>
+<li>volatile-ttl：从已设置过期时间的数据集（server.db[i].expires）中挑选将要过期的数据淘汰</li>
+<li> volatile-random：从已设置过期时间的数据集（server.db[i].expires）中任意选择数据淘汰</li>
+<li>allkeys-lru：从数据集（server.db[i].dict）中挑选最近最少使用的数据淘汰</li>
+<li>allkeys-random：从数据集（server.db[i].dict）中任意选择数据淘汰</li>
+<li>no-enviction（驱逐）：禁止驱逐数据</li>
+</ol>
+<p>注意这里的6种机制，volatile和allkeys规定了是对已设置过期时间的数据集淘汰数据还是从全部数据集淘汰数据，后面的lru、ttl以及random是三种不同的淘汰策略，再加上一种no-enviction永不回收的策略。</p>
+<p><strong>使用策略规则：</strong></p>
+<ol>
+<li>如果数据呈现幂律分布，也就是一部分数据访问频率高，一部分数据访问频率低，则使用allkeys-lru</li>
+<li>如果数据呈现平等分布，也就是所有的数据访问频率都相同，则使用allkeys-random</li>
+</ol>
+<h4 id="三种数据淘汰策略："><a href="#三种数据淘汰策略：" class="headerlink" title="三种数据淘汰策略："></a><strong>三种数据淘汰策略：</strong></h4><p>ttl和random比较容易理解，实现也会比较简单。主要是Lru最近最少使用淘汰策略，设计上会对key 按失效时间排序，然后取最先失效的key进行淘汰</p>
+<h3 id="redis-适合的场景"><a href="#redis-适合的场景" class="headerlink" title="redis 适合的场景"></a><strong>redis 适合的场景</strong></h3><p>Redis最适合所有数据in-momory的场景，虽然Redis也提供持久化功能，但实际更多的是一个disk-backed的功能，跟传统意义上的持久化有比较大的差别，那么可能大家就会有疑问，似乎Redis更像一个加强版的Memcached，那么何时使用Memcached，何时使用Redis呢?</p>
+<p>如果简单地比较Redis与Memcached的区别，大多数都会得到以下观点：</p>
+<ol>
+<li>Redis不仅仅支持简单的k/v类型的数据，同时还提供list，set，zset，hash等数据结构的存储。</li>
+<li>Redis支持数据的备份，即master-slave模式的数据备份。</li>
+<li>Redis支持数据的持久化，可以将内存中的数据保持在磁盘中，重启的时候可以再次加载进行使用。</li>
+</ol>
+<h4 id="会话缓存（Session-Cache）"><a href="#会话缓存（Session-Cache）" class="headerlink" title="会话缓存（Session Cache）"></a><strong>会话缓存（Session Cache）</strong></h4><p>最常用的一种使用Redis的情景是会话缓存（session cache）。用Redis缓存会话比其他存储（如Memcached）的优势在于：Redis提供持久化。当维护一个不是严格要求一致性的缓存时，如果用户的购物车信息全部丢失，大部分人都会不高兴的，现在，他们还会这样吗？</p>
+<p>幸运的是，随着 Redis 这些年的改进，很容易找到怎么恰当的使用Redis来缓存会话的文档。甚至广为人知的商业平台Magento也提供Redis的插件。</p>
+<h4 id="全页缓存（FPC）"><a href="#全页缓存（FPC）" class="headerlink" title="全页缓存（FPC）"></a><strong>全页缓存（FPC）</strong></h4><p>除基本的会话token之外，Redis还提供很简便的FPC平台。回到一致性问题，即使重启了Redis实例，因为有磁盘的持久化，用户也不会看到页面加载速度的下降，这是一个极大改进，类似PHP本地FPC。</p>
+<p>再次以Magento为例，Magento提供一个插件来使用Redis作为全页缓存后端。</p>
+<p>此外，对WordPress的用户来说，Pantheon有一个非常好的插件 wp-redis，这个插件能帮助你以最快速度加载你曾浏览过的页面。</p>
+<h4 id="队列"><a href="#队列" class="headerlink" title="队列"></a><strong>队列</strong></h4><p>Reids在内存存储引擎领域的一大优点是提供 list 和 set 操作，这使得Redis能作为一个很好的消息队列平台来使用。Redis作为队列使用的操作，就类似于本地程序语言（如Python）对 list 的 push/pop 操作。</p>
+<p>如果你快速的在Google中搜索“Redis queues”，你马上就能找到大量的开源项目，这些项目的目的就是利用Redis创建非常好的后端工具，以满足各种队列需求。例如，Celery有一个后台就是使用Redis作为broker，你可以从这里去查看。</p>
+<h4 id="排行榜-计数器"><a href="#排行榜-计数器" class="headerlink" title="排行榜/计数器"></a><strong>排行榜/计数器</strong></h4><p>Redis在内存中对数字进行递增或递减的操作实现的非常好。集合（Set）和有序集合（Sorted Set）也使得我们在执行这些操作的时候变的非常简单，Redis只是正好提供了这两种数据结构。</p>
+<p>所以，我们要从排序集合中获取到排名最靠前的10个用户–我们称之为“user_scores”，我们只需要像下面一样执行即可：</p>
+<p>当然，这是假定你是根据你用户的分数做递增的排序。如果你想返回用户及用户的分数，你需要这样执行：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">ZRANGE user_scores 0 10 WITHSCORES</span><br></pre></td></tr></table></figure>
+
+<p>Agora Games就是一个很好的例子，用Ruby实现的，它的排行榜就是使用Redis来存储数据的，你可以在这里看到。</p>
+<h4 id="发布-订阅"><a href="#发布-订阅" class="headerlink" title="发布/订阅"></a><strong>发布/订阅</strong></h4><p>最后（但肯定不是最不重要的）是Redis的发布/订阅功能。发布/订阅的使用场景确实非常多。我已看见人们在社交网络连接中使用，还可作为基于发布/订阅的脚本触发器，甚至用Redis的发布/订阅功能来建立聊天系统！</p>
+<p>Redis提供的所有特性中，我感觉这个是喜欢的人最少的一个，虽然它为用户提供如果此多功能。</p>
+<h3 id="参考文献"><a href="#参考文献" class="headerlink" title="参考文献"></a>参考文献</h3><ul>
+<li><a target="_blank" rel="external nofollow noopener noreferrer" href="https://juejin.im/entry/5b7cfe976fb9a01a13366d95?utm_source=gold_browser_extension">https://juejin.im/entry/5b7cfe976fb9a01a13366d95?utm_source=gold_browser_extension</a></li>
+<li><a target="_blank" rel="external nofollow noopener noreferrer" href="https://mp.weixin.qq.com/s?__biz=MzI4Njc5NjM1NQ==&mid=2247486252&idx=1&sn=d72ee144765b3b16964dc4ce0f54ccd7&chksm=ebd63400dca1bd16fada25e175c052fc7528f85750d2e0c4bfd9bd561c8aa49fe019f32c21ae&mpshare=1&scene=24&srcid=09020vky9fT4UYZG8JpeePdz#rd">Redis的那些最常见面试问题</a></li>
+<li><a target="_blank" rel="external nofollow noopener noreferrer" href="https://www.cnblogs.com/whcwkw1314/p/8922031.html">java中Redis5大基本类型的用法</a></li>
+</ul>
+
+
+<div class="article-footer fs14"><section id="license"><div class="header"><span>许可协议</span></div><div class="body"><p>本文采用 <a target="_blank" rel="external nofollow noopener noreferrer" href="https://creativecommons.org/licenses/by-nc-sa/4.0/">署名-非商业性使用-相同方式共享 4.0 国际</a> 许可协议，转载请注明出处。</p>
+</div></section></div>
+
+</article>
+
+<div class="related-wrap" id="read-next"><section class="header cap theme"><span>接下来阅读</span></section><section class="body"><div class="post-title h2"><a href="/post/762945f0/">Spring事务管理</a></div><div class="post-title fs14"><a href="/post/158677550/">上一篇：Java集合框架</a></div></section></div>
+
+
+<div class="related-wrap" id="related-posts">
+    <section class="header">
+      <div class="title cap theme">您可能感兴趣的文章</div>
+    </section>
+    <section class="body">
+    <div class="related-posts"><a class="item" href="/post/3508477588/" title="Redis配置认证密码"><div class="img"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://github.com/cayzlh/git-img-repository/raw/master/blog/2018091302/1.png"></div><span class="title">Redis配置认证密码</span><span class="excerpt">配置Redis使用密码认证</span></a><a class="item" href="/post/1639182984/" title="SpringBoot实现Redis分布式锁"><div class="img"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2021/04/16092916181285691618128569411.jpg"></div><span class="title">SpringBoot实现Redis分布式锁</span><span class="excerpt">基于Redis的分布式事务锁</span></a><a class="item" href="/post/3136136825/" title="SpringBoot自动部署脚本"><div class="img"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2021/04/22353816180653381618065338077.jpg"></div><span class="title">SpringBoot自动部署脚本</span><span class="excerpt">SpringBoot自动部署脚本</span></a><a class="item" href="/post/2348855541/" title="SpringBoot启动脚本"><div class="img"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2021/04/22353816180653381618065338077.jpg"></div><span class="title">SpringBoot启动脚本</span><span class="excerpt">SpringBoot启动脚本</span></a><a class="item" href="/post/20210402/" title="HomeBrew换源"><div class="img"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://7.dusays.com/2021/04/13/9deb48fe1deac.svg"></div><span class="title">HomeBrew换源</span><span class="excerpt">HomeBrew换源</span></a></div></section></div>
+
+
+
+
+
+      
+<footer class="page-footer fs12"><hr><div><p>本站所有文章除特别声明外，均采用 <a target="_blank" rel="external nofollow noopener noreferrer" href="https://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY-NC-SA 4.0</a> 许可协议，转载请注明出处</p>
+<p>本站由 <a href="https://www.cayzlh.com/">@chen anyu</a> 创建，使用 <a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/xaoxuu/hexo-theme-stellar/tree/1.1.0">Stellar</a> 作为主题，您可以在 <a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/cayzlh/cayzlh.github.io">GitHub</a> 找到本站源码</p>
+<p>本站托管于 <a target="_blank" rel="external nofollow noopener noreferrer" href="https://cloudbase.net/">云开发CloudBase</a> &amp; <a target="_blank" rel="external nofollow noopener noreferrer" href="https://pages.github.com/">Github Pages</a>，粤ICP备<a target="_blank" rel="external nofollow noopener noreferrer" href="https://beian.miit.gov.cn/">20058712</a>号</p>
+<div><span id="timeDate">载入天数...</span><span id="times">载入时分秒...</span>，<span id="busuanzi_container_site_pv">总访问量: <span id="busuanzi_value_site_pv"></span>次</span>，<span id="busuanzi_container_site_uv">访客数: <span id="busuanzi_value_site_uv"></span>人</span></div><p><a target="_blank" rel="external nofollow noopener noreferrer" href="https://travellings.now.sh/"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://travellings.vercel.app/assets/logo.gif" alt="开往-友链接力" width="100"></a></p>
+</div></footer>
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<script>
+  function createtime() {
+    var now = new Date();
+    var grt= new Date("05/26/2019 04:40:00");
+    now.setTime(now.getTime()+250);
+    days = (now - grt ) / 1000 / 60 / 60 / 24; dnum = Math.floor(days);
+    hours = (now - grt ) / 1000 / 60 / 60 - (24 * dnum); hnum = Math.floor(hours);
+    if(String(hnum).length ==1 ){hnum = "0" + hnum;} minutes = (now - grt ) / 1000 /60 - (24 * 60 * dnum) - (60 * hnum);
+    mnum = Math.floor(minutes); if(String(mnum).length ==1 ){mnum = "0" + mnum;}
+    seconds = (now - grt ) / 1000 - (24 * 60 * 60 * dnum) - (60 * 60 * hnum) - (60 * mnum);
+    snum = Math.round(seconds); if(String(snum).length ==1 ){snum = "0" + snum;}
+    document.getElementById("timeDate").innerHTML = "本站已运行 "+dnum+" 天 ";
+    document.getElementById("times").innerHTML = hnum + " 小时 " + mnum + " 分 " + snum + " 秒";
+  };
+  setInterval("createtime()",250);
+</script>
+      <div class="float-panel mobile-only" style="display:none">
+  <button type="button" class="sidebar-toggle mobile" onclick="sidebar.toggle()">
+    <svg class="icon" viewbox="0 0 1228 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2849"><path d="M0 0m97.390199 0l973.901995 0q97.390199 0 97.390199 97.390199l0 0q0 97.390199-97.390199 97.3902l-973.901995 0q-97.390199 0-97.390199-97.3902l0 0q0-97.390199 97.390199-97.390199Z" p-id="2850"/><path d="M0 389.560798m97.390199 0l973.901995 0q97.390199 0 97.390199 97.390199l0 0q0 97.390199-97.390199 97.3902l-973.901995 0q-97.390199 0-97.390199-97.3902l0 0q0-97.390199 97.390199-97.390199Z" p-id="2851"/><path d="M0 779.121596m97.390199 0l973.901995 0q97.390199 0 97.390199 97.390199l0 0q0 97.390199-97.390199 97.390199l-973.901995 0q-97.390199 0-97.390199-97.390199l0 0q0-97.390199 97.390199-97.390199Z" p-id="2852"/></svg>
+  </button>
+</div>
+
+    </div>
+  </div>
+  <div class="scripts">
+    <script type="text/javascript">
+  stellar = {
+    // 懒加载 css https://github.com/filamentgroup/loadCSS
+    loadCSS: (href, before, media, attributes) => {
+      var doc = window.document;
+      var ss = doc.createElement("link");
+      var ref;
+      if (before) {
+        ref = before;
+      } else {
+        var refs = (doc.body || doc.getElementsByTagName("head")[0]).childNodes;
+        ref = refs[refs.length - 1];
+      }
+      var sheets = doc.styleSheets;
+      if (attributes) {
+        for (var attributeName in attributes) {
+          if (attributes.hasOwnProperty(attributeName)) {
+            ss.setAttribute(attributeName, attributes[attributeName]);
+          }
+        }
+      }
+      ss.rel = "stylesheet";
+      ss.href = href;
+      ss.media = "only x";
+      function ready(cb) {
+        if (doc.body) {
+          return cb();
+        }
+        setTimeout(function () {
+          ready(cb);
+        });
+      }
+      ready(function () {
+        ref.parentNode.insertBefore(ss, before ? ref : ref.nextSibling);
+      });
+      var onloadcssdefined = function (cb) {
+        var resolvedHref = ss.href;
+        var i = sheets.length;
+        while (i--) {
+          if (sheets[i].href === resolvedHref) {
+            return cb();
+          }
+        }
+        setTimeout(function () {
+          onloadcssdefined(cb);
+        });
+      };
+      function loadCB() {
+        if (ss.addEventListener) {
+          ss.removeEventListener("load", loadCB);
+        }
+        ss.media = media || "all";
+      }
+      if (ss.addEventListener) {
+        ss.addEventListener("load", loadCB);
+      }
+      ss.onloadcssdefined = onloadcssdefined;
+      onloadcssdefined(loadCB);
+      return ss;
+    },
+
+    // 从 butterfly 和 volantis 获得灵感
+    loadScript: (src, opt) => new Promise((resolve, reject) => {
+      var script = document.createElement('script')
+      script.src = src
+      if (opt) {
+        for (let key of Object.keys(opt)) {
+          script[key] = opt[key]
+        }
+      } else {
+        // 默认异步，如果需要同步，第二个参数传入 {} 即可
+        script.async = true
+      }
+      script.onerror = reject
+      script.onload = script.onreadystatechange = function() {
+        const loadState = this.readyState
+        if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+        script.onload = script.onreadystatechange = null
+        resolve()
+      }
+      document.head.appendChild(script)
+    }),
+
+    // https://github.com/jerryc127/hexo-theme-butterfly
+    jQuery: (fn) => {
+      if (typeof jQuery === 'undefined') {
+        stellar.loadScript(stellar.plugins.jQuery).then(fn)
+      } else {
+        fn()
+      }
+    }
+  };
+  stellar.github = 'https://github.com/xaoxuu/hexo-theme-stellar/tree/1.1.0';
+  stellar.config = {
+    date_suffix: {
+      just: '刚刚',
+      min: '分钟前',
+      hour: '小时前',
+      day: '天前',
+      month: '个月前',
+    },
+  };
+
+  // required plugins (only load if needs)
+  stellar.plugins = {
+    jQuery: 'https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js',
+    sitesjs: '/js/plugins/sites.js',
+    friendsjs: '/js/plugins/friends.js',
+  };
+
+  // optional plugins
+  if ('true' == 'true') {
+    stellar.plugins.lazyload = Object.assign({"enable":true,"js":"https://cdn.jsdelivr.net/npm/vanilla-lazyload@17.3.1/dist/lazyload.min.js","transition":"blur"});
+  }
+  if ('true' == 'true') {
+    stellar.plugins.swiper = Object.assign({"enable":true,"css":"https://unpkg.com/swiper/swiper-bundle.min.css","js":"https://unpkg.com/swiper/swiper-bundle.min.js"});
+  }
+  if ('' == 'true') {
+    stellar.plugins.scrollreveal = Object.assign({"enable":null,"js":"https://cdn.jsdelivr.net/npm/scrollreveal@4.0.9/dist/scrollreveal.min.js","distance":"8px","duration":500,"interval":100,"scale":1});
+  }
+  if ('true' == 'true') {
+    stellar.plugins.preload = Object.assign({"enable":true,"service":"flying_pages","instant_page":"https://cdn.jsdelivr.net/gh/volantis-x/cdn-volantis@4.1.2/js/instant_page.js","flying_pages":"https://cdn.jsdelivr.net/gh/gijo-varghese/flying-pages@2.1.2/flying-pages.min.js"});
+  }
+</script>
+
+<!-- required -->
+
+  
+<script src="/js/main.js" async></script>
+
+
+
+<!-- optional -->
+
+  <script>
+  function utterances(){
+    if(!document.getElementById("utterances"))return;
+    setTimeout(function() {
+      var checkUtterances = setInterval(function () {
+        var el = document.getElementById("utterances");
+        if (!el) return
+        clearInterval(checkUtterances)
+        try {
+          el.innerHTML="";
+        } catch (error) {}
+        var script = document.createElement('script');
+        script.src = 'https://utteranc.es/client.js';
+        const keys = ['repo', 'issue-term', 'issue-number', 'theme', 'label', 'crossorigin'];
+        keys.forEach((key, i) => {
+          if (el.attributes[key] && el.attributes[key].value) {
+            script.setAttribute(key, el.attributes[key].value);
+          }
+        });
+        el.appendChild(script);
+       }, 200)
+    });
+  }
+  utterances();
+</script>
+
+
+
+
+<!-- inject -->
+
+
+  </div>
+</body>
+</html>

@@ -1,0 +1,1058 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta name="generator" content="Hexo 5.4.0">
+  <meta charset="utf-8">
+  
+
+  <meta http-equiv="x-dns-prefetch-control" content="on">
+  <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+
+  <meta name="renderer" content="webkit">
+  <meta name="force-rendering" content="webkit">
+  <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+  <meta name="HandheldFriendly" content="True">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <title>Spring源码分析：IOC之深入分析Bean的类型转换体系 - CAYZLH</title>
+
+  
+  <meta name="description" content="
+本文作者：chenssy
+出处：http://cmsblogs.com/?p=3983
+在学习Spring源码的过程中发现的好站+好贴，原创不易感谢作者。
+Spring版本：Spring 5.0.6.RELEASE
+
+我们知道不管 bean 对象里面的属性时什么类型，他们都是通过 XML 、...">
+
+  <!-- feed -->
+  
+    <link rel="alternate" href="/atom.xml" title="CAYZLH" type="application/atom+xml">
+  
+
+  
+    
+<link rel="stylesheet" href="/css/main.css">
+
+  
+
+  
+    
+      <meta name="msapplication-TileColor" content="#2d89ef">
+    
+      <meta name="msapplication-config" content="/assets/favicon/browserconfig.xml">
+    
+      <meta name="theme-color" content="#ffffff">
+    
+      <link rel="shortcut icon" href="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/logo/favicon.ico">
+    
+      <link rel="icon" type="image/png" href="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/logo/favicon-192x192.png" sizes="192x192">
+    
+      <link rel="apple-touch-icon" sizes="180x180" href="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/logo/apple-touch-icon.png">
+    
+  
+</head>
+
+<body>
+  
+
+
+  <div class="l_body" id="start">
+    <aside class="l_left">
+    
+
+<header class="header">
+  <div class="logo-wrap">
+  
+    <a class="avatar" href="/">
+      
+        <img no-lazy class="bg" src="https://cdn.jsdelivr.net/gh/cdn-x/placeholder@1.0.2/avatar/round/rainbow64@3x.webp" onerror="javascript:this.classList.add('error');this.src='https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2021/04/16084216181285221618128522255.svg';">
+      
+      <img no-lazy class="avatar" src="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/image/IMG_4207.JPG" onerror="javascript:this.classList.add('error');this.src='https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2021/04/16084216181285221618128522255.svg';">
+    </a>
+  
+  
+    <a class="title" href="/">
+      CAYZLH
+    </a>
+  
+</div>
+
+  <nav class="menu dis-select"><a class="nav-item" href="/">文章</a><a class="nav-item active" href="/wiki/">文档</a><a class="nav-item" href="/talking/">动态</a><a class="nav-item" href="/about/">更多</a></nav>
+</header>
+
+<div class="widgets">
+  
+    
+      
+      
+<div class="widget-wrap" id="toc"><div class="widget-header h4 dis-select"><span class="name">本文目录</span></div><div class="widget-body fs14 wiki"><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/index.html"><span class="toc-text">Spring源码分析</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC1.html"><span class="toc-text">4张图带你读懂Spring IOC的世界</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC2.html"><span class="toc-text">IOC之深入理解SpringIoC</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC24.html"><span class="toc-text">IOC之深入分析PropertyPlaceholderConfigurer</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC25.html"><span class="toc-text">IOC之PropertyPlaceholderConfigurer的应用</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC2_5.html"><span class="toc-text">IOC之Spring统一资源加载策略</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC3.html"><span class="toc-text">IoC之加载BeanDefinition</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC4.html"><span class="toc-text">IOC之获取验证模型</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC5.html"><span class="toc-text">IOC之获取Document对象</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC6.html"><span class="toc-text">IoC之注册BeanDefinitions</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC7.html"><span class="toc-text">IoC之解析Bean：解析import标签</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC8.html"><span class="toc-text">IOC之解析bean标签：开启解析进程</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC9.html"><span class="toc-text">IOC之解析bean标签：BeanDefinition</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC10.html"><span class="toc-text">IoC之解析bean标签：meta、lookup-method、replace-method</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC11.html"><span class="toc-text">IOC之解析bean标签：constructor-arg、property子元素</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC12.html"><span class="toc-text">IoC之解析bean标签：解析自定义标签</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC13.html"><span class="toc-text">IoC之注册解析的BeanDefinitions</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC14.html"><span class="toc-text">IoC之装载BeanDefinitions总结</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC15.html"><span class="toc-text">IOC之开启bean的加载</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC16.html"><span class="toc-text">IOC之从单例缓存中获取单例bean</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC16_4.html"><span class="toc-text">IOC之parentBeanFactory与依赖处理</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC16_5.html"><span class="toc-text">IOC之分析各scope的bean创建</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC16_6.html"><span class="toc-text">IOC之开启Bean的实例化进程</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC16_7.html"><span class="toc-text">IOC之Factory实例化bean</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC16_8.html"><span class="toc-text">IOC之构造函数实例化bean</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC17.html"><span class="toc-text">IOC之属性填充</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC18.html"><span class="toc-text">IOC之循环依赖</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC19.html"><span class="toc-text">IOC之Bean的初始化</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC20.html"><span class="toc-text">IOC之加载Bean——总结篇</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC21.html"><span class="toc-text">IOC之深入分析Aware接口</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC22.html"><span class="toc-text">IOC之深入分析BeanPostProcessor</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC23.html"><span class="toc-text">IOC之深入分析InitializingBean和init-method</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC25_5.html"><span class="toc-text">IOC之深入分析BeanFactoryPostProcessor</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC26.html"><span class="toc-text">IOC之深入分析PropertyOverrideConfigurer</span></a></div><div class="doc-tree active"><a class="doc-tree-link active" href="/wiki/source_of_spring/springIOC27.html"><span class="toc-text">IOC之深入分析Bean的类型转换体系</span></a>undefined</div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC28.html"><span class="toc-text">IOC之自定义类型转换器</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC29.html"><span class="toc-text">IOC之分析BeanWrapper</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC30.html"><span class="toc-text">IOC之bean的实例化策略：InstantiationStrategy</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC31.html"><span class="toc-text">IOC之BeanDefinition注册机：BeanDefinitionRegistry</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC32.html"><span class="toc-text">Spring的环境&属性：PropertySource、Environment、Profile</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC33.html"><span class="toc-text">IOC之分析bean的生命周期</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC34.html"><span class="toc-text">ApplicationContext相关接口架构分析</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC35.html"><span class="toc-text">深入分析ApplicationContext的refresh()</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/source_of_spring/springIOC36.html"><span class="toc-text">Spring AOP和Spring Transaction源码资料整理</span></a></div></div></div>
+
+    
+  
+    
+      
+      
+  
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+      <div class="widget-wrap" id="related">
+        <div class="widget-header h4 dis-select">
+          <span class="name">更多编程技术</span>
+        </div>
+        <div class="widget-body fs14">
+          
+            
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+                <div class="post-title">
+                  <a href="/wiki/design_patterns/index.html">
+                    设计模式
+                  </a>
+                </div>
+              
+            
+          
+            
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+          
+            
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+                <div class="post-title">
+                  <a href="/wiki/springcloud/index.html">
+                    SpringCloud
+                  </a>
+                </div>
+              
+            
+          
+        </div>
+      </div>
+    
+  
+
+
+    
+  
+</div>
+<footer class="footer"><div class="social-wrap dis-select"><a class="social" href="https://github.com/cayzlh" target="_blank" rel="external nofollow noopener noreferrer"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cdn-x/placeholder@1.0.1/social/08a41b181ce68.svg"></a><a class="social" href="https://telegram.me/Q2F5emxo" target="_blank" rel="external nofollow noopener noreferrer"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/image/guanyuwomen.svg"></a><a class="social" href="/about/#comments" rel="noopener noreferrer"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cdn-x/placeholder@1.0.1/social/942ebbf1a4b91.svg"></a></div></footer>
+
+    </aside>
+    <div class="l_main">
+      
+
+      
+
+  
+  
+  <div class="bread-nav fs12">
+  
+    
+    <div id="breadcrumb">
+      <a class="cap breadcrumb" href="/">主页</a>
+      <span class="sep"></span>
+      
+        <a class="cap breadcrumb" href="/wiki/">文档</a>
+      
+      
+        <span class="sep"></span>
+        <a class="cap breadcrumb" href="/wiki/categories/programmer/index.html">编程技术</a>
+      
+      
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        <span class="sep"></span>
+        <a class="cap breadcrumb" href="/wiki/source_of_spring/index.html">Spring源码分析</a>
+      
+    </div>
+    <div id="post-meta">
+      更新于&nbsp;<time datetime="2021-04-15T04:55:46.845Z">2021-04-15</time>
+    </div>
+  
+  </div>
+
+
+  <article class="content md wiki">
+  <h1 class="article-title"><span>IOC之深入分析Bean的类型转换体系</span></h1>
+  <blockquote>
+<p>本文作者：chenssy</p>
+<p>出处：<a target="_blank" rel="external nofollow noopener noreferrer" href="http://cmsblogs.com/?p=3983">http://cmsblogs.com/?p=3983</a></p>
+<p>在学习<code>Spring源码</code>的过程中发现的好站+好贴，原创不易感谢作者。</p>
+<p>Spring版本：<strong>Spring 5.0.6.RELEASE</strong></p>
+</blockquote>
+<p>我们知道不管 bean 对象里面的属性时什么类型，他们都是通过 XML 、Properties 或者其他方式来配置这些属性对象类型的。在 Spring 容器加载过程中，这些属性都是以 String 类型加载进容器的，但是最终都需要将这些 String 类型的属性转换 Bean 对象属性所对应真正的类型，要想完成这种由字符串到具体对象的转换，就需要这种转换规则相关的信息，而这些信息以及转换过程由 Spring 类型转换体系来完成。</p>
+<p>我们依然以 xml 为例，在 Spring 容器加载阶段，容器将 xml 文件中定义的 <code>&lt;bean&gt;</code> 解析为 BeanDefinition，BeanDefinition 中存储着我们定义一个 bean 需要的所有信息，包括属性，这些属性是以 String 类型的存储的。</p>
+<p>当用户触发 Bean 实例化阶段时，Spring 容器会将这些属性转换为这些属性真正对应的类型。我们知道在 bean 实例化阶段，属性的注入是在实例化 bean 阶段的属性注入阶段，即 <code>populateBean()</code> 方法。在 <code>populateBean()</code> 中会将 BeanDefinition 中定义的属性值翻译为 PropertyValue 然后调用 <code>applyPropertyValues()</code> 进行属性应用。其中 PropertyValue 用于保存单个 bean 属性的信息和值的对象。在 <code>applyPropertyValues()</code> 中会调用 <code>convertForProperty()</code> 进行属性转换，如下：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> Object <span class="title">convertForProperty</span><span class="params">(</span></span></span><br><span class="line"><span class="function"><span class="params">  <span class="meta">@Nullable</span> Object value, String propertyName, BeanWrapper bw, TypeConverter converter)</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> (converter <span class="keyword">instanceof</span> BeanWrapperImpl) &#123;</span><br><span class="line">    <span class="keyword">return</span> ((BeanWrapperImpl) converter).convertForProperty(value, propertyName);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">else</span> &#123;</span><br><span class="line">    PropertyDescriptor pd = bw.getPropertyDescriptor(propertyName);</span><br><span class="line">    MethodParameter methodParam = BeanUtils.getWriteMethodParameter(pd);</span><br><span class="line">    <span class="keyword">return</span> converter.convertIfNecessary(value, pd.getPropertyType(), methodParam);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>若 TypeConverter 为 BeanWrapperImpl 类型，则使用 BeanWrapperImpl 来进行类型转换，这里主要是因为 BeanWrapperImpl 实现了 PropertyEditorRegistry 接口。否则则调用 TypeConverter 的 <code>convertIfNecessary()</code> 进行类型转换。TypeConverter 是定义类型转换方法的接口，通常情况下与 PropertyEditorRegistry 配合使用实现类型转换。</p>
+<p><code>convertIfNecessary()</code> 的实现者有两个：<code>DataBinder</code> 和 <code>TypeConverterSupport</code> ，其中 <code>DataBinder</code> 主要用于参数绑定（熟悉 Spring MVC 的都应该知道这个类），<code>TypeConverterSupport</code> 则是 <code>TypeConverter</code> 的基本实现，使用的是 <code>package-private</code> 策略。</p>
+<p> 所以这里我们只需要关注 TypeConverterSupport 的 <code>convertIfNecessary()</code>，如下：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> &lt;T&gt; <span class="function">T <span class="title">convertIfNecessary</span><span class="params">(<span class="meta">@Nullable</span> Object value, <span class="meta">@Nullable</span> Class&lt;T&gt; requiredType, <span class="meta">@Nullable</span> MethodParameter methodParam)</span></span></span><br><span class="line"><span class="function">  <span class="keyword">throws</span> TypeMismatchException </span>&#123;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> doConvert(value, requiredType, methodParam, <span class="keyword">null</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span> &lt;T&gt; <span class="function">T <span class="title">doConvert</span><span class="params">(<span class="meta">@Nullable</span> Object value,<span class="meta">@Nullable</span> Class&lt;T&gt; requiredType,</span></span></span><br><span class="line"><span class="function"><span class="params">                        <span class="meta">@Nullable</span> MethodParameter methodParam, <span class="meta">@Nullable</span> Field field)</span> <span class="keyword">throws</span> TypeMismatchException </span>&#123;</span><br><span class="line"></span><br><span class="line">  Assert.state(<span class="keyword">this</span>.typeConverterDelegate != <span class="keyword">null</span>, <span class="string">&quot;No TypeConverterDelegate&quot;</span>);</span><br><span class="line">  <span class="keyword">try</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (field != <span class="keyword">null</span>) &#123;</span><br><span class="line">      <span class="keyword">return</span> <span class="keyword">this</span>.typeConverterDelegate.convertIfNecessary(value, requiredType, field);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span> &#123;</span><br><span class="line">      <span class="keyword">return</span> <span class="keyword">this</span>.typeConverterDelegate.convertIfNecessary(value, requiredType, methodParam);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">catch</span> (ConverterNotFoundException | IllegalStateException ex) &#123;</span><br><span class="line">    <span class="keyword">throw</span> <span class="keyword">new</span> ConversionNotSupportedException(value, requiredType, ex);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">catch</span> (ConversionException | IllegalArgumentException ex) &#123;</span><br><span class="line">    <span class="keyword">throw</span> <span class="keyword">new</span> TypeMismatchException(value, requiredType, ex);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>我们一直往下跟会跟踪到 TypeConverterDelegate 的 <code>convertIfNecessary()</code> ，会发现如下代码段：</p>
+<p><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2020/05/27/15388823317115-20200527094430730_S7jNAq.jpg" alt="img"></p>
+<p>如果没有自定义的编辑器则使用 ConversionService 。ConversionService 是 Spring 自 3 后推出来用来替代 PropertyEditor 转换模式的转换体系，接口定义如下：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">ConversionService</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">boolean</span> <span class="title">canConvert</span><span class="params">(<span class="meta">@Nullable</span> Class&lt;?&gt; sourceType, Class&lt;?&gt; targetType)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">boolean</span> <span class="title">canConvert</span><span class="params">(<span class="meta">@Nullable</span> TypeDescriptor sourceType, TypeDescriptor targetType)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Nullable</span></span><br><span class="line">    &lt;T&gt; <span class="function">T <span class="title">convert</span><span class="params">(<span class="meta">@Nullable</span> Object source, Class&lt;T&gt; targetType)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Nullable</span></span><br><span class="line">    <span class="function">Object <span class="title">convert</span><span class="params">(<span class="meta">@Nullable</span> Object source, <span class="meta">@Nullable</span> TypeDescriptor sourceType, TypeDescriptor targetType)</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>其 UML 类图如下：</p>
+<p><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2020/05/27/15388832533588_Cmgmcb_smrQ4E.jpg" alt="img"></p>
+<ul>
+<li><strong>ConfigurableConversionService</strong>：ConversionService 的配置接口，继承 ConversionService 和 ConverterRegistry 两个接口，用于合并他们两者的操作，以便于通过 add 和 remove 的方式添加和删除转换器。</li>
+<li><strong>GenericConversionService</strong>：ConversionService 接口的基础实现，适用于大部分条件下的转换工作，通过 ConfigurableConversionService 接口间接地将 ConverterRegistry 实现为注册 API 。</li>
+<li><strong>DefaultConversionService</strong>：ConversionService 接口的默认实现，适用于大部分条件下的转换工作。</li>
+</ul>
+<p>回归到 <code>convertIfNecessary()</code>，在该方法中如果没有自定义的属性编辑器则调用 ConversionService 接口的 <code>convert()</code>，方法定义如下：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function">Object <span class="title">convert</span><span class="params">(<span class="meta">@Nullable</span> Object source, <span class="meta">@Nullable</span> TypeDescriptor sourceType, TypeDescriptor targetType)</span></span>;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>source：要转换的源对象，可以为 null</li>
+<li>sourceType：source 的类型的上下文，如果 source 为 null，则可以为 null</li>
+<li>targetType：source 要转换的类型的上下文。</li>
+</ul>
+<p><code>convert()</code> 将给定的源对象 source 转换为指定的 targetType。</p>
+<p>TypeDescriptors 提供有关发生转换的源位置和目标位置的附加上下文，通常是对象字段或属性位置。方法由子类 GenericConversionService 实现：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> Object <span class="title">convert</span><span class="params">(<span class="meta">@Nullable</span> Object source, <span class="meta">@Nullable</span> TypeDescriptor sourceType, TypeDescriptor targetType)</span> </span>&#123;</span><br><span class="line">  <span class="comment">// 删掉 if ，其实就是上面的 null 判断</span></span><br><span class="line">  GenericConverter converter = getConverter(sourceType, targetType);</span><br><span class="line">  <span class="keyword">if</span> (converter != <span class="keyword">null</span>) &#123;</span><br><span class="line">    Object result = ConversionUtils.invokeConverter(converter, source, sourceType, targetType);</span><br><span class="line">    <span class="keyword">return</span> handleResult(sourceType, targetType, result);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> handleConverterNotFound(source, sourceType, targetType);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>首先根据 sourceType 和 targetType 调用 <code>getConverter()</code> 获取 GenericConverter 对象 converter ，如果 converter 为 null，则调用 <code>handleConverterNotFound()</code>，否则调用 <code>handleResult()</code> 方法。<code>getConverter()</code> 如下：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> GenericConverter <span class="title">getConverter</span><span class="params">(TypeDescriptor sourceType, TypeDescriptor targetType)</span> </span>&#123;</span><br><span class="line">  ConverterCacheKey key = <span class="keyword">new</span> ConverterCacheKey(sourceType, targetType);</span><br><span class="line">  GenericConverter converter = <span class="keyword">this</span>.converterCache.get(key);</span><br><span class="line">  <span class="keyword">if</span> (converter != <span class="keyword">null</span>) &#123;</span><br><span class="line">    <span class="keyword">return</span> (converter != NO_MATCH ? converter : <span class="keyword">null</span>);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  converter = <span class="keyword">this</span>.converters.find(sourceType, targetType);</span><br><span class="line">  <span class="keyword">if</span> (converter == <span class="keyword">null</span>) &#123;</span><br><span class="line">    converter = getDefaultConverter(sourceType, targetType);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> (converter != <span class="keyword">null</span>) &#123;</span><br><span class="line">    <span class="keyword">this</span>.converterCache.put(key, converter);</span><br><span class="line">    <span class="keyword">return</span> converter;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">this</span>.converterCache.put(key, NO_MATCH);</span><br><span class="line">  <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这段代码意图非常明确，从 converterCache 缓存中获取，如果存在返回，否则从 converters 中获取，然后加入到 converterCache 缓存中。converterCache 和 converters 是 GenericConversionService 维护的两个很重要的对象，其中 converterCache 用于存储 GenericConverter ，converters 对象为 GenericConversionService 的内部类。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> Converters converters = <span class="keyword">new</span> Converters();</span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> Map&lt;ConverterCacheKey, GenericConverter&gt; converterCache = <span class="keyword">new</span> ConcurrentReferenceHashMap&lt;&gt;(<span class="number">64</span>);</span><br></pre></td></tr></table></figure>
+
+<p>Converters 用于管理所有注册的转换器，其内部维护一个 Set 和 Map 的数据结构用于管理转换器，如下：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> Set&lt;GenericConverter&gt; globalConverters = <span class="keyword">new</span> LinkedHashSet&lt;&gt;();</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> Map&lt;ConvertiblePair, ConvertersForPair&gt; converters = <span class="keyword">new</span> LinkedHashMap&lt;&gt;(<span class="number">36</span>);</span><br></pre></td></tr></table></figure>
+
+<p>同时提供了相应的方法（如 add、remove）操作这两个集合。在 <code>getConverter()</code> 中如果缓存 converterCache 中 不存在，则调用 Converters 对象的 <code>find()</code> 方法获取相应的 GenericConverter，如下：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> GenericConverter <span class="title">find</span><span class="params">(TypeDescriptor sourceType, TypeDescriptor targetType)</span> </span>&#123;</span><br><span class="line">    <span class="comment">// Search the full type hierarchy</span></span><br><span class="line">    List&lt;Class&lt;?&gt;&gt; sourceCandidates = getClassHierarchy(sourceType.getType());</span><br><span class="line">    List&lt;Class&lt;?&gt;&gt; targetCandidates = getClassHierarchy(targetType.getType());</span><br><span class="line">    <span class="keyword">for</span> (Class&lt;?&gt; sourceCandidate : sourceCandidates) &#123;</span><br><span class="line">        <span class="keyword">for</span> (Class&lt;?&gt; targetCandidate : targetCandidates) &#123;</span><br><span class="line">            ConvertiblePair convertiblePair = <span class="keyword">new</span> ConvertiblePair(sourceCandidate, targetCandidate);</span><br><span class="line">            GenericConverter converter = getRegisteredConverter(sourceType, targetType, convertiblePair);</span><br><span class="line">            <span class="keyword">if</span> (converter != <span class="keyword">null</span>) &#123;</span><br><span class="line">                <span class="keyword">return</span> converter;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">private</span> GenericConverter <span class="title">getRegisteredConverter</span><span class="params">(TypeDescriptor sourceType,</span></span></span><br><span class="line"><span class="function"><span class="params">                TypeDescriptor targetType, ConvertiblePair convertiblePair)</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Check specifically registered converters</span></span><br><span class="line">    ConvertersForPair convertersForPair = <span class="keyword">this</span>.converters.get(convertiblePair);</span><br><span class="line">    <span class="keyword">if</span> (convertersForPair != <span class="keyword">null</span>) &#123;</span><br><span class="line">        GenericConverter converter = convertersForPair.getConverter(sourceType, targetType);</span><br><span class="line">        <span class="keyword">if</span> (converter != <span class="keyword">null</span>) &#123;</span><br><span class="line">            <span class="keyword">return</span> converter;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// Check ConditionalConverters for a dynamic match</span></span><br><span class="line">    <span class="keyword">for</span> (GenericConverter globalConverter : <span class="keyword">this</span>.globalConverters) &#123;</span><br><span class="line">        <span class="keyword">if</span> (((ConditionalConverter) globalConverter).matches(sourceType, targetType)) &#123;</span><br><span class="line">            <span class="keyword">return</span> globalConverter;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在 <code>find()</code> 中会根据 sourceType 和 targetType 去查询 Converters 中维护的 Map 中是否包括支持的注册类型，如果存在返回 GenericConverter ，如果没有存在返回 null。</p>
+<p>当得到 GenericConverter 后，则调用其 <code>convert()</code> 进行类型转换。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function">Object <span class="title">convert</span><span class="params">(<span class="meta">@Nullable</span> Object source, TypeDescriptor sourceType, TypeDescriptor targetType)</span></span>;</span><br></pre></td></tr></table></figure>
+
+<p>到这里我们就可以得到 bean 属性定义的真正类型了。</p>
+<p><strong>GenericConverter 接口</strong></p>
+<p>GenericConverter 是一个转换接口，一个用于在两种或更多种类型之间转换的通用型转换器接口。它是 Converter SPI 体系中最灵活的，也是最复杂的接口，灵活性在于 GenericConverter 可以支持在多个源/目标类型对之间进行转换，同时也可以在类型转换过程中访问源/目标字段上下文。由于该接口足够复杂，所有当更简单的 Converter 或 ConverterFactory 接口足够使用时，通常不应使用此接口。其定义如下：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">GenericConverter</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Nullable</span></span><br><span class="line">    <span class="function">Set&lt;ConvertiblePair&gt; <span class="title">getConvertibleTypes</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Nullable</span></span><br><span class="line">    <span class="function">Object <span class="title">convert</span><span class="params">(<span class="meta">@Nullable</span> Object source, TypeDescriptor sourceType, TypeDescriptor targetType)</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>GenericConverter 的子类有这么多（看类名就知道是干嘛的了）：</p>
+<p><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2020/05/27/15388984648307_DEQ9BT_olp6Km.jpg" alt="img"></p>
+<p>我们看一个子类的实现 StringToArrayConverter，该子类将逗号分隔的 String 转换为 Array。如下：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> Object <span class="title">convert</span><span class="params">(<span class="meta">@Nullable</span> Object source, TypeDescriptor sourceType, TypeDescriptor targetType)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (source == <span class="keyword">null</span>) &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">  &#125;</span><br><span class="line">  String string = (String) source;</span><br><span class="line">  String[] fields = StringUtils.commaDelimitedListToStringArray(string);</span><br><span class="line">  TypeDescriptor targetElementType = targetType.getElementTypeDescriptor();</span><br><span class="line">  Assert.state(targetElementType != <span class="keyword">null</span>, <span class="string">&quot;No target element type&quot;</span>);</span><br><span class="line">  Object target = Array.newInstance(targetElementType.getType(), fields.length);</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; fields.length; i++) &#123;</span><br><span class="line">    String sourceElement = fields[i];</span><br><span class="line">    Object targetElement = <span class="keyword">this</span>.conversionService.convert(sourceElement.trim(), sourceType, targetElementType);</span><br><span class="line">    Array.set(target, i, targetElement);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> target;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在类型转换体系中，Spring 提供了非常多的类型转换器，除了上面的 GenericConverter，还有 Converter、ConditionalConverter、ConverterFactory。</p>
+<p><strong>Converter</strong></p>
+<p>Converter 是一个将 S 类型的源对象转换为 T 类型的目标对象的转换器。该接口是线程安全的，所以可以共享。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">Converter</span>&lt;<span class="title">S</span>, <span class="title">T</span>&gt; </span>&#123;</span><br><span class="line">    <span class="meta">@Nullable</span></span><br><span class="line">    <span class="function">T <span class="title">convert</span><span class="params">(S source)</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>子类如下：</p>
+<p><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2020/05/27/15389004851676-20200527094627489_1lakfm.jpg" alt="img"></p>
+<p><strong>ConditionalConverter</strong></p>
+<p>ConditionalConverter 接口用于表示有条件的类型转换，通过转入的sourceType 与 targetType 判断转换能否匹配，只有可匹配的转换才会调用convert 方法进行转换，如下：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">public interface ConditionalConverter &#123;</span><br><span class="line">    boolean matches(TypeDescriptor sourceType, TypeDescriptor targetType);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>ConditionalConverter 的子类如下：</p>
+<p><a target="_blank" rel="external nofollow noopener noreferrer" href="https://gitee.com/chenssy/blog-home/raw/master/image/201811/15389064279138.jpg"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://gitee.com/chenssy/blog-home/raw/master/image/201811/15389064279138.jpg" alt="img"></a></p>
+<p><strong>ConverterFactory</strong></p>
+<p>一个用于“远程”转换的转换工厂，可以将对象从 S 转换为 R 的子类型。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">ConverterFactory</span>&lt;<span class="title">S</span>, <span class="title">R</span>&gt; </span>&#123;</span><br><span class="line">    &lt;T extends R&gt; <span class="function">Converter&lt;S, T&gt; <span class="title">getConverter</span><span class="params">(Class&lt;T&gt; targetType)</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>子类如下：</p>
+<p><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2020/05/27/15389071818355_KBtf0I_MmL1Mp.jpg" alt="img"></p>
+<p>四种不同的转换器承载着不同的转换过程：</p>
+<ul>
+<li>Converter：用于 1:1 的 source -&gt; target 类型转换</li>
+<li>ConverterFactory：用于 1:N 的 source -&gt; target 类型转换</li>
+<li>GenericConverter用于 N:N 的 source -&gt; target 类型转换</li>
+<li>ConditionalConverter：有条件的 source -&gt; target 类型转换</li>
+</ul>
+<p><strong>GenericConversionService</strong></p>
+<p>转换器介绍完了，我们再次回归到 ConversionService 接口中去，该接口定义了两类方法 <code>canConvert()</code> 和 <code>convert()</code>，其中 <code>canConvert()</code> 用于判 sourceType 能否转成 targetType ,而 <code>convert()</code> 用于将 source 转成转入的 TargetType 类型实例。这两类方法都是在 GenericConversionService 中实现。类 GenericConversionService 实现 ConfigurableConversionService 接口，而 ConfigurableConversionService 接口继承 ConversionService 和 ConverterRegistry。ConverterRegistry 提供了类型转换器的管理功能，他提供了四个 add 和 一个 remove 方法，支持注册/删除相应的类型转换器。GenericConversionService 作为一个基础实现类，它即支持了不同类型之间的转换，也对各类型转换器进行管理，主要是通过一个 Map 类型的 converterCache 和一个内部类 Converters。在上面已经分析了 GenericConversionService 执行类型转换的过程 <code>cover()</code>，下面我们就一个 <code>addConverter()</code> 来看看它是如何完成转换器的注入工作的。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">addConverter</span><span class="params">(Converter&lt;?, ?&gt; converter)</span> </span>&#123;</span><br><span class="line">  ResolvableType[] typeInfo = getRequiredTypeInfo(converter.getClass(), Converter.class);</span><br><span class="line">  <span class="keyword">if</span> (typeInfo == <span class="keyword">null</span> &amp;&amp; converter <span class="keyword">instanceof</span> DecoratingProxy) &#123;</span><br><span class="line">    typeInfo = getRequiredTypeInfo(((DecoratingProxy) converter).getDecoratedClass(), Converter.class);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">if</span> (typeInfo == <span class="keyword">null</span>) &#123;</span><br><span class="line">    <span class="keyword">throw</span> <span class="keyword">new</span> IllegalArgumentException(<span class="string">&quot;Unable to determine source type &lt;S&gt; and target type &lt;T&gt; for your &quot;</span> +</span><br><span class="line">                                       <span class="string">&quot;Converter [&quot;</span> + converter.getClass().getName() + <span class="string">&quot;]; does the class parameterize those types?&quot;</span>);</span><br><span class="line">  &#125;</span><br><span class="line">  addConverter(<span class="keyword">new</span> ConverterAdapter(converter, typeInfo[<span class="number">0</span>], typeInfo[<span class="number">1</span>]));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>首先根据 converter 获取 ResolvableType，然后将其与 converter 封装成一个 ConverterAdapter 实例，最后调用 <code>addConverter()</code>。ResolvableType 用于封装 Java 的类型。ConverterAdapter 则是 Converter 的一个适配器， 它实现了 GenericConverter 和 ConditionalConverter 两个类型转换器。</p>
+<p><code>addConverter()</code> 如下：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">addConverter</span><span class="params">(GenericConverter converter)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">this</span>.converters.add(converter);</span><br><span class="line">    invalidateCache();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>直接调用内部类 Converters 的 <code>add()</code> 方法，如下：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">add</span><span class="params">(GenericConverter converter)</span> </span>&#123;</span><br><span class="line">  Set&lt;ConvertiblePair&gt; convertibleTypes = converter.getConvertibleTypes();</span><br><span class="line">  <span class="keyword">if</span> (convertibleTypes == <span class="keyword">null</span>) &#123;</span><br><span class="line">    Assert.state(converter <span class="keyword">instanceof</span> ConditionalConverter,</span><br><span class="line">                 <span class="string">&quot;Only conditional converters may return null convertible types&quot;</span>);</span><br><span class="line">    <span class="keyword">this</span>.globalConverters.add(converter);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="keyword">for</span> (ConvertiblePair convertiblePair : convertibleTypes) &#123;</span><br><span class="line">      ConvertersForPair convertersForPair = getMatchableConverters(convertiblePair);</span><br><span class="line">      convertersForPair.add(converter);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>首先调用 <code>getConvertibleTypes()</code> 获取 ConvertiblePair 集合，如果为空，则加入到 globalConverters 集合中，否则通过迭代的方式依次添加。ConvertiblePair 为 source-to-targer 的持有者，它持有 source 和 target 的 class 类型，如下：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">final</span> <span class="class"><span class="keyword">class</span> <span class="title">ConvertiblePair</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> Class&lt;?&gt; sourceType;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> Class&lt;?&gt; targetType;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 其他代码   </span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在迭代过程中会根据 ConvertiblePair 获取相应的 ConvertersForPair ，然后 converter 转换器加入其中，ConvertiblePair 用于管理使用特定GenericConverter.ConvertiblePair 注册的转换器。如下：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">ConvertersForPair</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">final</span> LinkedList&lt;GenericConverter&gt; converters = <span class="keyword">new</span> LinkedList&lt;&gt;();</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">add</span><span class="params">(GenericConverter converter)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">this</span>.converters.addFirst(converter);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="meta">@Nullable</span></span><br><span class="line">  <span class="function"><span class="keyword">public</span> GenericConverter <span class="title">getConverter</span><span class="params">(TypeDescriptor sourceType, TypeDescriptor targetType)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">for</span> (GenericConverter converter : <span class="keyword">this</span>.converters) &#123;</span><br><span class="line">      <span class="keyword">if</span> (!(converter <span class="keyword">instanceof</span> ConditionalGenericConverter) ||</span><br><span class="line">          ((ConditionalGenericConverter) converter).matches(sourceType, targetType)) &#123;</span><br><span class="line">        <span class="keyword">return</span> converter;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>其实内部就是维护一个 LinkedList 集合。他内部有两个方法：<code>add()</code> 和 <code>getConverter()</code>，实现较为简单，这里就不多介绍了。</p>
+<p><strong>DefaultConversionService</strong></p>
+<p>DefaultConversionService 是 ConversionService 的默认实现，它继承 GenericConversionService，GenericConversionService 主要用于转换器的注册和调用，DefaultConversionService 则是为 ConversionService 体系提供一些默认的转换器。在 DefaultConversionService 构造方法中就会添加默认的 Converter ，如下：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="title">DefaultConversionService</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  addDefaultConverters(<span class="keyword">this</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">addDefaultConverters</span><span class="params">(ConverterRegistry converterRegistry)</span> </span>&#123;</span><br><span class="line">  addScalarConverters(converterRegistry);</span><br><span class="line">  addCollectionConverters(converterRegistry);</span><br><span class="line"></span><br><span class="line">  converterRegistry.addConverter(<span class="keyword">new</span> ByteBufferConverter((ConversionService) converterRegistry));</span><br><span class="line">  <span class="keyword">if</span> (jsr310Available) &#123;</span><br><span class="line">    Jsr310ConverterRegistrar.registerJsr310Converters(converterRegistry);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  converterRegistry.addConverter(<span class="keyword">new</span> ObjectToObjectConverter());</span><br><span class="line">  converterRegistry.addConverter(<span class="keyword">new</span> IdToEntityConverter((ConversionService) converterRegistry));</span><br><span class="line">  converterRegistry.addConverter(<span class="keyword">new</span> FallbackObjectToStringConverter());</span><br><span class="line">  <span class="keyword">if</span> (javaUtilOptionalClassAvailable) &#123;</span><br><span class="line">    converterRegistry.addConverter(<span class="keyword">new</span> ObjectToOptionalConverter((ConversionService) converterRegistry));</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>当然它还提供了一些其他的方法如 <code>addCollectionConverters()</code>、<code>addScalarConverters()</code> 用于注册其他类型的转换器。</p>
+<p>至此，从 bean 属性的转换，到 Spring ConversionService 体系的转换器 Converter 以及转换器的管理都介绍完毕了。</p>
+
+  
+
+
+  </article>
+  
+<div class="related-wrap" id="read-next"><section class="header cap theme"><span>接下来阅读</span></section><section class="body"><div class="post-title h2"><a href="/wiki/source_of_spring/springIOC28.html">IOC之自定义类型转换器</a></div><div class="post-title fs14"><a href="/wiki/source_of_spring/springIOC26.html">上一篇：IOC之深入分析PropertyOverrideConfigurer</a></div></section></div>
+
+  
+
+  <div class="related-wrap md" id="comments">
+    <div class="cmt-title cap theme">
+      快来参与讨论吧
+    </div>
+    <div class="cmt-body utterances">
+      
+
+<svg class="loading" style="vertical-align: middle;fill: currentColor;overflow: hidden;" viewbox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2709"><path d="M832 512c0-176-144-320-320-320V128c211.2 0 384 172.8 384 384h-64zM192 512c0 176 144 320 320 320v64C300.8 896 128 723.2 128 512h64z" p-id="2710"/></svg>
+
+<div id="utterances" repo="cayzlh/studious-barnacle" issue-term="Spring源码分析" theme="github-light"></div>
+
+    </div>
+  </div>
+
+
+
+
+      
+<footer class="page-footer fs12"><hr><div><p>本站所有文章除特别声明外，均采用 <a target="_blank" rel="external nofollow noopener noreferrer" href="https://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY-NC-SA 4.0</a> 许可协议，转载请注明出处</p>
+<p>本站由 <a href="https://www.cayzlh.com/">@chen anyu</a> 创建，使用 <a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/xaoxuu/hexo-theme-stellar/tree/1.1.0">Stellar</a> 作为主题，您可以在 <a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/cayzlh/cayzlh.github.io">GitHub</a> 找到本站源码</p>
+<p>本站托管于 <a target="_blank" rel="external nofollow noopener noreferrer" href="https://cloudbase.net/">云开发CloudBase</a> &amp; <a target="_blank" rel="external nofollow noopener noreferrer" href="https://pages.github.com/">Github Pages</a>，粤ICP备<a target="_blank" rel="external nofollow noopener noreferrer" href="https://beian.miit.gov.cn/">20058712</a>号</p>
+<div><span id="timeDate">载入天数...</span><span id="times">载入时分秒...</span>，<span id="busuanzi_container_site_pv">总访问量: <span id="busuanzi_value_site_pv"></span>次</span>，<span id="busuanzi_container_site_uv">访客数: <span id="busuanzi_value_site_uv"></span>人</span></div><p><a target="_blank" rel="external nofollow noopener noreferrer" href="https://travellings.now.sh/"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://travellings.vercel.app/assets/logo.gif" alt="开往-友链接力" width="100"></a></p>
+</div></footer>
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<script>
+  function createtime() {
+    var now = new Date();
+    var grt= new Date("05/26/2019 04:40:00");
+    now.setTime(now.getTime()+250);
+    days = (now - grt ) / 1000 / 60 / 60 / 24; dnum = Math.floor(days);
+    hours = (now - grt ) / 1000 / 60 / 60 - (24 * dnum); hnum = Math.floor(hours);
+    if(String(hnum).length ==1 ){hnum = "0" + hnum;} minutes = (now - grt ) / 1000 /60 - (24 * 60 * dnum) - (60 * hnum);
+    mnum = Math.floor(minutes); if(String(mnum).length ==1 ){mnum = "0" + mnum;}
+    seconds = (now - grt ) / 1000 - (24 * 60 * 60 * dnum) - (60 * 60 * hnum) - (60 * mnum);
+    snum = Math.round(seconds); if(String(snum).length ==1 ){snum = "0" + snum;}
+    document.getElementById("timeDate").innerHTML = "本站已运行 "+dnum+" 天 ";
+    document.getElementById("times").innerHTML = hnum + " 小时 " + mnum + " 分 " + snum + " 秒";
+  };
+  setInterval("createtime()",250);
+</script>
+      <div class="float-panel mobile-only" style="display:none">
+  <button type="button" class="sidebar-toggle mobile" onclick="sidebar.toggle()">
+    <svg class="icon" viewbox="0 0 1228 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2849"><path d="M0 0m97.390199 0l973.901995 0q97.390199 0 97.390199 97.390199l0 0q0 97.390199-97.390199 97.3902l-973.901995 0q-97.390199 0-97.390199-97.3902l0 0q0-97.390199 97.390199-97.390199Z" p-id="2850"/><path d="M0 389.560798m97.390199 0l973.901995 0q97.390199 0 97.390199 97.390199l0 0q0 97.390199-97.390199 97.3902l-973.901995 0q-97.390199 0-97.390199-97.3902l0 0q0-97.390199 97.390199-97.390199Z" p-id="2851"/><path d="M0 779.121596m97.390199 0l973.901995 0q97.390199 0 97.390199 97.390199l0 0q0 97.390199-97.390199 97.390199l-973.901995 0q-97.390199 0-97.390199-97.390199l0 0q0-97.390199 97.390199-97.390199Z" p-id="2852"/></svg>
+  </button>
+</div>
+
+    </div>
+  </div>
+  <div class="scripts">
+    <script type="text/javascript">
+  stellar = {
+    // 懒加载 css https://github.com/filamentgroup/loadCSS
+    loadCSS: (href, before, media, attributes) => {
+      var doc = window.document;
+      var ss = doc.createElement("link");
+      var ref;
+      if (before) {
+        ref = before;
+      } else {
+        var refs = (doc.body || doc.getElementsByTagName("head")[0]).childNodes;
+        ref = refs[refs.length - 1];
+      }
+      var sheets = doc.styleSheets;
+      if (attributes) {
+        for (var attributeName in attributes) {
+          if (attributes.hasOwnProperty(attributeName)) {
+            ss.setAttribute(attributeName, attributes[attributeName]);
+          }
+        }
+      }
+      ss.rel = "stylesheet";
+      ss.href = href;
+      ss.media = "only x";
+      function ready(cb) {
+        if (doc.body) {
+          return cb();
+        }
+        setTimeout(function () {
+          ready(cb);
+        });
+      }
+      ready(function () {
+        ref.parentNode.insertBefore(ss, before ? ref : ref.nextSibling);
+      });
+      var onloadcssdefined = function (cb) {
+        var resolvedHref = ss.href;
+        var i = sheets.length;
+        while (i--) {
+          if (sheets[i].href === resolvedHref) {
+            return cb();
+          }
+        }
+        setTimeout(function () {
+          onloadcssdefined(cb);
+        });
+      };
+      function loadCB() {
+        if (ss.addEventListener) {
+          ss.removeEventListener("load", loadCB);
+        }
+        ss.media = media || "all";
+      }
+      if (ss.addEventListener) {
+        ss.addEventListener("load", loadCB);
+      }
+      ss.onloadcssdefined = onloadcssdefined;
+      onloadcssdefined(loadCB);
+      return ss;
+    },
+
+    // 从 butterfly 和 volantis 获得灵感
+    loadScript: (src, opt) => new Promise((resolve, reject) => {
+      var script = document.createElement('script')
+      script.src = src
+      if (opt) {
+        for (let key of Object.keys(opt)) {
+          script[key] = opt[key]
+        }
+      } else {
+        // 默认异步，如果需要同步，第二个参数传入 {} 即可
+        script.async = true
+      }
+      script.onerror = reject
+      script.onload = script.onreadystatechange = function() {
+        const loadState = this.readyState
+        if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+        script.onload = script.onreadystatechange = null
+        resolve()
+      }
+      document.head.appendChild(script)
+    }),
+
+    // https://github.com/jerryc127/hexo-theme-butterfly
+    jQuery: (fn) => {
+      if (typeof jQuery === 'undefined') {
+        stellar.loadScript(stellar.plugins.jQuery).then(fn)
+      } else {
+        fn()
+      }
+    }
+  };
+  stellar.github = 'https://github.com/xaoxuu/hexo-theme-stellar/tree/1.1.0';
+  stellar.config = {
+    date_suffix: {
+      just: '刚刚',
+      min: '分钟前',
+      hour: '小时前',
+      day: '天前',
+      month: '个月前',
+    },
+  };
+
+  // required plugins (only load if needs)
+  stellar.plugins = {
+    jQuery: 'https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js',
+    sitesjs: '/js/plugins/sites.js',
+    friendsjs: '/js/plugins/friends.js',
+  };
+
+  // optional plugins
+  if ('true' == 'true') {
+    stellar.plugins.lazyload = Object.assign({"enable":true,"js":"https://cdn.jsdelivr.net/npm/vanilla-lazyload@17.3.1/dist/lazyload.min.js","transition":"blur"});
+  }
+  if ('true' == 'true') {
+    stellar.plugins.swiper = Object.assign({"enable":true,"css":"https://unpkg.com/swiper/swiper-bundle.min.css","js":"https://unpkg.com/swiper/swiper-bundle.min.js"});
+  }
+  if ('' == 'true') {
+    stellar.plugins.scrollreveal = Object.assign({"enable":null,"js":"https://cdn.jsdelivr.net/npm/scrollreveal@4.0.9/dist/scrollreveal.min.js","distance":"8px","duration":500,"interval":100,"scale":1});
+  }
+  if ('true' == 'true') {
+    stellar.plugins.preload = Object.assign({"enable":true,"service":"flying_pages","instant_page":"https://cdn.jsdelivr.net/gh/volantis-x/cdn-volantis@4.1.2/js/instant_page.js","flying_pages":"https://cdn.jsdelivr.net/gh/gijo-varghese/flying-pages@2.1.2/flying-pages.min.js"});
+  }
+</script>
+
+<!-- required -->
+
+  
+<script src="/js/main.js" async></script>
+
+
+
+<!-- optional -->
+
+  <script>
+  function utterances(){
+    if(!document.getElementById("utterances"))return;
+    setTimeout(function() {
+      var checkUtterances = setInterval(function () {
+        var el = document.getElementById("utterances");
+        if (!el) return
+        clearInterval(checkUtterances)
+        try {
+          el.innerHTML="";
+        } catch (error) {}
+        var script = document.createElement('script');
+        script.src = 'https://utteranc.es/client.js';
+        const keys = ['repo', 'issue-term', 'issue-number', 'theme', 'label', 'crossorigin'];
+        keys.forEach((key, i) => {
+          if (el.attributes[key] && el.attributes[key].value) {
+            script.setAttribute(key, el.attributes[key].value);
+          }
+        });
+        el.appendChild(script);
+       }, 200)
+    });
+  }
+  utterances();
+</script>
+
+
+
+
+<!-- inject -->
+
+
+  </div>
+</body>
+</html>

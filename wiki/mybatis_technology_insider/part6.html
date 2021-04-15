@@ -1,0 +1,1045 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta name="generator" content="Hexo 5.4.0">
+  <meta charset="utf-8">
+  
+
+  <meta http-equiv="x-dns-prefetch-control" content="on">
+  <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+
+  <meta name="renderer" content="webkit">
+  <meta name="force-rendering" content="webkit">
+  <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+  <meta name="HandheldFriendly" content="True">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <title>Mybatis技术内幕：基础支持层——DataSource - CAYZLH</title>
+
+  
+  <meta name="description" content="MyBatis基础支持层位于 Mybatis 整体架构的最底层，支撑着 Mybatis 的核心处理层，是整个框架的基石。基础支持层中封装了多个较为通用的、独立的模块，不仅仅为 Mybatis 提供基础支撑，也可以在合适的场景中直接复用。
+
+
+这篇文章介绍MyBatis的DataSource模块...">
+
+  <!-- feed -->
+  
+    <link rel="alternate" href="/atom.xml" title="CAYZLH" type="application/atom+xml">
+  
+
+  
+    
+<link rel="stylesheet" href="/css/main.css">
+
+  
+
+  
+    
+      <meta name="msapplication-TileColor" content="#2d89ef">
+    
+      <meta name="msapplication-config" content="/assets/favicon/browserconfig.xml">
+    
+      <meta name="theme-color" content="#ffffff">
+    
+      <link rel="shortcut icon" href="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/logo/favicon.ico">
+    
+      <link rel="icon" type="image/png" href="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/logo/favicon-192x192.png" sizes="192x192">
+    
+      <link rel="apple-touch-icon" sizes="180x180" href="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/logo/apple-touch-icon.png">
+    
+  
+</head>
+
+<body>
+  
+
+
+  <div class="l_body" id="start">
+    <aside class="l_left">
+    
+
+<header class="header">
+  <div class="logo-wrap">
+  
+    <a class="avatar" href="/">
+      
+        <img no-lazy class="bg" src="https://cdn.jsdelivr.net/gh/cdn-x/placeholder@1.0.2/avatar/round/rainbow64@3x.webp" onerror="javascript:this.classList.add('error');this.src='https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2021/04/16084216181285221618128522255.svg';">
+      
+      <img no-lazy class="avatar" src="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/image/IMG_4207.JPG" onerror="javascript:this.classList.add('error');this.src='https://cdn.jsdelivr.net/gh/cayzlh/git-img-repository@master/2021/04/16084216181285221618128522255.svg';">
+    </a>
+  
+  
+    <a class="title" href="/">
+      CAYZLH
+    </a>
+  
+</div>
+
+  <nav class="menu dis-select"><a class="nav-item" href="/">文章</a><a class="nav-item active" href="/wiki/">文档</a><a class="nav-item" href="/talking/">动态</a><a class="nav-item" href="/about/">更多</a></nav>
+</header>
+
+<div class="widgets">
+  
+    
+      
+      
+<div class="widget-wrap" id="toc"><div class="widget-header h4 dis-select"><span class="name">本文目录</span></div><div class="widget-body fs14 wiki"><div class="doc-tree"><a class="doc-tree-link" href="/wiki/mybatis_technology_insider/index.html"><span class="toc-text">Mybatis技术内幕</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/mybatis_technology_insider/part1.html"><span class="toc-text">MyBatis快速入门</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/mybatis_technology_insider/part2.html"><span class="toc-text">基础支持层——解析器模块</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/mybatis_technology_insider/part3.html"><span class="toc-text">基础支持层——反射模块</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/mybatis_technology_insider/part4.html"><span class="toc-text">基础支持层——日志模块</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/mybatis_technology_insider/part5.html"><span class="toc-text">基础支持层——资源加载</span></a></div><div class="doc-tree active"><a class="doc-tree-link active" href="/wiki/mybatis_technology_insider/part6.html"><span class="toc-text">基础支持层——DataSource</span></a><ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%B7%A5%E5%8E%82%E6%96%B9%E6%B3%95%E6%A8%A1%E5%BC%8F"><span class="toc-text">工厂方法模式</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#DataSourceFactory"><span class="toc-text">DataSourceFactory</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#UnpooledDataSource"><span class="toc-text">UnpooledDataSource</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Pooled-DataSource"><span class="toc-text">Pooled DataSource</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#PooledConnection"><span class="toc-text">PooledConnection</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#PoolState"><span class="toc-text">PoolState</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#PooledDataSource"><span class="toc-text">PooledDataSource</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%8F%82%E8%80%83"><span class="toc-text">参考</span></a></li></ol></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/mybatis_technology_insider/part7.html"><span class="toc-text">基础支持层——Transaction</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/mybatis_technology_insider/part8.html"><span class="toc-text">基础支持层——binding模块</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/mybatis_technology_insider/part9.html"><span class="toc-text">基础支持层——缓存模块</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/mybatis_technology_insider/part10.html"><span class="toc-text">核心处理层-MyBatis初始化</span></a></div><div class="doc-tree"><a class="doc-tree-link" href="/wiki/mybatis_technology_insider/part11.html"><span class="toc-text">核心处理层-SqlNode&SqlSource</span></a></div></div></div>
+
+    
+  
+    
+      
+      
+  
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+      <div class="widget-wrap" id="related">
+        <div class="widget-header h4 dis-select">
+          <span class="name">更多读书笔记</span>
+        </div>
+        <div class="widget-body fs14">
+          
+            
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+          
+            
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+                <div class="post-title">
+                  <a href="/wiki/understanding_jvm/index.html">
+                    深入理解Java虚拟机
+                  </a>
+                </div>
+              
+            
+          
+            
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+                <div class="post-title">
+                  <a href="/wiki/how_to_reading/index.html">
+                    《如何阅读一本书》
+                  </a>
+                </div>
+              
+            
+          
+        </div>
+      </div>
+    
+  
+
+
+    
+  
+</div>
+<footer class="footer"><div class="social-wrap dis-select"><a class="social" href="https://github.com/cayzlh" target="_blank" rel="external nofollow noopener noreferrer"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cdn-x/placeholder@1.0.1/social/08a41b181ce68.svg"></a><a class="social" href="https://telegram.me/Q2F5emxo" target="_blank" rel="external nofollow noopener noreferrer"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cayzlh/psychic-potato@master/image/guanyuwomen.svg"></a><a class="social" href="/about/#comments" rel="noopener noreferrer"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://cdn.jsdelivr.net/gh/cdn-x/placeholder@1.0.1/social/942ebbf1a4b91.svg"></a></div></footer>
+
+    </aside>
+    <div class="l_main">
+      
+
+      
+
+  
+  
+  <div class="bread-nav fs12">
+  
+    
+    <div id="breadcrumb">
+      <a class="cap breadcrumb" href="/">主页</a>
+      <span class="sep"></span>
+      
+        <a class="cap breadcrumb" href="/wiki/">文档</a>
+      
+      
+        <span class="sep"></span>
+        <a class="cap breadcrumb" href="/wiki/categories/reading/index.html">读书笔记</a>
+      
+      
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        <span class="sep"></span>
+        <a class="cap breadcrumb" href="/wiki/mybatis_technology_insider/index.html">Mybatis技术内幕</a>
+      
+    </div>
+    <div id="post-meta">
+      更新于&nbsp;<time datetime="2021-04-15T04:55:46.845Z">2021-04-15</time>
+    </div>
+  
+  </div>
+
+
+  <article class="content md wiki">
+  <h1 class="article-title"><span>基础支持层——DataSource</span></h1>
+  <p>MyBatis基础支持层位于 Mybatis 整体架构的最底层，支撑着 Mybatis 的核心处理层，是整个框架的基石。基础支持层中封装了多个较为通用的、独立的模块，不仅仅为 Mybatis 提供基础支撑，也可以在合适的场景中直接复用。</p>
+<p><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/09/2_c5SKkm_zgJEGC.png" alt="整体架构"></p>
+<blockquote>
+<p>这篇文章介绍MyBatis的DataSource模块</p>
+</blockquote>
+<p>在数 据持久层 中，数 据源是一个 非常重要的组 件，其性能直接关 系到整个 数 据持久层 的性能。</p>
+<p>在实 践 中比较 常见 的第三方数 据源组 件有<code>ApacheCommonDBCP</code>、<code>C3P0</code>、<code>Proxool</code>等，MyBatis不仅 可以集成第三方数 据源组 件，还 提供了自己的数 据源实 现 。</p>
+<p>常见 的数 据源组 件都实 现 了 <code>javax.sql.DataSource</code>接口，MyBatis自身实 现 的数 据源实 现 也 不 例 外 。</p>
+<p>MyBatis 提 供 了 两 个 <code>javax.sql.DataSource</code> 接 口 实 现 ， 分 别 是 <code>PooledDataSource</code> 和 <code>UnpooledDataSource</code>。 </p>
+<p>Mybatis使 用 不 同 的 DataSourceFactory接 口 实 现 创 建 不 同 类 型 的 DataSource,如图所示，这 是工厂 方法模式的一个 典型应 用。</p>
+<p><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/08/image-20200608220639013_wB5yIb.png" alt="image-20200608220639013"></p>
+<h3 id="工厂方法模式"><a href="#工厂方法模式" class="headerlink" title="工厂方法模式"></a>工厂方法模式</h3><blockquote>
+<p>在工厂 方法模式中，定义 了一个 用于创 建对 象的工厂 接口，并 根据工厂 接口的具体 实 现 类 决定具体实例化哪一个具体产品类。首先来看工厂方法模式的UML图，从整体上了解该模式 的结 构 。</p>
+</blockquote>
+<p><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/08/image-20200608221034019_4Qx2xe.png" alt="image-20200608221034019"></p>
+<p>工厂方法有四个角色构成：</p>
+<ul>
+<li><p>工厂接口（Factory）</p>
+<p>工厂 接口是工厂 方法模式的核心接口，调 用者会 直接与 工厂 接 口交互用于获取具体的产品实现类</p>
+</li>
+<li><p>具体工厂类（ConcreteFactory）</p>
+<p>具体 工厂 类 是工厂 接口的实 现 类 ，用于实 例化产 品 对象，不同的具体工厂类会根据需求实例化不同的产品实现类。</p>
+</li>
+<li><p>产品接口（Product）</p>
+<p> 品接口用于定义 产 品类 的功能，具体 工厂 类 产 生的所有产 品对象都必须实现该接口。调用者一般会面向产品接口进行编程，所以产品接口会与调用者直接交互，也是调 用者最为 关 心的接口。</p>
+</li>
+<li><p>具体 产 品类 （ConcreteProduct）</p>
+<p> 现 产 品接口的实 现 类 ，具体 产 品类 中定义 了具体的业务逻辑</p>
+</li>
+</ul>
+<p>如果需要产 生新的产 品，例如对 于MyBatis的数 据源模块 来 说 ，就是添加新的第三方数 据 源组 件，只需要添加对 应 的工厂 实 现 类 ，新数 据源就可以被MyBatis使用，而不必修改己有的 代码 。显 然，工厂 方法模式符合“开 放-封闭 ”原则 。除此之外，工厂 方法会 向调 用者隐 藏具体 产 品类 的实 例化细 节 ，调 用者只需要了解工厂 接口和产 品接口，面向这 两 个 接口编 程即 可。</p>
+<blockquote>
+<p>工厂 方法模式也是存在缺点的。在增加新产 品实 现 类 时 ，还 要提供一个 与 之对 应 的工厂 实 现 类 ，所以实 际 新增的类 是成对 出现 的，这 增加了系统 的复 杂 度。另 外，工厂 方法模式引入了 工厂 接口和产 品接口这 一层 抽象，调 用者面向该 抽象层 编 程,增加了程序的抽象性和理解难 度。</p>
+</blockquote>
+<h3 id="DataSourceFactory"><a href="#DataSourceFactory" class="headerlink" title="DataSourceFactory"></a>DataSourceFactory</h3><p>在数 据源模块 中，<code>DataSourceFactory</code>接口扮演工厂 接口的角色。</p>
+<p><code>UnpooledDataSourceFactory</code> 和 <code>PooledDataSourceFactory</code>则 扮演着具体 工厂 类 的角色。</p>
+<p>我们 从 <code>DataSourceFactory</code>接口开 始分 析，其定义 如下:</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">DataSourceFactory</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 设置DataSource的相关属性，一般紧跟在初始化完成之后</span></span><br><span class="line">  <span class="function"><span class="keyword">void</span> <span class="title">setProperties</span><span class="params">(Properties props)</span></span>;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 获取DataSource对象</span></span><br><span class="line">  <span class="function">DataSource <span class="title">getDataSource</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在 <code>UnpooledDataSourceFactory</code>的 构 造 函 数 中 会 直 接 创 建 <code>UnpooledDataSource</code>对 象 ，并 初始 化 <code>UnpooledDataSourceFactory.dataSource</code> 字 段 。<code>UnpooledDataSourceFactory.setProperties()</code>方法会 完成对 <code>UnpooledDataSource</code>对 象的配置，代码 如下:</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">setProperties</span><span class="params">(Properties properties)</span> </span>&#123;</span><br><span class="line">  Properties driverProperties = <span class="keyword">new</span> Properties();</span><br><span class="line">  <span class="comment">// 创建DataSource对应的MetaObject</span></span><br><span class="line">  MetaObject metaDataSource = SystemMetaObject.forObject(dataSource);</span><br><span class="line">  <span class="comment">// 遍历properties集合，该集合中配置了数据源需要的信息</span></span><br><span class="line">  <span class="keyword">for</span> (Object key : properties.keySet()) &#123;</span><br><span class="line">    String propertyName = (String) key;</span><br><span class="line">    <span class="comment">// 以&quot;driver.&quot;开头的配置项是对DateSource的配置，记录到driverProperties中保存</span></span><br><span class="line">    <span class="keyword">if</span> (propertyName.startsWith(DRIVER_PROPERTY_PREFIX)) &#123;</span><br><span class="line">      String value = properties.getProperty(propertyName);</span><br><span class="line">      driverProperties.setProperty(</span><br><span class="line">        propertyName.substring(DRIVER_PROPERTY_PREFIX_LENGTH), value);</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (metaDataSource.hasSetter(propertyName)) &#123;</span><br><span class="line">      String value = (String) properties.get(propertyName);</span><br><span class="line">      Object convertedValue = convertValue(metaDataSource, propertyName, value);</span><br><span class="line">      metaDataSource.setValue(propertyName, convertedValue);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      <span class="keyword">throw</span> <span class="keyword">new</span> DataSourceException(<span class="string">&quot;...&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">if</span> (driverProperties.size() &gt; <span class="number">0</span>) &#123;</span><br><span class="line">    metaDataSource.setValue(<span class="string">&quot;driverProperties&quot;</span>, driverProperties);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>UnpooledDataSourceFactory.getDataSource()</code>方法实 现 比较 简 单 ，它 直接返回 <code>dataSource</code>字段 记 录 的 <code>UnpooledDataSource</code> 对 象 。</p>
+<p><code>PooledDataSourceFactory</code> 继 承 了 <code>UnpooledDataSourceFactory</code>, 但 并 没 有 覆 盖 <code>setProperties()</code> 方法和<code>getDataSource()</code>方法。两 者唯一的区 别 是<code>PooledDataSourceFactory</code>的构 造函数 会 将 其 <code>dataSource</code> 字 段 初 始 化 为 <code>PooledDataSource</code> 对 象 。</p>
+<p><code>JndiDataSourceFactory</code>是依赖 JNDI服务 从 容器中获 取用户 配置的<code>DataSource</code>，其逻 辑 并 不 复 杂 。</p>
+<h3 id="UnpooledDataSource"><a href="#UnpooledDataSource" class="headerlink" title="UnpooledDataSource"></a>UnpooledDataSource</h3><p><code>javax.sql.DataSource</code>接口在数 据源模块 中扮演了产 品接口的角色，<code>MyBatis</code>提供了两 个 <code>DataSource</code>接 口 的 实 现 类 ，分 别 是 <code>UnpooledDataSource</code>和 <code>PooledDataSource</code>，它 们 扮 演 着 具 体 产 品类 的角色。</p>
+<p><code>UnpooledDataSource</code> 实 现 了 <code>javax.sql.DataSource</code> 接 口 中 定 义 的 <code>getConnection()</code>方 法 及 其 重 载方法，用于获 取数 据库 连 接。</p>
+<p>每次通过 <code>UnpooledDataSource.getConnection()</code>方法获 取数 据库 连 接 时 都会 创 建一个 新连 接。</p>
+<p><code>UnpooledDataSource</code>中的字段如下，每个 字段都有对 应 的getter/setter 方法:</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">UnpooledDataSource</span> <span class="keyword">implements</span> <span class="title">DataSource</span> </span>&#123;</span><br><span class="line">  </span><br><span class="line">  <span class="keyword">private</span> ClassLoader driverClassLoader;</span><br><span class="line">  <span class="keyword">private</span> Properties driverProperties;</span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">static</span> Map&lt;String, Driver&gt; registeredDrivers = <span class="keyword">new</span> ConcurrentHashMap&lt;String, Driver&gt;();</span><br><span class="line"></span><br><span class="line">  <span class="keyword">private</span> String driver;</span><br><span class="line">  <span class="keyword">private</span> String url;</span><br><span class="line">  <span class="keyword">private</span> String username;</span><br><span class="line">  <span class="keyword">private</span> String password;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">private</span> Boolean autoCommit;</span><br><span class="line">  <span class="keyword">private</span> Integer defaultTransactionIsolationLevel;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">static</span> &#123;</span><br><span class="line">    Enumeration&lt;Driver&gt; drivers = DriverManager.getDrivers();</span><br><span class="line">    <span class="keyword">while</span> (drivers.hasMoreElements()) &#123;</span><br><span class="line">      Driver driver = drivers.nextElement();</span><br><span class="line">      registeredDrivers.put(driver.getClass().getName(), driver);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="comment">// ...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="Pooled-DataSource"><a href="#Pooled-DataSource" class="headerlink" title="Pooled DataSource"></a>Pooled DataSource</h3><p>了解JDBC编 程的读 者知道，数 据库 连 接的创 建过 程是非常耗时 的，数 据库 能够 建立的连 接数 也非常有限，所以在绝 大多数 系统 中，数 据库 连 接是非常珍贵 的资 源，使用数 据库 连 接池就显得尤为必要。</p>
+<p>使用数据库连接池会带来很多好处，例如，<strong>可以实现数据库连接的重用、提高响 应 速度、防止数 据库 连 接过 多造成数 据库 假死、避免数 据库 连 接泄露等。</strong></p>
+<blockquote>
+<p>数据库连接池在初始化时，一般会创建一定数量的数据库连接并添加到连接池中备用。</p>
+<p>当 程序需要使用数 据库 连 接时 ，从 池中请 求连 接;当 程序不再使用该 连 接时 ，会 将 其返回到池中 缓 存，等待下次使用，而不是直接关 闭 。</p>
+<p>当 然，数 据库 连 接池会 控制连 接总 数 的上限以及空闲 连 接数 的上限，如果连 接池创 建的总 连 接数 己达 到上限，且都已被占用，则 后续 请 求连 接的线 程会 进 入阻塞队 列等待，直到有线 程释 放出可用的连 接。</p>
+<p>如果连 接池中空闲 连 接数 较 多，达 到 其上限，则 后续 返回的空闲 连 接不会 放入池中，而是直接关 闭 ，这 样 可以减 少系统 维 护 多余数 据库连接的开销。</p>
+</blockquote>
+<ul>
+<li>如果将总连接数的上限设置得过大，可能因连接数过多而导致数据库僵死，系统整体性能 下降;</li>
+<li>如果总连接数上限过小，则无法完全发挥数据库的性能，浪费数据库资源。如果将空闲 连接的上限设置得过大，则会浪费系统资源来维护这些空闲连接;</li>
+<li>如果空闲连接上限过小，当 出现 瞬间 的峰值 请 求时 ，系统 的快速响 应 能力就比较 弱。</li>
+</ul>
+<p><em>所以在设 置数 据库 连 接池的这 两 个 值 时，需要进行性能测试、权衡以及一些经验。</em></p>
+<p><code>PooledDataSource</code>实 现 了简 易数 据库 连 接池的功能，它 依赖 的组 件如图 所示，其中需 要注意的是，<code>PooledDataSource</code>创 建新数 据库 连 接的功能是依赖 其中封装 的<code>UnpooledDataSource</code> 对象实现的。</p>
+<p><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/09/image-20200609115725188_8mgoXg.png" alt="image-20200609115725188"></p>
+<h4 id="PooledConnection"><a href="#PooledConnection" class="headerlink" title="PooledConnection"></a>PooledConnection</h4><p><code>PooledDataSource</code>并 不会 直接管理<code>java.sql.Connection</code>对 象，而是管理 <code>PooledConnection</code>对 象。</p>
+<p>在 <code>PooledConnection</code>中封装 了真 正的数 据库 连 接对 象(<code>java.sql.Connection</code>) 以及其代理对 象，这 里的代理对 象是通过 JDK动 态 代理产 生的。<code>PooledConnection</code>继 承了 <code>InvocationHandler</code> 接口。</p>
+<p>核心字段：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="comment">// 记录当前PooledConnection对 象所在的 PooledDataSource对 象。</span></span><br><span class="line"><span class="comment">// 该 PooledConnection是从该 PooledDataSource中获 取的;</span></span><br><span class="line"><span class="comment">// 当 调 用close() 方法时 会 将 PooledConnection放回该PooledDataSource 中</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> PooledDataSource dataSource;</span><br><span class="line"><span class="comment">// 真正的数据库连接</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> Connection realConnection;</span><br><span class="line"><span class="comment">// 数据库连接代理对象</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> Connection proxyConnection;</span><br><span class="line"><span class="comment">// 从连接池中取出该连接的时间戳</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">long</span> checkoutTimestamp;</span><br><span class="line"><span class="comment">// 创建该连接的时间戳</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">long</span> createdTimestamp;</span><br><span class="line"><span class="comment">// 最后一次使用的时间戳</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">long</span> lastUsedTimestamp;</span><br><span class="line"><span class="comment">// 由数据库URL、用户名和密码计算出来的hash值，可用于标识该连接所在的连接池</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">int</span> connectionTypeCode;</span><br><span class="line"><span class="comment">// 检测当前PooledConnection是否有效，主要是为了防止程序通过close()方法将连接还给连接池之后</span></span><br><span class="line"><span class="comment">// 依然通过该连接操作数据库</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">boolean</span> valid;</span><br></pre></td></tr></table></figure>
+
+<p><code>PooledConnection.invoke()</code>方法的实 现 ，该 方法是<code>proxyConnection</code>这 个 连 接代理对 象的真 正代理 逻 辑 ，它 会 对 <code>close()</code>方法的调 用进 行代理，并 且在调 用真 正数 据库 连 接的方法之前进 行检 测 ， 代码 如下:</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> Object <span class="title">invoke</span><span class="params">(Object proxy, Method method, Object[] args)</span> </span></span><br><span class="line"><span class="function">  <span class="keyword">throws</span> Throwable </span>&#123;</span><br><span class="line">  String methodName = method.getName();</span><br><span class="line">  <span class="comment">// 如果调用close()方法，则将其重新放入连接池，而不是真正关闭数据库连接</span></span><br><span class="line">  <span class="keyword">if</span> (CLOSE.hashCode() == methodName.hashCode() &amp;&amp; CLOSE.equals(methodName)) &#123;</span><br><span class="line">    dataSource.pushConnection(<span class="keyword">this</span>);</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">  &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">      <span class="keyword">if</span> (!Object.class.equals(method.getDeclaringClass())) &#123;</span><br><span class="line">        <span class="comment">// issue #579 toString() should never fail</span></span><br><span class="line">        <span class="comment">// throw an SQLException instead of a Runtime</span></span><br><span class="line">        <span class="comment">// 通过valid字段检测连接是否有效</span></span><br><span class="line">        checkConnection();</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="comment">// 调用真正数据库连接对象对应的方法</span></span><br><span class="line">      <span class="keyword">return</span> method.invoke(realConnection, args);</span><br><span class="line">    &#125; <span class="keyword">catch</span> (Throwable t) &#123;</span><br><span class="line">      <span class="keyword">throw</span> ExceptionUtil.unwrapThrowable(t);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="PoolState"><a href="#PoolState" class="headerlink" title="PoolState"></a>PoolState</h4><p><code>PoolState</code>是 用 于 管 理 <code>PooledConnection</code>对 象 状 态 的 组 件 ，它 通 过 两 个 <code>ArrayList &lt;PooledConnection&gt;</code>集合分别 管理空闲 状 态 的连 接和活跃 状 态 的连 接，定义 如下:</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="comment">// 空闲的PooledConnection对象集合</span></span><br><span class="line"><span class="keyword">protected</span> <span class="keyword">final</span> List&lt;PooledConnection&gt; idleConnections = </span><br><span class="line">  <span class="keyword">new</span> ArrayList&lt;PooledConnection&gt;();</span><br><span class="line"><span class="comment">// 活跃的PooledConnection集合</span></span><br><span class="line"><span class="keyword">protected</span> <span class="keyword">final</span> List&lt;PooledConnection&gt; activeConnections = </span><br><span class="line">  <span class="keyword">new</span> ArrayList&lt;PooledConnection&gt;();</span><br><span class="line"><span class="comment">// 请求数据库连接的次数</span></span><br><span class="line"><span class="keyword">protected</span> <span class="keyword">long</span> requestCount = <span class="number">0</span>;</span><br><span class="line"><span class="comment">// 获取连接的累积时间</span></span><br><span class="line"><span class="keyword">protected</span> <span class="keyword">long</span> accumulatedRequestTime = <span class="number">0</span>;</span><br><span class="line"><span class="comment">// checkoutTime表示应用从连接池中取出连接，到归还的这段时长</span></span><br><span class="line"><span class="comment">// accumulatedCheckoutTime记录了所有连接累积的checkoutTime时长</span></span><br><span class="line"><span class="keyword">protected</span> <span class="keyword">long</span> accumulatedCheckoutTime = <span class="number">0</span>;</span><br><span class="line"><span class="comment">// 当连接长时间未归还给连接池的时候，会被认该连接超时</span></span><br><span class="line"><span class="comment">// claimedOverdueConnectionCount记录了超时连接个数</span></span><br><span class="line"><span class="keyword">protected</span> <span class="keyword">long</span> claimedOverdueConnectionCount = <span class="number">0</span>;</span><br><span class="line"><span class="comment">// 累积超时时间</span></span><br><span class="line"><span class="keyword">protected</span> <span class="keyword">long</span> accumulatedCheckoutTimeOfOverdueConnections = <span class="number">0</span>;</span><br><span class="line"><span class="comment">// 累积等待时间</span></span><br><span class="line"><span class="keyword">protected</span> <span class="keyword">long</span> accumulatedWaitTime = <span class="number">0</span>;</span><br><span class="line"><span class="comment">// 累积等待次数</span></span><br><span class="line"><span class="keyword">protected</span> <span class="keyword">long</span> hadToWaitCount = <span class="number">0</span>;</span><br><span class="line"><span class="comment">// 无效的连接数</span></span><br><span class="line"><span class="keyword">protected</span> <span class="keyword">long</span> badConnectionCount = <span class="number">0</span>;</span><br></pre></td></tr></table></figure>
+
+<h4 id="PooledDataSource"><a href="#PooledDataSource" class="headerlink" title="PooledDataSource"></a>PooledDataSource</h4><p><code>PooledDataSource</code>中 管 理 的 真 正 的 数 据 库 连 接 对 象 是 由 <code>PooledDataSource</code>中封装 的<code>UnpooledDataSource</code>对 象 创 建 的 ，并 由 <code>PoolState</code>管 理 所 有 连 接 的 状 态 。</p>
+<p><code>PooledDataSource</code>中核心字段的含义 和功能如下:</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="comment">// 通过 PoolState管理连接池的状态并记录统计信息</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> PoolState state = <span class="keyword">new</span> PoolState(<span class="keyword">this</span>);</span><br><span class="line"></span><br><span class="line"><span class="comment">// 记录UnpooledDataSource对象，用于生成真实的数据库连接对象，构造函数中会初始化该字段</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> UnpooledDataSource dataSource;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 最大活跃连接数</span></span><br><span class="line"><span class="keyword">protected</span> <span class="keyword">int</span> poolMaximumActiveConnections = <span class="number">10</span>;</span><br><span class="line"><span class="comment">// 最大空闲连接数</span></span><br><span class="line"><span class="keyword">protected</span> <span class="keyword">int</span> poolMaximumIdleConnections = <span class="number">5</span>;</span><br><span class="line"><span class="comment">// 最大checkout时长</span></span><br><span class="line"><span class="keyword">protected</span> <span class="keyword">int</span> poolMaximumCheckoutTime = <span class="number">20000</span>;</span><br><span class="line"><span class="comment">// 最大等待时间</span></span><br><span class="line"><span class="keyword">protected</span> <span class="keyword">int</span> poolTimeToWait = <span class="number">20000</span>;</span><br><span class="line"><span class="comment">// 最大无效连接数量</span></span><br><span class="line"><span class="keyword">protected</span> <span class="keyword">int</span> poolMaximumLocalBadConnectionTolerance = <span class="number">3</span>;</span><br><span class="line"><span class="comment">// 在检测一个数据库连接是否可用的时候，会给数据库发送一个测试SQL语句</span></span><br><span class="line"><span class="keyword">protected</span> String poolPingQuery = <span class="string">&quot;NO PING QUERY SET&quot;</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">protected</span> <span class="keyword">boolean</span> poolPingEnabled;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 当连接超过 poolPingConnectionsNotUsedFor毫秒未使用时 ，会发送一次测试SQL语句，检测连接是否正常</span></span><br><span class="line"><span class="keyword">protected</span> <span class="keyword">int</span> poolPingConnectionsNotUsedFor;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 根据数据库的URL、用户名和密码生成的一个hash值，该哈希值用于标志着当前的连接池，在构造函数中初始化</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">int</span> expectedConnectionTypeCode;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p><code>PooledDataSource.getConnection()</code>方 法 首 先 会 调 用 <code>PooledDataSource.popConnection()</code>方 法 获 取 <code>PooledConnection</code> 对 象，然后通过 <code>PooledConnection.getProxyConnection()</code>方法获 取数 据库 连 接的代理对 象。<code>popConnection()</code>方法是<code>PooledDataSource</code>的核心逻 辑 之一，其具体 逻 辑 如图。</p>
+<p><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/09/image-20200609150810073_QLmTH2.png" alt="image-20200609150810073"></p>
+<p><code>PooledDataSource.popConnection()</code>方法的具体实现：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> PooledConnection <span class="title">popConnection</span><span class="params">(String username, String password)</span> </span></span><br><span class="line"><span class="function">  <span class="keyword">throws</span> SQLException </span>&#123;</span><br><span class="line">  <span class="keyword">boolean</span> countedWait = <span class="keyword">false</span>;</span><br><span class="line">  PooledConnection conn = <span class="keyword">null</span>;</span><br><span class="line">  <span class="keyword">long</span> t = System.currentTimeMillis();</span><br><span class="line">  <span class="keyword">int</span> localBadConnectionCount = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">while</span> (conn == <span class="keyword">null</span>) &#123;</span><br><span class="line">    <span class="keyword">synchronized</span> (state) &#123;</span><br><span class="line">      <span class="keyword">if</span> (!state.idleConnections.isEmpty()) &#123;</span><br><span class="line">        <span class="comment">// Pool has available connection</span></span><br><span class="line">        conn = state.idleConnections.remove(<span class="number">0</span>);</span><br><span class="line">        <span class="keyword">if</span> (log.isDebugEnabled()) &#123;</span><br><span class="line">          log.debug(<span class="string">&quot;...&quot;</span>);</span><br><span class="line">        &#125;</span><br><span class="line">      &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="comment">// Pool does not have available connection</span></span><br><span class="line">        <span class="keyword">if</span> (state.activeConnections.size() &lt; poolMaximumActiveConnections) &#123;</span><br><span class="line">          <span class="comment">// Can create new connection</span></span><br><span class="line">          conn = <span class="keyword">new</span> PooledConnection(dataSource.getConnection(), <span class="keyword">this</span>);</span><br><span class="line">          <span class="keyword">if</span> (log.isDebugEnabled()) &#123;</span><br><span class="line">            log.debug(<span class="string">&quot;...&quot;</span>);</span><br><span class="line">          &#125;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">          <span class="comment">// Cannot create new connection</span></span><br><span class="line">          PooledConnection oldestActiveConnection = state.activeConnections.get(<span class="number">0</span>);</span><br><span class="line">          <span class="keyword">long</span> longestCheckoutTime = oldestActiveConnection.getCheckoutTime();</span><br><span class="line">          <span class="keyword">if</span> (longestCheckoutTime &gt; poolMaximumCheckoutTime) &#123;</span><br><span class="line">            <span class="comment">// Can claim overdue connection</span></span><br><span class="line">            state.claimedOverdueConnectionCount++;</span><br><span class="line">            state.accumulatedCheckoutTimeOfOverdueConnections += longestCheckoutTime;</span><br><span class="line">            state.accumulatedCheckoutTime += longestCheckoutTime;</span><br><span class="line">            state.activeConnections.remove(oldestActiveConnection);</span><br><span class="line">            <span class="keyword">if</span> (!oldestActiveConnection.getRealConnection().getAutoCommit()) &#123;</span><br><span class="line">              <span class="keyword">try</span> &#123;</span><br><span class="line">                oldestActiveConnection.getRealConnection().rollback();</span><br><span class="line">              &#125; <span class="keyword">catch</span> (SQLException e) &#123;</span><br><span class="line">                log.debug(<span class="string">&quot;Bad connection. Could not roll back&quot;</span>);</span><br><span class="line">              &#125;  </span><br><span class="line">            &#125;</span><br><span class="line">            conn = <span class="keyword">new</span> PooledConnection(oldestActiveConnection.getRealConnection(), <span class="keyword">this</span>);</span><br><span class="line">            conn.setCreatedTimestamp(oldestActiveConnection.getCreatedTimestamp());</span><br><span class="line">            conn.setLastUsedTimestamp(oldestActiveConnection.getLastUsedTimestamp());</span><br><span class="line">            oldestActiveConnection.invalidate();</span><br><span class="line">            <span class="keyword">if</span> (log.isDebugEnabled()) &#123;</span><br><span class="line">              log.debug(<span class="string">&quot;....&quot;</span>);</span><br><span class="line">            &#125;</span><br><span class="line">          &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="comment">// Must wait</span></span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">              <span class="keyword">if</span> (!countedWait) &#123;</span><br><span class="line">                state.hadToWaitCount++;</span><br><span class="line">                countedWait = <span class="keyword">true</span>;</span><br><span class="line">              &#125;</span><br><span class="line">              <span class="keyword">if</span> (log.isDebugEnabled()) &#123;</span><br><span class="line">                log.debug(<span class="string">&quot;...&quot;</span>);</span><br><span class="line">              &#125;</span><br><span class="line">              <span class="keyword">long</span> wt = System.currentTimeMillis();</span><br><span class="line">              state.wait(poolTimeToWait);</span><br><span class="line">              state.accumulatedWaitTime += System.currentTimeMillis() - wt;</span><br><span class="line">            &#125; <span class="keyword">catch</span> (InterruptedException e) &#123;</span><br><span class="line">              <span class="keyword">break</span>;</span><br><span class="line">            &#125;</span><br><span class="line">          &#125;</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">if</span> (conn != <span class="keyword">null</span>) &#123;</span><br><span class="line">        <span class="comment">// ping to server and check the connection is valid or not</span></span><br><span class="line">        <span class="keyword">if</span> (conn.isValid()) &#123;</span><br><span class="line">          <span class="keyword">if</span> (!conn.getRealConnection().getAutoCommit()) &#123;</span><br><span class="line">            conn.getRealConnection().rollback();</span><br><span class="line">          &#125;</span><br><span class="line">          conn.setConnectionTypeCode(assembleConnectionTypeCode(dataSource.getUrl(), username, password));</span><br><span class="line">          conn.setCheckoutTimestamp(System.currentTimeMillis());</span><br><span class="line">          conn.setLastUsedTimestamp(System.currentTimeMillis());</span><br><span class="line">          state.activeConnections.add(conn);</span><br><span class="line">          state.requestCount++;</span><br><span class="line">          state.accumulatedRequestTime += System.currentTimeMillis() - t;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">          <span class="keyword">if</span> (log.isDebugEnabled()) &#123;</span><br><span class="line">            log.debug(<span class="string">&quot;...&quot;</span>);</span><br><span class="line">          &#125;</span><br><span class="line">          state.badConnectionCount++;</span><br><span class="line">          localBadConnectionCount++;</span><br><span class="line">          conn = <span class="keyword">null</span>;</span><br><span class="line">          <span class="keyword">if</span> (localBadConnectionCount &gt; (poolMaximumIdleConnections + poolMaximumLocalBadConnectionTolerance)) &#123;</span><br><span class="line">            <span class="keyword">if</span> (log.isDebugEnabled()) &#123;</span><br><span class="line">              log.debug(<span class="string">&quot;...&quot;</span>);</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> SQLException(<span class="string">&quot;...&quot;</span>);</span><br><span class="line">          &#125;</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> (conn == <span class="keyword">null</span>) &#123;</span><br><span class="line">    <span class="keyword">if</span> (log.isDebugEnabled()) &#123;</span><br><span class="line">      log.debug(<span class="string">&quot;...&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">throw</span> <span class="keyword">new</span> SQLException(<span class="string">&quot;...&quot;</span>);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> conn;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>通 过 前 面 对 <code>PooledConnection.invoke()</code>方法的分析我们 知道，当 调 用连 接的代理对 象的 <code>close()</code>方 法 时 ，并未关闭真正的数据连接 ，而是调用<code>PooledDataSource.pushConnection()</code>方法将 <code>PooledConnection</code>对 象归 还 给 连 接池，供之后重用。</p>
+<p><code>PooledDataSource.pushConnection()</code>方法也是 <code>PooledDataSource</code>的核心逻 辑 之一，其逻 辑 如图 </p>
+<p><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://gitee.com/cayzlh/img-repo/raw/master/2020/06/09/image-20200609151224380_AWh8ao.png" alt="image-20200609151224380"></p>
+<p><code>PooledDataSource.pushConnection()</code>代码如下：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title">pushConnection</span><span class="params">(PooledConnection conn)</span> <span class="keyword">throws</span> SQLException </span>&#123;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">synchronized</span> (state) &#123;</span><br><span class="line">    state.activeConnections.remove(conn);</span><br><span class="line">    <span class="keyword">if</span> (conn.isValid()) &#123;</span><br><span class="line">      <span class="keyword">if</span> (state.idleConnections.size() &lt; poolMaximumIdleConnections </span><br><span class="line">          &amp;&amp; conn.getConnectionTypeCode() == expectedConnectionTypeCode) &#123;</span><br><span class="line">        state.accumulatedCheckoutTime += conn.getCheckoutTime();</span><br><span class="line">        <span class="keyword">if</span> (!conn.getRealConnection().getAutoCommit()) &#123;</span><br><span class="line">          <span class="comment">// 回滚未提交的事务</span></span><br><span class="line">          conn.getRealConnection().rollback();</span><br><span class="line">        &#125;</span><br><span class="line">        PooledConnection newConn = <span class="keyword">new</span> PooledConnection(conn.getRealConnection(), <span class="keyword">this</span>);</span><br><span class="line">        state.idleConnections.add(newConn);</span><br><span class="line">        newConn.setCreatedTimestamp(conn.getCreatedTimestamp());</span><br><span class="line">        newConn.setLastUsedTimestamp(conn.getLastUsedTimestamp());</span><br><span class="line">        conn.invalidate();</span><br><span class="line">        <span class="keyword">if</span> (log.isDebugEnabled()) &#123;</span><br><span class="line">          log.debug(<span class="string">&quot;...&quot;</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        state.notifyAll();</span><br><span class="line">      &#125; <span class="keyword">else</span> &#123; <span class="comment">// 空闲连接数已达到上限或PooledConnection对象并不属于该连接池</span></span><br><span class="line">        state.accumulatedCheckoutTime += conn.getCheckoutTime();</span><br><span class="line">        <span class="keyword">if</span> (!conn.getRealConnection().getAutoCommit()) &#123;</span><br><span class="line">          conn.getRealConnection().rollback();</span><br><span class="line">        &#125;</span><br><span class="line">        conn.getRealConnection().close();</span><br><span class="line">        <span class="keyword">if</span> (log.isDebugEnabled()) &#123;</span><br><span class="line">          log.debug(<span class="string">&quot;...&quot;</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        conn.invalidate();</span><br><span class="line">      &#125;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      <span class="keyword">if</span> (log.isDebugEnabled()) &#123;</span><br><span class="line">        log.debug(<span class="string">&quot;...&quot;</span>);</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="comment">// 统计无效PooledConnection对象个数</span></span><br><span class="line">      state.badConnectionCount++;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里需要注意的是，<code>PooledDataSource.pushConnection()</code>方法和<code>popConnection()</code>方法中都调 用了 <code>PooledConnection.isValid()</code>方 法 来 检 测 <code>PooledConnection</code>的 有 效 性 ， 该 方 法 除 了 检 测 <code>PooledConnection.valid</code> 字段的值 ，还 会 调 用 <code>PooledDataSource.pingConnection()</code>方法尝 试 让 数 据 库 执 行<code>podPingQuery</code>字段中记 录 的测 试 SQL语 句，从 而检 测 真 正的数 据库 连 接对 象是否依然 可以正常使用。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">isValid</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> valid &amp;&amp; realConnection != <span class="keyword">null</span> &amp;&amp; dataSource.pingConnection(<span class="keyword">this</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">boolean</span> <span class="title">pingConnection</span><span class="params">(PooledConnection conn)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">boolean</span> result = <span class="keyword">true</span>;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">try</span> &#123;</span><br><span class="line">    result = !conn.getRealConnection().isClosed();</span><br><span class="line">  &#125; <span class="keyword">catch</span> (SQLException e) &#123;</span><br><span class="line">    <span class="keyword">if</span> (log.isDebugEnabled()) &#123;</span><br><span class="line">      log.debug(<span class="string">&quot;...&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    result = <span class="keyword">false</span>;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> (result) &#123;</span><br><span class="line">    <span class="keyword">if</span> (poolPingEnabled) &#123;</span><br><span class="line">      <span class="comment">// 检测poolPingEnabled设置，是否运行执行测试SQL语 句</span></span><br><span class="line">      <span class="comment">// 长时间(超过 poolPingConnectionsNotUsedFor指定的时长)未使用的连接，才需要ping</span></span><br><span class="line">      <span class="comment">// 操作来检测数据库连接是否正常</span></span><br><span class="line">      <span class="keyword">if</span> (poolPingConnectionsNotUsedFor &gt;= <span class="number">0</span> </span><br><span class="line">          &amp;&amp; conn.getTimeElapsedSinceLastUse() &gt; poolPingConnectionsNotUsedFor) &#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">          <span class="keyword">if</span> (log.isDebugEnabled()) &#123;</span><br><span class="line">            log.debug(<span class="string">&quot;...&quot;</span>);</span><br><span class="line">          &#125;</span><br><span class="line">          Connection realConn = conn.getRealConnection();</span><br><span class="line">          Statement statement = realConn.createStatement();</span><br><span class="line">          ResultSet rs = statement.executeQuery(poolPingQuery);</span><br><span class="line">          rs.close();</span><br><span class="line">          statement.close();</span><br><span class="line">          <span class="keyword">if</span> (!realConn.getAutoCommit()) &#123;</span><br><span class="line">            realConn.rollback();</span><br><span class="line">          &#125;</span><br><span class="line">          result = <span class="keyword">true</span>;</span><br><span class="line">          <span class="keyword">if</span> (log.isDebugEnabled()) &#123;</span><br><span class="line">            log.debug(<span class="string">&quot;...&quot;</span>);</span><br><span class="line">          &#125;</span><br><span class="line">        &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">          log.warn(<span class="string">&quot;...&quot;</span>);</span><br><span class="line">          <span class="keyword">try</span> &#123;</span><br><span class="line">            conn.getRealConnection().close();</span><br><span class="line">          &#125; <span class="keyword">catch</span> (Exception e2) &#123;</span><br><span class="line">            <span class="comment">//ignore</span></span><br><span class="line">          &#125;</span><br><span class="line">          result = <span class="keyword">false</span>;</span><br><span class="line">          <span class="keyword">if</span> (log.isDebugEnabled()) &#123;</span><br><span class="line">            log.debug(<span class="string">&quot;...&quot;</span>);</span><br><span class="line">          &#125;</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> result;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>最后需要注意的是<code>PooledDataSource.forceCloseAll()</code>方法，当 修改<code>PooledDataSource</code>的字段 时 ，例如数 <strong>据库 URL</strong>、<strong>用户名</strong>、<strong>密码</strong> 、<strong>autoCommit配置</strong>等，都会 调 用<code>forceCloseAll()</code>方法将 所 有数 据库 连 接关 闭 ，同时 也会 将 所有相应 的<code>PooledConnectiori</code>对 象都设 置为 无效，清 空 <code>activeConnections</code> 集 合 和 <code>idleConnections</code> 集 合 。</p>
+<p>应用系统之后通过<code>PooledDataSource.getConnection()</code>获取连接时，会按照新的配置重新配置新的数据库连接以及相应的<code>PooledConnection</code>对象。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">forceCloseAll</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="keyword">synchronized</span> (state) &#123;</span><br><span class="line">    expectedConnectionTypeCode = assembleConnectionTypeCode(</span><br><span class="line">      dataSource.getUrl(), dataSource.getUsername(), dataSource.getPassword());</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = state.activeConnections.size(); i &gt; <span class="number">0</span>; i--) &#123;</span><br><span class="line">      <span class="keyword">try</span> &#123;</span><br><span class="line">        PooledConnection conn = state.activeConnections.remove(i - <span class="number">1</span>);</span><br><span class="line">        conn.invalidate();</span><br><span class="line"></span><br><span class="line">        Connection realConn = conn.getRealConnection();</span><br><span class="line">        <span class="keyword">if</span> (!realConn.getAutoCommit()) &#123;</span><br><span class="line">          realConn.rollback();</span><br><span class="line">        &#125;</span><br><span class="line">        realConn.close();</span><br><span class="line">      &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">        <span class="comment">// ignore</span></span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = state.idleConnections.size(); i &gt; <span class="number">0</span>; i--) &#123;</span><br><span class="line">      <span class="keyword">try</span> &#123;</span><br><span class="line">        PooledConnection conn = state.idleConnections.remove(i - <span class="number">1</span>);</span><br><span class="line">        conn.invalidate();</span><br><span class="line"></span><br><span class="line">        Connection realConn = conn.getRealConnection();</span><br><span class="line">        <span class="keyword">if</span> (!realConn.getAutoCommit()) &#123;</span><br><span class="line">          realConn.rollback();</span><br><span class="line">        &#125;</span><br><span class="line">        realConn.close();</span><br><span class="line">      &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">        <span class="comment">// ignore</span></span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">if</span> (log.isDebugEnabled()) &#123;</span><br><span class="line">    log.debug(<span class="string">&quot;PooledDataSource forcefully closed/removed all connections.&quot;</span>);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h3><ul>
+<li><p><strong>《MyBatis技术内幕》</strong></p>
+</li>
+<li><p>部分图片来源——<strong>《MyBatis技术内幕》</strong></p>
+</li>
+</ul>
+
+  
+
+
+  </article>
+  
+<div class="related-wrap" id="read-next"><section class="header cap theme"><span>接下来阅读</span></section><section class="body"><div class="post-title h2"><a href="/wiki/mybatis_technology_insider/part7.html">基础支持层——Transaction</a></div><div class="post-title fs14"><a href="/wiki/mybatis_technology_insider/part5.html">上一篇：基础支持层——资源加载</a></div></section></div>
+
+  
+
+  <div class="related-wrap md" id="comments">
+    <div class="cmt-title cap theme">
+      快来参与讨论吧
+    </div>
+    <div class="cmt-body utterances">
+      
+
+<svg class="loading" style="vertical-align: middle;fill: currentColor;overflow: hidden;" viewbox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2709"><path d="M832 512c0-176-144-320-320-320V128c211.2 0 384 172.8 384 384h-64zM192 512c0 176 144 320 320 320v64C300.8 896 128 723.2 128 512h64z" p-id="2710"/></svg>
+
+<div id="utterances" repo="cayzlh/studious-barnacle" issue-term="Mybatis技术内幕" theme="github-light"></div>
+
+    </div>
+  </div>
+
+
+
+
+      
+<footer class="page-footer fs12"><hr><div><p>本站所有文章除特别声明外，均采用 <a target="_blank" rel="external nofollow noopener noreferrer" href="https://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY-NC-SA 4.0</a> 许可协议，转载请注明出处</p>
+<p>本站由 <a href="https://www.cayzlh.com/">@chen anyu</a> 创建，使用 <a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/xaoxuu/hexo-theme-stellar/tree/1.1.0">Stellar</a> 作为主题，您可以在 <a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/cayzlh/cayzlh.github.io">GitHub</a> 找到本站源码</p>
+<p>本站托管于 <a target="_blank" rel="external nofollow noopener noreferrer" href="https://cloudbase.net/">云开发CloudBase</a> &amp; <a target="_blank" rel="external nofollow noopener noreferrer" href="https://pages.github.com/">Github Pages</a>，粤ICP备<a target="_blank" rel="external nofollow noopener noreferrer" href="https://beian.miit.gov.cn/">20058712</a>号</p>
+<div><span id="timeDate">载入天数...</span><span id="times">载入时分秒...</span>，<span id="busuanzi_container_site_pv">总访问量: <span id="busuanzi_value_site_pv"></span>次</span>，<span id="busuanzi_container_site_uv">访客数: <span id="busuanzi_value_site_uv"></span>人</span></div><p><a target="_blank" rel="external nofollow noopener noreferrer" href="https://travellings.now.sh/"><img class="lazy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAADa6r/EAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" data-src="https://travellings.vercel.app/assets/logo.gif" alt="开往-友链接力" width="100"></a></p>
+</div></footer>
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<script>
+  function createtime() {
+    var now = new Date();
+    var grt= new Date("05/26/2019 04:40:00");
+    now.setTime(now.getTime()+250);
+    days = (now - grt ) / 1000 / 60 / 60 / 24; dnum = Math.floor(days);
+    hours = (now - grt ) / 1000 / 60 / 60 - (24 * dnum); hnum = Math.floor(hours);
+    if(String(hnum).length ==1 ){hnum = "0" + hnum;} minutes = (now - grt ) / 1000 /60 - (24 * 60 * dnum) - (60 * hnum);
+    mnum = Math.floor(minutes); if(String(mnum).length ==1 ){mnum = "0" + mnum;}
+    seconds = (now - grt ) / 1000 - (24 * 60 * 60 * dnum) - (60 * 60 * hnum) - (60 * mnum);
+    snum = Math.round(seconds); if(String(snum).length ==1 ){snum = "0" + snum;}
+    document.getElementById("timeDate").innerHTML = "本站已运行 "+dnum+" 天 ";
+    document.getElementById("times").innerHTML = hnum + " 小时 " + mnum + " 分 " + snum + " 秒";
+  };
+  setInterval("createtime()",250);
+</script>
+      <div class="float-panel mobile-only" style="display:none">
+  <button type="button" class="sidebar-toggle mobile" onclick="sidebar.toggle()">
+    <svg class="icon" viewbox="0 0 1228 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2849"><path d="M0 0m97.390199 0l973.901995 0q97.390199 0 97.390199 97.390199l0 0q0 97.390199-97.390199 97.3902l-973.901995 0q-97.390199 0-97.390199-97.3902l0 0q0-97.390199 97.390199-97.390199Z" p-id="2850"/><path d="M0 389.560798m97.390199 0l973.901995 0q97.390199 0 97.390199 97.390199l0 0q0 97.390199-97.390199 97.3902l-973.901995 0q-97.390199 0-97.390199-97.3902l0 0q0-97.390199 97.390199-97.390199Z" p-id="2851"/><path d="M0 779.121596m97.390199 0l973.901995 0q97.390199 0 97.390199 97.390199l0 0q0 97.390199-97.390199 97.390199l-973.901995 0q-97.390199 0-97.390199-97.390199l0 0q0-97.390199 97.390199-97.390199Z" p-id="2852"/></svg>
+  </button>
+</div>
+
+    </div>
+  </div>
+  <div class="scripts">
+    <script type="text/javascript">
+  stellar = {
+    // 懒加载 css https://github.com/filamentgroup/loadCSS
+    loadCSS: (href, before, media, attributes) => {
+      var doc = window.document;
+      var ss = doc.createElement("link");
+      var ref;
+      if (before) {
+        ref = before;
+      } else {
+        var refs = (doc.body || doc.getElementsByTagName("head")[0]).childNodes;
+        ref = refs[refs.length - 1];
+      }
+      var sheets = doc.styleSheets;
+      if (attributes) {
+        for (var attributeName in attributes) {
+          if (attributes.hasOwnProperty(attributeName)) {
+            ss.setAttribute(attributeName, attributes[attributeName]);
+          }
+        }
+      }
+      ss.rel = "stylesheet";
+      ss.href = href;
+      ss.media = "only x";
+      function ready(cb) {
+        if (doc.body) {
+          return cb();
+        }
+        setTimeout(function () {
+          ready(cb);
+        });
+      }
+      ready(function () {
+        ref.parentNode.insertBefore(ss, before ? ref : ref.nextSibling);
+      });
+      var onloadcssdefined = function (cb) {
+        var resolvedHref = ss.href;
+        var i = sheets.length;
+        while (i--) {
+          if (sheets[i].href === resolvedHref) {
+            return cb();
+          }
+        }
+        setTimeout(function () {
+          onloadcssdefined(cb);
+        });
+      };
+      function loadCB() {
+        if (ss.addEventListener) {
+          ss.removeEventListener("load", loadCB);
+        }
+        ss.media = media || "all";
+      }
+      if (ss.addEventListener) {
+        ss.addEventListener("load", loadCB);
+      }
+      ss.onloadcssdefined = onloadcssdefined;
+      onloadcssdefined(loadCB);
+      return ss;
+    },
+
+    // 从 butterfly 和 volantis 获得灵感
+    loadScript: (src, opt) => new Promise((resolve, reject) => {
+      var script = document.createElement('script')
+      script.src = src
+      if (opt) {
+        for (let key of Object.keys(opt)) {
+          script[key] = opt[key]
+        }
+      } else {
+        // 默认异步，如果需要同步，第二个参数传入 {} 即可
+        script.async = true
+      }
+      script.onerror = reject
+      script.onload = script.onreadystatechange = function() {
+        const loadState = this.readyState
+        if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+        script.onload = script.onreadystatechange = null
+        resolve()
+      }
+      document.head.appendChild(script)
+    }),
+
+    // https://github.com/jerryc127/hexo-theme-butterfly
+    jQuery: (fn) => {
+      if (typeof jQuery === 'undefined') {
+        stellar.loadScript(stellar.plugins.jQuery).then(fn)
+      } else {
+        fn()
+      }
+    }
+  };
+  stellar.github = 'https://github.com/xaoxuu/hexo-theme-stellar/tree/1.1.0';
+  stellar.config = {
+    date_suffix: {
+      just: '刚刚',
+      min: '分钟前',
+      hour: '小时前',
+      day: '天前',
+      month: '个月前',
+    },
+  };
+
+  // required plugins (only load if needs)
+  stellar.plugins = {
+    jQuery: 'https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js',
+    sitesjs: '/js/plugins/sites.js',
+    friendsjs: '/js/plugins/friends.js',
+  };
+
+  // optional plugins
+  if ('true' == 'true') {
+    stellar.plugins.lazyload = Object.assign({"enable":true,"js":"https://cdn.jsdelivr.net/npm/vanilla-lazyload@17.3.1/dist/lazyload.min.js","transition":"blur"});
+  }
+  if ('true' == 'true') {
+    stellar.plugins.swiper = Object.assign({"enable":true,"css":"https://unpkg.com/swiper/swiper-bundle.min.css","js":"https://unpkg.com/swiper/swiper-bundle.min.js"});
+  }
+  if ('' == 'true') {
+    stellar.plugins.scrollreveal = Object.assign({"enable":null,"js":"https://cdn.jsdelivr.net/npm/scrollreveal@4.0.9/dist/scrollreveal.min.js","distance":"8px","duration":500,"interval":100,"scale":1});
+  }
+  if ('true' == 'true') {
+    stellar.plugins.preload = Object.assign({"enable":true,"service":"flying_pages","instant_page":"https://cdn.jsdelivr.net/gh/volantis-x/cdn-volantis@4.1.2/js/instant_page.js","flying_pages":"https://cdn.jsdelivr.net/gh/gijo-varghese/flying-pages@2.1.2/flying-pages.min.js"});
+  }
+</script>
+
+<!-- required -->
+
+  
+<script src="/js/main.js" async></script>
+
+
+
+<!-- optional -->
+
+  <script>
+  function utterances(){
+    if(!document.getElementById("utterances"))return;
+    setTimeout(function() {
+      var checkUtterances = setInterval(function () {
+        var el = document.getElementById("utterances");
+        if (!el) return
+        clearInterval(checkUtterances)
+        try {
+          el.innerHTML="";
+        } catch (error) {}
+        var script = document.createElement('script');
+        script.src = 'https://utteranc.es/client.js';
+        const keys = ['repo', 'issue-term', 'issue-number', 'theme', 'label', 'crossorigin'];
+        keys.forEach((key, i) => {
+          if (el.attributes[key] && el.attributes[key].value) {
+            script.setAttribute(key, el.attributes[key].value);
+          }
+        });
+        el.appendChild(script);
+       }, 200)
+    });
+  }
+  utterances();
+</script>
+
+
+
+
+<!-- inject -->
+
+
+  </div>
+</body>
+</html>
