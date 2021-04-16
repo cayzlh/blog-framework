@@ -14,5 +14,8 @@ sidebar: [welcome, toc]
 cover: xxx
 h1: 一级标题
 menu_id: more
+references: 
+  title:
+  url:
 ---
 
