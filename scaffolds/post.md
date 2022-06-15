@@ -8,7 +8,7 @@ keywords:
 description:
 comments: false
 abbrlink: 
-sidebar: [welcome, toc]
+sidebar: [toc]
 cover: xxx
 h1: 一级标题
 menu_id: more
