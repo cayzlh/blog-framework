@@ -2,7 +2,7 @@
 title: {{ title }}
 date: {{ date }}
 updated: {{ date }}
-layout: post
+sidebar: [toc, recent]
 tags:
 categories: 
 keywords: 
