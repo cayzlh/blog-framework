@@ -2,14 +2,12 @@
 title: {{ title }}
 date: {{ date }}
 updated: {{ date }}
-sidebar: [toc, recent]
 tags:
 categories: 
 keywords: 
 description:
 comments: false
 abbrlink: 
-sidebar: [toc]
 cover: xxx
 h1: 一级标题
 menu_id: more
