@@ -18,8 +18,8 @@ poster: # 海报（可选，全图封面卡片）
 h1: 一级标题
 menu_id: more
 references:
-title:
-url:
+  - title: 
+    url: 
 seo_title: xxx
 toc_title: xxx
 robots: 'index,nofollow'
