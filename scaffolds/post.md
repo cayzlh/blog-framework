@@ -22,6 +22,7 @@ references:
     url: 
 seo_title: xxx
 toc_title: xxx
+indent: true # 首行缩进 与 标题居中
 robots: 'index,nofollow'
 ---
 
