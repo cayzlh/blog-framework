@@ -18,9 +18,7 @@ poster: # 海报（可选，全图封面卡片）
 h1: 一级标题
 menu_id: more
 references:
-  - title: 
-    url: 
-seo_title: xxx
+  - '[]()'
 toc_title: xxx
 indent: true # 首行缩进 与 标题居中
 robots: 'index,nofollow'
