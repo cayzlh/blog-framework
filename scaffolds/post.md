@@ -22,5 +22,8 @@ references:
 toc_title: xxx
 indent: true # 首行缩进 与 标题居中
 robots: 'index,nofollow'
+article:
+  type: tech # tech/story
+topic: # _data/topic/..
 ---
 
