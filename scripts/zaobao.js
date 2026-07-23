@@ -40,7 +40,7 @@ hexo.extend.generator.register('zaobao', function () {
   for (var k in siteCfg)  cfg[k] = siteCfg[k];
 
   var total = cfg.enable !== false;
-  var token = themeCfg.token || '';
+  var token = themeCfg.token || siteCfg.token || '';
 
   /* ---- cache first: use cached data regardless of token ---- */
   var cache = loadCache();
