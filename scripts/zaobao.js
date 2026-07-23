@@ -33,14 +33,14 @@ var CACHE_FILE = '.daily_cache.json';
 hexo.extend.generator.register('zaobao', function () {
 
   /* ---- read config (theme + site merged, site takes priority) ---- */
-  var themeCfg = hexo.theme.alapi || {};
+  var themeCfg = (hexo.theme.config && hexo.theme.config.alapi) || {};
   var siteCfg  = hexo.config.alapi || {};
   var cfg = {};
   for (var k in themeCfg) cfg[k] = themeCfg[k];
   for (var k in siteCfg)  cfg[k] = siteCfg[k];
 
   var total = cfg.enable !== false;
-  var token = themeCfg.token || siteCfg.token || '';
+  var token = themeCfg.token || '';
 
   /* ---- cache first: use cached data regardless of token ---- */
   var cache = loadCache();
