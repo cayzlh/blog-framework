@@ -1,101 +1,156 @@
 'use strict';
 
 /**
- * Zaobao (每日早报) Generator
+ * Daily News Generator (聚合)
  *
- * Fetches daily news from alapi.cn API during `hexo generate`,
- * generates /news/index.html — zero external dependencies.
+ * Fetches three data sources from alapi.cn during `hexo generate`:
+ *   - 每日早报  /api/zaobao
+ *   - 微博热搜  /api/new/wbtop
+ *   - 知乎日报  /api/zhihu
  *
  * Token sources (priority):
- *   1. process.env.ZAOBAO_TOKEN — environment variable (best for CI/CD)
+ *   1. process.env.ZAOBAO_TOKEN — environment variable
  *   2. zaobao.token in site root _config.yml
  *
- * If neither is set, the build proceeds with an empty page (no crash).
- *
- * Usage:
- *   # Via env var (recommended for CI/CD):
- *   ZAOBAO_TOKEN=your_token hexo generate
- *
- *   # Via _config.yml (local dev):
- *   zaobao:
- *     token: your_token
+ * If token is missing, build proceeds with empty state.
  */
 
 var https = require('https');
 var querystring = require('querystring');
 
 var TOKEN = process.env.ZAOBAO_TOKEN || (hexo.config.zaobao && hexo.config.zaobao.token) || '';
-var API_URL = 'https://v3.alapi.cn/api/zaobao';
 var PAGE_PATH = 'news/index.html';
 
 hexo.extend.generator.register('zaobao', function () {
-  var params = querystring.stringify({
-    token: TOKEN,
-    format: 'json'
-  });
-  var url = API_URL + '?' + params;
 
-  hexo.log.info('[zaobao] Fetching daily news from alapi.cn...');
+  if (!TOKEN) {
+    hexo.log.warn('[daily] Token not configured. Skipping all fetches.');
+    return emptyPage();
+  }
 
-  return fetchJson(url).then(function (result) {
-    if (!result || result.code !== 200) {
-      hexo.log.warn('[zaobao] API returned error: ' + (result && result.msg || 'unknown'));
-      return emptyPage();
-    }
+  var now = new Date();
+  var updateTime = nowStr(now);
+  var dateStr = fmtDate(now);
 
-    var data = result.data || {};
-    var rawNews = data.news || [];
-    var news = normalizeNews(rawNews);
-    var date = data.date || '';
-    var motto = (data.weiyu || data.motto || '').replace(/^【微语】/, '').trim();
-    var updateTime = nowStr();
+  hexo.log.info('[daily] Fetching 3 sources...');
 
-    hexo.log.info('[zaobao] Success: ' + news.length + ' articles on ' + (date || 'today'));
+  return Promise.all([
+    fetchZaobao(),
+    fetchWeibo(),
+    fetchZhihu()
+  ]).then(function (results) {
+    var zaobao = results[0] || { news: [], motto: '' };
+    var weibo  = results[1] || { news: [] };
+    var zhihu  = results[2] || { news: [] };
+
+    // Use the earliest date from any source that returned data
+    var newsDate = zaobao.date || dateStr;
+
+    hexo.log.info('[daily] Done — zaobao:' + zaobao.news.length +
+      ' weibo:' + weibo.news.length + ' zhihu:' + zhihu.news.length);
 
     return {
       path: PAGE_PATH,
       layout: 'daily',
       data: {
         title: '每日资讯',
-        newsDate: date,
-        news: news,
-        motto: motto,
-        updateTime: updateTime
+        newsDate: newsDate,
+        updateTime: updateTime,
+        zaobao: zaobao,
+        weibo: weibo,
+        zhihu: zhihu
       }
     };
   }).catch(function (err) {
-    hexo.log.error('[zaobao] Request failed: ' + err.message);
+    hexo.log.error('[daily] Fatal: ' + err.message);
     return emptyPage();
   });
 });
 
-/**
- * Normalize news array — supports both string[] and {title, url}[] formats.
- */
-function normalizeNews(arr) {
-  if (!Array.isArray(arr)) return [];
-  return arr.map(function (item) {
-    if (typeof item === 'string') {
-      return { title: stripLeadingNumber(item), url: '' };
+/* ===== Data Fetchers ===== */
+
+function fetchZaobao() {
+  var url = 'https://v3.alapi.cn/api/zaobao?' + querystring.stringify({
+    token: TOKEN, format: 'json'
+  });
+  hexo.log.info('[daily] Fetching zaobao...');
+  return fetchJson(url).then(function (res) {
+    if (!res || res.code !== 200) {
+      hexo.log.warn('[daily] zaobao API error: ' + (res && res.msg || 'unknown'));
+      return { news: [], motto: '', date: '' };
     }
-    if (item && typeof item === 'object') {
-      return {
-        title: stripLeadingNumber(item.title || ''),
-        url: item.url || item.link || ''
-      };
-    }
-    return { title: stripLeadingNumber(String(item)), url: '' };
-  }).filter(function (item) {
-    return item.title.length > 0;
+    var d = res.data || {};
+    var raw = d.news || [];
+    var news = normalizeStrArr(raw).map(function (t) {
+      return { title: stripLeadingNum(t), url: '' };
+    });
+    var motto = (d.weiyu || d.motto || '').replace(/^【微语】/, '').trim();
+    hexo.log.info('[daily] zaobao: ' + news.length + ' items');
+    return { news: news, motto: motto, date: d.date || '' };
+  }).catch(function (err) {
+    hexo.log.warn('[daily] zaobao failed: ' + err.message);
+    return { news: [], motto: '', date: '' };
   });
 }
 
-/**
- * Strip leading number prefix like "1、", "2.", "3．" from news text.
- */
-function stripLeadingNumber(text) {
-  return String(text).replace(/^\d+[、.．\s]\s*/, '');
+function fetchWeibo() {
+  var url = 'https://v3.alapi.cn/api/new/wbtop?' + querystring.stringify({
+    token: TOKEN, num: 15
+  });
+  hexo.log.info('[daily] Fetching weibo hot search...');
+  return fetchJson(url).then(function (res) {
+    if (!res || res.code !== 200) {
+      hexo.log.warn('[daily] weibo API error: ' + (res && res.msg || 'unknown'));
+      return { news: [] };
+    }
+    var items = Array.isArray(res.data) ? res.data : [];
+    var news = items.map(function (item) {
+      var rawUrl = item.url || '';
+      // Filter invalid URLs (e.g. "https://s.weibo.comjavascript:void(0)")
+      if (!/^https?:\/\//i.test(rawUrl) || /javascript:/i.test(rawUrl)) rawUrl = '';
+      return {
+        title: item.hot_word || '',
+        hot: item.hot_num,
+        url: rawUrl
+      };
+    }).filter(function (item) { return item.title; });
+    hexo.log.info('[daily] weibo: ' + news.length + ' items');
+    return { news: news };
+  }).catch(function (err) {
+    hexo.log.warn('[daily] weibo failed: ' + err.message);
+    return { news: [] };
+  });
 }
+
+function fetchZhihu() {
+  var url = 'https://v3.alapi.cn/api/zhihu?' + querystring.stringify({
+    token: TOKEN
+  });
+  hexo.log.info('[daily] Fetching zhihu daily...');
+  return fetchJson(url).then(function (res) {
+    if (!res || res.code !== 200) {
+      hexo.log.warn('[daily] zhihu API error: ' + (res && res.msg || 'unknown'));
+      return { news: [] };
+    }
+    var d = res.data || {};
+    var stories = d.stories || [];
+    var news = stories.map(function (item) {
+      return {
+        title: item.title || '',
+        url: item.url || '',
+        hint: item.hint || '',
+        image: item.image || (item.images && item.images[0]) || ''
+      };
+    }).filter(function (item) { return item.title; });
+    hexo.log.info('[daily] zhihu: ' + news.length + ' items');
+    return { news: news };
+  }).catch(function (err) {
+    hexo.log.warn('[daily] zhihu failed: ' + err.message);
+    return { news: [] };
+  });
+}
+
+/* ===== Helpers ===== */
 
 function fetchJson(url) {
   return new Promise(function (resolve, reject) {
@@ -105,10 +160,31 @@ function fetchJson(url) {
       res.on('data', function (chunk) { body += chunk; });
       res.on('end', function () {
         try { resolve(JSON.parse(body)); }
-        catch (e) { reject(new Error('Invalid JSON response')); }
+        catch (e) { reject(new Error('Invalid JSON')); }
       });
     }).on('error', reject);
   });
+}
+
+function normalizeStrArr(arr) {
+  if (!Array.isArray(arr)) return [];
+  return arr.map(function (i) { return String(i); }).filter(function (i) { return i.length > 0; });
+}
+
+function stripLeadingNum(text) {
+  return String(text).replace(/^\d+[、.．\s]\s*/, '');
+}
+
+function fmtDate(d) {
+  return d.getFullYear() + '-' +
+    String(d.getMonth() + 1).padStart(2, '0') + '-' +
+    String(d.getDate()).padStart(2, '0');
+}
+
+function nowStr(d) {
+  var pad = function (n) { return String(n).padStart(2, '0'); };
+  return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) +
+    ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
 }
 
 function emptyPage() {
@@ -118,16 +194,10 @@ function emptyPage() {
     data: {
       title: '每日资讯',
       newsDate: '',
-      news: [],
-      motto: '',
-      updateTime: ''
+      updateTime: '',
+      zaobao: { news: [], motto: '' },
+      weibo: { news: [] },
+      zhihu: { news: [] }
     }
   };
-}
-
-function nowStr() {
-  var d = new Date();
-  var pad = function (n) { return String(n).padStart(2, '0'); };
-  return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) +
-    ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
 }
