@@ -26,13 +26,27 @@
  *       description: 简介                       # 可选
  */
 
-var Parser = require('rss-parser');
-var parser = new Parser({
-  timeout: 10000,
-  headers: {
-    'User-Agent': 'Polaris-Subscriptions/1.0'
+var Parser, parser;
+try {
+  Parser = require('rss-parser');
+  parser = new Parser({
+    timeout: 10000,
+    headers: {
+      'User-Agent': 'Polaris-Subscriptions/1.0'
+    }
+  });
+} catch (e) {
+  hexo.log.error('[subscriptions] Failed to load rss-parser: ' + e.message);
+  hexo.log.error('[subscriptions] Run: npm install rss-parser --save');
+}
+
+function requireRssParser() {
+  if (!Parser) {
+    hexo.log.error('[subscriptions] rss-parser not available, skipping feed fetch.');
+    return false;
   }
-});
+  return true;
+}
 
 hexo.extend.generator.register('subscriptions', function () {
   var cfg = hexo.config.subscriptions || {};
@@ -48,6 +62,16 @@ hexo.extend.generator.register('subscriptions', function () {
   var showDesc = cfg.show_description !== false;
   var showCount = cfg.show_count !== false;
   var timeout = cfg.timeout || 10000;
+
+  // 检查 rss-parser 是否可用
+  if (!requireRssParser()) {
+    return buildPage({
+      title: pageTitle,
+      items: [],
+      isEmpty: true,
+      totalActive: 0
+    });
+  }
 
   // 读取数据文件
   var data = hexo.locals.get('data') || {};
