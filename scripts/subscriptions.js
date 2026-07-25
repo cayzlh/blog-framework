@@ -53,19 +53,61 @@ hexo.extend.generator.register('subscriptions', function () {
   var data = hexo.locals.get('data') || {};
   var subscriptions = (data.subscriptions && data.subscriptions.subscriptions) || [];
 
+  var PER_PAGE = 10;
+
   function buildPage(customData) {
+    var path = customData.path || 'subscriptions/index.html';
     return {
-      path: 'subscriptions/index.html',
+      path: path,
       layout: 'subscriptions',
       data: customData
     };
+  }
+
+  function buildPages(allItems, totalActive) {
+    var totalPages = Math.max(1, Math.ceil(allItems.length / PER_PAGE));
+    var pages = [];
+
+    for (var p = 1; p <= totalPages; p++) {
+      var start = (p - 1) * PER_PAGE;
+      var end = Math.min(start + PER_PAGE, allItems.length);
+      var pageItems = allItems.slice(start, end);
+
+      var pagePath = p === 1
+        ? 'subscriptions/index.html'
+        : 'subscriptions/page/' + p + '/index.html';
+
+      var prevLink = p > 1
+        ? (p === 2 ? '/subscriptions/' : '/subscriptions/page/' + (p - 1) + '/')
+        : null;
+
+      var nextLink = p < totalPages
+        ? '/subscriptions/page/' + (p + 1) + '/'
+        : null;
+
+      pages.push(buildPage({
+        path: pagePath,
+        title: pageTitle,
+        items: pageItems,
+        isEmpty: false,
+        totalActive: totalActive,
+        total: totalPages,
+        current: p,
+        prev: p > 1,
+        next: p < totalPages,
+        prev_link: prevLink,
+        next_link: nextLink
+      }));
+    }
+
+    return pages;
   }
 
   if (!Array.isArray(subscriptions) || subscriptions.length === 0) {
     hexo.log.info('[subscriptions] No subscriptions data found, page will be empty.');
     return buildPage({
       title: pageTitle,
-      feeds: [],
+      items: [],
       updateTime: nowStr(),
       isEmpty: true,
       totalActive: 0
@@ -81,25 +123,36 @@ hexo.extend.generator.register('subscriptions', function () {
 
   return Promise.all(promises).then(function (feeds) {
     var totalActive = 0;
-    feeds.forEach(function (f) { if (!f.error) totalActive++; });
-
-    hexo.log.info('[subscriptions] Done — ' + totalActive + '/' + feeds.length + ' feeds fetched.');
-
-    return buildPage({
-      title: pageTitle,
-      subtitle: pageSubtitle.replace('%d', totalActive),
-      feeds: feeds,
-      updateTime: nowStr(),
-      isEmpty: false,
-      totalActive: totalActive,
-      showDescription: showDesc,
-      showCount: showCount
+    var allItems = [];
+    feeds.forEach(function (f) {
+      if (!f.error) totalActive++;
+      if (f.items && f.items.length > 0) {
+        f.items.forEach(function (item) {
+          allItems.push({
+            title: item.title,
+            link: item.link,
+            pubDate: item.pubDate,
+            sourceName: f.name,
+            sourceHomepage: f.homepage || f.url,
+            sourceIcon: f.icon
+          });
+        });
+      }
     });
+
+    // 按 pubDate 倒序排序（最新的在前）
+    allItems.sort(function (a, b) {
+      return new Date(b.pubDate) - new Date(a.pubDate);
+    });
+
+    hexo.log.info('[subscriptions] Done — ' + totalActive + '/' + feeds.length + ' feeds fetched, ' + allItems.length + ' items.');
+
+    return buildPages(allItems, totalActive);
   }).catch(function (err) {
     hexo.log.error('[subscriptions] Fatal: ' + err.message);
     return buildPage({
       title: pageTitle,
-      feeds: [],
+      items: [],
       updateTime: nowStr(),
       isEmpty: true,
       totalActive: 0
