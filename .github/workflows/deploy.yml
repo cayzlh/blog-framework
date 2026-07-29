@@ -1,0 +1,96 @@
+# .github/workflows/deploy.yml
+name: cayzlh.com
+
+on:
+  push:
+    branches:
+      - master
+  repository_dispatch:
+    types: [Hexo]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Deploy cayzlh.com
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      # ---------- 1. 检出当前仓库 ----------
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ---------- 2. 设置 Node.js ----------
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.12.0
+#          cache: npm
+
+      # ---------- 3. 缓存 node_modules ----------
+      - name: Cache dependencies
+        id: cache
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-npm-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-npm-
+
+      # ---------- 4. 安装依赖 ----------
+      - name: Install dependencies
+        run: npm install
+        env:
+          NODE_OPTIONS: "--max-old-space-size=8192"
+
+      # ---------- 5. 配置 Git 和 SSH ----------
+      - name: Configure Git & SSH
+        env:
+          HEXO_DEPLOY_PRI: ${{ secrets.HEXO_DEPLOY_PRI }}
+        run: |
+          set -e
+          # SSH 配置
+          mkdir -p ~/.ssh/
+          echo "$HEXO_DEPLOY_PRI" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
+
+          # Git 全局配置
+          git config --global user.name "Ant丶"
+          git config --global user.email "mail@cayzlh.com"
+
+      # ---------- 6. 克隆私有源仓库 ----------
+      - name: Checkout source
+        run: |
+          set -e
+          rm -rf source
+          git clone --depth=1 git@github.com:cayzlh/blog-private.git source
+          # 清理不需要的文件
+          rm -rf source/.git source/.github
+
+      # ---------- 7. 克隆主题仓库 ----------
+      - name: Checkout theme
+        run: |
+          set -e
+          git clone --depth=1 git@github.com:cayzlh/hexo-theme-polaris.git themes/polaris
+          rm -f themes/polaris/_config.yml
+
+      # ---------- 8. 配置 Hexo ----------
+      - name: Prepare Hexo config
+        run: |
+          set -e
+          # 移动主题配置
+          # mv ./source/_config.polaris.yml ./themes/polaris/_config.yml
+          # 移动站点配置（覆盖根目录 _config.yml）
+          mv ./source/_config.site.yml ./_config.yml
+
+      # ---------- 9. 构建并部署 ----------
+      - name: Generate and deploy
+        run: |
+          set -e
+          npx hexo clean
+          npx hexo generate
+          npx hexo deploy
