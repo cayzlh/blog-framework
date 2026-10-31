@@ -12,6 +12,16 @@ on:
 permissions:
   contents: write
 
+# 部署串行化。两个 workflow_dispatch / repository_dispatch 与 push 可能几乎
+# 同时触发（例如子模块推送会连带 triggering 一次），而 hexo deploy 是
+# 整仓库强推：后完成的那次会覆盖先完成的产物。实测出现过旧 commit 的 run
+# 比新 commit 晚结束、把新内容盖回去的情况。
+# cancel-in-progress: false —— 不取消在跑的部署，避免部署到一半被打断；
+# 排队等前面结束后，用最新的 commit 重新构建。
+concurrency:
+  group: deploy-cayzlh-com
+  cancel-in-progress: false
+
 jobs:
   build:
     name: Deploy cayzlh.com
