@@ -88,7 +88,7 @@ hexo.extend.generator.register('subscriptions', function () {
     };
   }
 
-  function buildPages(allItems, totalActive) {
+  function buildPages(allItems, totalActive, sources) {
     var totalPages = Math.max(1, Math.ceil(allItems.length / PER_PAGE));
     var pages = [];
 
@@ -115,6 +115,7 @@ hexo.extend.generator.register('subscriptions', function () {
         items: pageItems,
         isEmpty: false,
         totalActive: totalActive,
+        sources: sources || [],
         total: totalPages,
         current: p,
         prev: p > 1,
@@ -148,8 +149,20 @@ hexo.extend.generator.register('subscriptions', function () {
   return Promise.all(promises).then(function (feeds) {
     var totalActive = 0;
     var allItems = [];
+    // 订阅源摘要：供页面「正在关注」网格使用。只留展示需要的字段，
+    // 不把每个源抓到的全部条目塞进页面数据。
+    var sources = [];
     feeds.forEach(function (f) {
       if (!f.error) totalActive++;
+      sources.push({
+        name: f.name,
+        url: f.url,
+        homepage: f.homepage || f.url,
+        icon: f.icon,
+        description: f.description || '',
+        error: !!f.error,
+        count: (f.items || []).length
+      });
       if (f.items && f.items.length > 0) {
         f.items.forEach(function (item) {
           allItems.push({
@@ -171,7 +184,7 @@ hexo.extend.generator.register('subscriptions', function () {
 
     hexo.log.info('[subscriptions] Done — ' + totalActive + '/' + feeds.length + ' feeds fetched, ' + allItems.length + ' items.');
 
-    return buildPages(allItems, totalActive);
+    return buildPages(allItems, totalActive, sources);
   }).catch(function (err) {
     hexo.log.error('[subscriptions] Fatal: ' + err.message);
     return buildPage({
